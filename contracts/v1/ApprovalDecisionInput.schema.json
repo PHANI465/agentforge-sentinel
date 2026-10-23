@@ -1,0 +1,31 @@
+{
+  "additionalProperties": false,
+  "description": "Untrusted human choice; server resolves intent and authenticated approver.",
+  "properties": {
+    "action_intent_id": {
+      "format": "uuid",
+      "title": "Action Intent Id",
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "approved",
+        "rejected"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_intent_id",
+    "decision"
+  ],
+  "title": "ApprovalDecisionInput",
+  "type": "object"
+}

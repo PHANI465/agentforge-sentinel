@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "session_id": {
+          "format": "uuid",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "session_id"
+      ],
+      "title": "Scope",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "actor_id": {
+      "format": "uuid",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "actor_kind": {
+      "enum": [
+        "human",
+        "agent",
+        "system"
+      ],
+      "title": "Actor Kind",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_revision": {
+      "maximum": 2147483647,
+      "minimum": 1,
+      "title": "Case Revision",
+      "type": "integer"
+    },
+    "correlation_id": {
+      "format": "uuid",
+      "title": "Correlation Id",
+      "type": "string"
+    },
+    "event_type": {
+      "enum": [
+        "transaction_received",
+        "alert_raised",
+        "investigation_started",
+        "investigation_completed",
+        "approval_recorded",
+        "action_succeeded",
+        "action_denied"
+      ],
+      "title": "Event Type",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "success",
+        "denied",
+        "failure"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/Scope"
+    }
+  },
+  "required": [
+    "id",
+    "scope",
+    "case_id",
+    "case_revision",
+    "correlation_id",
+    "actor_id",
+    "actor_kind",
+    "event_type",
+    "outcome",
+    "occurred_at",
+    "recorded_at"
+  ],
+  "title": "AuditEvent",
+  "type": "object"
+}

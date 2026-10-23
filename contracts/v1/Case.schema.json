@@ -1,0 +1,187 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "CasePins": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_config": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "dataset": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "evidence_snapshot_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Snapshot Sha256",
+          "type": "string"
+        },
+        "policy": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scorer": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "threshold_policy": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "tool_config": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "dataset",
+        "scorer",
+        "threshold_policy",
+        "policy",
+        "agent_config",
+        "tool_config",
+        "evidence_snapshot_sha256"
+      ],
+      "title": "CasePins",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "session_id": {
+          "format": "uuid",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "session_id"
+      ],
+      "title": "Scope",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "alert_id": {
+      "format": "uuid",
+      "title": "Alert Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "default": [],
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 100,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "pins": {
+      "$ref": "#/$defs/CasePins"
+    },
+    "revision": {
+      "maximum": 2147483647,
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/Scope"
+    },
+    "state": {
+      "enum": [
+        "open",
+        "investigating",
+        "awaiting_approval",
+        "closed",
+        "inconclusive"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "scope",
+    "alert_id",
+    "revision",
+    "state",
+    "pins",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Case",
+  "type": "object"
+}

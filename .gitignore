@@ -1,0 +1,26 @@
+# Local evidence and Python caches
+.agent/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Review staged files as well; ignore rules are not a security boundary.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Private local files; publish only deliberately reviewed fixtures.
+data/private/
+local-credentials/
+artifacts/private/
+
+# Python packaging and local tools
+*.egg-info/
+build/
+dist/
+.uv-cache/

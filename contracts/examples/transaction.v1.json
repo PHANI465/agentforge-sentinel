@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "external_id": "replay-1",
+  "account_id": "00000000-0000-0000-0000-00000000000a",
+  "amount": {
+    "schema_version": "1.0",
+    "currency": "USD",
+    "minor_units": 12345,
+    "currency_exponent": 2
+  },
+  "direction": "debit",
+  "occurred_at": "2026-10-23T17:00:00Z",
+  "id": "00000000-0000-0000-0000-000000000007",
+  "scope": {
+    "schema_version": "1.0",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "session_id": "00000000-0000-0000-0000-000000000002"
+  },
+  "ingested_at": "2026-10-23T17:00:00Z",
+  "dataset": {
+    "schema_version": "1.0",
+    "name": "data",
+    "version": "v1.0.0",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "synthetic": true
+}

@@ -1,0 +1,321 @@
+{
+  "$defs": {
+    "ActionIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Case Revision",
+          "type": "integer"
+        },
+        "evidence_snapshot_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Snapshot Sha256",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "parameters": {
+          "discriminator": {
+            "mapping": {
+              "escalate": "#/$defs/EscalateParameters",
+              "simulated_hold": "#/$defs/HoldParameters"
+            },
+            "propertyName": "operation"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/HoldParameters"
+            },
+            {
+              "$ref": "#/$defs/EscalateParameters"
+            }
+          ],
+          "title": "Parameters"
+        },
+        "policy": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        }
+      },
+      "required": [
+        "id",
+        "scope",
+        "case_id",
+        "case_revision",
+        "evidence_snapshot_sha256",
+        "policy",
+        "parameters"
+      ],
+      "title": "ActionIntent",
+      "type": "object"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "EscalateParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "escalate",
+          "title": "Operation",
+          "type": "string"
+        },
+        "reason_code": {
+          "enum": [
+            "velocity_pattern",
+            "unusual_amount",
+            "insufficient_evidence"
+          ],
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "transaction_id": {
+          "format": "uuid",
+          "title": "Transaction Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation",
+        "transaction_id",
+        "reason_code"
+      ],
+      "title": "EscalateParameters",
+      "type": "object"
+    },
+    "HoldParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "$ref": "#/$defs/Money"
+        },
+        "operation": {
+          "const": "simulated_hold",
+          "title": "Operation",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "transaction_id": {
+          "format": "uuid",
+          "title": "Transaction Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation",
+        "transaction_id",
+        "amount"
+      ],
+      "title": "HoldParameters",
+      "type": "object"
+    },
+    "Money": {
+      "additionalProperties": false,
+      "description": "Positive magnitude; direction is separate. Integers remain safe in JavaScript.",
+      "properties": {
+        "currency": {
+          "enum": [
+            "USD",
+            "INR",
+            "GBP",
+            "JPY"
+          ],
+          "title": "Currency",
+          "type": "string"
+        },
+        "currency_exponent": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Currency Exponent",
+          "type": "integer"
+        },
+        "minor_units": {
+          "exclusiveMinimum": 0,
+          "maximum": 9000000000000,
+          "title": "Minor Units",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "currency",
+        "minor_units",
+        "currency_exponent"
+      ],
+      "title": "Money",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "session_id": {
+          "format": "uuid",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "session_id"
+      ],
+      "title": "Scope",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "approval_id": {
+      "format": "uuid",
+      "title": "Approval Id",
+      "type": "string"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "format": "uuid",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "intent": {
+      "$ref": "#/$defs/ActionIntent"
+    },
+    "intent_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Intent Sha256",
+      "type": "string"
+    },
+    "mode": {
+      "const": "simulated",
+      "default": "simulated",
+      "title": "Mode",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "pending",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "intent",
+    "approval_id",
+    "intent_sha256",
+    "idempotency_key",
+    "state",
+    "created_at"
+  ],
+  "title": "SimulatedAction",
+  "type": "object"
+}
