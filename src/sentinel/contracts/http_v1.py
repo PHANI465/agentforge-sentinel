@@ -38,7 +38,10 @@ class ErrorDetail(HttpBody):
 
 
 class ErrorResponse(HttpBody):
-    """Every non-2xx response. `error` is a stable machine code; no input is echoed."""
+    """Body of every handled (documented) error response. `error` is a stable machine code;
+    no input is echoed. Unexpected server failures, proxies and network faults can instead
+    produce a non-JSON 5xx, an empty or invalid body, or no response: clients must fall back
+    to a generic message and, for an execution request, keep the same idempotency key."""
     error: str
     details: list[ErrorDetail] | None = Field(
         default=None, description="Validation error codes only (no field names or values).")

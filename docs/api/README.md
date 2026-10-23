@@ -59,7 +59,7 @@ Bodies are JSON, at most 16 KiB, with unknown fields rejected.
 
 ## Errors
 
-Every non-2xx body is `ErrorResponse`: `{"error": "<code>"}`, plus `details: [{"code": ...}]` for invalid JSON bodies. No field names, values or input are echoed.
+Every **handled** error (the codes below, plus unknown routes/methods and request validation) returns `ErrorResponse`: `{"error": "<code>"}`, plus `details: [{"code": ...}]` for invalid JSON bodies. No field names, values or input are echoed. This is not a guarantee for every failure; see the next section.
 
 | Status | Codes |
 | --- | --- |
@@ -73,6 +73,21 @@ Every non-2xx body is `ErrorResponse`: `{"error": "<code>"}`, plus `details: [{"
 | 422 | `invalid_request` (body or query/path validation), `invalid_cursor`, `future_event_time` |
 
 For a 409, re-read authoritative state before offering the next step. Codes are stable within v1; new codes may be added, so the UI should show a generic message for an unknown code.
+
+## Failures outside the error contract (client fallback is required)
+
+The API does not guarantee a JSON body for every failure:
+- An unexpected server exception, such as a storage outage or a response that fails its own model validation, returns **HTTP 500 with a non-JSON body** (currently `text/plain` "Internal Server Error"). Internals are not echoed (tested).
+- A proxy, gateway, timeout or runtime in front of the API can return other non-JSON 5xx pages, an empty body or a truncated or invalid body.
+- A network failure can produce no response at all.
+
+Client requirements:
+1. Parse an error body as `ErrorResponse` only if the status is 4xx/5xx, the content type is JSON and the body validates. Otherwise show a safe generic message and never render the raw body.
+2. Treat any non-JSON 5xx, empty or invalid body, timeout or network failure as **outcome unknown**. Re-read authoritative state (`GET /v1/cases/{id}`) before offering the next step.
+3. **Execution:** after an ambiguous `POST /v1/actions` failure (network failure, timeout, any 5xx, or an unparseable body), retry with the same `idempotency_key`; never generate a new one. An ambiguous failure does not establish that no action occurred. The retry either returns the original action (`replayed: true`) or a handled error. Only a handled 4xx/409 response is a definite outcome.
+4. Ingestion retries reuse the same `external_id` and body for the same reason.
+
+Safe logging and observability for unexpected errors are tracked separately (C05).
 
 ## Example index
 

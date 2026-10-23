@@ -59,18 +59,29 @@ def encode_cursor(created_at: datetime, case_id) -> str:
 
 
 def decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
-    """Opaque position only; it carries no authority (queries stay session-scoped)."""
+    """Opaque position only; it carries no authority (queries stay session-scoped).
+
+    The decoded JSON must be exactly [timestamp-string, uuid-string]; shape and member types
+    are checked before parsing, so no malformed input reaches datetime/uuid (review R9)."""
+    invalid = ServiceError("invalid_cursor", 422)
+    if len(cursor) > MAX_CURSOR_LENGTH or not cursor.isascii():
+        raise invalid
     try:
-        if len(cursor) > MAX_CURSOR_LENGTH:
-            raise ValueError
-        raw = base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4))
-        created, case_id = json.loads(raw)
+        decoded = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
+    except (ValueError, binascii.Error):  # JSONDecodeError and UnicodeDecodeError included
+        raise invalid from None
+    if not (isinstance(decoded, list) and len(decoded) == 2
+            and all(isinstance(member, str) for member in decoded)):
+        raise invalid
+    created, case_id = decoded
+    try:
         when = datetime.fromisoformat(created)
-        if when.tzinfo is None:
-            raise ValueError
-        return when, uuid.UUID(case_id)
-    except (ValueError, TypeError, binascii.Error, UnicodeDecodeError):
-        raise ServiceError("invalid_cursor", 422) from None
+        position = uuid.UUID(case_id)
+    except ValueError:
+        raise invalid from None
+    if when.tzinfo is None:
+        raise invalid
+    return when, position
 
 
 def utc_now() -> datetime:

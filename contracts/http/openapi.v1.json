@@ -854,7 +854,7 @@
       },
       "ErrorResponse": {
         "additionalProperties": false,
-        "description": "Every non-2xx response. `error` is a stable machine code; no input is echoed.",
+        "description": "Body of every handled (documented) error response. `error` is a stable machine code;\nno input is echoed. Unexpected server failures, proxies and network faults can instead\nproduce a non-JSON 5xx, an empty or invalid body, or no response: clients must fall back\nto a generic message and, for an execution request, keep the same idempotency key.",
         "properties": {
           "details": {
             "anyOf": [
