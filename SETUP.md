@@ -45,7 +45,7 @@ uv run --locked python -m sentinel.cli devdb stop
 
 Endpoints: `POST /v1/transactions`, `GET /v1/cases/{id}`, `GET /v1/cases/{id}/audit`, `POST /v1/cases/{id}/investigations`, `POST /v1/approvals`, `POST /v1/actions`, `GET /healthz`.
 
-Investigator modes (decision 0003): `deterministic` (default, no AI) or `claude-cli` (local only; refused unless `SENTINEL_MODE=local`, which is the default). The Claude mode strips API-key environment variables so it uses subscription login. Switching modes makes cases created under the other mode fail investigation with `stale_agent_config`.
+Investigator modes (decision 0003): `deterministic` (default, no AI) or `claude-cli` (local only; refused unless `SENTINEL_MODE=local`, which is the default). The Claude mode removes every `ANTHROPIC_*`/`CLAUDE_CODE_USE_*` variable, then requires `claude auth status` to report first-party claude.ai login before any model call. Otherwise it fails closed (decision 0005). Switching modes makes cases created under the other mode fail investigation with `stale_agent_config`.
 
 ## Coordination
 

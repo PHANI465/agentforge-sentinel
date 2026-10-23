@@ -67,6 +67,7 @@
         "investigation_started",
         "investigation_completed",
         "approval_recorded",
+        "approval_expired",
         "action_succeeded",
         "action_denied"
       ],

@@ -18,8 +18,17 @@ FINDING = {"operation": "escalate", "reason_code": "velocity_pattern",
            "rationale": "Three prior transactions in one hour."}
 
 
-def fake_runner(stdout="", returncode=0, raises=None, seen=None):
+SUBSCRIPTION = {"loggedIn": True, "authMethod": "claude.ai", "apiProvider": "firstParty",
+                "subscriptionType": "pro", "email": "redacted@example.invalid"}
+
+
+def fake_runner(stdout="", returncode=0, raises=None, seen=None, auth=SUBSCRIPTION, calls=None):
+    """Answers `claude auth status` with `auth`; records the model call in `seen`."""
     def run(cmd, **kwargs):
+        if calls is not None:
+            calls.append({"cmd": cmd, **kwargs})
+        if cmd[1:3] == ["auth", "status"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout=json.dumps(auth), stderr="")
         if seen is not None:
             seen.update(cmd=cmd, **kwargs)
         if raises:
@@ -45,10 +54,51 @@ def test_structured_output_becomes_finding(monkeypatch):
     assert "--strict-mcp-config" in cmd and "--no-session-persistence" in cmd
     assert cmd[cmd.index("--setting-sources") + 1] == ""
     assert "--bare" not in cmd and "--dangerously-skip-permissions" not in cmd
+    assert "--disable-slash-commands" in cmd
     assert "ANTHROPIC_API_KEY" not in seen["env"]
     assert Path(seen["cwd"]).resolve() != Path.cwd().resolve()
     assert json.loads(seen["input"])["facts"] == VIEW.facts
     assert seen["timeout"] == agent.timeout_seconds
+
+
+# Every documented alternate provider route/credential (dummy values only).
+ALTERNATE_ROUTES = {
+    "ANTHROPIC_API_KEY": "DUMMY_NOT_REAL", "ANTHROPIC_AUTH_TOKEN": "DUMMY_NOT_REAL",
+    "ANTHROPIC_BASE_URL": "https://example.invalid", "CLAUDE_CODE_USE_BEDROCK": "1",
+    "AWS_BEARER_TOKEN_BEDROCK": "DUMMY_NOT_REAL", "ANTHROPIC_BEDROCK_BASE_URL": "https://x.invalid",
+    "CLAUDE_CODE_USE_VERTEX": "1", "ANTHROPIC_VERTEX_PROJECT_ID": "dummy",
+    "CLAUDE_CODE_USE_FOUNDRY": "1", "ANTHROPIC_FOUNDRY_API_KEY": "DUMMY_NOT_REAL",
+    "ANTHROPIC_FOUNDRY_RESOURCE": "dummy", "ANTHROPIC_FOUNDRY_BASE_URL": "https://y.invalid",
+}
+
+
+def test_r1_no_alternate_provider_route_reaches_any_child(monkeypatch):
+    for name, value in ALTERNATE_ROUTES.items():
+        monkeypatch.setenv(name, value)
+    calls = []
+    ClaudeCliInvestigator(executable="claude", runner=fake_runner(
+        envelope(structured_output=FINDING), calls=calls)).investigate(VIEW)
+    assert [c["cmd"][1] for c in calls] == ["auth", "-p"]  # preflight, then the model call
+    for call in calls:
+        leaked = sorted(set(ALTERNATE_ROUTES) & set(call["env"]))
+        assert leaked == [], leaked
+
+
+@pytest.mark.parametrize("auth", [
+    {**SUBSCRIPTION, "authMethod": "api_key"},
+    {**SUBSCRIPTION, "apiProvider": "foundry"},
+    {**SUBSCRIPTION, "apiProvider": "bedrock"},
+    {**SUBSCRIPTION, "loggedIn": False},
+    {"unexpected": "shape"},
+])
+def test_r1_model_is_never_called_without_verified_subscription_login(auth):
+    calls = []
+    agent = ClaudeCliInvestigator(executable="claude", runner=fake_runner(
+        envelope(structured_output=FINDING), auth=auth, calls=calls))
+    with pytest.raises(InvestigatorError) as raised:
+        agent.investigate(VIEW)
+    assert raised.value.code == "provider_unavailable"
+    assert [c["cmd"][1] for c in calls] == ["auth"]
 
 
 def test_windows_cmd_shim_is_never_executed(tmp_path, monkeypatch):

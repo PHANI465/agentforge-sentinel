@@ -19,11 +19,13 @@ from psycopg.types.json import Jsonb
 from sentinel import db, scoring
 from sentinel.contracts.guards import (
     ContractViolation, require_evidence_snapshot, require_executable_approval,
+    require_execution_authority,
 )
 from sentinel.contracts.v1 import (
     ActionIntent, AgentRun, Alert, Approval, ApprovalDecisionInput, AuditEvent, Case, CasePins,
     EscalateParameters, EvidenceItem, ExecuteActionInput, Fact, HoldParameters,
-    InvestigationFinding, RunBudget, Scope, SimulatedAction, Transaction, TransactionInput,
+    InvestigationFinding, RunBudget, Scope, ScoringOutcome, SimulatedAction, Transaction,
+    TransactionInput,
     TrustedContext, canonical_digest, evidence_content_digest, evidence_snapshot_digest,
     intent_digest,
 )
@@ -106,13 +108,19 @@ class Sentinel:
 
     def ingest(self, ctx: TrustedContext, data: TransactionInput) -> dict:
         _require(ctx, "ingest_transaction")
-        now = self.clock()
-        if data.occurred_at > now:
-            raise ServiceError("future_event_time", 422)
         input_sha = canonical_digest("sentinel.transaction-input.v1", data.model_dump(mode="json"))
+        tenant, session = _scoped(ctx)
+        account_key = f"{tenant}:{session}:{data.account_id}"
         for _ in range(2):
             try:
                 with db.connect(self.database_url) as conn, conn.transaction():
+                    # One decision per account at a time, so each sees exactly the history
+                    # committed before its decision time, which is read after the lock (R3).
+                    conn.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                                 (account_key,))
+                    now = self.clock()
+                    if data.occurred_at > now:
+                        raise ServiceError("future_event_time", 422)
                     return self._ingest(conn, ctx, data, input_sha, now)
             except psycopg.errors.UniqueViolation:
                 continue  # a concurrent identical external_id won; re-read it
@@ -128,11 +136,14 @@ class Sentinel:
             if existing["input_sha256"] != input_sha:
                 raise ServiceError("idempotency_conflict", 409)
             return self._ingest_result(conn, ctx, existing["id"], replayed=True)
+        # Events in [t-1h, t) that were available (ingested) by the decision time. Events at
+        # exactly t are excluded regardless of arrival order.
         prior = conn.execute(
             "SELECT count(*) AS n FROM transactions WHERE tenant_id = %s AND session_id = %s"
-            " AND account_id = %s AND occurred_at >= %s AND occurred_at < %s",
+            " AND account_id = %s AND occurred_at >= %s AND occurred_at < %s"
+            " AND ingested_at <= %s",
             (tenant, session, data.account_id, data.occurred_at - timedelta(hours=1),
-             data.occurred_at)).fetchone()["n"]
+             data.occurred_at, now)).fetchone()["n"]
         txn = Transaction(**data.model_dump(), id=uuid.uuid4(), scope=ctx.scope, ingested_at=now,
                           dataset=scoring.DATASET)
         conn.execute(
@@ -142,9 +153,17 @@ class Sentinel:
             (txn.id, tenant, session, txn.external_id, txn.account_id, txn.occurred_at,
              txn.ingested_at, input_sha, _dump(txn)))
         score = scoring.rule_score(txn, prior)
-        if score < scoring.THRESHOLD:
-            return {"transaction": txn.model_dump(mode="json"), "rule_score": score,
-                    "alert": None, "case": None, "replayed": False}
+        outcome = ScoringOutcome(
+            transaction_id=txn.id, scope=ctx.scope, scored_at=now, features_as_of=now,
+            scorer=scoring.SCORER, features=scoring.FEATURES,
+            threshold_policy=scoring.THRESHOLD_POLICY, scoring_kind="rule",
+            score_semantics="heuristic", score=score, threshold=scoring.THRESHOLD,
+            alerted=score >= scoring.THRESHOLD, prior_count_1h=prior)
+        conn.execute("INSERT INTO scoring_outcomes (transaction_id, tenant_id, session_id, score,"
+                     " alerted, body) VALUES (%s, %s, %s, %s, %s, %s)",
+                     (txn.id, tenant, session, score, outcome.alerted, _dump(outcome)))
+        if not outcome.alerted:
+            return self._ingest_result(conn, ctx, txn.id, replayed=False)
         alert = Alert(
             id=uuid.uuid4(), scope=ctx.scope, transaction_id=txn.id, created_at=now,
             features_as_of=now, scorer=scoring.SCORER, features=scoring.FEATURES,
@@ -191,14 +210,16 @@ class Sentinel:
     def _ingest_result(self, conn, ctx, txn_id, *, replayed: bool) -> dict:
         tenant, session = _scoped(ctx)
         row = conn.execute(
-            "SELECT t.body AS txn, a.body AS alert, c.body AS case_body FROM transactions t"
+            "SELECT t.body AS txn, s.body AS scoring, a.body AS alert, c.body AS case_body"
+            " FROM transactions t LEFT JOIN scoring_outcomes s ON s.transaction_id = t.id"
             " LEFT JOIN alerts a ON a.transaction_id = t.id"
             " LEFT JOIN cases c ON c.alert_id = a.id"
             " WHERE t.id = %s AND t.tenant_id = %s AND t.session_id = %s",
             (txn_id, tenant, session)).fetchone()
-        score = row["alert"]["score"] if row["alert"] else None
-        return {"transaction": row["txn"], "rule_score": score, "alert": row["alert"],
-                "case": row["case_body"], "replayed": replayed}
+        # Ingested before migration 0002: no recorded outcome, so no score is invented.
+        score = row["scoring"]["score"] if row["scoring"] else None
+        return {"transaction": row["txn"], "rule_score": score, "scoring": row["scoring"],
+                "alert": row["alert"], "case": row["case_body"], "replayed": replayed}
 
     # ---- reads -----------------------------------------------------------------------------
 
@@ -269,24 +290,29 @@ class Sentinel:
                                                                              InvestigationView]:
         """Transaction 1: claim the case (open -> investigating) and record a running run."""
         _require(ctx, "read_case", human=True)
-        now = self.clock()
         with db.connect(self.database_url) as conn:
             with conn.transaction():
                 case = self._case(conn, ctx, case_id, lock=True)
+                now = self.clock()
                 if case.revision != expected_revision:
                     raise ServiceError("stale_case_revision", 409)
                 busy = case.state == "investigating"
-                # Recovery (if any) commits with this block; the client then re-reads.
+                # Recovery or expiry (if any) commits with this block; the client re-reads.
                 recovered = busy and self._recover_lost_run(conn, ctx, case, now)
+                expired = (case.state == "awaiting_approval"
+                           and self._expire_lapsed_approval(conn, ctx, case, now) is not None)
             if busy:
                 raise ServiceError("investigation_recovered" if recovered
                                    else "investigation_in_progress", 409)
-            return self._claim(conn, ctx, case, now)
+            if expired:
+                raise ServiceError("approval_expired", 409)
+            return self._claim(conn, ctx, case)
 
-    def _claim(self, conn, ctx, case: Case, now) -> tuple[AgentRun, InvestigationView]:
+    def _claim(self, conn, ctx, case: Case) -> tuple[AgentRun, InvestigationView]:
         with conn.transaction():
             expected_revision = case.revision
             case = self._case(conn, ctx, case.id, lock=True)
+            now = self.clock()
             if case.revision != expected_revision:
                 raise ServiceError("stale_case_revision", 409)
             if case.state != "open":
@@ -384,6 +410,23 @@ class Sentinel:
         self._fail_run(conn, ctx, case, run, "timeout", now)
         return True
 
+    def _expire_lapsed_approval(self, conn, ctx, case: Case, now) -> Case | None:
+        """Reopen a case whose current intent's approval lapsed unused (review R8). The old
+        approval is never revived: it stays bound to the superseded case revision."""
+        row = conn.execute(
+            "SELECT ap.body FROM action_intents i JOIN approvals ap ON ap.intent_id = i.id"
+            " WHERE i.case_id = %s AND i.case_revision = %s", (case.id, case.revision)).fetchone()
+        if row is None:
+            return None
+        approval = Approval.model_validate(row["body"])
+        if (approval.decision != "approved" or approval.consumed_at is not None
+                or now < approval.expires_at):
+            return None
+        reopened = self._transition(conn, case, "open", now)
+        self._audit(conn, ctx, reopened, uuid.uuid4(), SYSTEM_ACTOR, "system", "approval_expired",
+                    "success", now)
+        return reopened
+
     # ---- approval and simulated execution --------------------------------------------------
 
     def record_approval(self, ctx: TrustedContext, data: ApprovalDecisionInput) -> dict:
@@ -427,11 +470,11 @@ class Sentinel:
         raise ServiceError("conflict", 409)
 
     def _execute(self, ctx, data) -> dict:
-        now = self.clock()
         tenant, session = _scoped(ctx)
-        denial: tuple[str, Case] | None = None
+        code: str | None = None
         with db.connect(self.database_url) as conn:
             with conn.transaction():
+                # Lock order: approval, then case.
                 row = conn.execute(
                     "SELECT a.body, i.intent_sha256 FROM approvals a"
                     " JOIN action_intents i ON i.id = a.intent_id"
@@ -439,30 +482,36 @@ class Sentinel:
                     " FOR UPDATE OF a", (data.approval_id, tenant, session)).fetchone()
                 if row is None:
                     raise ServiceError("not_found", 404)
+                approval = Approval.model_validate(row["body"])
+                case = self._case(conn, ctx, approval.intent.case_id, lock=True)
+                # Validity is judged after every lock wait, never before (review R2).
+                now = self.clock()
                 existing = conn.execute(
                     "SELECT approval_id, body FROM simulated_actions"
                     " WHERE tenant_id = %s AND idempotency_key = %s",
                     (tenant, data.idempotency_key)).fetchone()
-                if existing is not None:
-                    if existing["approval_id"] != data.approval_id:
-                        raise ServiceError("idempotency_conflict", 409)
-                    return {"action": existing["body"], "replayed": True}
-                approval = Approval.model_validate(row["body"])
-                case = self._case(conn, ctx, approval.intent.case_id, lock=True)
                 try:
+                    if existing is not None:
+                        if existing["approval_id"] != data.approval_id:
+                            raise ServiceError("idempotency_conflict", 409)
+                        # A replay needs current authority, not fresh preconditions (R4).
+                        require_execution_authority(ctx, approval)
+                        return {"action": existing["body"], "replayed": True}
                     require_executable_approval(
                         ctx, approval, now=now, current_case=case,
                         current_intent_sha256=row["intent_sha256"],
                         active_policy=scoring.ACTION_POLICY)
                 except ContractViolation as violation:
-                    denial = (str(violation), case)
-                if denial is None:
+                    code = str(violation)
+                if code is None:
                     return self._perform(conn, ctx, approval, case, data, now)
             # The denial is recorded in its own transaction; nothing above was changed.
             with conn.transaction():
-                code, case = denial
+                case = self._case(conn, ctx, case.id, lock=True)
                 self._audit(conn, ctx, case, uuid.uuid4(), ctx.actor_id, ctx.actor_kind,
                             "action_denied", "denied", now)
+                if code == "approval_outside_validity" and case.state == "awaiting_approval":
+                    self._expire_lapsed_approval(conn, ctx, case, now)
         status = 403 if code in {"action_permission_denied", "approver_mismatch"} else 409
         raise ServiceError(code, status)
 

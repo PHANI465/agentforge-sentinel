@@ -43,9 +43,7 @@ def create_app(service: Sentinel | None = None) -> FastAPI:
         return service.authenticate(token)
 
     async def body(request: Request, model: type[BaseModel]):
-        raw = await request.body()
-        if len(raw) > MAX_BODY_BYTES:
-            raise ServiceError("body_too_large", 413)
+        raw = await read_limited(request, MAX_BODY_BYTES)
         try:
             return model.model_validate_json(raw)
         except ValidationError as error:
@@ -91,6 +89,23 @@ def create_app(service: Sentinel | None = None) -> FastAPI:
                                       await body(request, ExecuteActionInput))
 
     return app
+
+
+async def read_limited(request: Request, limit: int) -> bytes:
+    """Reject a declared oversize body unread, and stop consuming a chunked or understated
+    body as soon as it passes the limit (review R6)."""
+    declared = request.headers.get("content-length")
+    if declared is not None:
+        if not declared.isdigit():
+            raise ServiceError("invalid_content_length", 400)
+        if int(declared) > limit:
+            raise ServiceError("body_too_large", 413)
+    raw = bytearray()
+    async for chunk in request.stream():
+        raw += chunk
+        if len(raw) > limit:
+            raise ServiceError("body_too_large", 413)
+    return bytes(raw)
 
 
 class _InvalidBody(Exception):

@@ -2,6 +2,7 @@
 simulated action -> audit, including restarts, isolation, races and denials."""
 import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 
 import psycopg
@@ -10,9 +11,9 @@ from fastapi.testclient import TestClient
 
 from sentinel import db
 from sentinel.api import create_app
-from sentinel.contracts.v1 import InvestigationFinding
+from sentinel.contracts.v1 import ExecuteActionInput, InvestigationFinding
 from sentinel.investigators import DeterministicInvestigator, InvestigatorError
-from sentinel.service import Sentinel
+from sentinel.service import Sentinel, ServiceError
 
 ANALYST = frozenset({"ingest_transaction", "read_case", "approve_action",
                      "execute_simulated_action"})
@@ -193,6 +194,41 @@ def test_stale_revision_and_wrong_state_are_rejected(harness, token, clock):
         "error": "case_not_investigable"}
 
 
+def run_concurrently(fn, arg_lists, timeout=30):
+    """Start all callers together; every caller must finish in time with a result. Unexpected
+    exceptions are re-raised and stuck callers fail the test (R7)."""
+    barrier = threading.Barrier(len(arg_lists))
+
+    def call(args):
+        barrier.wait(timeout)
+        return fn(*args)
+
+    pool = ThreadPoolExecutor(len(arg_lists))
+    try:
+        futures = [pool.submit(call, args) for args in arg_lists]
+        return [future.result(timeout=timeout) for future in futures]
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+
+
+def test_run_concurrently_reraises_unexpected_errors():
+    def fn(n):
+        if n == 2:
+            raise RuntimeError("unexpected")
+        return n
+    with pytest.raises(RuntimeError):
+        run_concurrently(fn, [(0,), (1,), (2,), (3,)], timeout=5)
+
+
+def test_run_concurrently_fails_on_stuck_caller():
+    release = threading.Event()
+    try:
+        with pytest.raises(TimeoutError):
+            run_concurrently(lambda n: n if n else release.wait(30), [(0,), (1,)], timeout=0.5)
+    finally:
+        release.set()
+
+
 def test_concurrent_execution_consumes_approval_once(database_url, clock):
     h = Harness(database_url, clock)
     token = h.service.create_session(ANALYST)[0]
@@ -200,32 +236,27 @@ def test_concurrent_execution_consumes_approval_once(database_url, clock):
     h.call("POST", f"/v1/cases/{case['id']}/investigations", token, {"expected_revision": 1})
     approval = approve_pending(h, token, case["id"])
     ctx = h.service.authenticate(token)
-    barrier, results = threading.Barrier(4), []
 
     def attempt(key):
-        from sentinel.contracts.v1 import ExecuteActionInput
-        from sentinel.service import ServiceError
-        barrier.wait()
         try:
             out = h.service.execute_action(ctx, ExecuteActionInput(
                 approval_id=approval["id"], idempotency_key=key))
-            results.append(("ok", out["action"]["id"], key))
-        except ServiceError as error:
-            results.append((error.code, None, key))
+            return ("ok", out["action"]["id"])
+        except ServiceError as error:  # only expected, typed denials are tolerated
+            return (error.code, None)
 
     shared = uuid.uuid4()
     keys = [shared, shared, uuid.uuid4(), uuid.uuid4()]
-    threads = [threading.Thread(target=attempt, args=(k,)) for k in keys]
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join(timeout=30)
+    results = run_concurrently(attempt, [(key,) for key in keys])
+    assert len(results) == len(keys)
     with db.connect(database_url) as conn:
-        assert conn.execute("SELECT count(*) AS n FROM simulated_actions").fetchone()["n"] == 1
-    action_ids = {action_id for status, action_id, _ in results if status == "ok"}
-    assert len(action_ids) == 1
-    denied = [status for status, _, _ in results if status != "ok"]
-    assert set(denied) <= {"approval_not_available", "stale_case_revision"}
+        row = conn.execute("SELECT id, idempotency_key FROM simulated_actions").fetchall()
+    assert len(row) == 1
+    action_id, winning_key = str(row[0]["id"]), row[0]["idempotency_key"]
+    for key, outcome in zip(keys, results):
+        # The winning key (performed or replayed) returns the one action; others are denied.
+        expected = ("ok", action_id) if key == winning_key else ("approval_not_available", None)
+        assert outcome == expected, (key == shared, outcome)
     assert audit_types(h, token, case["id"]).count(("action_succeeded", "success", 4)) == 1
 
 
@@ -258,7 +289,8 @@ def test_expired_approval_is_denied_and_audited(harness, token, clock):
     response = harness.call("POST", "/v1/actions", token, {"approval_id": approval["id"],
                                                            "idempotency_key": str(uuid.uuid4())})
     assert (response.status_code, response.json()) == (409, {"error": "approval_outside_validity"})
-    assert audit_types(harness, token, case["id"])[-1] == ("action_denied", "denied", 3)
+    assert audit_types(harness, token, case["id"])[-2:] == [
+        ("action_denied", "denied", 3), ("approval_expired", "success", 4)]
     view = harness.call("GET", f"/v1/cases/{case['id']}", token).json()
     assert view["action_intents"][0]["action"] is None
     assert view["action_intents"][0]["approval"]["consumed_at"] is None

@@ -1,0 +1,160 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "session_id": {
+          "format": "uuid",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "session_id"
+      ],
+      "title": "Scope",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The recorded decision for one ingested transaction, alerting or not.",
+  "properties": {
+    "alerted": {
+      "title": "Alerted",
+      "type": "boolean"
+    },
+    "features": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "features_as_of": {
+      "format": "date-time",
+      "title": "Features As Of",
+      "type": "string"
+    },
+    "prior_count_1h": {
+      "maximum": 9000000000000,
+      "minimum": 0,
+      "title": "Prior Count 1H",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/Scope"
+    },
+    "score": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Score",
+      "type": "number"
+    },
+    "score_semantics": {
+      "enum": [
+        "heuristic",
+        "estimated_probability"
+      ],
+      "title": "Score Semantics",
+      "type": "string"
+    },
+    "scored_at": {
+      "format": "date-time",
+      "title": "Scored At",
+      "type": "string"
+    },
+    "scorer": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "scoring_kind": {
+      "enum": [
+        "rule",
+        "model"
+      ],
+      "title": "Scoring Kind",
+      "type": "string"
+    },
+    "threshold": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Threshold",
+      "type": "number"
+    },
+    "threshold_policy": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "transaction_id": {
+      "format": "uuid",
+      "title": "Transaction Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "transaction_id",
+    "scope",
+    "scored_at",
+    "features_as_of",
+    "scorer",
+    "features",
+    "threshold_policy",
+    "scoring_kind",
+    "score_semantics",
+    "score",
+    "threshold",
+    "alerted",
+    "prior_count_1h"
+  ],
+  "title": "ScoringOutcome",
+  "type": "object"
+}

@@ -139,6 +139,33 @@ class Alert(Contract):
         return self
 
 
+class ScoringOutcome(Contract):
+    """The recorded decision for one ingested transaction, alerting or not."""
+    transaction_id: Id
+    scope: Scope
+    scored_at: Timestamp
+    features_as_of: Timestamp
+    scorer: ArtifactRef
+    features: ArtifactRef
+    threshold_policy: ArtifactRef
+    scoring_kind: Literal["rule", "model"]
+    score_semantics: Literal["heuristic", "estimated_probability"]
+    score: UnitScore
+    threshold: UnitScore
+    alerted: bool
+    prior_count_1h: Annotated[StrictInt, Field(ge=0, le=MAX_MINOR_UNITS)]
+
+    @model_validator(mode="after")
+    def decision_snapshot(self):
+        if self.features_as_of > self.scored_at:
+            raise ValueError("features are unavailable at the decision time")
+        if self.alerted != (self.score >= self.threshold):
+            raise ValueError("alert flag disagrees with score and threshold")
+        if self.scoring_kind == "rule" and self.score_semantics != "heuristic":
+            raise ValueError("rule scores are not probabilities")
+        return self
+
+
 class Fact(Contract):
     name: Literal["amount_minor", "transaction_count_1h", "account_age_days"]
     value: Annotated[StrictInt, Field(ge=0, le=MAX_MINOR_UNITS)]
@@ -368,7 +395,8 @@ class AuditEvent(Contract):
     actor_kind: Literal["human", "agent", "system"]
     event_type: Literal[
         "transaction_received", "alert_raised", "investigation_started",
-        "investigation_completed", "approval_recorded", "action_succeeded", "action_denied",
+        "investigation_completed", "approval_recorded", "approval_expired", "action_succeeded",
+        "action_denied",
     ]
     outcome: Literal["success", "denied", "failure"]
     occurred_at: Timestamp
@@ -392,7 +420,7 @@ def safe_validation_errors(error: ValidationError) -> list[dict[str, str]]:
 
 
 PERSISTED_MODELS = (Transaction, Alert, EvidenceItem, Case, AgentRun, Approval,
-                    SimulatedAction, AuditEvent)
+                    SimulatedAction, AuditEvent, ScoringOutcome)
 EXPORT_MODELS = PERSISTED_MODELS + (
     TransactionInput, ApprovalDecisionInput, ActionIntent, InvestigationFinding,
     InvestigationRequestInput, ExecuteActionInput,

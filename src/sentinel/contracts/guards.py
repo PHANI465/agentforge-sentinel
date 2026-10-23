@@ -58,6 +58,16 @@ def require_evidence_snapshot(
         raise ContractViolation("evidence_snapshot_mismatch")
 
 
+def require_execution_authority(context: TrustedContext, approval: Approval) -> None:
+    """Who may execute (or replay the result of) this approval, checked against the current
+    context. Replays skip freshness checks but never this one."""
+    require_scope(context, approval.intent.scope)
+    if context.actor_kind != "human" or "execute_simulated_action" not in context.capabilities:
+        raise ContractViolation("action_permission_denied")
+    if context.actor_id != approval.actor_id:
+        raise ContractViolation("approver_mismatch")
+
+
 def require_executable_approval(
     context: TrustedContext,
     approval: Approval,
@@ -69,11 +79,7 @@ def require_executable_approval(
 ) -> None:
     """Checks trusted snapshots only; does not consume approval or perform an action."""
     require_scope(context, current_case.scope)
-    require_scope(context, approval.intent.scope)
-    if context.actor_kind != "human" or "execute_simulated_action" not in context.capabilities:
-        raise ContractViolation("action_permission_denied")
-    if context.actor_id != approval.actor_id:
-        raise ContractViolation("approver_mismatch")
+    require_execution_authority(context, approval)
     if now.tzinfo is None or now.utcoffset() is None:
         raise ContractViolation("naive_execution_time")
     if approval.decision != "approved" or approval.consumed_at is not None:

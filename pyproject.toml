@@ -44,5 +44,6 @@ select = ["E4", "E7", "E9", "F"]
 "tests_handoff/test_handoff.py" = ["E402"]
 
 [tool.uv]
-# Supply-chain hygiene: newly added transitive packages must be at least two weeks old.
+# Supply-chain hygiene, scoped: only these three packages are held to releases at least two
+# weeks old (their newest releases were days old when added). Not a project-wide rule.
 exclude-newer-package = { certifi = "2026-10-09T00:00:00Z", fastapi = "2026-10-09T00:00:00Z", starlette = "2026-10-09T00:00:00Z" }

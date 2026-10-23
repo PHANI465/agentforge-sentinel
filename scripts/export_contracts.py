@@ -24,11 +24,12 @@ def main() -> int:
     for name, content in expected.items():
         path = destination / name
         if args.check:
-            if not path.exists() or path.read_text(encoding="utf-8") != content:
+            # Byte comparison: CRLF drift (e.g. a Windows text-mode write) is a difference.
+            if not path.exists() or path.read_bytes() != content.encode("utf-8"):
                 stale.append(name)
         else:
             destination.mkdir(parents=True, exist_ok=True)
-            path.write_text(content, encoding="utf-8")
+            path.write_bytes(content.encode("utf-8"))
     if destination.exists():
         extras = {p.name for p in destination.glob("*.schema.json")} - expected.keys()
         stale.extend(sorted(extras))

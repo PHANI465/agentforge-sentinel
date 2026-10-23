@@ -86,9 +86,18 @@ CLAUDE_SYSTEM_PROMPT = (
     "with one reason_code, and a short factual rationale citing only the given facts. "
     "You cannot take actions; a human decides. Reply with the JSON object only."
 )
-# Environment variables that would switch Claude Code from subscription login to paid API.
-_PAID_AUTH_ENV = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK",
-                  "CLAUDE_CODE_USE_VERTEX", "ANTHROPIC_BASE_URL")
+# Provider routing/credential controls removed from the child environment (review R1): every
+# ANTHROPIC_* variable (API keys, auth tokens, base URLs, Bedrock/Vertex/Foundry settings),
+# every CLAUDE_CODE_USE_* provider switch, and the Bedrock bearer token.
+_ROUTE_PREFIXES = ("ANTHROPIC_", "CLAUDE_CODE_USE_")
+_ROUTE_NAMES = {"AWS_BEARER_TOKEN_BEDROCK"}
+# The only accepted profile, as reported by `claude auth status --json`.
+SUBSCRIPTION_PROFILE = {"loggedIn": True, "authMethod": "claude.ai", "apiProvider": "firstParty"}
+
+
+def subscription_env() -> dict[str, str]:
+    return {name: value for name, value in os.environ.items()
+            if not name.upper().startswith(_ROUTE_PREFIXES) and name.upper() not in _ROUTE_NAMES}
 
 
 def resolve_claude_executable(name: str = "claude") -> str | None:
@@ -106,7 +115,9 @@ def resolve_claude_executable(name: str = "claude") -> str | None:
 
 class ClaudeCliInvestigator:
     """Local-only: calls the user's logged-in Claude Code CLI headless, with no tools, MCP
-    servers, settings, project instructions or saved session. Never enable in public mode."""
+    servers, skills, settings files, project instructions or saved session. Before any model
+    call, `claude auth status` (same environment) must report first-party claude.ai login;
+    otherwise nothing is sent. Never enable in public mode."""
 
     def __init__(self, model: str = "sonnet", executable: str | None = None,
                  timeout_seconds: int = 60,
@@ -125,6 +136,7 @@ class ClaudeCliInvestigator:
     def command(self, executable: str) -> list[str]:
         return [executable, "-p", "--output-format", "json", "--model", self.model,
                 "--tools", "", "--strict-mcp-config", "--setting-sources", "",
+                "--disable-slash-commands",
                 "--no-session-persistence", "--system-prompt", CLAUDE_SYSTEM_PROMPT,
                 "--json-schema", json.dumps(self.schema, separators=(",", ":"))]
 
@@ -136,10 +148,11 @@ class ClaudeCliInvestigator:
         executable = self.executable or resolve_claude_executable()
         if executable is None:
             raise InvestigatorError("provider_unavailable")
-        env = {k: v for k, v in os.environ.items() if k not in _PAID_AUTH_ENV}
+        env = subscription_env()
         try:
             # Empty working directory: no project files or CLAUDE.md are visible to the model.
             with tempfile.TemporaryDirectory(prefix="sentinel-claude-") as cwd:
+                self._require_subscription_login(executable, env, cwd)
                 completed = self.runner(self.command(executable), input=prompt, capture_output=True,
                                         text=True, encoding="utf-8", timeout=self.timeout_seconds,
                                         cwd=cwd, env=env)
@@ -151,6 +164,20 @@ class ClaudeCliInvestigator:
         if completed.returncode != 0:
             raise InvestigatorError("provider_unavailable")
         return parse_claude_result(completed.stdout)
+
+
+    def _require_subscription_login(self, executable: str, env: dict, cwd: str) -> None:
+        """Fail closed unless the CLI, as configured here (including any managed settings it
+        applies), resolves to subscription login. Output is not logged: it contains the email."""
+        status = self.runner([executable, "auth", "status", "--json"], capture_output=True,
+                             text=True, encoding="utf-8", timeout=15, cwd=cwd, env=env)
+        try:
+            profile = json.loads(status.stdout) if status.returncode == 0 else None
+        except json.JSONDecodeError:
+            profile = None
+        if not isinstance(profile, dict) or any(
+                profile.get(key) != value for key, value in SUBSCRIPTION_PROFILE.items()):
+            raise InvestigatorError("provider_unavailable")
 
 
 def parse_claude_result(stdout: str) -> InvestigationFinding:

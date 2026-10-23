@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg
 import pytest
+from psycopg.conninfo import make_conninfo
 
 from sentinel import db, devdb
 
@@ -35,9 +36,8 @@ def pg_cluster(tmp_path_factory):
     cluster = devdb.Cluster(bin_dir, tmp_path_factory.mktemp("pg") / "data", devdb.free_port())
     cluster.init()
     cluster.start()
-    template = cluster.create_database("sentinel_template")
-    db.migrate(template)
-    try:
+    try:  # everything after start, including template setup, is covered by the stop below
+        db.migrate(cluster.create_database("sentinel_template"))
         yield cluster.url(), cluster
     finally:
         cluster.stop()
@@ -47,17 +47,18 @@ def pg_cluster(tmp_path_factory):
 def database_url(pg_cluster):
     admin_url, cluster = pg_cluster
     name = f"sentinel_test_{os.getpid()}_{next(_names)}"
+    # Rebuild the DSN properly so query/TLS parameters on an external admin URL survive.
+    url = make_conninfo(admin_url, dbname=name)
     with psycopg.connect(admin_url, autocommit=True) as conn:
+        template = "" if cluster is None else " TEMPLATE sentinel_template"
+        conn.execute(f'CREATE DATABASE "{name}"{template}')
+    try:
         if cluster is None:
-            conn.execute(f'CREATE DATABASE "{name}"')
-        else:
-            conn.execute(f'CREATE DATABASE "{name}" TEMPLATE sentinel_template')
-    url = admin_url.rsplit("/", 1)[0] + "/" + name
-    if cluster is None:
-        db.migrate(url)
-    yield url
-    with psycopg.connect(admin_url, autocommit=True) as conn:
-        conn.execute(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
+            db.migrate(url)
+        yield url
+    finally:
+        with psycopg.connect(admin_url, autocommit=True) as conn:
+            conn.execute(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
 
 
 @pytest.fixture
