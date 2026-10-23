@@ -6,7 +6,10 @@ indistinguishable (not_found). Case transitions use compare-and-set on revision.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
+import json
 import secrets
 import uuid
 from dataclasses import dataclass
@@ -17,6 +20,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from sentinel import db, scoring
+from sentinel.contracts.http_v1 import CASE_STATES
 from sentinel.contracts.guards import (
     ContractViolation, require_evidence_snapshot, require_executable_approval,
     require_execution_authority,
@@ -43,6 +47,30 @@ class ServiceError(Exception):
         super().__init__(code)
         self.code = code
         self.status = status
+
+
+MAX_CURSOR_LENGTH = 200
+
+
+def encode_cursor(created_at: datetime, case_id) -> str:
+    raw = json.dumps([created_at.astimezone(timezone.utc).isoformat(), str(case_id)],
+                     separators=(",", ":"))
+    return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+
+
+def decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
+    """Opaque position only; it carries no authority (queries stay session-scoped)."""
+    try:
+        if len(cursor) > MAX_CURSOR_LENGTH:
+            raise ValueError
+        raw = base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4))
+        created, case_id = json.loads(raw)
+        when = datetime.fromisoformat(created)
+        if when.tzinfo is None:
+            raise ValueError
+        return when, uuid.UUID(case_id)
+    except (ValueError, TypeError, binascii.Error, UnicodeDecodeError):
+        raise ServiceError("invalid_cursor", 422) from None
 
 
 def utc_now() -> datetime:
@@ -187,8 +215,9 @@ class Sentinel:
                           evidence_snapshot_sha256=evidence_snapshot_digest(evidence)),
             evidence_ids=tuple(item.id for item in evidence), created_at=now, updated_at=now)
         conn.execute("INSERT INTO cases (id, tenant_id, session_id, alert_id, revision, state,"
-                     " body) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                     (case.id, tenant, session, alert.id, 1, "open", _dump(case)))
+                     " created_at, body) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                     (case.id, tenant, session, alert.id, 1, "open", case.created_at,
+                      _dump(case)))
         for item in evidence:
             conn.execute("INSERT INTO evidence_items (id, tenant_id, session_id, case_id, body)"
                          " VALUES (%s, %s, %s, %s, %s)",
@@ -248,6 +277,8 @@ class Sentinel:
                                  ).fetchone()["body"]
             txn = conn.execute("SELECT body FROM transactions WHERE id = %s",
                                (alert["transaction_id"],)).fetchone()["body"]
+            scored = conn.execute("SELECT body FROM scoring_outcomes WHERE transaction_id = %s",
+                                  (alert["transaction_id"],)).fetchone()
             runs = conn.execute(
                 "SELECT body, finding FROM agent_runs WHERE case_id = %s AND tenant_id = %s"
                 " AND session_id = %s ORDER BY started_at", (case.id, tenant, session)).fetchall()
@@ -260,12 +291,73 @@ class Sentinel:
             evidence = self._rows(conn, ctx, "evidence_items", case.id)
         return {
             "case": case.model_dump(mode="json"), "alert": alert, "transaction": txn,
-            "evidence": evidence,
+            "scoring": scored["body"] if scored else None, "evidence": evidence,
             "agent_runs": [{"run": r["body"], "finding": r["finding"]} for r in runs],
             "action_intents": [{"intent": i["body"], "intent_sha256": i["intent_sha256"],
                                 "approval": i["approval"], "action": i["action"]}
                                for i in intents],
         }
+
+    def list_cases(self, ctx: TrustedContext, *, limit: int, state: str | None = None,
+                   cursor: str | None = None) -> dict:
+        """Own-session cases, newest first; created_at ties are broken by id (keyset)."""
+        _require(ctx, "read_case")
+        tenant, session = _scoped(ctx)
+        where, params = ["c.tenant_id = %s", "c.session_id = %s"], [tenant, session]
+        if state is not None:
+            where.append("c.state = %s")
+            params.append(state)
+        if cursor is not None:
+            created_at, case_id = decode_cursor(cursor)
+            where.append("(c.created_at, c.id) < (%s, %s)")
+            params.extend([created_at, case_id])
+        with db.connect(self.database_url) as conn:
+            rows = conn.execute(
+                "SELECT c.created_at, c.body AS case_body, a.body AS alert, t.body AS txn"
+                " FROM cases c JOIN alerts a ON a.id = c.alert_id"
+                " JOIN transactions t ON t.id = a.transaction_id"
+                f" WHERE {' AND '.join(where)} ORDER BY c.created_at DESC, c.id DESC"
+                " LIMIT %s", (*params, limit + 1)).fetchall()
+        more = len(rows) > limit
+        rows = rows[:limit]
+        items = [{
+            "id": r["case_body"]["id"], "state": r["case_body"]["state"],
+            "revision": r["case_body"]["revision"], "created_at": r["case_body"]["created_at"],
+            "updated_at": r["case_body"]["updated_at"], "alert_id": r["alert"]["id"],
+            "transaction_id": r["txn"]["id"], "external_id": r["txn"]["external_id"],
+            "amount": r["txn"]["amount"], "direction": r["txn"]["direction"],
+            "score": r["alert"]["score"], "threshold": r["alert"]["threshold"],
+            "scoring_kind": r["alert"]["scoring_kind"],
+            "score_semantics": r["alert"]["score_semantics"],
+        } for r in rows]
+        last = rows[-1] if more else None
+        next_cursor = encode_cursor(last["created_at"], last["case_body"]["id"]) if last else None
+        return {"items": items, "next_cursor": next_cursor, "limit": limit}
+
+    def session_view(self, token: str) -> dict:
+        with db.connect(self.database_url) as conn:
+            row = conn.execute(
+                "SELECT tenant_id, session_id, actor_id, actor_kind, capabilities, expires_at"
+                " FROM api_sessions WHERE token_sha256 = %s AND expires_at > %s",
+                (token_digest(token), self.clock())).fetchone()
+        if row is None:
+            raise ServiceError("unauthenticated", 401)
+        return {**row, "capabilities": sorted(row["capabilities"])}
+
+    def overview(self, ctx: TrustedContext) -> dict:
+        _require(ctx, "read_case")
+        scope = _scoped(ctx)
+        where = "WHERE tenant_id = %s AND session_id = %s"
+        with db.connect(self.database_url) as conn:
+            by_state = {r["state"]: r["n"] for r in conn.execute(
+                f"SELECT state, count(*) AS n FROM cases {where} GROUP BY state", scope)}
+            counts = {table: conn.execute(f"SELECT count(*) AS n FROM {table} {where}",
+                                          scope).fetchone()["n"]
+                      for table in ("transactions", "alerts", "simulated_actions")}
+        return {"cases_by_state": {state: by_state.get(state, 0) for state in CASE_STATES},
+                **counts,
+                "investigator": {"name": self.investigator.config.name,
+                                 "version": self.investigator.config.version}}
 
     def get_audit(self, ctx: TrustedContext, case_id: uuid.UUID) -> list[dict]:
         _require(ctx, "read_case")
@@ -431,7 +523,6 @@ class Sentinel:
 
     def record_approval(self, ctx: TrustedContext, data: ApprovalDecisionInput) -> dict:
         _require(ctx, "approve_action", human=True)
-        now = self.clock()
         tenant, session = _scoped(ctx)
         try:
             with db.connect(self.database_url) as conn, conn.transaction():
@@ -443,6 +534,9 @@ class Sentinel:
                     raise ServiceError("not_found", 404)
                 intent = ActionIntent.model_validate(row["body"])
                 case = self._case(conn, ctx, intent.case_id, lock=True)
+                # Decision/expiry times are taken after the lock wait, so a delayed request
+                # never returns an approval that is already expired.
+                now = self.clock()
                 if case.state != "awaiting_approval" or case.revision != intent.case_revision:
                     raise ServiceError("stale_case_revision", 409)
                 approval = Approval(

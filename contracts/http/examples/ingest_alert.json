@@ -1,0 +1,177 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "account_id": "00000000-0000-4000-8000-0000000000a1",
+      "amount": {
+        "currency": "USD",
+        "currency_exponent": 2,
+        "minor_units": 250000
+      },
+      "direction": "debit",
+      "external_id": "demo-large-1",
+      "occurred_at": "2026-10-23T17:00:00Z"
+    },
+    "method": "POST",
+    "path": "/v1/transactions"
+  },
+  "response": {
+    "alert": {
+      "created_at": "2026-10-23T17:00:00Z",
+      "features": {
+        "name": "thin-path-features",
+        "schema_version": "1.0",
+        "sha256": "e26c85a55b8cbb9de536a2b55bca69328b28c72299205534b34c0be5b445d01b",
+        "version": "f1"
+      },
+      "features_as_of": "2026-10-23T17:00:00Z",
+      "id": "5e000000-0000-4000-8000-000000000008",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "score": 1.0,
+      "score_semantics": "heuristic",
+      "scorer": {
+        "name": "velocity-amount-rules",
+        "schema_version": "1.0",
+        "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+        "version": "r1"
+      },
+      "scoring_kind": "rule",
+      "threshold": 0.5,
+      "threshold_policy": {
+        "name": "alert-threshold",
+        "schema_version": "1.0",
+        "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+        "version": "t1"
+      },
+      "transaction_id": "5e000000-0000-4000-8000-000000000007"
+    },
+    "case": {
+      "alert_id": "5e000000-0000-4000-8000-000000000008",
+      "created_at": "2026-10-23T17:00:00Z",
+      "evidence_ids": [
+        "5e000000-0000-4000-8000-00000000000a",
+        "5e000000-0000-4000-8000-00000000000b"
+      ],
+      "id": "5e000000-0000-4000-8000-000000000009",
+      "pins": {
+        "agent_config": {
+          "name": "deterministic-investigator",
+          "schema_version": "1.0",
+          "sha256": "f786d618952834fd1a108b27d3cff98c8eb1b8f52177e013eec2ec5aa1d40908",
+          "version": "i1"
+        },
+        "dataset": {
+          "name": "api-synthetic-ingest",
+          "schema_version": "1.0",
+          "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+          "version": "d1"
+        },
+        "evidence_snapshot_sha256": "9319c96d9fee1955c257b8913885c1dbe8828320a9c80587cd959b7bc98e401f",
+        "policy": {
+          "name": "simulated-action-policy",
+          "schema_version": "1.0",
+          "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+          "version": "p1"
+        },
+        "schema_version": "1.0",
+        "scorer": {
+          "name": "velocity-amount-rules",
+          "schema_version": "1.0",
+          "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+          "version": "r1"
+        },
+        "threshold_policy": {
+          "name": "alert-threshold",
+          "schema_version": "1.0",
+          "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+          "version": "t1"
+        },
+        "tool_config": {
+          "name": "no-tools",
+          "schema_version": "1.0",
+          "sha256": "9260913bc49e607b7d106f163933feaf215e7c84ae9e30152bd4e56d8dbb3762",
+          "version": "n1"
+        }
+      },
+      "revision": 1,
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "state": "open",
+      "updated_at": "2026-10-23T17:00:00Z"
+    },
+    "replayed": false,
+    "rule_score": 1.0,
+    "scoring": {
+      "alerted": true,
+      "features": {
+        "name": "thin-path-features",
+        "schema_version": "1.0",
+        "sha256": "e26c85a55b8cbb9de536a2b55bca69328b28c72299205534b34c0be5b445d01b",
+        "version": "f1"
+      },
+      "features_as_of": "2026-10-23T17:00:00Z",
+      "prior_count_1h": 3,
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "score": 1.0,
+      "score_semantics": "heuristic",
+      "scored_at": "2026-10-23T17:00:00Z",
+      "scorer": {
+        "name": "velocity-amount-rules",
+        "schema_version": "1.0",
+        "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+        "version": "r1"
+      },
+      "scoring_kind": "rule",
+      "threshold": 0.5,
+      "threshold_policy": {
+        "name": "alert-threshold",
+        "schema_version": "1.0",
+        "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+        "version": "t1"
+      },
+      "transaction_id": "5e000000-0000-4000-8000-000000000007"
+    },
+    "transaction": {
+      "account_id": "00000000-0000-4000-8000-0000000000a1",
+      "amount": {
+        "currency": "USD",
+        "currency_exponent": 2,
+        "minor_units": 250000,
+        "schema_version": "1.0"
+      },
+      "dataset": {
+        "name": "api-synthetic-ingest",
+        "schema_version": "1.0",
+        "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+        "version": "d1"
+      },
+      "direction": "debit",
+      "external_id": "demo-large-1",
+      "id": "5e000000-0000-4000-8000-000000000007",
+      "ingested_at": "2026-10-23T17:00:00Z",
+      "occurred_at": "2026-10-23T17:00:00Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "synthetic": true
+    }
+  },
+  "status": 201
+}

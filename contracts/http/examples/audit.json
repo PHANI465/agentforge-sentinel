@@ -1,0 +1,119 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/cases/5e000000-0000-4000-8000-000000000009/audit"
+  },
+  "response": [
+    {
+      "actor_id": "f332e8e3-6ead-5d4e-88e1-12396c5e543e",
+      "actor_kind": "system",
+      "case_id": "5e000000-0000-4000-8000-000000000009",
+      "case_revision": 1,
+      "correlation_id": "5e000000-0000-4000-8000-00000000000c",
+      "event_type": "transaction_received",
+      "id": "5e000000-0000-4000-8000-00000000000d",
+      "occurred_at": "2026-10-23T17:00:00Z",
+      "outcome": "success",
+      "recorded_at": "2026-10-23T17:00:00Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "actor_id": "f332e8e3-6ead-5d4e-88e1-12396c5e543e",
+      "actor_kind": "system",
+      "case_id": "5e000000-0000-4000-8000-000000000009",
+      "case_revision": 1,
+      "correlation_id": "5e000000-0000-4000-8000-00000000000c",
+      "event_type": "alert_raised",
+      "id": "5e000000-0000-4000-8000-00000000000e",
+      "occurred_at": "2026-10-23T17:00:00Z",
+      "outcome": "success",
+      "recorded_at": "2026-10-23T17:00:00Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "actor_id": "5e000000-0000-4000-8000-000000000003",
+      "actor_kind": "human",
+      "case_id": "5e000000-0000-4000-8000-000000000009",
+      "case_revision": 2,
+      "correlation_id": "5e000000-0000-4000-8000-000000000018",
+      "event_type": "investigation_started",
+      "id": "5e000000-0000-4000-8000-000000000019",
+      "occurred_at": "2026-10-23T17:00:06Z",
+      "outcome": "success",
+      "recorded_at": "2026-10-23T17:00:06Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "actor_id": "3610840e-2855-5ff4-96d8-e6f386c34dea",
+      "actor_kind": "agent",
+      "case_id": "5e000000-0000-4000-8000-000000000009",
+      "case_revision": 3,
+      "correlation_id": "5e000000-0000-4000-8000-00000000001b",
+      "event_type": "investigation_completed",
+      "id": "5e000000-0000-4000-8000-00000000001c",
+      "occurred_at": "2026-10-23T17:00:06Z",
+      "outcome": "success",
+      "recorded_at": "2026-10-23T17:00:06Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "actor_id": "5e000000-0000-4000-8000-000000000003",
+      "actor_kind": "human",
+      "case_id": "5e000000-0000-4000-8000-000000000009",
+      "case_revision": 3,
+      "correlation_id": "5e000000-0000-4000-8000-00000000001e",
+      "event_type": "approval_recorded",
+      "id": "5e000000-0000-4000-8000-00000000001f",
+      "occurred_at": "2026-10-23T17:00:06Z",
+      "outcome": "success",
+      "recorded_at": "2026-10-23T17:00:06Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "actor_id": "5e000000-0000-4000-8000-000000000003",
+      "actor_kind": "human",
+      "case_id": "5e000000-0000-4000-8000-000000000009",
+      "case_revision": 4,
+      "correlation_id": "5e000000-0000-4000-8000-000000000021",
+      "event_type": "action_succeeded",
+      "id": "5e000000-0000-4000-8000-000000000022",
+      "occurred_at": "2026-10-23T17:00:06Z",
+      "outcome": "success",
+      "recorded_at": "2026-10-23T17:00:06Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      }
+    }
+  ],
+  "status": 200
+}
