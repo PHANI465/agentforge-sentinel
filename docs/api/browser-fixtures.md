@@ -18,20 +18,23 @@ There is no mock server. The investigator makes no model or network call, and li
 Run from the backend checkout root (Python 3.11 and uv; PostgreSQL binaries found automatically or via `SENTINEL_PG_BIN`):
 
 ```powershell
-uv run --locked python tests/support/browser_stack.py start [--state-dir DIR] [--api-port N] [--timeout 60]
+uv run --locked python tests/support/browser_stack.py start [--parent-dir DIR] [--api-port N] [--timeout 60]
 uv run --locked python tests/support/browser_stack.py seed --manifest PATH --scenario NAME --ordinal N
 uv run --locked python tests/support/browser_stack.py restart-api --manifest PATH
 uv run --locked python tests/support/browser_stack.py restart-db --manifest PATH
 uv run --locked python tests/support/browser_stack.py status --manifest PATH   # {"api":"up|down","database":"up|down"}
-uv run --locked python tests/support/browser_stack.py stop --manifest PATH     # {"api_stopped":..,"database_stopped":..,"state_removed":..}
+uv run --locked python tests/support/browser_stack.py stop --manifest PATH     # {"ok":..,"api_stopped":..,"database_stopped":..,"state_removed":..,"errors":[..]}
 ```
 
 - **`start`** returns once the API answers `/healthz`. It prints `SENTINEL_STACK_MANIFEST=<path>` and a line with `base_url` and scenario names, **never tokens**. Exit code 1 means a startup error.
-  - On failure everything it started is stopped, and the manifest is deleted.
-  - Without `--state-dir` it uses a new private temp directory (`sentinel-browser-*`), which `stop` removes.
+  - It **always creates a fresh private directory** named `sentinel-browser-*`: in the user temp directory, or inside `--parent-dir` if given. It never takes over an existing directory, and the parent and its other contents are never modified or deleted.
+  - On failure everything it started is stopped. If both API and database are verified stopped, the private directory is removed. Otherwise the command fails with `recovery manifest kept at <path>`; run `stop --manifest <path>` to finish cleanup.
 - **`seed`** prints one scenario record as JSON (no tokens). `ordinal` ≥ 1 is single-use per stack and gives stable IDs.
 - **`restart-api`** kills only the recorded uvicorn process tree (identity checked by PID **and** process start time) and starts a new process on the same port. **`restart-db`** stops and starts the PostgreSQL server with `pg_ctl`; the API reconnects on its next request.
-- **`stop`** stops the API and database, verifies both (process gone, port closed, `pg_ctl status`), then deletes the state directory, including the token file and database files. Nothing is terminated by process name.
+- **`stop`** stops the API and database and verifies both (process gone, port closed, `pg_ctl status`). Nothing is terminated by process name, and a PID whose start time no longer matches is never killed.
+  - Only when **both** are verified does it delete the private directory (manifest with tokens, process identity, database files), and only after re-checking ownership. It refuses to delete if the directory contains anything unexpected or any link/junction.
+  - Any incomplete step returns `ok: false` with `errors` (exit code 1) and **keeps the manifest, including tokens**, as the recovery record, so `stop` can be retried. Those tokens only authorize the disposable local database.
+- **Ownership checks** (all commands taking `--manifest`): the manifest must sit in the canonical directory it records, the directory name must start with `sentinel-browser-`, neither path may be a link or junction, and the directory's `.sentinel-browser-stack` marker must match the manifest's random owner value. Anything else is rejected before any process or file is touched.
 
 Suggested Playwright wiring: `globalSetup` runs `start` and reads the manifest path; `globalTeardown` runs `stop`. Tests that need a fresh, time-sensitive record call `seed` just before use.
 
@@ -71,13 +74,13 @@ Sessions expire 8 hours after `start`.
 | `awaiting_approval` | awaiting_approval, rev 3, pending intent | approve → 201 (case stays rev 3); or reject → 201 and the case closes (rev 4) |
 | `approved` | awaiting_approval, rev 3, approved | execute with a new key → 200 `succeeded`, closed rev 4; same key again → 200 `replayed: true`, one action row. **Valid only 5 minutes from seeding**: use `seed` right before the test |
 | `executed` | closed, rev 4, with `action_id` + `idempotency_key` | execute with that key → 200 `replayed: true`, same `action_id`; another key → 409 `approval_not_available` |
-| `rejected` | closed, rev 4 | execute → 409 `approval_not_available`; approve again → 409 `approval_exists` |
+| `rejected` | closed, rev 4 | execute → 409 `approval_not_available`; approving the same intent again → 409 `stale_case_revision` (the case is closed, so the accepted API rejects it before any approval-exists check) |
 | `approval_expired` | awaiting_approval, rev 3; approval decided 10 min before start | execute → 409 `approval_outside_validity`, then the case is **open rev 4** with an `approval_expired` audit event; investigate (rev 4) → rev 6 with a new intent; approve + execute → 200; the old approval → 409 |
 | `stale_revision` | open, rev 1 | load it in the UI, investigate it out of band with the analyst token, then submit with rev 1 → 409 `stale_case_revision`; a re-read shows rev 3 |
 | `provider_failure` | open, rev 1, amount 777777 | investigate → **200** with the last run `failed` / `provider_unavailable`, case open rev 3, `action_intents` empty; each retry fails again (+2 revisions) |
 | `failed_run_reopened` | open, rev 3, one failed run | investigate (rev 3) → 200 `awaiting_approval` rev 5; the failed run stays in `agent_runs` |
 | `foreign_session_case` | open, rev 1, in session B | analyst token: GET/audit/investigate → 404 `not_found`; absent from the analyst's list and overview |
-| `limited_capabilities` | awaiting_approval, rev 3, approved | see the Sessions table; each denied execution adds an `action_denied` audit event |
+| `limited_capabilities` | awaiting_approval, rev 3, approved | see the Sessions table; each **denied execution** adds an `action_denied` audit event; a denied approval (403 `permission_denied`) writes no audit event |
 
 **IDs.** IDs are deterministic. Every fresh stack yields the same scenario and session IDs (UUIDv5 under namespace `5e1e0000-c02f-4000-8000-000000000000`). An on-demand seed's IDs depend on `(scenario, ordinal)`.
 
@@ -89,7 +92,7 @@ Sessions expire 8 hours after `start`.
 
 ## Verification
 
-`tests/test_browser_fixtures.py` (13 tests, real sockets) covers:
+`tests/test_browser_fixtures.py` (13 tests, real sockets) and `tests/test_browser_fixtures_review.py` (10 tests: ownership, failure-safe cleanup, corrected expectations) cover:
 - documented states for all scenarios;
 - foreign-session denial; limited capabilities and second actor;
 - live provider failure and retry; seeded failed-run recovery;
@@ -97,11 +100,15 @@ Sessions expire 8 hours after `start`.
 - concurrent duplicate execution with one row;
 - API and DB restart persistence;
 - repeatable IDs across two fresh stacks, with tokens absent from CLI output;
-- failed start (readiness timeout, crashing app) leaving no running cluster or token file.
+- failed start (readiness timeout, crashing app) leaving no running API and no private directory;
+- **ownership:** an existing populated directory is never taken over (its canary survives); copied, forged-marker and junction-redirected manifests are rejected; unexpected contents block deletion;
+- **failure-safe cleanup:** an injected API-stop or DB-stop failure returns `ok: false` and keeps the recovery manifest, and a retried `stop` completes; a failed start whose cleanup fails keeps its manifest and is recoverable;
+- **corrected expectations:** a rejected intent's re-approval gives 409 `stale_case_revision`; a denied approval is not audited.
 
 ## Limits
 
 - Verified on Windows 11 only. The POSIX process path (`killpg`, `/proc` start time) is untested.
 - Startup takes about 5–10 s (initdb).
+- Recursive removal relies on the ownership and no-link checks above. Pass `--parent-dir` only for a directory you control; the helper still never deletes the parent.
 - One stack per Playwright run is recommended; parallel workers should each start their own stack (random ports).
 - There is no lost-response simulation inside the stack: drop the response in the browser/network layer, and the backend guarantees the replay.

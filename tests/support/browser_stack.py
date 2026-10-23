@@ -1,8 +1,9 @@
 """Browser-test stack (C02): disposable PostgreSQL + the real API in a real uvicorn process,
 seeded with deterministic scenarios. Cursor's Playwright setup drives it through this CLI.
 
-    uv run --locked python tests/support/browser_stack.py start [--state-dir DIR]
-        -> prints SENTINEL_STACK_MANIFEST=<path> (tokens are only inside that private file)
+    uv run --locked python tests/support/browser_stack.py start [--parent-dir DIR]
+        -> creates a fresh private sentinel-browser-* directory (inside DIR if given) and
+           prints SENTINEL_STACK_MANIFEST=<path>; tokens are only inside that private file
     uv run --locked python tests/support/browser_stack.py seed --manifest P --scenario NAME --ordinal N
     uv run --locked python tests/support/browser_stack.py restart-api --manifest P
     uv run --locked python tests/support/browser_stack.py restart-db --manifest P
@@ -17,7 +18,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import secrets
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -35,8 +38,12 @@ from sentinel import db, devdb  # noqa: E402
 
 import scenarios  # noqa: E402
 
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2
 DEFAULT_APP = "fixture_app:create_app"
+PREFIX = "sentinel-browser-"
+MARKER = ".sentinel-browser-stack"
+# The only top-level entries a helper-owned state directory may contain at deletion time.
+OWNED_ENTRIES = {"stack.json", MARKER, "pg", "api.log"}
 
 
 class StackError(RuntimeError):
@@ -103,6 +110,33 @@ def terminate_tree(pid: int) -> None:
             pass
 
 
+# ---- ownership (review R11) ----------------------------------------------------------------
+
+def is_redirect(path: Path) -> bool:
+    """True for a symlink, a Windows junction/reparse point, or a path that cannot be read."""
+    try:
+        info = os.lstat(path)
+    except OSError:
+        return True
+    reparse = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & reparse)
+
+
+def canonical(path: Path) -> str:
+    return os.path.normcase(os.path.realpath(path))
+
+
+def redirects_below(root: Path) -> list[str]:
+    """Links/junctions anywhere under root (never followed)."""
+    found = []
+    for directory, dirs, files in os.walk(root, followlinks=False):
+        for name in dirs + files:
+            if is_redirect(Path(directory) / name):
+                found.append(os.path.relpath(Path(directory) / name, root))
+        dirs[:] = [d for d in dirs if not is_redirect(Path(directory) / d)]
+    return found
+
+
 # ---- the stack -----------------------------------------------------------------------------
 
 class Stack:
@@ -117,10 +151,61 @@ class Stack:
 
     @classmethod
     def load(cls, manifest_path: Path) -> "Stack":
-        data = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
-        if data.get("version") != MANIFEST_VERSION:
+        """Accept only a manifest inside the helper-owned directory it records."""
+        manifest_path = Path(manifest_path)
+        directory = manifest_path.parent
+        if is_redirect(directory) or is_redirect(manifest_path):
+            raise StackError("manifest path is redirected or unreadable")
+        try:
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            raise StackError("manifest is unreadable") from None
+        if not isinstance(data, dict) or data.get("version") != MANIFEST_VERSION:
             raise StackError("unsupported manifest version")
-        return cls(Path(manifest_path).parent, data)
+        recorded = data.get("state_dir")
+        if not isinstance(recorded, str) or canonical(directory) != os.path.normcase(recorded):
+            raise StackError("manifest is not in the state directory it records")
+        stack = cls(Path(recorded), data)
+        stack.verify_owned()
+        return stack
+
+    def verify_owned(self) -> None:
+        """The directory is ours: expected name, canonical path and a matching marker."""
+        directory = self.state_dir
+        if not directory.name.startswith(PREFIX) or is_redirect(directory):
+            raise StackError("state directory is not a helper-owned directory")
+        if canonical(directory) != os.path.normcase(self.manifest.get("state_dir", "")):
+            raise StackError("state directory does not match the manifest")
+        marker = directory / MARKER
+        if is_redirect(marker) or not marker.is_file():
+            raise StackError("ownership marker is missing")
+        try:
+            owner = json.loads(marker.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            raise StackError("ownership marker is unreadable") from None
+        if not (isinstance(owner, dict) and isinstance(self.manifest.get("owner"), str)
+                and secrets.compare_digest(str(owner.get("owner", "")), self.manifest["owner"])
+                and owner.get("state_dir") == self.manifest["state_dir"]):
+            raise StackError("ownership marker does not match the manifest")
+
+    def _remove_owned(self) -> str | None:
+        """Delete the verified directory. Returns an error instead of deleting anything
+        unexpected (unrelated files, links or junctions)."""
+        try:
+            self.verify_owned()
+        except StackError as error:
+            return f"not removed: {error}"
+        unexpected = sorted(set(os.listdir(self.state_dir)) - OWNED_ENTRIES)
+        if unexpected:
+            return f"not removed: unexpected entries {unexpected}"
+        links = redirects_below(self.state_dir)
+        if links:
+            return f"not removed: links inside state directory {links[:5]}"
+        try:
+            shutil.rmtree(self.state_dir)
+        except OSError as error:
+            return f"removal incomplete: {type(error).__name__}"
+        return None
 
     def _cluster(self) -> devdb.Cluster:
         bin_dir = devdb.find_pg_bin()
@@ -138,17 +223,24 @@ class Stack:
             pass
 
     @classmethod
-    def start(cls, state_dir: Path | None = None, *, app: str = DEFAULT_APP,
+    def start(cls, parent: Path | None = None, *, app: str = DEFAULT_APP,
               api_port: int | None = None, timeout: float = 60) -> "Stack":
-        """Create, migrate, seed and serve. On any failure everything started is torn down."""
-        created = state_dir is None
-        base = Path(tempfile.mkdtemp(prefix="sentinel-browser-")) if created else Path(state_dir)
-        base.mkdir(parents=True, exist_ok=True)
-        stack = cls(base, {"version": MANIFEST_VERSION, "app": app,
+        """Create, migrate, seed and serve in a fresh private directory (never an existing
+        one). On failure everything started is stopped; state is removed only if both
+        shutdowns are verified, otherwise the recovery manifest is kept (review R12)."""
+        if parent is not None:
+            Path(parent).mkdir(parents=True, exist_ok=True)
+        base = Path(os.path.realpath(tempfile.mkdtemp(prefix=PREFIX, dir=parent)))
+        owner = secrets.token_hex(16)
+        (base / MARKER).write_text(json.dumps({"owner": owner, "state_dir": canonical(base)}),
+                                   encoding="utf-8")
+        stack = cls(base, {"version": MANIFEST_VERSION, "app": app, "owner": owner,
+                           "state_dir": canonical(base),
                            "database": {"port": devdb.free_port(), "name": "browser"},
                            "api": {"port": api_port or devdb.free_port()}})
-        cluster = stack._cluster()
+        stack._save()
         try:
+            cluster = stack._cluster()
             cluster.init()
             cluster.start()
             stack.manifest["database"]["started"] = True
@@ -161,10 +253,13 @@ class Stack:
             stack._start_api(timeout)
             stack._save()
             return stack
-        except BaseException:
-            stack.stop(remove=created)
-            stack.path.unlink(missing_ok=True)  # never leave tokens behind after a failure
-            raise
+        except BaseException as error:
+            cleanup = stack.stop()
+            if cleanup["ok"]:
+                raise
+            raise StackError(f"startup failed ({type(error).__name__}: {error}); cleanup "
+                             f"incomplete {cleanup['errors']}; recovery manifest kept at "
+                             f"{stack.path}") from error
 
     def _start_api(self, timeout: float) -> None:
         port = self.manifest["api"]["port"]
@@ -213,26 +308,39 @@ class Stack:
         api.update(pid=None, start_time=None)
         self._process = None
 
-    def stop(self, remove: bool = True) -> dict:
-        """Stop API and database, verify both, then delete the private state directory."""
-        result = {"api_stopped": True, "database_stopped": True, "state_removed": False}
+    def stop(self) -> dict:
+        """Stop API and database and verify each. The owned state directory (manifest,
+        tokens, process identity, database files) is deleted only when BOTH are verified
+        stopped; otherwise it is kept for a retry and the result reports failure."""
+        errors: list[str] = []
+        api_ok = True
         try:
             self.stop_api()
-        finally:
-            if self.manifest.get("database", {}).get("started"):
-                cluster = self._cluster()
-                try:
-                    cluster.stop()
-                except subprocess.CalledProcessError:
-                    pass  # verified below
-                result["database_stopped"] = not _cluster_running(cluster)
-                self.manifest["database"]["started"] = not result["database_stopped"]
-            if remove and result["database_stopped"]:
-                shutil.rmtree(self.state_dir, ignore_errors=True)
-                result["state_removed"] = not self.state_dir.exists()
-            elif self.path.parent.exists():
-                self._save()
-        return result
+        except StackError as error:
+            api_ok = False
+            errors.append(f"api: {error}")
+        db_ok = True
+        if self.manifest.get("database", {}).get("started"):
+            cluster = self._cluster()
+            try:
+                cluster.stop()
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+                errors.append("database: pg_ctl stop failed")
+            db_ok = not _cluster_running(cluster)
+            if db_ok:
+                self.manifest["database"]["started"] = False
+            elif not any(e.startswith("database") for e in errors):
+                errors.append("database: still running")
+        removed = False
+        if api_ok and db_ok:
+            problem = self._remove_owned()
+            removed = problem is None
+            if problem:
+                errors.append(problem)
+        if not removed and self.state_dir.exists():
+            self._save()  # the recovery record reflects what is still running
+        return {"ok": api_ok and db_ok and removed, "api_stopped": api_ok,
+                "database_stopped": db_ok, "state_removed": removed, "errors": errors}
 
     def restart_api(self, timeout: float = 60) -> None:
         """A new uvicorn process (new PID) on the same port and database."""
@@ -280,7 +388,8 @@ def main(argv: list[str] | None = None) -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
     start = sub.add_parser("start")
-    start.add_argument("--state-dir", type=Path)
+    start.add_argument("--parent-dir", type=Path,
+                       help="existing or new parent; a fresh private child is always created")
     start.add_argument("--api-port", type=int)
     start.add_argument("--timeout", type=float, default=60)
     start.add_argument("--app", default=DEFAULT_APP, help=argparse.SUPPRESS)
@@ -293,7 +402,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "start":
-            stack = Stack.start(args.state_dir, app=args.app, api_port=args.api_port,
+            stack = Stack.start(args.parent_dir, app=args.app, api_port=args.api_port,
                                 timeout=args.timeout)
             print(f"SENTINEL_STACK_MANIFEST={stack.path}")
             print(f"base_url={stack.manifest['api']['base_url']} "
@@ -311,7 +420,9 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "status":
             print(json.dumps(stack.status()))
         else:
-            print(json.dumps(stack.stop()))
+            result = stack.stop()
+            print(json.dumps(result))
+            return 0 if result["ok"] else 1
         return 0
     except StackError as error:  # messages never contain tokens
         print(f"error: {error}", file=sys.stderr)

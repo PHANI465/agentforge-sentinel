@@ -2,6 +2,7 @@
 PostgreSQL; scenarios behave as documented; restarts are real process restarts; teardown and
 failure cleanup are verified. All HTTP here goes over real sockets."""
 import json
+import os
 import subprocess
 import sys
 import urllib.error
@@ -29,7 +30,8 @@ def stack():
     started = Stack.start()
     yield started
     result = started.stop()
-    assert result == {"api_stopped": True, "database_stopped": True, "state_removed": True}
+    assert result == {"ok": True, "api_stopped": True, "database_stopped": True,
+                      "state_removed": True, "errors": []}
 
 
 def http(stack, method, path, token=None, body=None):
@@ -200,7 +202,7 @@ def test_real_api_and_database_restart_preserve_state(stack):
 
 def test_fresh_stacks_are_repeatable_and_cli_never_prints_tokens(stack, tmp_path):
     out = subprocess.run([sys.executable, str(SUPPORT / "browser_stack.py"), "start",
-                          "--state-dir", str(tmp_path / "s")], capture_output=True, text=True,
+                          "--parent-dir", str(tmp_path)], capture_output=True, text=True,
                          timeout=180, check=True)
     manifest_path = Path(out.stdout.split("SENTINEL_STACK_MANIFEST=")[1].split()[0])
     other = json.loads(manifest_path.read_text())
@@ -220,8 +222,11 @@ def test_fresh_stacks_are_repeatable_and_cli_never_prints_tokens(stack, tmp_path
         stopped = subprocess.run([sys.executable, str(SUPPORT / "browser_stack.py"), "stop",
                                   "--manifest", str(manifest_path)], capture_output=True,
                                  text=True, timeout=60)
-    assert json.loads(stopped.stdout) == {"api_stopped": True, "database_stopped": True,
-                                          "state_removed": True}
+    assert stopped.returncode == 0
+    assert json.loads(stopped.stdout) == {"ok": True, "api_stopped": True,
+                                          "database_stopped": True, "state_removed": True,
+                                          "errors": []}
+    assert not list(tmp_path.glob("sentinel-browser-*"))
     assert healthy(other["api"]["port"]) is None
 
 
@@ -229,12 +234,20 @@ def test_fresh_stacks_are_repeatable_and_cli_never_prints_tokens(stack, tmp_path
     ("fixture_app:create_app_never_ready", "not ready"),
     ("fixture_app:no_such_factory", "exited"),
 ])
-def test_failed_start_cleans_up_processes_and_tokens(tmp_path, app, message):
-    state = tmp_path / "state"
+def test_failed_start_cleans_up_processes_and_tokens(tmp_path, app, message, monkeypatch):
+    seen = []
+    real_stop = Stack.stop
+
+    def recording_stop(self):
+        seen.append((self.state_dir, self.manifest["api"].get("port")))
+        return real_stop(self)
+
+    monkeypatch.setattr(Stack, "stop", recording_stop)
     with pytest.raises(StackError, match=message):
-        Stack.start(state, app=app, timeout=8)
-    assert not (state / "stack.json").exists()
-    cluster = devdb.Cluster(devdb.find_pg_bin(), state / "pg" / "data", 0)
-    assert not browser_stack._cluster_running(cluster)
-    log = (state / "api.log").read_text(errors="replace") if (state / "api.log").exists() else ""
-    assert "Bearer" not in log
+        Stack.start(tmp_path, app=app, timeout=8)
+    # Both shutdowns verified, so the private child (tokens, data, log) is gone entirely.
+    (state_dir, port), = seen
+    assert state_dir.name.startswith(browser_stack.PREFIX)
+    assert Path(os.path.realpath(state_dir)).parent == Path(os.path.realpath(tmp_path))
+    assert not state_dir.exists() and not list(tmp_path.glob("sentinel-browser-*"))
+    assert healthy(port) is None

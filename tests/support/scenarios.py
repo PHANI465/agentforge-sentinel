@@ -147,8 +147,9 @@ def rejected(at, ctx, label, now):
     approval = service.record_approval(ctx["analyst"], ApprovalDecisionInput(
         action_intent_id=ids["intent_id"], decision="rejected"))
     return {**ids, "approval_id": approval["id"], "session": "analyst", "state": "closed",
-            "revision": 4, "next": "execute -> 409 approval_not_available; approve again -> "
-                                   "409 approval_exists"}
+            "revision": 4, "next": "execute -> 409 approval_not_available; approving the "
+                                   "same intent again -> 409 stale_case_revision (the case "
+                                   "is closed, so the approval-exists check is not reached)"}
 
 
 def approval_expired(at, ctx, label, now):
@@ -198,7 +199,8 @@ def limited_capabilities(at, ctx, label, now):
             "state": "awaiting_approval", "revision": 3,
             "next": "read_only token: GET 200, approve -> 403 permission_denied, execute -> "
                     "403 action_permission_denied; second_actor token: execute -> 403 "
-                    "approver_mismatch (all audited as action_denied)"}
+                    "approver_mismatch. Each denied execution adds an action_denied audit "
+                    "event; a denied approval is not audited"}
 
 
 SCENARIOS = {fn.__name__: fn for fn in (

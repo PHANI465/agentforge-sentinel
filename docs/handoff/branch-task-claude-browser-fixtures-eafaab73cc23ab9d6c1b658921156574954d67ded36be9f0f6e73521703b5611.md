@@ -4,8 +4,8 @@
 - Owner: Claude Code. Accepted dependency: C01 at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529.
 - Tool and worktree: Claude Code, E:\PHANI\sentinel-wt\claude-browser-fixtures (branch task/claude-browser-fixtures)
 - Updated: 2026-10-23
-- State: ready for Codex review; on acceptance it is the backend dependency for Cursor U02 (with U01)
-- Code reference tested before this note: working tree on top of 2e6c232 (strict checks rerun after the commit; reported in chat)
+- State: R11–R13 corrections ready for Codex re-review. c3fd83d was CHANGES REQUESTED (docs/reviews/c3fd83d.md on task/coordination). U02 stays gated until the corrected C02 is accepted.
+- Code reference tested before this note: working tree on top of c3fd83df78f2d8e90598508f3779c33a3fdad0a5 (strict checks rerun after the correction commit; reported in chat)
 - Owned/changed paths: new tests/support/browser_stack.py, tests/support/scenarios.py, tests/support/fixture_app.py, tests/test_browser_fixtures.py, docs/api/browser-fixtures.md, this note; modified scripts/agent_check.py (per-command timeout 300 -> 900 s: the full pytest run now takes about 301 s). No changes to src/sentinel/, contracts/, migrations, web/ or docs/ui/. The HTTP contract is untouched.
 
 ## Implemented
@@ -37,13 +37,43 @@
 
 ## Not verified / gaps
 
+- The junction/redirect rejection was verified on Windows (mklink /J). The POSIX symlink path is written but unexecuted.
+
 - POSIX process handling is untested (`killpg`, `/proc` start time); no CI/Linux.
 - No Playwright run. Cursor's U02 is the browser-side consumer, and Playwright trace masking of the token field is Cursor's responsibility (documented).
 - A lost response is simulated at the browser/network layer, not inside the stack.
 
+## Review correction: R11–R13 (on top of c3fd83d)
+
+Changed paths: tests/support/browser_stack.py, tests/support/scenarios.py (prose only), tests/test_browser_fixtures.py (interface updates), tests/test_browser_fixtures_review.py (new), docs/api/browser-fixtures.md, this note. Production API and contracts are unchanged.
+
+- **R11 (ownership):**
+  - `start` always creates a fresh private `sentinel-browser-*` directory, under `--parent-dir` if given (replaces `--state-dir`). It never takes over an existing directory.
+  - It writes a `.sentinel-browser-stack` marker holding a random owner value and the canonical path. The manifest (version 2) records both.
+  - `load` rejects: a link/junction manifest or directory, a manifest outside the directory it records, a wrong directory name, and a missing or mismatched marker. All of this happens before any process or file action.
+  - Deletion re-verifies ownership and refuses unexpected top-level entries or any link/junction in the tree. Python 3.11 `rmtree` can follow Windows junctions, which is why that check exists.
+- **R12 (failure-safe cleanup):** `stop` returns `{ok, api_stopped, database_stopped, state_removed, errors}`, and the CLI exits 1 unless `ok`.
+  - The directory (manifest with tokens, process identity, database files) is deleted only when both API and database are verified stopped and ownership still holds. Otherwise the recovery manifest is saved and kept.
+  - A failed start follows the same rule: either fully cleaned and the original error re-raised, or `StackError(... recovery manifest kept at <path>)`.
+  - An identity mismatch never kills a process: if the recorded PID's start time differs, nothing is terminated, and an API still serving on the port is reported as a failure.
+- **R13:** the rejected scenario now says re-approval gives 409 `stale_case_revision`, asserted over real HTTP. The limited-capabilities wording says only denied executions are audited; a denied approval writes no audit event, also asserted.
+
+Test-first evidence:
+- On c3fd83d, `tests/test_browser_fixtures_review.py` gave 10 failed:
+  - an existing directory was reused;
+  - copied, forged and junction manifests were accepted (DID NOT RAISE);
+  - an unexpected file was deleted;
+  - the injected API-stop failure propagated after the state directory was deleted;
+  - there was no `ok` result;
+  - a failed start erased its manifest;
+  - the prose said approval_exists / "all audited".
+- The live re-approval already returned 409 `stale_case_revision`, confirming only the fixture text was wrong.
+- That run used only pytest `tmp_path` subtrees. One expected orphan cluster from the injected-DB-failure case was stopped afterwards by its exact data directory. A `pytest-86` cluster belonging to another session was left untouched.
+- After the fix: 23 passed (13 existing + 10 new), all real-process. Then: 0 stack postgres processes, 0 fixture API processes, 0 `sentinel-browser-*` directories in the user temp directory.
+
 ## Next action
 
-Codex: review C02. On acceptance, Cursor U02 consumes this commit (after U01). Claude then starts C05 from accepted C01 in its own branch, per CLAUDE_C02.md sequencing.
+Codex: re-review the correction commit (R11–R13). On acceptance, Cursor U02 consumes it (U01 is delivered at 98ce8ae per the owner). Claude may start C05 from accepted C01 in its own worktree.
 
 ## Coordination and provenance
 
