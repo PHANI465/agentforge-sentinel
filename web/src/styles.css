@@ -1,0 +1,289 @@
+:root {
+  --desk: #e4eee8;
+  --ink: #14241c;
+  --sheet: #f7fbf8;
+  --line: #b7c9be;
+  --stamp: #143e63;
+  --hold: #8a4514;
+  --closed: #1c6b45;
+  --alert: #8d2e2e;
+  --focus: #0b5cab;
+  --muted: #3d5248;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.skip {
+  position: absolute;
+  left: 0.75rem;
+  top: -4rem;
+  background: var(--sheet);
+  padding: 0.4rem 0.7rem;
+}
+
+.skip:focus {
+  top: 0.5rem;
+  z-index: 2;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--sheet);
+}
+
+.top h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.session-line {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+}
+
+.desk {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  align-items: start;
+}
+
+.queue,
+.case {
+  min-width: 0;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.queue {
+  border-right: 1px solid var(--line);
+}
+
+.case {
+  background: var(--sheet);
+  min-height: 100%;
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem 1rem;
+  margin: 0;
+  padding: 0.75rem 1.25rem 0.25rem;
+}
+
+.counts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.counts dt {
+  margin: 0;
+  color: var(--muted);
+}
+
+.counts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 0.65rem 0.4rem 0.65rem 0.7rem;
+  cursor: pointer;
+}
+
+.row.selected {
+  background: var(--sheet);
+  box-shadow: inset 4px 0 0 var(--stamp);
+}
+
+.row strong,
+.amount {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.amount {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.meta {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+}
+
+.alert-score {
+  color: var(--alert);
+  font-weight: 600;
+}
+
+.hold {
+  color: var(--hold);
+  font-weight: 600;
+}
+
+.closed {
+  color: var(--closed);
+  font-weight: 600;
+}
+
+.pager,
+.actions,
+.sign-in,
+.ingest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.sign-in,
+.ingest {
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 28rem;
+}
+
+.sign-in {
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+input,
+select {
+  background: white;
+  border: 1px solid var(--line);
+  padding: 0.45rem 0.5rem;
+}
+
+button {
+  background: var(--stamp);
+  color: white;
+  border: 0;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--stamp);
+  border: 1px solid var(--stamp);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.rationale {
+  white-space: pre-wrap;
+  margin: 0.4rem 0;
+  max-width: 68ch;
+}
+
+.block {
+  margin: 1.15rem 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+}
+
+.audit {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.audit li {
+  margin: 0.35rem 0;
+}
+
+.status {
+  margin: 0.6rem 0;
+  max-width: 68ch;
+}
+
+.hash {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 800px) {
+  .desk {
+    grid-template-columns: 1fr;
+  }
+
+  .queue {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .amount {
+    font-size: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}

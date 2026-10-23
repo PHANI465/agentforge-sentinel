@@ -1,31 +1,19 @@
-# U01 analyst workbench — design note
+# U01 analyst workbench
 
-Status: blocked. No `web/` application is implemented in this commit.
+Status: implemented in `web/` against accepted C01 `2e6c2329aafe28b2e7c31ef5078d554cb66ca529`. Commands are in `docs/ui/workflow.md`.
 
-## Base and the missing contract
+## Dependency
 
-- Task branch: `task/cursor-analyst-ui`.
-- Worktree: `E:\PHANI\sentinel-wt\cursor-analyst-ui`.
-- Base commit: `9e49a87b2a7d50c0fdcc3823cd87a07e49a856ae` on `task/coordination` (`docs: dispatch C01 review corrections and record delivered packages`).
-- Queue read with `git show task/coordination:docs/TASK_QUEUE.md` at that commit. U01 is **BLOCKED ON ACCEPTED C01**. U02 additionally waits for accepted C02. U03 waits for the accepted C07 model-results contract.
-- Accepted C01 dependency commit: **none**.
+- Task branch: `task/cursor-analyst-ui`. Worktree: `E:\PHANI\sentinel-wt\cursor-analyst-ui`.
+- Planning commit preserved: `b3e58ea3a6b99db89761eb5c7e30ab6615e165b1`.
+- Accepted C01 merged with `git merge 2e6c2329aafe28b2e7c31ef5078d554cb66ca529`. Merge commit: `ed61cc99dfaf754c1b085ffcbb46b9bda7e027fd`.
+- The client follows `contracts/http/openapi.v1.json`, the 21 files in `contracts/http/examples/`, and `docs/api/README.md` from that commit.
+- U02 still waits for accepted C02. U03 still waits for accepted C07.
+- No AgentForge UI source was copied.
 
-Codex reviewed `0a6fb0ec8e63fd686ac7e4cf6bbfb7bd22a105b0` and requested changes (R9 malformed cursor, R10 error-contract accuracy). See `docs/reviews/0a6fb0e.md`. A passing strict check on that commit is not acceptance.
+## Accepted routes
 
-`git log task/claude-api-contracts` shows a later candidate, `2e6c2329aafe28b2e7c31ef5078d554cb66ca529` (`C01 review R9/R10: strict cursor validation, scoped error contract`), parent `0a6fb0e`. Its message says cursor members must be strings and that `ErrorResponse` covers handled errors only. Codex has not accepted that commit. This branch does not merge it, does not copy its OpenAPI snapshot, and does not treat it as the UI contract.
-
-Exact missing contract: a Codex acceptance record that names one C01 commit and thereby freezes, for the analyst client:
-
-- `contracts/http/openapi.v1.json`
-- `contracts/http/examples/*.json`
-- the pagination, score-label and error semantics in that commit’s `docs/api/README.md`, including `422 invalid_cursor` for a malformed cursor and a client fallback for non-JSON 5xx, empty bodies, invalid bodies and network failures
-- the response models that commit exports (`SessionView`, `Overview`, `CasePage`, `CaseDetail`, `IngestResponse`, `ExecuteResponse`, `ErrorResponse`, and the domain records they embed)
-
-The typed client is generated from that accepted snapshot. If review moves the tip past `2e6c232`, implementation waits for the accepted SHA and reads that tree with `git show`, not another worktree’s working copy.
-
-## Surfaces described by the unaccepted candidate
-
-These routes are quoted from `git show 2e6c232:docs/api/README.md`. They are the intended binding if Codex accepts `2e6c232` unchanged. They are not implemented here.
+These routes are the binding from accepted C01. The browser calls them on the Vite origin. The dev server proxies `/healthz` and `/v1` to `SENTINEL_API_ORIGIN`, default `http://127.0.0.1:8000`.
 
 | Method and path | Success | Client use |
 | --- | --- | --- |
@@ -44,7 +32,7 @@ Every `/v1/*` call sends `Authorization: Bearer` from memory. Tokens are issued 
 
 Handled errors use `{"error": "<code>"}` and, for invalid JSON bodies, `details: [{"code": ...}]`. Stable codes are listed in that same API note (400, 401, 403, 404, 405, 409, 413, 422). An unknown code gets a generic message that includes the code when the body validated, and omits the raw body.
 
-## Client behavior to implement against the accepted fixtures
+## Client behavior implemented against the accepted fixtures
 
 React, TypeScript and Vite, in `web/`. Same-origin dev server: proxy `/healthz` and `/v1` to the local API. The existing smoke helper defaults to `http://127.0.0.1:8000` (`scripts/smoke_thin_path.py`). Override with an environment variable for another local origin. The browser talks only to the Vite origin. No backend CORS or auth edit.
 
@@ -60,7 +48,7 @@ Case detail. Show the transaction, evidence facts, investigator finding and the 
 
 Decisions. Approve and reject are separate from execute. Buttons follow `SessionView.capabilities` (`approve_action`, `execute_simulated_action`) and `actor_kind: human`. The server remains the authority: 403 `permission_denied`, `action_permission_denied` and `approver_mismatch` stay visible as permission failures. Execute creates one UUID idempotency key for that approval and keeps it in memory for that attempt.
 
-Idempotency. An ambiguous `POST /v1/actions` result is a network failure, timeout, any 5xx, or a body that is empty, non-JSON or invalid `ErrorResponse`. The client keeps the original key, shows a generic message that the outcome is unknown, refetches the case, and retries with that same key. A later `replayed: true` shows the original action. A handled 4xx is a definite outcome. A new key is created only when the analyst starts a new execution on a newly read approval. Component tests cover key retention for a lost or unreadable response. One persisted database row for that lost response is a U02 assertion and needs the accepted C02 fixture.
+Idempotency. An ambiguous `POST /v1/actions` result is a network failure, timeout, any 5xx, or a body that is empty, non-JSON or invalid `ErrorResponse`. The client keeps the original key, shows a generic message that the outcome is unknown, refetches the case, and retries with that same key. A later `replayed: true` shows the original action. A handled 4xx is a definite outcome. A new key is created only when the analyst starts a new execution on a different approval. A component test drops the first execution response after the fake server stores one action, then retries with the same key and receives `replayed: true`. A real Postgres row for that lost response waits for accepted C02.
 
 Conflicts and lifecycle. Any 409 refetches the case before the next step. `stale_case_revision` asks the analyst to continue from the new revision. `approval_expired` and `approval_outside_validity` show the reopened case (`open`, new revision, `approval_expired` audit). The lapsed approval is not offered again. The next step is a new investigation, then a new approval. A failed run shows `failure_code` (`provider_unavailable`, `timeout`, `invalid_output`, `budget_exhausted`) and the reopened case. `investigation_recovered` also refetches. Rejection closes the case when the server says so.
 
@@ -68,7 +56,7 @@ Failure parsing. Parse `ErrorResponse` only when the status is 4xx or 5xx, the c
 
 Accessibility. The token field, sign-out, queue rows, pagination, approve, reject and execute are named controls. Status text is in a live region. Loading, empty and error states include text. Keyboard users can reach every action without a pointer.
 
-Tests once unblocked. Typecheck and production build. Client tests against the accepted example JSON for queue, detail, inert rationale, 409 refetch, permission flags, replayed execution, and ambiguous execution retaining one key. Browser coverage of Postgres persistence, restart, cross-session denial and a lost response with one stored action is U02, after accepted C02, using the deterministic investigator.
+Tests. `npm test` covers the 21 frozen examples, non-JSON and network failures, inert rationale, permission flags, 409 refetch, and one idempotency key after a lost execution response. `npm run build` typechecks and builds. Browser coverage of Postgres persistence, restart, and cross-session denial is U02, after accepted C02, using the deterministic investigator.
 
 ## Out of scope until later gates
 
@@ -79,4 +67,4 @@ Tests once unblocked. Typecheck and production build. Client tests against the a
 
 ## Next action
 
-Codex accepts a C01 commit, or requests further changes. On acceptance of commit `S`, implement this note in `web/` bound to `S` and its fixtures. If `S` is not `2e6c232`, re-read `S` before generating types.
+Codex reviews this UI commit. U02 starts after that review and an accepted C02 fixture commit.

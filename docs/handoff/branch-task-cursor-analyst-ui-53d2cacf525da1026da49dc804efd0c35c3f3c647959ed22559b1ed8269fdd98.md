@@ -1,40 +1,42 @@
 # Handoff: task/cursor-analyst-ui
 
-- Task and acceptance criteria: U01 analyst workbench in `web/` and `docs/ui/`, then U02 after accepted C02 and U03 after accepted C07. U01 waits for Codex acceptance of the C01 HTTP contract. Without that acceptance, the deliverable is a UI design note that names the missing contract.
+- Task and acceptance criteria: U01 analyst workbench in `web/` and `docs/ui/`. Typed client, in-memory session, queue, overview, case detail, evidence, audit, approve/reject, separate execute, one idempotency key across an ambiguous retry, 409 refresh, and safe non-JSON failures. U02 waits for accepted C02. U03 waits for accepted C07.
 - Tool and worktree: Cursor, `E:\PHANI\sentinel-wt\cursor-analyst-ui`.
 - Updated: October 23, 2026, UTC-7.
-- State: blocked. No accepted C01 contract commit.
-- Code reference tested before this note: base `9e49a87b2a7d50c0fdcc3823cd87a07e49a856ae` (`task/coordination`). This note and `docs/ui/U01-design.md` are the task changes. No application code.
-- Final check evidence: run the strict helper after the documentation commit; record the result in the final chat / ignored local report. This note does not claim its own commit SHA.
-- Owned/changed paths: `docs/ui/U01-design.md` and this handoff note. `docs/STATUS.md` and `docs/TASK_QUEUE.md` were not edited.
+- State: ready for review. U01 is implemented. U02 and U03 are not started.
+- Code reference tested before this note: merge `ed61cc99dfaf754c1b085ffcbb46b9bda7e027fd` plus the uncommitted `web/` and `docs/ui/` changes. Planning commit `b3e58ea3a6b99db89761eb5c7e30ab6615e165b1` remains an ancestor. Accepted C01 dependency: `2e6c2329aafe28b2e7c31ef5078d554cb66ca529`.
+- Final check evidence: run the strict helper after this commit. Frontend test/build results below were run on the working tree before the commit. This note does not claim its own commit SHA.
+- Owned/changed paths: `web/` (source, lockfile, Vite config) and `docs/ui/`. This handoff note. No `src/sentinel/`, `contracts/`, migrations, Python dependencies, `docs/STATUS.md`, or `docs/TASK_QUEUE.md`.
 
 ## Implemented
 
-- Opened `task/cursor-analyst-ui` from coordination commit `9e49a87b2a7d50c0fdcc3823cd87a07e49a856ae`.
-- Read `git show task/coordination:docs/TASK_QUEUE.md`, `docs/STATUS.md`, `docs/reviews/0a6fb0e.md`, decisions 0002, 0003 and 0005, and `docs/CONTRACTS.md`.
-- Recorded the missing contract in `docs/ui/U01-design.md`: Codex has not accepted a C01 commit. Reviewed `0a6fb0ec8e63fd686ac7e4cf6bbfb7bd22a105b0` is changes-requested. Candidate `2e6c2329aafe28b2e7c31ef5078d554cb66ca529` was observed with `git log` / `git show` and is not accepted.
-- Described the client behavior that will bind to the accepted OpenAPI snapshot, examples and error semantics, including in-memory tokens, inert rationale, 409 refetch, and one execution idempotency key after an ambiguous response.
+- Merged accepted C01 `2e6c2329aafe28b2e7c31ef5078d554cb66ca529` into `task/cursor-analyst-ui` (merge `ed61cc99dfaf754c1b085ffcbb46b9bda7e027fd`). No content conflicts.
+- React/TypeScript/Vite workbench. Same-origin dev proxy for `/healthz` and `/v1` to `SENTINEL_API_ORIGIN`, default `http://127.0.0.1:8000`.
+- Session token is React state only. Sign-out drops it. Requests send `Authorization: Bearer` and put no token in the URL.
+- Queue, overview, case detail, evidence, server-built proposal, approve/reject, and a separate execute step. Rule scores stay labeled as rule scores. Deterministic and local Claude investigators are labeled from the server name. Rationale is a text node.
+- One execution UUID is kept when the response is missing, non-JSON, a 5xx, or a network failure. A handled 4xx clears it. A 409 reloads the case.
+- Synthetic ingest uses `POST /v1/transactions` when the session has `ingest_transaction`. An ambiguous ingest can be retried with the same body.
 
 ## Verified
 
-- Queue gate -> `git show task/coordination:docs/TASK_QUEUE.md` -> U01 blocked on accepted C01; C01 row is still `0a6fb0e` / changes requested.
-- C01 branch tip -> `git log -1 task/claude-api-contracts` -> `2e6c2329aafe28b2e7c31ef5078d554cb66ca529`, parent `0a6fb0e`. No Codex acceptance record for that SHA.
-- Worktree -> `git worktree list` -> this checkout is `task/cursor-analyst-ui` at the coordination base. Claude worktrees were not edited.
-- UI build, typecheck, component tests and browser tests -> not run. There is no `web/` app.
+- `npm test` in `web/` -> 16 passed (5 files): 21 frozen examples, non-JSON/empty/invalid/network failures, money formatting, inert rationale, permission hiding, reopened case, provider failure, 409 refetch, lost execution retaining one key and one stored action, token absent from storage and the URL.
+- `npm run build` in `web/` -> `tsc --noEmit` and Vite production build passed.
+- These commands ran on the working tree before the UI commit. The strict Python helper is run after that commit.
 
 ## Not verified / gaps
 
-- No accepted HTTP contract, so no typed client, proxy, screens or fixture-backed tests.
-- U02 and U03 are not started. C02 and C07 remain unaccepted.
-- Candidate `2e6c232` was not retested here. Claude’s reported R9/R10 results are not Cursor or Codex acceptance.
-- Strict project checks for this documentation commit are reported after the commit, outside this note.
+- No browser-to-Postgres run. U02 still needs an accepted C02 fixture. Reload-clears-token, cross-session denial, rejection, expiry, and restart are not exercised against a real server.
+- No live model call. Ordinary tests use fixtures and the deterministic labels from those fixtures.
+- `npm audit --omit=dev` reported 0 vulnerabilities. The full audit reported dev-only Vitest/tinypool advisories. They were not force-upgraded to Vitest 5.
+- Backend strict checks on this commit are recorded after the commit, outside this note.
+- U03 is not started.
 
 ## Next action
 
-When Codex accepts a C01 commit, implement U01 in `web/` against that exact commit and `docs/ui/U01-design.md`. If the accepted SHA differs from `2e6c232`, re-read its OpenAPI snapshot and examples before generating types.
+Codex reviews the U01 commit. Start U02 only after that review and an accepted C02 fixture commit.
 
 ## Coordination and provenance
 
-- Dependency commit for implementation: none. Base for this branch: `9e49a87b2a7d50c0fdcc3823cd87a07e49a856ae`.
-- No edits to `src/sentinel/`, `contracts/`, migrations, Python dependencies, STATUS or TASK_QUEUE.
-- No AgentForge UI source was copied. No tokens, credentials or raw traces are in these notes.
+- Accepted dependency: C01 `2e6c2329aafe28b2e7c31ef5078d554cb66ca529`, recorded in coordination `f6236672685fe9508a645f62fac7d9fdb4e21fd6`.
+- No reused AgentForge UI source. Public Sans is the `@fontsource/public-sans` package (SIL Open Font License), loaded locally.
+- Frontend commands for the integrator are in `docs/ui/workflow.md`.
