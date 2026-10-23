@@ -1,0 +1,12 @@
+{
+  "request": {
+    "authenticated": false,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/session"
+  },
+  "response": {
+    "error": "unauthenticated"
+  },
+  "status": 401
+}

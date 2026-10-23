@@ -1,0 +1,57 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/cases?state=open"
+  },
+  "response": {
+    "items": [
+      {
+        "alert_id": "5e000000-0000-4000-8000-000000000010",
+        "amount": {
+          "currency": "USD",
+          "currency_exponent": 2,
+          "minor_units": 120000,
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-10-23T17:00:01Z",
+        "direction": "debit",
+        "external_id": "demo-large-2",
+        "id": "5e000000-0000-4000-8000-000000000011",
+        "revision": 1,
+        "score": 1.0,
+        "score_semantics": "heuristic",
+        "scoring_kind": "rule",
+        "state": "open",
+        "threshold": 0.5,
+        "transaction_id": "5e000000-0000-4000-8000-00000000000f",
+        "updated_at": "2026-10-23T17:00:01Z"
+      },
+      {
+        "alert_id": "5e000000-0000-4000-8000-000000000008",
+        "amount": {
+          "currency": "USD",
+          "currency_exponent": 2,
+          "minor_units": 250000,
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-10-23T17:00:00Z",
+        "direction": "debit",
+        "external_id": "demo-large-1",
+        "id": "5e000000-0000-4000-8000-000000000009",
+        "revision": 1,
+        "score": 1.0,
+        "score_semantics": "heuristic",
+        "scoring_kind": "rule",
+        "state": "open",
+        "threshold": 0.5,
+        "transaction_id": "5e000000-0000-4000-8000-000000000007",
+        "updated_at": "2026-10-23T17:00:00Z"
+      }
+    ],
+    "limit": 25,
+    "next_cursor": null
+  },
+  "status": 200
+}
