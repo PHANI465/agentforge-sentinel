@@ -16,6 +16,8 @@ __pycache__/
 
 # Private local files; publish only deliberately reviewed fixtures.
 data/private/
+# Generated synthetic datasets (track code, manifests and small fixtures only).
+data/generated/
 local-credentials/
 artifacts/private/
 

@@ -1,0 +1,68 @@
+{
+  "config": {
+    "accounts": 24,
+    "daily_rate_range": [
+      0.3,
+      3.0
+    ],
+    "days": 6,
+    "fraud_account_rate": 0.4,
+    "late_ingestion_rate": 0.01,
+    "lookalike_account_rate": 0.4,
+    "max_rows": 100000,
+    "seed": 11,
+    "unlabeled_fraud_rate": 0.1
+  },
+  "currencies": {
+    "GBP": {
+      "count": 11,
+      "credit_minor": 0,
+      "debit_minor": 608775
+    },
+    "INR": {
+      "count": 80,
+      "credit_minor": 85629698,
+      "debit_minor": 107996775
+    },
+    "JPY": {
+      "count": 28,
+      "credit_minor": 462960,
+      "debit_minor": 283653
+    },
+    "USD": {
+      "count": 196,
+      "credit_minor": 1314410,
+      "debit_minor": 2848260
+    }
+  },
+  "generator_version": "g1",
+  "labels": {
+    "by_scenario": {
+      "account_takeover": 12,
+      "card_testing": 24,
+      "large_legit_purchase": 1,
+      "micro_payments": 33,
+      "mule_cashout": 25,
+      "normal": 209,
+      "payday_burst": 11
+    },
+    "fraud_never_disclosed": 8,
+    "fraud_rate_ppm": 193651,
+    "fraud_rows": 61
+  },
+  "occurred_range": [
+    "2026-09-01T00:44:34.121945Z",
+    "2026-09-06T23:11:55.540514Z"
+  ],
+  "rows": {
+    "accounts": 24,
+    "labels": 315,
+    "transactions": 315
+  },
+  "sha256": {
+    "accounts.jsonl": "7b4978e1aac7c8835c007a8013a57357009c13861d7aa6ad99e82ca69f634e41",
+    "labels.jsonl": "bc3058a6cebdc87761ff657974f4f07deaafb3b2d40e472d927f19d1620c1ee6",
+    "transactions.jsonl": "d0ea0f2bc15935b10d6b9c954261dbf4153048f1865b98d7ac5546c10d9a664a"
+  },
+  "truncated_by_max_rows": false
+}
