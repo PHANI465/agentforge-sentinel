@@ -13,16 +13,30 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 - task/coordination adds this shared task queue and tool prompts on top of the reviewed implementation. New work starts from that committed reference or a later explicitly accepted integration commit, not the old main.
 - G0 and G1 remain partial. There is no analyst UI, real browser-to-database acceptance, trained model, hosted staging or public BYOK yet.
 
+## Delivery and review snapshot
+
+Latest owner-provided handoff, with branch commits verified by Codex:
+
+| Package | Delivered commit | Review state |
+| --- | --- | --- |
+| C01 HTTP contract | 0a6fb0ec8e63fd686ac7e4cf6bbfb7bd22a105b0 | CHANGES REQUESTED: R9 malformed cursor; R10 error-contract accuracy |
+| C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
+| C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
+| C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
+
+C01's existing tests pass (40 focused, 146 full / 1 live skip), but independent HTTP probes reproduce R9/R10. Read [the review](reviews/0a6fb0e.md) and [the immediate Claude follow-up](prompts/CLAUDE_REVIEW_FOLLOWUP.md). C03/C06/C08 checks and runtime measurements remain attributed to Claude until independently reviewed. Delivery is not acceptance; the four task branches have not been integrated.
+
+C02 and Cursor U01 wait for accepted corrected C01. C05 is parked until accepted C01 because it overlaps backend paths. C04 waits for accepted C03; C07 waits for accepted C04. WSL changes and GitHub provisioning are undecided and do not block the C01 corrections.
+
 ## Immediate executable queue
 
 Use [TASK_QUEUE.md](TASK_QUEUE.md) for exact branches, dependencies, ownership and acceptance. This is a substantial queue, not a promise that all tasks fit today.
 
-1. Claude C01: freeze typed HTTP responses/fixtures and add session-scoped case-list, overview and safe session metadata. Include the remaining approval-creation clock hardening review.
-2. Claude C02: deterministic backend fixtures and real test-server lifecycle for Cursor's browser tests.
-3. Cursor U01/U02 (REQUIRED): implement the React/TypeScript/Vite analyst workbench and real browser/API/Postgres acceptance after their backend dependencies are accepted.
-4. Claude can continue independent C03 data generation/historical features, C05 reliability or C06 backend CI in its own worktree while waiting for contract/UI review. C04 training depends on accepted C03.
-5. C07 trained-scorer serving and Cursor U03 results views follow their model/HTTP gates. C08 local operator preparation can proceed; hosted release remains a later action.
-6. After the real browser path and reproducible ML baseline, deepen bounded multi-agent roles, AI-security evaluations and public BYOK against the milestone plan.
+1. Claude applies C01 review corrections R9/R10 and returns the new commit; see prompts/CLAUDE_REVIEW_FOLLOWUP.md.
+2. Codex re-reviews C01 and reviews the separately delivered C03/C06/C08 packages.
+3. Cursor U01 and Claude C02 wait for accepted corrected C01. C05 starts from the same accepted backend base with coordinated contract ownership.
+4. C04 waits for accepted C03, including an explicit delayed-label eligibility and mature-label count policy. C07/U03 follow accepted training/API gates.
+5. No WSL installation, GitHub provisioning, main merge or hosted release is authorized by this prompt update.
 
 ## Evidence history
 

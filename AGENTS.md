@@ -23,7 +23,7 @@ These shared instructions apply to the adopted Sentinel project. The current use
 4. The local thin path exists. For parallel work, use separate worktrees, explicit file ownership and one integrator. Two agents must not edit the same checkout concurrently. Start from the named accepted dependency commit; main may still be the old baseline.
 5. Codex coordinates review and owns central STATUS/TASK_QUEUE edits. Claude owns backend/contracts, data/ML and backend reliability/CI. Cursor MUST implement web/, docs/ui/ and browser tests in its own worktree; Claude does not absorb that assignment. Shared API contracts, migrations, types and Python dependencies have one designated writer at a time. Freeze the accepted HTTP contract before Cursor consumes it. The existing owner-designation gate for merging into main remains.
 6. Document decisions and source provenance, including reused repository/path/commit and applicable licenses. Preserve required notices and genuine contributor credit.
-7. Use docs/prompts/CLAUDE_BATCH.md and docs/prompts/CURSOR_UI.md for tool-specific assignments. Each implementer updates its own branch handoff and task documentation. There is no automatic cross-tool shared memory or messaging; commits, contracts and handoffs carry context.
+7. For the current C01 corrections use docs/prompts/CLAUDE_REVIEW_FOLLOWUP.md from the latest task/coordination reference; docs/prompts/CLAUDE_BATCH.md remains the full backlog. Use docs/prompts/CURSOR_UI.md for tool-specific assignments. Each implementer updates its own branch handoff and task documentation. There is no automatic cross-tool shared memory or messaging; commits, contracts and handoffs carry context.
 
 ## Handoff
 
