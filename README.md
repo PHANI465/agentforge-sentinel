@@ -6,4 +6,6 @@ Current state: draft versioned domain contracts plus a thin integrated API path 
 
 Start with [setup](SETUP.md), [current status](docs/STATUS.md), [contract semantics](docs/CONTRACTS.md) and [the full milestone roadmap](docs/PROJECT_PLAN.md).
 
+Implementation coordination: [shared task queue](docs/TASK_QUEUE.md), [Claude batch](docs/prompts/CLAUDE_BATCH.md), [required Cursor UI/browser assignment](docs/prompts/CURSOR_UI.md), and [Codex re-review of c6d369f](docs/reviews/c6d369f.md).
+
 Not yet built: the analyst UI, hosted staging, a trained fraud model and public BYOK. These remain later acceptance gates.

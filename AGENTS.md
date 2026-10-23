@@ -6,9 +6,9 @@ These shared instructions apply to the adopted Sentinel project. The current use
 
 - Product: a fraud investigation workbench with trained risk scoring, bounded agents, analyst tools, human approval and an auditable simulated outcome.
 - Delivery: no fixed deadline. Complete the milestone gates in docs/PROJECT_PLAN.md; keep one end-to-end path working as each part improves.
-- Proposed stack: Python, FastAPI, Pydantic, PostgreSQL, scikit-learn, React/TypeScript (reuse the current Vite frontend unless an explicit decision justifies Next.js). Stack and runtime choices remain proposals until the initial baseline is measured.
+- Implemented backend: Python, FastAPI, Pydantic and PostgreSQL. Next: scikit-learn and React/TypeScript/Vite; record provenance for any reused source UI. Hardware and hosting choices still require measurement.
 - Budget: existing laptop/subscriptions and free allowances only; no additional paid usage or paid fallback is assumed. Stop the affected mode when quota is exhausted.
-- Initial code: draft domain contracts and guards in src/sentinel/contracts; JSON Schema exports in contracts/v1. API, Postgres migrations and the UI are the next increment.
+- Current code: versioned domain contracts, Postgres migrations and a tested local API thin path with rules, bounded investigation, human approval, simulated execution and audit. The analyst UI and trained model are not yet built. See docs/reviews/c6d369f.md for the accepted local review scope.
 - Install: `uv sync --locked --extra dev`.
 - Verify: `uv run --locked python -m ruff check .`, `uv run --locked python -m pytest -q`, `uv run --locked python -m unittest discover -s tests_handoff -v`, `uv run --locked python scripts/export_contracts.py --check`, and `node scripts/check_contract_examples.mjs`.
 - Briefing: `uv run --locked python scripts/agent_status.py` (manual baseline; optional hooks are disabled).
@@ -17,12 +17,13 @@ These shared instructions apply to the adopted Sentinel project. The current use
 
 ## Start and work
 
-1. Read the current request, docs/STATUS.md and the briefing. Inspect Git state before editing. Preserve unfamiliar changes and coordinate if paths conflict; their presence alone is not a reason to stop.
+1. Read the current request, docs/STATUS.md, docs/TASK_QUEUE.md and the briefing. Inspect Git state before editing. Preserve unfamiliar changes and coordinate if paths conflict; their presence alone is not a reason to stop.
 2. Read this branch's note, if present. Treat its next step as a proposal. Reuse verification only if its code/environment still match; local check evidence does not transfer to another checkout.
 3. Use one task branch per task, following the existing repository's branch conventions. Discover the default branch; do not assume it is named main. Do not switch branches over another person's work.
-4. Start with one implementation agent until shared contracts and the thin working path exist. For parallel work, use separate worktrees, explicit file ownership and one integrator. Two agents must not edit the same checkout concurrently.
-5. Shared API contracts, migrations and types have one designated owner. Propose changes before consumers diverge. Keep central STATUS edits with the integrator; branch agents use their own notes.
+4. The local thin path exists. For parallel work, use separate worktrees, explicit file ownership and one integrator. Two agents must not edit the same checkout concurrently. Start from the named accepted dependency commit; main may still be the old baseline.
+5. Codex coordinates review and owns central STATUS/TASK_QUEUE edits. Claude owns backend/contracts, data/ML and backend reliability/CI. Cursor MUST implement web/, docs/ui/ and browser tests in its own worktree; Claude does not absorb that assignment. Shared API contracts, migrations, types and Python dependencies have one designated writer at a time. Freeze the accepted HTTP contract before Cursor consumes it. The existing owner-designation gate for merging into main remains.
 6. Document decisions and source provenance, including reused repository/path/commit and applicable licenses. Preserve required notices and genuine contributor credit.
+7. Use docs/prompts/CLAUDE_BATCH.md and docs/prompts/CURSOR_UI.md for tool-specific assignments. Each implementer updates its own branch handoff and task documentation. There is no automatic cross-tool shared memory or messaging; commits, contracts and handoffs carry context.
 
 ## Handoff
 
