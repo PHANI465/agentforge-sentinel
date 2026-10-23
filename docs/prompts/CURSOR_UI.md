@@ -2,11 +2,19 @@
 
 The owner explicitly requires Cursor to contribute. You own the analyst interface and browser tests; Claude owns backend/data/ML and Codex owns review/coordination.
 
-Open a dedicated Cursor worktree. Read AGENTS.md, docs/STATUS.md, docs/TASK_QUEUE.md, relevant decisions and the accepted C01 HTTP contract/fixtures. Read the current coordination queue from its named Git reference; files in another worktree are not your working copy.
+C01 is ACCEPTED at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. U01 is ready. U02 and U03 retain their separate dependencies.
 
-C01 update: submitted commit 0a6fb0e is NOT accepted; R9/R10 corrections are pending. Read the latest queue with git show task/coordination:docs/TASK_QUEUE.md. Do not treat a passing strict check as acceptance.
+Use the existing Cursor worktree E:/PHANI/sentinel-wt/cursor-analyst-ui, branch task/cursor-analyst-ui. Inspect actual HEAD/status first. Codex observed uncommitted planning files in docs/ui/ and the Cursor branch handoff; preserve them. Review and commit only your intended owned preparation files before bringing in the accepted dependency. If accepted C01 is not already an ancestor, merge that exact commit into your task branch without resetting or discarding work. If a conflict appears, preserve it and report the actual conflict.
 
-Before coding, record your base/dependency commit. U01 waits for Codex's acceptance of the C01 contract commit. If it is not available yet, produce a short UI task/design note and identify the exact missing contract; do not invent endpoints or implement a mock-only app as completed functionality.
+Read current instructions with:
+    git show task/coordination:AGENTS.md
+    git show task/coordination:docs/TASK_QUEUE.md
+    git show task/coordination:docs/prompts/CURSOR_UI.md
+    git show task/coordination:docs/reviews/2e6c232.md
+
+Inherited STATUS/queue copies in this worktree may describe older pending gates. The current coordination reference and accepted C01 commit above govern this task; do not merge the coordination branch merely to copy documents.
+
+Record the exact accepted C01 dependency and actual working HEAD. Read the accepted contracts/http/openapi.v1.json, contracts/http/examples/ and docs/api/README.md before implementation.
 
 Implement U01 in web/ and docs/ui/:
 - React/TypeScript/Vite, a typed client from the accepted response contracts, and a same-origin development proxy.

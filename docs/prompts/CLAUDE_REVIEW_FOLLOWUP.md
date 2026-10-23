@@ -1,5 +1,7 @@
 # Claude follow-up after four delivered packages
 
+Historical correction prompt: R9/R10 are completed and C01 is accepted at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. Use CLAUDE_C02.md from the latest task/coordination reference for the next task. The pending instructions below describe the earlier review stage; do not repeat them.
+
 Use this follow-up for the current next step; CLAUDE_BATCH.md remains the broader backlog. The owner has not sent the earlier C01 correction prompt yet.
 
 ## Preserve delivered work and identify the current state

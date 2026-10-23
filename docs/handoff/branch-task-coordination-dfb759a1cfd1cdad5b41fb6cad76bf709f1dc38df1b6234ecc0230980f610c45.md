@@ -45,3 +45,11 @@ Owner supplied C01/C03/C06/C08 delivery hashes; Git branch tips verified. C01 0a
 This coordination update publishes the review, the immediate Claude correction prompt, the Cursor non-JSON error requirement, and accurate queue/status gates. No application source, task branch or main was changed. Previously tested coordination commit: fcc04c5eebdb353ce290b99c288990c51a0d4dcf. Final after-commit evidence belongs in the local ignored report/final chat, not a self-referential note hash.
 
 Next action: Claude fixes R9/R10 on its existing C01 branch and returns the corrected commit for Codex re-review. Environment provisioning is outside this prompt update.
+
+## Corrected C01 accepted
+
+C01 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 passed independent re-review/checks; R9/R10 are resolved. Evidence is in docs/reviews/2e6c232.md. This unlocks Cursor U01 and Claude C02. C05 follows the C02 implementation handoff, and the overview consistency note stays assigned there.
+
+The existing Cursor worktree has uncommitted planning notes. Its owner preserves/commits only intended owned notes and merges the accepted C01 dependency without resetting; Codex did not edit that worktree. New backend task branches start from accepted C01. Read latest shared docs via task/coordination, whose application source still remains c6. C03/C06/C08 and main integration are unchanged and pending.
+
+Previously tested coordination reference: 9e49a87b2a7d50c0fdcc3823cd87a07e49a856ae. Final checks after this documentation commit belong in the ignored report/final chat.

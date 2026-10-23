@@ -10,33 +10,31 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 - Reviewed implementation: task/thin-path at c6d369f6043a8c9ec86d8f56cf05670e81fba81d, following ed08de0. It implements Postgres + FastAPI, rule scoring, recorded scoring outcomes, deterministic or opt-in local Claude investigation, human approval, idempotent simulated actions and audit.
 - Codex independently re-reviewed R1-R8 and found no new blocking defect in those corrections. Focused regressions: 13 passed. Strict clean-commit check: passed; full pytest 106 passed / 1 intentional live-Claude skip, 21 handoff tests, 15 schema exports, Ruff and Node checks.
 - Review scope and limitations: [c6d369f review](reviews/c6d369f.md). Claude's live-call, real-server restart and isolation-canary evidence was not independently repeated by Codex.
-- task/coordination adds this shared task queue and tool prompts on top of the reviewed implementation. New work starts from that committed reference or a later explicitly accepted integration commit, not the old main.
+- C01 is separately accepted at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. See reviews/2e6c232.md. U01/C02/C05 include that application dependency. task/coordination carries current instructions on the older c6 source; do not use its tip or old main as their application base.
 - G0 and G1 remain partial. There is no analyst UI, real browser-to-database acceptance, trained model, hosted staging or public BYOK yet.
 
 ## Delivery and review snapshot
 
-Latest owner-provided handoff, with branch commits verified by Codex:
-
 | Package | Delivered commit | Review state |
 | --- | --- | --- |
-| C01 HTTP contract | 0a6fb0ec8e63fd686ac7e4cf6bbfb7bd22a105b0 | CHANGES REQUESTED: R9 malformed cursor; R10 error-contract accuracy |
+| C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01/C02 ready |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
-C01's existing tests pass (40 focused, 146 full / 1 live skip), but independent HTTP probes reproduce R9/R10. Read [the review](reviews/0a6fb0e.md) and [the immediate Claude follow-up](prompts/CLAUDE_REVIEW_FOLLOWUP.md). C03/C06/C08 checks and runtime measurements remain attributed to Claude until independently reviewed. Delivery is not acceptance; the four task branches have not been integrated.
+C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03/C06/C08 evidence remains Claude-reported until independently reviewed; those branches have not been integrated.
 
-C02 and Cursor U01 wait for accepted corrected C01. C05 is parked until accepted C01 because it overlaps backend paths. C04 waits for accepted C03; C07 waits for accepted C04. WSL changes and GitHub provisioning are undecided and do not block the C01 corrections.
+Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
+
+Cursor U01 and Claude C02 can proceed concurrently in separate worktrees. C05 follows the C02 implementation handoff, without merging unaccepted C02 code. U02 still waits for accepted C02; C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Immediate executable queue
 
-Use [TASK_QUEUE.md](TASK_QUEUE.md) for exact branches, dependencies, ownership and acceptance. This is a substantial queue, not a promise that all tasks fit today.
-
-1. Claude applies C01 review corrections R9/R10 and returns the new commit; see prompts/CLAUDE_REVIEW_FOLLOWUP.md.
-2. Codex re-reviews C01 and reviews the separately delivered C03/C06/C08 packages.
-3. Cursor U01 and Claude C02 wait for accepted corrected C01. C05 starts from the same accepted backend base with coordinated contract ownership.
-4. C04 waits for accepted C03, including an explicit delayed-label eligibility and mature-label count policy. C07/U03 follow accepted training/API gates.
-5. No WSL installation, GitHub provisioning, main merge or hosted release is authorized by this prompt update.
+1. Cursor U01: real analyst interface including accepted C01; preserve its existing planning work.
+2. Claude C02: real browser-test backend fixtures from accepted C01. Follow prompts/CLAUDE_C02.md.
+3. C05 follows the C02 implementation handoff; freeze API changes before consumers diverge.
+4. Codex reviews C02 and delivered C03/C06/C08. C04 still awaits accepted C03; U02 still awaits accepted C02 plus U01.
+5. Main, WSL/GitHub provisioning, hosted release and model expansion remain outside this acceptance.
 
 ## Evidence history
 
@@ -49,7 +47,7 @@ Use [TASK_QUEUE.md](TASK_QUEUE.md) for exact branches, dependencies, ownership a
 
 Codex is review/coordination lead and owns central STATUS/TASK_QUEUE. Claude owns backend, data/ML and backend reliability/CI. Cursor is a required implementation contributor and owns the analyst interface and browser tests. Each task uses a branch/handoff and a dedicated worktree for parallel work. No two tools edit a checkout concurrently.
 
-The existing owner-designation gate for the integrator remains: the owner has not explicitly named the main-branch integrator, so this review/queue does not merge into main. Implementation can continue from the reviewed coordination reference.
+The existing owner-designation gate for the integrator remains: the owner has not explicitly named the main-branch integrator, so this review/queue does not merge into main. Implementation starts from each package's accepted application dependency; task/coordination supplies current instructions.
 
 | Area | Owner | Paths |
 | --- | --- | --- |
