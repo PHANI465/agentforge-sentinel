@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "Untrusted execution request; the key makes client retries return the original result.",
+  "properties": {
+    "approval_id": {
+      "format": "uuid",
+      "title": "Approval Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "format": "uuid",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "approval_id",
+    "idempotency_key"
+  ],
+  "title": "ExecuteActionInput",
+  "type": "object"
+}

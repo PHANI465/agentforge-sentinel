@@ -62,7 +62,9 @@ class TrustedContext(Contract):
     scope: Scope
     actor_id: Id
     actor_kind: Literal["human", "system"]
-    capabilities: frozenset[Literal["read_case", "approve_action", "execute_simulated_action"]]
+    capabilities: frozenset[Literal[
+        "ingest_transaction", "read_case", "approve_action", "execute_simulated_action",
+    ]]
 
 
 class Money(Contract):
@@ -283,10 +285,29 @@ def intent_digest(intent: ActionIntent) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+class InvestigationFinding(Contract):
+    """Untrusted agent output. It selects among enumerated options only; the server builds
+    the action intent from stored records. Rationale is display text, never instructions."""
+    operation: Literal["simulated_hold", "escalate"]
+    reason_code: Literal["velocity_pattern", "unusual_amount", "insufficient_evidence"]
+    rationale: Annotated[str, Field(min_length=1, max_length=600)]
+
+
+class InvestigationRequestInput(Contract):
+    """Untrusted request to investigate a case at the revision the analyst last read."""
+    expected_revision: Revision
+
+
 class ApprovalDecisionInput(Contract):
     """Untrusted human choice; server resolves intent and authenticated approver."""
     action_intent_id: Id
     decision: Literal["approved", "rejected"]
+
+
+class ExecuteActionInput(Contract):
+    """Untrusted execution request; the key makes client retries return the original result."""
+    approval_id: Id
+    idempotency_key: Id
 
 
 class Approval(Contract):
@@ -372,4 +393,7 @@ def safe_validation_errors(error: ValidationError) -> list[dict[str, str]]:
 
 PERSISTED_MODELS = (Transaction, Alert, EvidenceItem, Case, AgentRun, Approval,
                     SimulatedAction, AuditEvent)
-EXPORT_MODELS = PERSISTED_MODELS + (TransactionInput, ApprovalDecisionInput, ActionIntent)
+EXPORT_MODELS = PERSISTED_MODELS + (
+    TransactionInput, ApprovalDecisionInput, ActionIntent, InvestigationFinding,
+    InvestigationRequestInput, ExecuteActionInput,
+)

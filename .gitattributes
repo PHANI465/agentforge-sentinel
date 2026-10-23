@@ -1,0 +1,4 @@
+# LF everywhere so recorded file hashes and schema exports match across Windows, WSL and CI.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

@@ -1,0 +1,23 @@
+{
+  "additionalProperties": false,
+  "description": "Untrusted request to investigate a case at the revision the analyst last read.",
+  "properties": {
+    "expected_revision": {
+      "maximum": 2147483647,
+      "minimum": 1,
+      "title": "Expected Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "expected_revision"
+  ],
+  "title": "InvestigationRequestInput",
+  "type": "object"
+}

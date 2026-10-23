@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "description": "Untrusted agent output. It selects among enumerated options only; the server builds\nthe action intent from stored records. Rationale is display text, never instructions.",
+  "properties": {
+    "operation": {
+      "enum": [
+        "simulated_hold",
+        "escalate"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "rationale": {
+      "maxLength": 600,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "reason_code": {
+      "enum": [
+        "velocity_pattern",
+        "unusual_amount",
+        "insufficient_evidence"
+      ],
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "operation",
+    "reason_code",
+    "rationale"
+  ],
+  "title": "InvestigationFinding",
+  "type": "object"
+}

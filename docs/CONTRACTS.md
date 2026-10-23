@@ -1,8 +1,8 @@
 # Draft v1 domain contracts
 
-The initial implementation defines eight persisted/read models: Transaction, Alert, EvidenceItem, Case, AgentRun, Approval, SimulatedAction and AuditEvent. Narrow TransactionInput and ApprovalDecisionInput request DTOs deliberately omit server authority. ActionIntent binds proposed action content. JSON Schema exports live in contracts/v1; the synthetic transaction example is in contracts/examples.
+The contracts define eight persisted/read models: Transaction, Alert, EvidenceItem, Case, AgentRun, Approval, SimulatedAction and AuditEvent. Narrow untrusted request DTOs deliberately omit server authority: TransactionInput, InvestigationRequestInput, ApprovalDecisionInput and ExecuteActionInput. ActionIntent binds proposed action content. InvestigationFinding is untrusted agent output. JSON Schema exports (14) live in contracts/v1; the synthetic transaction example is in contracts/examples.
 
-These are draft contracts and pure precondition checks. HTTP authentication, database migrations/constraints, durable orchestration and simulated effects are the next increment. No schema grants authorization. Server code must build TrustedContext from authenticated identity, resolve every identifier under that scope and never deserialize it from a public/model payload.
+The contracts are still draft. Since the thin-path increment (decision 0002), a Postgres/FastAPI boundary uses them: see "Storage/service boundary" below. No schema grants authorization. Server code builds TrustedContext only from a bearer-token lookup and resolves every identifier under that scope. It never deserializes TrustedContext from a public/model payload.
 
 ## Values and time
 
@@ -21,15 +21,28 @@ Action-intent canonicalization is versioned as sentinel.action-intent.v1. It has
 
 The prototype pure guard intentionally limits execution to the approving human within the same session. A later background-worker service identity needs a separate explicit authorization design.
 
-## Work still required at the storage/service boundary
+## Agent output
 
-- Authenticate identity and load active policy and current records from trusted storage.
-- Resolve and verify the full evidence snapshot before presenting an investigation/action.
-- Prevent invalid transitions with compare-and-set case revisions.
-- Atomically consume an approval, enforce unique idempotency, record a simulated effect and append audit evidence. Retried identical intents return the original result; conflicting key reuse fails.
-- Enforce append-only audit behavior and retention; do not claim tamper-proof records.
-- Sign/verify browser approval tokens if used; the current SHA binding is not a signature.
-- Add Postgres migrations and cross-session/concurrent/restart tests. Pure contract tests do not establish these properties.
+InvestigationFinding selects `operation` (simulated_hold | escalate) and `reason_code` from enums, plus a rationale of at most 600 characters. Extra fields are rejected. The rationale is display text only. The server, not the agent, builds the ActionIntent: the transaction id and hold amount come from stored records, and the case revision, evidence snapshot and policy come from the case. Additions in this increment: InvestigationFinding, InvestigationRequestInput, ExecuteActionInput, and the `ingest_transaction` TrustedContext capability (TrustedContext is not exported).
+
+## Storage/service boundary (thin path, decision 0002)
+
+Implemented and tested against real Postgres:
+- Bearer-token sessions: only token SHA-256 is stored. Context comes from the lookup; tenant AND session filters apply to every query. Foreign and missing records both return `not_found`.
+- Ingestion idempotency on `(tenant, session, external_id)`: an identical payload replays the original; a different payload returns `idempotency_conflict`. Future event time is rejected.
+- Rule score with pinned scorer/feature/threshold artifacts. Velocity counts prior transactions in `[t-1h, t)` within the same scope (same-timestamp transactions are excluded).
+- Case transitions are compare-and-set on revision and state: open(1) -> investigating(2) -> awaiting_approval(3) -> closed(4). A failed run reopens the case. A lost run is reopened after timeout + 30 s.
+- Full evidence snapshot verification before investigation. The case's agent-config pin must match the running investigator (`stale_agent_config`).
+- Approval: human with `approve_action`, one per intent, 5-minute validity, exact intent digest. Rejection closes the case.
+- Execution: row-locked approval, unique `(tenant, idempotency_key)`, the pure guard, atomic consume + simulated action + case close + audit. A retried identical key returns the original. Key reuse for another approval returns `idempotency_conflict`. Denials are audited as `action_denied`.
+- Audit is append-only for application roles via triggers. It is not tamper-proof.
+
+Still required:
+- Signed browser approval tokens if a UI uses them; the SHA binding is not a signature.
+- Transaction-level audit for transactions that raise no case (AuditEvent.case_id is required in v1).
+- Audit retention policy, a least-privilege database role and connection pooling.
+- A durable worker for long investigations, and a separate service identity for background execution.
+- Freeze v1 only after the UI consumes these contracts.
 
 ## Verification
 
