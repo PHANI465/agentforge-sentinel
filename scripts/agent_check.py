@@ -27,6 +27,7 @@ CHECKS: list[list[str]] = [
     [sys.executable, "-m", "unittest", "discover", "-s", "tests_handoff", "-v"],
     [sys.executable, "scripts/export_contracts.py", "--check"],
     ["node", "scripts/check_contract_examples.mjs"],
+    [sys.executable, "scripts/check_package.py"],
 ]
 CHECK_TIMEOUT_SECONDS = 300
 

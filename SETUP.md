@@ -13,6 +13,7 @@ uv run --locked python -m pytest -q
 uv run --locked python -m unittest discover -s tests_handoff -v
 uv run --locked python scripts/export_contracts.py --check
 node scripts/check_contract_examples.mjs
+uv run --locked python scripts/check_package.py   # wheel/sdist ship the migrations (docs/ci/README.md)
 ```
 
 All of these run locally without model keys or paid services. One opt-in live test uses your logged-in Claude subscription (a single small call):
