@@ -17,7 +17,8 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 
 | Package | Delivered commit | Review state |
 | --- | --- | --- |
-| C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01/C02 ready |
+| C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01 continues |
+| C02 browser fixtures | c3fd83df78f2d8e90598508f3779c33a3fdad0a5 | CHANGES REQUESTED: R11 state ownership, R12 cleanup recovery, R13 fixture expectations |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
@@ -26,13 +27,13 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-Cursor U01 and Claude C02 can proceed concurrently in separate worktrees. C05 follows the C02 implementation handoff, without merging unaccepted C02 code. U02 still waits for accepted C02; C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
+Cursor is running U01; leave its checkout untouched. Claude corrects C02 R11-R13; see [the review](reviews/c3fd83d.md) and [correction prompt](prompts/CLAUDE_C02_REVIEW_FIXES.md). U02 waits for accepted corrected C02. C05 may follow that correction handoff from accepted C01 in its own worktree. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Immediate executable queue
 
 1. Cursor U01: real analyst interface including accepted C01; preserve its existing planning work.
-2. Claude C02: real browser-test backend fixtures from accepted C01. Follow prompts/CLAUDE_C02.md.
-3. C05 follows the C02 implementation handoff; freeze API changes before consumers diverge.
+2. Claude corrects C02 R11-R13 using prompts/CLAUDE_C02_REVIEW_FIXES.md, then hands off the new tested commit.
+3. C05 may follow the C02 correction handoff from accepted C01; freeze API changes before consumers diverge.
 4. Codex reviews C02 and delivered C03/C06/C08. C04 still awaits accepted C03; U02 still awaits accepted C02 plus U01.
 5. Main, WSL/GitHub provisioning, hosted release and model expansion remain outside this acceptance.
 

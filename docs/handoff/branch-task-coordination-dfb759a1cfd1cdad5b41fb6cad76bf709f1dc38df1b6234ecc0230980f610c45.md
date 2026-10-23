@@ -53,3 +53,11 @@ C01 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 passed independent re-review/checks
 The existing Cursor worktree has uncommitted planning notes. Its owner preserves/commits only intended owned notes and merges the accepted C01 dependency without resetting; Codex did not edit that worktree. New backend task branches start from accepted C01. Read latest shared docs via task/coordination, whose application source still remains c6. C03/C06/C08 and main integration are unchanged and pending.
 
 Previously tested coordination reference: 9e49a87b2a7d50c0fdcc3823cd87a07e49a856ae. Final checks after this documentation commit belong in the ignored report/final chat.
+
+## C02 review: changes requested
+
+Reviewed c3fd83df78f2d8e90598508f3779c33a3fdad0a5 read-only. Focused real-socket fixture suite: 13 passed; independent safe lifecycle probes still show R11 unowned-directory deletion and R12 recovery-state deletion on shutdown failure. R13 corrects fixture expectations/audit prose. See docs/reviews/c3fd83d.md. Additional baseline checks, if run, are recorded externally; green checks do not clear these findings.
+
+Cursor U01 continues untouched on accepted C01. U02 stays gated on accepted corrected C02. Claude receives docs/prompts/CLAUDE_C02_REVIEW_FIXES.md; C05 may follow its correction handoff in a separate worktree from accepted C01. C06's independent checker edits and C02's 900-second timeout require an explicit future merge.
+
+This update changes coordination documents only. Previously checked coordination reference: f6236672685fe9508a645f62fac7d9fdb4e21fd6. Final check evidence after this doc commit belongs in the ignored report/final chat. No source worktree or main was modified.

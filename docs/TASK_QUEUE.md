@@ -15,7 +15,8 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 
 | Package | Delivered commit | Review state |
 | --- | --- | --- |
-| C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01/C02 ready |
+| C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01 continues |
+| C02 browser fixtures | c3fd83df78f2d8e90598508f3779c33a3fdad0a5 | CHANGES REQUESTED: R11 state ownership, R12 cleanup recovery, R13 fixture expectations |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
@@ -24,12 +25,12 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-Cursor U01 and Claude C02 can proceed concurrently in separate worktrees. C05 follows the C02 implementation handoff, without merging unaccepted C02 code. U02 still waits for accepted C02; C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
+Cursor is running U01; do not interrupt its checkout. Claude applies [C02 review corrections](prompts/CLAUDE_C02_REVIEW_FIXES.md); see [the review](reviews/c3fd83d.md). U02 waits for accepted corrected C02. C05 can follow the correction handoff from accepted C01 in a separate worktree without importing unaccepted fixture code. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Current execution order
 
 1. Cursor implements U01 on its own branch/worktree including accepted C01. Preserve its existing uncommitted planning notes before adopting that dependency; no resets.
-2. Claude implements C02 on a separate branch from accepted C01. Then C05 may begin in its own worktree after the C02 implementation handoff, coordinating API/migration ownership.
+2. Claude fixes C02 R11-R13 on its existing task branch, preserving unrelated files and ownership/recovery metadata. After the correction handoff, C05 may begin from accepted C01 in its own worktree, coordinating API/migration ownership.
 3. Codex reviews C02 and the separately delivered C03/C06/C08 packages. U02 needs accepted C02 plus U01; C04 needs accepted C03.
 4. C07/U03 follow their model gates. All final integrated checks remain necessary; passing checks on one task do not validate another task or a future merge.
 5. Existing budget only, no live-model ordinary tests, no repeated work to consume quota and no main merge by implementers.
@@ -50,7 +51,7 @@ Deliver:
 
 Acceptance: own-session records only, same-tenant foreign-session isolation, stable bounded pagination with ties, DTO/fixture/OpenAPI compatibility, safe errors and existing regressions pass. Record the exact contract commit for Cursor. No UI files.
 
-### C02 - Real browser test support - Claude - READY FROM ACCEPTED 2e6c232
+### C02 - Real browser test support - Claude - CHANGES REQUESTED AT c3fd83d
 
 Branch: task/claude-browser-fixtures. Own tests/support/, backend seed/startup scripts and docs/api/browser-fixtures.md. Leave web/ to Cursor.
 
@@ -107,7 +108,7 @@ Report average precision, precision/recall at stated review capacity, false posi
 
 Acceptance: actual saved trusted local artifact, reproducible small seeded run, pinned code/data/feature/model/threshold manifests, model card, error slices and a documented comparison with uncertainty. Never claim real-bank effectiveness or guaranteed savings from synthetic results. No GPU/cloud purchase.
 
-### C05 - Backend reliability, observability and secret safety - Claude - AFTER C02 IMPLEMENTATION HANDOFF
+### C05 - Backend reliability, observability and secret safety - Claude - AFTER C02 CORRECTION HANDOFF
 
 Branch: task/claude-backend-reliability. Own backend logging/diagnostics, security/failure tests, local role/migration setup and docs/security/. Coordinate any overlapping service.py or migration changes with C01 rather than writing both branches concurrently.
 

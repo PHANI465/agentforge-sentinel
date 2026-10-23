@@ -1,5 +1,7 @@
 # Claude next task: C02 browser fixtures
 
+Current update: C02 was delivered at c3fd83d and received R11-R13 changes requested. Use CLAUDE_C02_REVIEW_FIXES.md from the latest task/coordination reference before following this original implementation brief. Do not rebuild the package or treat delivery as acceptance.
+
 C01 is accepted at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 after independent Codex re-review. R9/R10 are resolved. This is the next implementation prompt; do not repeat the completed C01 fixes.
 
 Read the latest shared instructions without merging the coordination branch:

@@ -2,9 +2,9 @@
 
 The owner explicitly requires Cursor to contribute. You own the analyst interface and browser tests; Claude owns backend/data/ML and Codex owns review/coordination.
 
-C01 is ACCEPTED at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. U01 is ready. U02 and U03 retain their separate dependencies.
+C01 is ACCEPTED at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. Continue U01. C02 c3fd83d has R11-R13 changes requested; do not merge that fixture commit or begin U02 until a corrected C02 commit is explicitly accepted. U03 retains its model dependency.
 
-Use the existing Cursor worktree E:/PHANI/sentinel-wt/cursor-analyst-ui, branch task/cursor-analyst-ui. Inspect actual HEAD/status first. Codex observed uncommitted planning files in docs/ui/ and the Cursor branch handoff; preserve them. Review and commit only your intended owned preparation files before bringing in the accepted dependency. If accepted C01 is not already an ancestor, merge that exact commit into your task branch without resetting or discarding work. If a conflict appears, preserve it and report the actual conflict.
+Use the existing Cursor worktree E:/PHANI/sentinel-wt/cursor-analyst-ui, branch task/cursor-analyst-ui. U01 is already in progress: continue it and preserve existing planning/implementation commits and uncommitted work. Inspect actual HEAD/status. Accepted C01 must be an ancestor; bring it in only if it is missing, after preserving your work. Do not reset, discard files, repeat a completed merge or restart U01 because older worktree documents describe the preparation phase. Report any material dependency conflict.
 
 Read current instructions with:
     git show task/coordination:AGENTS.md
@@ -23,6 +23,8 @@ Implement U01 in web/ and docs/ui/:
 - Exact server-built action details, human approve/reject and separate execute, clear permissions, expired/reopened cases, provider failures and idempotent replay. Keep one execution idempotency key across an ambiguous network retry; test a lost response with one persisted action.
 - Safe loading/error/empty states; refresh server truth on 409; keyboard/accessibility support. Handle non-JSON 5xx, empty/invalid response bodies and network failures with a safe generic message; do not assume every failure parses as ErrorResponse. An ambiguous execution response retains its original idempotency key.
 - Model rationale is inert text. Do not enable raw HTML or store tokens in URLs/localStorage/sessionStorage.
+
+For U02, token-hygiene evidence must cover request headers and all saved artifacts; masking the token field alone does not prove trace redaction. Keep authenticated-context tracing disabled unless complete artifact redaction is verified.
 
 Then implement U02 after C02's accepted backend fixture: real browser -> API -> disposable Postgres tests for successful execution, rejection, expiration/reopening, stale revision, duplicate retry, cross-session denial and persistence/restart. Ordinary browser tests use the deterministic investigator, not a subscription/model call.
 
