@@ -77,3 +77,11 @@ Reviewed exact 66214bb466fe9810df5a306f12137606ba2c0251 without implementation e
 Ruff, HTTP and domain exports, Node transport and 21 helper regressions passed independently on clean 66214bb. Automatic approval review rejected the focused process-suite command for the known nested-path risk; it did not run and was not bypassed/retried. Claude's 23/198-test and strict evidence remains attributed to Claude. Review probes were isolated and cleaned; no foreign process was touched.
 
 C02 and U01 remain changes-requested; U02 waits for both accepted corrected packages. C05 is already authorized in its own worktree from accepted C01 without C02 code. Main and implementation source remain unchanged. Previously checked coordination reference: 46ecd6f513432c010c2562a41a7310c6600c02c7. Final checks on this documentation commit belong in the ignored report/final chat.
+
+## U01 5055321 re-review: one R15 query race remains
+
+Reviewed exact 5055321cfa810a2108d184e5542785cf44977edc, accepted C01 ancestor retained. R14/R16/R17 corrections are accepted within scope. A signed-in real Chrome/API/Postgres escalation now renders, approves, executes once and displays closed history/audit. Independent frontend 23-test run and build pass. A separate controlled React/JSDOM probe still shows delayed mutation refresh replacing Closed rows with all-state results while the selector remains Closed; see docs/reviews/5055321.md.
+
+Cursor receives docs/prompts/CURSOR_U01_R15_FOLLOWUP.md, preserving completed corrections and fixing only this query-context failure. Fresh strict results, if completed in parallel, are recorded externally. Reviewer loopback resources/ports and the verified disposable directory were cleaned; no model calls or implementation edits. C02 retains its separate review gate; U02 waits for accepted U01 and C02. Main remains unchanged.
+
+Previously checked coordination reference: 8924b73c9af18437b8da1149871a017ed89a584b. Final checks after this documentation commit belong in the ignored report/final chat.

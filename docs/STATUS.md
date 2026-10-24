@@ -11,7 +11,7 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 - Codex independently re-reviewed R1-R8 and found no new blocking defect in those corrections. Focused regressions: 13 passed. Strict clean-commit check: passed; full pytest 106 passed / 1 intentional live-Claude skip, 21 handoff tests, 15 schema exports, Ruff and Node checks.
 - Review scope and limitations: [c6d369f review](reviews/c6d369f.md). Claude's live-call, real-server restart and isolation-canary evidence was not independently repeated by Codex.
 - C01 is separately accepted at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. See reviews/2e6c232.md. U01/C02/C05 include that application dependency. task/coordination carries current instructions on the older c6 source; do not use its tip or old main as their application base.
-- G0 and G1 remain partial. U01 analyst UI is delivered but has R14-R17 changes requested. A bounded real-browser hold path works; full U02 browser-to-database acceptance, a trained model, hosted staging and public BYOK remain incomplete.
+- G0 and G1 remain partial. U01 5055321 resolves R14/R16/R17 but retains one R15 delayed-refresh query race. Bounded real-browser hold and escalation paths work; full U02 browser-to-database acceptance, a trained model, hosted staging and public BYOK remain incomplete.
 
 ## Delivery and review snapshot
 
@@ -19,7 +19,7 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 | --- | --- | --- |
 | C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01 continues |
 | C02 browser fixtures | 66214bb466fe9810df5a306f12137606ba2c0251 | CHANGES REQUESTED: remaining R11 nested-path checks and R12 partial-removal/unknown-status recovery; R13 corrected |
-| U01 analyst UI | 98ce8aef4a3cc7b1cab4b685ff671ee4acc88e6a | CHANGES REQUESTED: R14 escalation rendering, R15 request races/navigation, R16 expiry messaging, R17 amount contrast |
+| U01 analyst UI | 5055321cfa810a2108d184e5542785cf44977edc | R14/R16/R17 resolved; CHANGES REQUESTED: remaining R15 delayed-refresh query race |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
@@ -28,11 +28,11 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-Cursor corrects U01 R14-R17 using [the correction prompt](prompts/CURSOR_U01_REVIEW_FIXES.md); see [the U01 review](reviews/98ce8ae.md). Codex left its source checkout unchanged. Claude corrects the remaining C02 R11/R12 failures; see [the re-review](reviews/66214bb.md) and [follow-up prompt](prompts/CLAUDE_C02_FOLLOWUP.md). R13 is corrected. U02 waits for accepted corrected C02. C05 may follow that correction handoff from accepted C01 in its own worktree. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
+Cursor finishes the remaining R15 delayed-refresh race using [the follow-up prompt](prompts/CURSOR_U01_R15_FOLLOWUP.md); see [the U01 re-review](reviews/5055321.md). R14/R16/R17 are resolved. Codex left its source checkout unchanged. Claude corrects the remaining C02 R11/R12 failures; see [the re-review](reviews/66214bb.md) and [follow-up prompt](prompts/CLAUDE_C02_FOLLOWUP.md). R13 is corrected. U02 waits for accepted corrected C02. C05 may follow that correction handoff from accepted C01 in its own worktree. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Immediate executable queue
 
-1. Cursor corrects U01 R14-R17 on its existing branch including accepted C01, adds regressions and hands off the new tested commit.
+1. Cursor finishes U01 R15 query ownership on its existing branch, adds the delayed mutation-refresh regression and hands off a new tested commit.
 2. Claude corrects the C02 66214bb R11/R12 follow-ups using prompts/CLAUDE_C02_FOLLOWUP.md and returns a new tested commit.
 3. C05 is already authorized from accepted C01 in a separate worktree without C02 code; freeze API changes before consumers diverge.
 4. Codex reviews C02 and delivered C03/C06/C08. C04 still awaits accepted C03; U02 still awaits accepted C02 plus U01.

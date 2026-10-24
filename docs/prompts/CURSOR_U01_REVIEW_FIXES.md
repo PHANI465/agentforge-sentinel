@@ -1,3 +1,5 @@
+Current dispatch: U01 5055321 resolves R14/R16/R17; only the R15 delayed-refresh query-context counterexample remains. Read docs/prompts/CURSOR_U01_R15_FOLLOWUP.md and docs/reviews/5055321.md from current task/coordination. The original correction brief below is historical scope, not a request to redo resolved work.
+
 # Cursor U01 review corrections: R14-R17
 
 Continue in E:/PHANI/sentinel-wt/cursor-analyst-ui on task/cursor-analyst-ui. Reviewed U01 is 98ce8aef4a3cc7b1cab4b685ff671ee4acc88e6a; accepted C01 is 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. U01 has changes requested, not acceptance. Preserve your implementation/planning commits and any uncommitted work. Inspect actual Git status/HEAD and C01 ancestry; do not reset, repeat an already completed dependency merge or merge task/coordination to copy its docs.

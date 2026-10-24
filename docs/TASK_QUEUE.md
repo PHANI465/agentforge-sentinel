@@ -17,7 +17,7 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | --- | --- | --- |
 | C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01 continues |
 | C02 browser fixtures | 66214bb466fe9810df5a306f12137606ba2c0251 | CHANGES REQUESTED: remaining R11 nested-path checks and R12 partial-removal/unknown-status recovery; R13 corrected |
-| U01 analyst UI | 98ce8aef4a3cc7b1cab4b685ff671ee4acc88e6a | CHANGES REQUESTED: R14 escalation rendering, R15 request races/navigation, R16 expiry messaging, R17 amount contrast |
+| U01 analyst UI | 5055321cfa810a2108d184e5542785cf44977edc | R14/R16/R17 resolved; CHANGES REQUESTED: remaining R15 delayed-refresh query race |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
@@ -26,11 +26,11 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-Cursor corrects U01 R14-R17 on its existing branch using [the correction prompt](prompts/CURSOR_U01_REVIEW_FIXES.md); see [the review](reviews/98ce8ae.md). Codex left its source checkout unchanged. Claude applies [the remaining C02 R11/R12 corrections](prompts/CLAUDE_C02_FOLLOWUP.md); see [the re-review](reviews/66214bb.md). R13 is corrected. U02 waits for accepted corrected C02. C05 can follow the correction handoff from accepted C01 in a separate worktree without importing unaccepted fixture code. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
+Cursor finishes the remaining R15 delayed-refresh race using [the follow-up prompt](prompts/CURSOR_U01_R15_FOLLOWUP.md); see [the U01 re-review](reviews/5055321.md). R14/R16/R17 are resolved. Codex left its source checkout unchanged. Claude applies [the remaining C02 R11/R12 corrections](prompts/CLAUDE_C02_FOLLOWUP.md); see [the re-review](reviews/66214bb.md). R13 is corrected. U02 waits for accepted corrected C02. C05 can follow the correction handoff from accepted C01 in a separate worktree without importing unaccepted fixture code. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Current execution order
 
-1. Cursor corrects delivered U01 98ce8ae for R14-R17 on its existing branch/worktree including accepted C01; preserve existing commits/work and add regression evidence. No resets or repeated dependency merge.
+1. Cursor finishes the remaining R15 delayed-refresh query race on U01 5055321, preserving accepted R14/R16/R17 corrections, existing work and accepted C01. Add the concrete deferred refresh regression.
 2. Claude fixes the remaining C02 66214bb R11/R12 failures on its existing branch. C05 is already authorized from accepted C01 in a separate worktree without C02 code; coordinate API/migration ownership.
 3. Codex reviews C02 and the separately delivered C03/C06/C08 packages. U02 needs accepted C02 plus U01; C04 needs accepted C03.
 4. C07/U03 follow their model gates. All final integrated checks remain necessary; passing checks on one task do not validate another task or a future merge.
@@ -60,7 +60,7 @@ Deliver reproducible deterministic fixtures and a local test-server lifecycle fo
 
 Acceptance: real server readiness/cleanup, synthetic-only data, fixture repeatability, real restart persistence, and no public endpoint that grants capabilities, changes time, bypasses authentication or seeds a database. Test-only clock/policy setup stays outside normal application routes. Document commands and the C02 commit for U02.
 
-### U01 - Analyst workbench - CURSOR REQUIRED - CHANGES REQUESTED AT 98ce8ae
+### U01 - Analyst workbench - CURSOR REQUIRED - REMAINING R15 AT 5055321
 
 Branch: task/cursor-analyst-ui. Own web/ and docs/ui/. Use React/TypeScript/Vite; reuse suitable original AgentForge UI pieces only with source/license provenance.
 
