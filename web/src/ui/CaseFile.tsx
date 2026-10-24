@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { acceptModelProvenance, acceptScoringInputs } from "../api/analysis";
 import { allows, currentIntent, earlierIntents, recoveryRequired } from "../api/case";
 import {
   artifactLabel,
@@ -7,14 +8,60 @@ import {
   eventLabel,
   factLabel,
   failureLabel,
+  formatCount,
   formatMoney,
   formatScore,
   investigatorLabel,
   operationLabel,
+  probabilityCaution,
   scoreLabel,
   stateLabel,
 } from "../api/format";
-import type { AuditEvent, CaseDetail, SessionView } from "../api/types";
+import type { AuditEvent, CaseDetail, ScorerInfo, ScoringOutcome, SessionView } from "../api/types";
+
+function StoredModel({ model }: { model: ScoringOutcome["model"] }) {
+  if (model == null) return null;
+  const parsed = acceptModelProvenance(model);
+  if (!parsed) return <p>Stored model identity could not be read.</p>;
+  return (
+    <p className="meta">
+      Model {parsed.candidate}, protocol {parsed.protocol_version}, results {parsed.results_id}, threshold source{" "}
+      {parsed.threshold_source}.
+    </p>
+  );
+}
+
+function StoredInputs({ inputs }: { inputs: ScoringOutcome["inputs"] }) {
+  if (inputs == null) return null;
+  const parsed = acceptScoringInputs(inputs);
+  if (!parsed) return <p>Stored feature inputs could not be read.</p>;
+  return (
+    <div className="block">
+      <h3>Stored feature inputs</h3>
+      <p>Transaction currency {parsed.currency}.</p>
+      <p>
+        Profile home currency {parsed.profile_home_currency}. Profile opened {parsed.profile_opened_at}.
+      </p>
+      <p>
+        History rows {formatCount(parsed.history_rows)}. Disclosures used {formatCount(parsed.disclosures_used)}.
+        Feature version {parsed.feature_version}. Hidden scenario truth is not one of these inputs.
+      </p>
+      <div className="table-wrap">
+        <table className="data">
+          <caption>Decision-time feature values</caption>
+          <tbody>
+            {Object.entries(parsed.values).map(([name, value]) => (
+              <tr key={name}>
+                <th scope="row">{name}</th>
+                <td>{formatCount(value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 export function CaseFile({
   detail,
@@ -22,6 +69,7 @@ export function CaseFile({
   session,
   busy,
   replayed,
+  configured = null,
   onInvestigate,
   onDecide,
   onExecute,
@@ -31,6 +79,7 @@ export function CaseFile({
   session: SessionView;
   busy: boolean;
   replayed: boolean;
+  configured?: ScorerInfo | null;
   onInvestigate: () => void;
   onDecide: (decision: "approved" | "rejected") => void;
   onExecute: () => void;
@@ -65,14 +114,25 @@ export function CaseFile({
         {scoring ? `, threshold ${formatScore(threshold)}` : ""}
         {scoring && flagged ? ", at or above threshold" : ""}
       </p>
+      {scoring && probabilityCaution(scoreKind, scoreSemantics) ? (
+        <p>{probabilityCaution(scoreKind, scoreSemantics)}</p>
+      ) : null}
       {scoring ? (
         <p className="meta">
-          Scorer {artifactLabel(scoring.scorer)}. Features {artifactLabel(scoring.features)}. Threshold policy{" "}
-          {artifactLabel(scoring.threshold_policy)}.
+          Stored scorer {artifactLabel(scoring.scorer)} ({scoreKind}, {scoreSemantics}). Features{" "}
+          {artifactLabel(scoring.features)}. Threshold policy {artifactLabel(scoring.threshold_policy)}.
         </p>
       ) : (
         <p>No recorded scoring outcome is stored for this transaction.</p>
       )}
+      {scoring && configured ? (
+        <p>
+          The configured scorer is {artifactLabel(configured.scorer)} ({configured.scoring_kind},{" "}
+          {configured.score_semantics}). This record keeps {artifactLabel(scoring.scorer)}.
+        </p>
+      ) : null}
+      {scoring ? <StoredModel model={scoring.model} /> : null}
+      {scoring ? <StoredInputs inputs={scoring.inputs} /> : null}
       <div className="block">
         <h3>Transaction</h3>
         <p>Account {detail.transaction.account_id}</p>

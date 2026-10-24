@@ -1,3 +1,4 @@
+import { acceptModelResults, acceptScorerInfo } from "./analysis";
 import { messageFor, safeCode, unconfirmedMessage, unreachableMessage } from "./format";
 import type {
   ApiFailure,
@@ -10,7 +11,9 @@ import type {
   ExecuteResponse,
   Health,
   IngestResponse,
+  ModelResults,
   Overview,
+  ScorerInfo,
   SessionView,
   TransactionInput,
 } from "./types";
@@ -41,6 +44,8 @@ export interface SentinelClient {
     approvalId: string,
     idempotencyKey: string,
   ): Promise<ApiResult<ExecuteResponse>>;
+  scoring(token: string): Promise<ApiResult<ScorerInfo>>;
+  modelResults(token: string, resultsId: string): Promise<ApiResult<ModelResults>>;
 }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -260,6 +265,15 @@ export function createClient(fetchImpl: FetchLike = (input, init) => fetch(input
         token,
         { approval_id: approvalId, idempotency_key: idempotencyKey },
         acceptExecute,
+      ),
+    scoring: (token) => request("/v1/scoring", "GET", token, undefined, acceptScorerInfo),
+    modelResults: (token, resultsId) =>
+      request(
+        `/v1/model-results/${encodeURIComponent(resultsId)}`,
+        "GET",
+        token,
+        undefined,
+        acceptModelResults,
       ),
   };
 }

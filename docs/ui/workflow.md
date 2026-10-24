@@ -80,4 +80,12 @@ Reviewed commit `bb318a1d283b1802e6f87e484393b50bf4a7673b` still terminated a Vi
 
 ### Gaps
 
-Linux, macOS, CI, and hosting are not run. This does not measure production fraud detection. C05 is not in this branch. `main` is not merged. C07 and U03 stay behind their model gates. `npm audit` is not treated as acceptance.
+Linux, macOS, CI, and hosting are not run. This does not measure production fraud detection. C05 is not in this branch. `main` is not merged. The U03 contract view is in this checkout and is not real-stack acceptance. `npm audit` is not treated as acceptance.
+
+## Model and analysis view (U03)
+
+This checkout is `task/cursor-model-analysis` at `E:/PHANI/sentinel-wt/cursor-model-analysis`, created from accepted U02 `5f2855553ac0a445d96914730a89fc3722682830`. The accepted U02 worktree stays on that commit. The UI dependency is the v1.1 schema and nine examples at `62def106af74821040ac54535b8efe87341ca10b`. OpenAPI Git-blob SHA-256: `1f220a5628e3e261776c286c56b502b8d989184bd928bf219f30ebb6e451fd90`. That commit's backend is not merged. Copies and hashes are in `web/src/fixtures/http-v1.1/`.
+
+`GET /v1/scoring` and `GET /v1/model-results/{results_id}` use the session bearer and do not send `X-Request-ID`. A 404 or 405 from scoring says the analysis view is unavailable. The page does not replace that failure with the frozen report. A configured rule scorer has no offline report. A stored case keeps its own scorer when the server's configured scorer is different. Model scores are uncalibrated rankings. The frozen threshold stays `4.0295386895426815e-6` on screen. The daily top-15 table is separate from the frozen-threshold table. Scenario slices are labeled as offline hidden synthetic truth.
+
+`npm test` covers those fixtures. `npm run test:e2e` still runs the accepted U02 browser path. An older API without the new routes makes the analysis view unavailable; that run does not verify model endpoints. Real browser checks of rendered model values wait for an accepted corrected C07. See `docs/ui/U03-analysis.md`.

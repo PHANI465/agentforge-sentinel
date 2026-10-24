@@ -21,8 +21,12 @@ describe("money and labels", () => {
 
   it("names rule scores and investigators from the server fields", () => {
     expect(scoreLabel("rule", "heuristic")).toBe("Rule score");
-    expect(scoreLabel("model", "estimated_probability")).toBe("Estimated probability");
+    expect(scoreLabel("model", "uncalibrated_score")).toBe("Uncalibrated ranking");
+    expect(scoreLabel("model", "estimated_probability")).toBe("Recorded model score");
     expect(formatScore(null)).toBe("Unknown");
+    expect(formatScore(0.5)).toBe("0.5");
+    expect(formatScore(4.0295386895426815e-6)).toBe("4.0295386895426815e-6");
+    expect(formatScore(4.0295386895426815e-6)).not.toBe("0");
     expect(investigatorLabel({ name: "deterministic-investigator", version: "i1" })).toBe(
       "Deterministic investigator i1",
     );
@@ -35,6 +39,7 @@ describe("money and labels", () => {
   });
 
   it("keeps handled error text free of raw bodies", () => {
+    expect(messageFor("account_profile_missing", [])).toContain("no profile");
     expect(messageFor("stale_case_revision", [])).toContain("latest server state");
     expect(messageFor("invalid_request", ["extra_forbidden"])).toContain("extra_forbidden");
     expect(messageFor("<b>nope</b>", [])).toBe(unconfirmedMessage());

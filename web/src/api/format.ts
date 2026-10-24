@@ -31,6 +31,7 @@ const ERROR_TEXT: Record<string, string> = {
   stale_action_intent: "The proposed action changed. The case was reloaded.",
   inactive_policy: "The action policy is not active.",
   idempotency_conflict: "That key was already used for a different request.",
+  account_profile_missing: "The account has no profile, so nothing was scored or stored.",
   conflict: "The case changed. The latest server state is shown.",
 };
 
@@ -80,13 +81,41 @@ export function moneyFromParts(currency: Currency, minorUnits: number): Money {
 
 export function scoreLabel(kind: string, semantics: string): string {
   if (kind === "rule" && semantics === "heuristic") return "Rule score";
-  if (kind === "model" && semantics === "estimated_probability") return "Estimated probability";
+  if (kind === "model" && semantics === "uncalibrated_score") return "Uncalibrated ranking";
+  if (kind === "model" && semantics === "estimated_probability") return "Recorded model score";
   return "Recorded score";
 }
 
+export function probabilityCaution(kind: string, semantics: string): string | null {
+  if (kind === "model" || semantics === "uncalibrated_score") return "Not a fraud probability.";
+  if (kind === "rule" && semantics === "heuristic") return "Not a probability.";
+  return null;
+}
+
+/** Full precision. A non-zero value below 1e-4 stays exponential so 4.0295386895426815e-06 cannot render as 0. */
 export function formatScore(score: number | null | undefined): string {
   if (typeof score !== "number" || !Number.isFinite(score)) return "Unknown";
+  if (Object.is(score, -0)) return "0";
+  if (score !== 0 && Math.abs(score) < 1e-4) return score.toExponential();
   return String(score);
+}
+
+export function formatRate(value: number | null): string {
+  if (value === null) return "not available";
+  return formatScore(value);
+}
+
+export function formatCount(value: number): string {
+  if (!Number.isSafeInteger(value)) return "Unknown";
+  return String(value);
+}
+
+export function analysisUnavailableMessage(): string {
+  return "The analysis view is unavailable on this server.";
+}
+
+export function modelReportMissingMessage(): string {
+  return "That model report is not on this server.";
 }
 
 export function investigatorLabel(info: Pick<InvestigatorInfo, "name" | "version">): string {

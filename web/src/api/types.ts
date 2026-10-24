@@ -63,7 +63,7 @@ export interface CaseSummary {
   score: number;
   threshold: number;
   scoring_kind: "rule" | "model";
-  score_semantics: "heuristic" | "estimated_probability";
+  score_semantics: "heuristic" | "estimated_probability" | "uncalibrated_score";
 }
 
 export interface CasePage {
@@ -95,7 +95,7 @@ export interface ScoringOutcome {
   score: number;
   threshold: number;
   scoring_kind: "rule" | "model";
-  score_semantics: "heuristic" | "estimated_probability";
+  score_semantics: "heuristic" | "estimated_probability" | "uncalibrated_score";
   alerted: boolean;
   prior_count_1h: number;
   scored_at: string;
@@ -103,6 +103,8 @@ export interface ScoringOutcome {
   scorer: ArtifactRef;
   features: ArtifactRef;
   threshold_policy: ArtifactRef;
+  inputs?: ScoringInputs | null;
+  model?: ModelProvenance | null;
 }
 
 export interface Transaction {
@@ -201,7 +203,7 @@ export interface AlertRecord {
   score: number;
   threshold: number;
   scoring_kind: "rule" | "model";
-  score_semantics: "heuristic" | "estimated_probability";
+  score_semantics: "heuristic" | "estimated_probability" | "uncalibrated_score";
   scorer: ArtifactRef;
   features: ArtifactRef;
   threshold_policy: ArtifactRef;
@@ -267,6 +269,118 @@ export type ApiFailure = {
 };
 
 export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
+
+export interface ModelProvenance {
+  protocol_version: string;
+  protocol_sha256: string;
+  selection_sha256: string;
+  candidate: string;
+  artifact_sha256: string;
+  feature_version: string;
+  threshold_source: "validation_frozen_threshold";
+  results_id: string;
+}
+
+export interface ScoringInputs {
+  feature_version: "f1";
+  values: Record<string, number>;
+  currency: Currency;
+  history_rows: number;
+  disclosures_used: number;
+  profile_home_currency: Currency;
+  profile_opened_at: string;
+}
+
+export interface ScorerInfo {
+  mode: "rule" | "model";
+  scoring_kind: "rule" | "model";
+  score_semantics: "heuristic" | "estimated_probability" | "uncalibrated_score";
+  scorer: ArtifactRef;
+  features: ArtifactRef;
+  threshold_policy: ArtifactRef;
+  threshold: number;
+  alert_rule: "score >= threshold";
+  model: ModelProvenance | null;
+  results_id: string | null;
+  notes: string[];
+}
+
+export interface PolicyStats {
+  flagged: number;
+  tp: number;
+  fp: number;
+  fn: number;
+  tn: number;
+  precision: number | null;
+  recall: number | null;
+  false_positive_rate: number | null;
+}
+
+export interface ModelResultCandidate {
+  name: string;
+  kind: string;
+  validation_average_precision: number;
+  test_average_precision: number;
+  test_pr_auc_trapezoid: number;
+  test_daily_top_k: PolicyStats;
+  test_brier: number | null;
+}
+
+export interface SliceRow extends PolicyStats {
+  dimension: string;
+  value: string;
+  rows: number;
+  fraud: number;
+}
+
+export interface ReliabilityBin {
+  lo: number;
+  hi: number;
+  n: number;
+  mean_score: number;
+  fraud_rate: number;
+}
+
+export interface SplitCounts {
+  rows: number;
+  legitimate: number;
+  fraud: number;
+  unknown_excluded: number;
+  labels_observable_by_horizon: number | null;
+  decision_days: number;
+}
+
+export interface ModelResults {
+  results_id: string;
+  label: "offline synthetic benchmark";
+  synthetic: true;
+  protocol_version: string;
+  protocol_sha256: string;
+  selection_sha256: string;
+  artifact_sha256: string;
+  selected: string;
+  windows: Record<string, [number, number]>;
+  label_views: Record<string, string>;
+  review_k_per_day: number;
+  review_ranking: string;
+  frozen_threshold: number;
+  splits: Record<string, SplitCounts>;
+  candidates: ModelResultCandidate[];
+  selected_policy: { daily_top_k: PolicyStats; frozen_threshold: PolicyStats };
+  uncertainty: {
+    method: string;
+    replicates: number;
+    accounts: number;
+    skipped_one_class: number;
+    average_precision: [number, number] | null;
+    recall_at_capacity: [number, number] | null;
+    precision_at_capacity: [number, number] | null;
+  };
+  calibration: { brier: number; reliability: ReliabilityBin[]; note: string };
+  slices: SliceRow[];
+  pr_curve: { recall: number; precision: number }[];
+  limitations: string[];
+}
 
 export const CASE_STATES: CaseState[] = [
   "open",

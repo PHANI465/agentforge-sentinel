@@ -91,7 +91,16 @@ describe("session memory", () => {
       investigate: vi.fn(),
       decide: vi.fn(),
       execute: vi.fn(),
-    } as SentinelClient;
+      scoring: vi.fn(async () => ({
+        ok: false as const,
+        ambiguous: true,
+        status: 404,
+        code: null,
+        message: "missing",
+        details: [] as string[],
+      })),
+      modelResults: vi.fn(),
+    } as unknown as SentinelClient;
     render(<App client={client} />);
     const tokenField = screen.getByLabelText("Session token");
     await user.click(tokenField);

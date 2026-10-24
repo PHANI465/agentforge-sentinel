@@ -313,6 +313,81 @@ button.row.selected .alert-score {
   }
 }
 
+.analysis,
+.report {
+  padding: 0.85rem 1.25rem 1rem;
+  background: var(--sheet);
+  border-bottom: 1px solid var(--line);
+}
+
+.threshold-figure {
+  margin: 0.15rem 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 0.6rem 0 1rem;
+}
+
+table.data {
+  border-collapse: collapse;
+  width: 100%;
+  background: white;
+}
+
+table.data caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  padding: 0 0 0.35rem;
+}
+
+table.data th,
+table.data td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.28rem 0.45rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+table.data td {
+  font-variant-numeric: tabular-nums;
+}
+
+tr.selected-record {
+  box-shadow: inset 4px 0 0 var(--stamp);
+}
+
+.pr-chart {
+  display: block;
+  width: min(100%, 36rem);
+  height: auto;
+  margin: 0.4rem 0 0.8rem;
+  background: white;
+  border: 1px solid var(--line);
+}
+
+.report dd {
+  margin: 0 0 0.6rem;
+  max-width: 68ch;
+}
+
+@media (max-width: 800px) {
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;

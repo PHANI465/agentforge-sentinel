@@ -2,6 +2,7 @@ import { Component, useCallback, useEffect, useRef, useState, type ReactNode } f
 import type { SentinelClient } from "../api/client";
 import { allows } from "../api/case";
 import { investigatorLabel } from "../api/format";
+import { ModelSection, ScorerStrip, useAnalysis } from "./AnalysisPanel";
 import { beginExecution, finishExecution } from "../api/idempotency";
 import type { ExecutionAttempt } from "../api/idempotency";
 import type {
@@ -10,6 +11,7 @@ import type {
   CasePage,
   CaseState,
   Overview,
+  ScorerInfo,
   SessionView,
 } from "../api/types";
 import { CaseFile } from "./CaseFile";
@@ -66,7 +68,12 @@ export function Workbench({
   const [notice, setNotice] = useState<string | null>(null);
   const [replayed, setReplayed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [configured, setConfigured] = useState<ScorerInfo | null>(null);
   const [loadingQueue, setLoadingQueue] = useState(true);
+  const rememberScorer = useCallback((value: ScorerInfo | null) => {
+    setConfigured(value);
+  }, []);
+  const analysis = useAnalysis({ client, token, session, onConfigured: rememberScorer });
   const [queuePending, setQueuePending] = useState(false);
   const attempt = useRef<ExecutionAttempt | null>(null);
   const caseGeneration = useRef(0);
@@ -207,6 +214,9 @@ export function Workbench({
       <a className="skip" href="#case">
         Skip to case
       </a>
+      <a className="skip" href="#scoring">
+        Skip to configured scorer
+      </a>
       <header className="top">
         <div>
           <h1>Sentinel analyst</h1>
@@ -225,6 +235,7 @@ export function Workbench({
       <p className="status" role="status">
         {notice}
       </p>
+      <ScorerStrip state={analysis} />
       {overview ? (
         <dl className="counts" aria-label="Session overview">
           <div>
@@ -312,6 +323,7 @@ export function Workbench({
             session={session}
             busy={busy}
             replayed={replayed}
+            configured={configured}
             onInvestigate={() =>
               void mutate(async () => {
                 const result = await client.investigate(token, detail.case.id, detail.case.revision);
@@ -362,6 +374,7 @@ export function Workbench({
         )}
         </CasePaneBoundary>
       </div>
+      <ModelSection state={analysis} />
     </>
   );
 }
