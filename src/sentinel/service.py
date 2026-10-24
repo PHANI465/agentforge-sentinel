@@ -6,9 +6,14 @@ indistinguishable (not_found). Case transitions use compare-and-set on revision.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
+import json
+import logging
 import secrets
 import uuid
+from concurrent import futures
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Callable
@@ -17,6 +22,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from sentinel import db, scoring
+from sentinel.contracts.http_v1 import CASE_STATES
 from sentinel.contracts.guards import (
     ContractViolation, require_evidence_snapshot, require_executable_approval,
     require_execution_authority,
@@ -30,6 +36,12 @@ from sentinel.contracts.v1 import (
     intent_digest,
 )
 from sentinel.investigators import InvestigationView, Investigator, InvestigatorError
+from sentinel.observability import Metrics, emit
+
+LOG = logging.getLogger("sentinel.service")
+# The investigator gets its own budget; this grace lets an adapter's own timeout (a typed
+# InvestigatorError) win before the service-level deadline fires.
+INVESTIGATOR_GRACE_SECONDS = 2
 
 SYSTEM_ACTOR = uuid.uuid5(uuid.NAMESPACE_URL, "sentinel:system:ingest")
 # A running investigation older than its timeout plus this grace is presumed lost.
@@ -43,6 +55,41 @@ class ServiceError(Exception):
         super().__init__(code)
         self.code = code
         self.status = status
+
+
+MAX_CURSOR_LENGTH = 200
+
+
+def encode_cursor(created_at: datetime, case_id) -> str:
+    raw = json.dumps([created_at.astimezone(timezone.utc).isoformat(), str(case_id)],
+                     separators=(",", ":"))
+    return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+
+
+def decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
+    """Opaque position only; it carries no authority (queries stay session-scoped).
+
+    The decoded JSON must be exactly [timestamp-string, uuid-string]; shape and member types
+    are checked before parsing, so no malformed input reaches datetime/uuid (review R9)."""
+    invalid = ServiceError("invalid_cursor", 422)
+    if len(cursor) > MAX_CURSOR_LENGTH or not cursor.isascii():
+        raise invalid
+    try:
+        decoded = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
+    except (ValueError, binascii.Error):  # JSONDecodeError and UnicodeDecodeError included
+        raise invalid from None
+    if not (isinstance(decoded, list) and len(decoded) == 2
+            and all(isinstance(member, str) for member in decoded)):
+        raise invalid
+    created, case_id = decoded
+    try:
+        when = datetime.fromisoformat(created)
+        position = uuid.UUID(case_id)
+    except ValueError:
+        raise invalid from None
+    if when.tzinfo is None:
+        raise invalid
+    return when, position
 
 
 def utc_now() -> datetime:
@@ -71,6 +118,13 @@ class Sentinel:
     database_url: str
     investigator: Investigator
     clock: Callable[[], datetime] = utc_now
+    metrics: Metrics | None = None
+
+    def _event(self, event: str, **fields) -> None:
+        emit(LOG, event, logging.WARNING if event != "approval_expired" else logging.INFO,
+             **fields)
+        if self.metrics is not None:
+            self.metrics.count(event)
 
     # ---- authentication -------------------------------------------------------------------
 
@@ -187,8 +241,9 @@ class Sentinel:
                           evidence_snapshot_sha256=evidence_snapshot_digest(evidence)),
             evidence_ids=tuple(item.id for item in evidence), created_at=now, updated_at=now)
         conn.execute("INSERT INTO cases (id, tenant_id, session_id, alert_id, revision, state,"
-                     " body) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                     (case.id, tenant, session, alert.id, 1, "open", _dump(case)))
+                     " created_at, body) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                     (case.id, tenant, session, alert.id, 1, "open", case.created_at,
+                      _dump(case)))
         for item in evidence:
             conn.execute("INSERT INTO evidence_items (id, tenant_id, session_id, case_id, body)"
                          " VALUES (%s, %s, %s, %s, %s)",
@@ -248,6 +303,8 @@ class Sentinel:
                                  ).fetchone()["body"]
             txn = conn.execute("SELECT body FROM transactions WHERE id = %s",
                                (alert["transaction_id"],)).fetchone()["body"]
+            scored = conn.execute("SELECT body FROM scoring_outcomes WHERE transaction_id = %s",
+                                  (alert["transaction_id"],)).fetchone()
             runs = conn.execute(
                 "SELECT body, finding FROM agent_runs WHERE case_id = %s AND tenant_id = %s"
                 " AND session_id = %s ORDER BY started_at", (case.id, tenant, session)).fetchall()
@@ -260,12 +317,79 @@ class Sentinel:
             evidence = self._rows(conn, ctx, "evidence_items", case.id)
         return {
             "case": case.model_dump(mode="json"), "alert": alert, "transaction": txn,
-            "evidence": evidence,
+            "scoring": scored["body"] if scored else None, "evidence": evidence,
             "agent_runs": [{"run": r["body"], "finding": r["finding"]} for r in runs],
             "action_intents": [{"intent": i["body"], "intent_sha256": i["intent_sha256"],
                                 "approval": i["approval"], "action": i["action"]}
                                for i in intents],
         }
+
+    def list_cases(self, ctx: TrustedContext, *, limit: int, state: str | None = None,
+                   cursor: str | None = None) -> dict:
+        """Own-session cases, newest first; created_at ties are broken by id (keyset)."""
+        _require(ctx, "read_case")
+        tenant, session = _scoped(ctx)
+        where, params = ["c.tenant_id = %s", "c.session_id = %s"], [tenant, session]
+        if state is not None:
+            where.append("c.state = %s")
+            params.append(state)
+        if cursor is not None:
+            created_at, case_id = decode_cursor(cursor)
+            where.append("(c.created_at, c.id) < (%s, %s)")
+            params.extend([created_at, case_id])
+        with db.connect(self.database_url) as conn:
+            rows = conn.execute(
+                "SELECT c.created_at, c.body AS case_body, a.body AS alert, t.body AS txn"
+                " FROM cases c JOIN alerts a ON a.id = c.alert_id"
+                " JOIN transactions t ON t.id = a.transaction_id"
+                f" WHERE {' AND '.join(where)} ORDER BY c.created_at DESC, c.id DESC"
+                " LIMIT %s", (*params, limit + 1)).fetchall()
+        more = len(rows) > limit
+        rows = rows[:limit]
+        items = [{
+            "id": r["case_body"]["id"], "state": r["case_body"]["state"],
+            "revision": r["case_body"]["revision"], "created_at": r["case_body"]["created_at"],
+            "updated_at": r["case_body"]["updated_at"], "alert_id": r["alert"]["id"],
+            "transaction_id": r["txn"]["id"], "external_id": r["txn"]["external_id"],
+            "amount": r["txn"]["amount"], "direction": r["txn"]["direction"],
+            "score": r["alert"]["score"], "threshold": r["alert"]["threshold"],
+            "scoring_kind": r["alert"]["scoring_kind"],
+            "score_semantics": r["alert"]["score_semantics"],
+        } for r in rows]
+        last = rows[-1] if more else None
+        next_cursor = encode_cursor(last["created_at"], last["case_body"]["id"]) if last else None
+        return {"items": items, "next_cursor": next_cursor, "limit": limit}
+
+    def session_view(self, token: str) -> dict:
+        with db.connect(self.database_url) as conn:
+            row = conn.execute(
+                "SELECT tenant_id, session_id, actor_id, actor_kind, capabilities, expires_at"
+                " FROM api_sessions WHERE token_sha256 = %s AND expires_at > %s",
+                (token_digest(token), self.clock())).fetchone()
+        if row is None:
+            raise ServiceError("unauthenticated", 401)
+        return {**row, "capabilities": sorted(row["capabilities"])}
+
+    def overview(self, ctx: TrustedContext) -> dict:
+        _require(ctx, "read_case")
+        scope = _scoped(ctx)
+        where = "WHERE tenant_id = %s AND session_id = %s"
+        # One statement = one snapshot even under READ COMMITTED, so the counts agree with
+        # each other while ingestion/execution commit concurrently (C01 review follow-up).
+        with db.connect(self.database_url) as conn:
+            row = conn.execute(
+                "SELECT (SELECT coalesce(json_object_agg(state, n), '{}'::json) FROM"
+                f" (SELECT state, count(*) AS n FROM cases {where} GROUP BY state) s) AS by_state,"
+                f" (SELECT count(*) FROM transactions {where}) AS transactions,"
+                f" (SELECT count(*) FROM alerts {where}) AS alerts,"
+                f" (SELECT count(*) FROM simulated_actions {where}) AS simulated_actions",
+                scope * 4).fetchone()
+        by_state = row["by_state"] or {}
+        counts = {k: row[k] for k in ("transactions", "alerts", "simulated_actions")}
+        return {"cases_by_state": {state: by_state.get(state, 0) for state in CASE_STATES},
+                **counts,
+                "investigator": {"name": self.investigator.config.name,
+                                 "version": self.investigator.config.version}}
 
     def get_audit(self, ctx: TrustedContext, case_id: uuid.UUID) -> list[dict]:
         _require(ctx, "read_case")
@@ -278,13 +402,33 @@ class Sentinel:
     def investigate(self, ctx: TrustedContext, case_id: uuid.UUID, expected_revision: int,
                     ) -> dict:
         run, view = self.begin_investigation(ctx, case_id, expected_revision)
-        try:
-            finding: InvestigationFinding | None = self.investigator.investigate(view)
-            failure = None
-        except InvestigatorError as error:
-            finding, failure = None, error.code
+        finding, failure = self._run_investigator(run, view)
         self.finish_investigation(ctx, run, finding, failure)
         return self.get_case(ctx, case_id)
+
+    def _run_investigator(self, run: AgentRun, view) -> tuple[InvestigationFinding | None,
+                                                              str | None]:
+        """Run under a wall-clock deadline (budget + grace). A timeout or an unexpected
+        exception becomes a failed run (honest state), never a stuck `investigating` case.
+        The worker thread cannot be killed; if it finishes late its result is discarded,
+        because the run has already been recorded as failed."""
+        deadline = run.budget.timeout_seconds + INVESTIGATOR_GRACE_SECONDS
+        pool = futures.ThreadPoolExecutor(1, thread_name_prefix="investigator")
+        future = pool.submit(self.investigator.investigate, view)
+        try:
+            return future.result(timeout=deadline), None
+        except futures.TimeoutError:
+            self._event("investigation_timeout", run_id=str(run.id), seconds=deadline)
+            return None, "timeout"
+        except InvestigatorError as error:
+            self._event("investigation_failed", run_id=str(run.id), failure_code=error.code)
+            return None, error.code
+        except Exception as error:  # type name only: messages may carry provider output
+            self._event("investigation_failed", run_id=str(run.id),
+                        failure_code="provider_unavailable", error_type=type(error).__name__)
+            return None, "provider_unavailable"
+        finally:
+            pool.shutdown(wait=False)
 
     def begin_investigation(self, ctx, case_id, expected_revision) -> tuple[AgentRun,
                                                                              InvestigationView]:
@@ -425,13 +569,13 @@ class Sentinel:
         reopened = self._transition(conn, case, "open", now)
         self._audit(conn, ctx, reopened, uuid.uuid4(), SYSTEM_ACTOR, "system", "approval_expired",
                     "success", now)
+        self._event("approval_expired", case_id=str(case.id), revision=reopened.revision)
         return reopened
 
     # ---- approval and simulated execution --------------------------------------------------
 
     def record_approval(self, ctx: TrustedContext, data: ApprovalDecisionInput) -> dict:
         _require(ctx, "approve_action", human=True)
-        now = self.clock()
         tenant, session = _scoped(ctx)
         try:
             with db.connect(self.database_url) as conn, conn.transaction():
@@ -443,6 +587,9 @@ class Sentinel:
                     raise ServiceError("not_found", 404)
                 intent = ActionIntent.model_validate(row["body"])
                 case = self._case(conn, ctx, intent.case_id, lock=True)
+                # Decision/expiry times are taken after the lock wait, so a delayed request
+                # never returns an approval that is already expired.
+                now = self.clock()
                 if case.state != "awaiting_approval" or case.revision != intent.case_revision:
                     raise ServiceError("stale_case_revision", 409)
                 approval = Approval(

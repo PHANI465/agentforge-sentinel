@@ -1,0 +1,22 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/session"
+  },
+  "response": {
+    "actor_id": "5e000000-0000-4000-8000-000000000003",
+    "actor_kind": "human",
+    "capabilities": [
+      "approve_action",
+      "execute_simulated_action",
+      "ingest_transaction",
+      "read_case"
+    ],
+    "expires_at": "2026-10-24T01:00:00Z",
+    "session_id": "5e000000-0000-4000-8000-000000000002",
+    "tenant_id": "5e000000-0000-4000-8000-000000000001"
+  },
+  "status": 200
+}

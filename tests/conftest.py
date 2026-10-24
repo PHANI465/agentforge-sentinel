@@ -1,8 +1,10 @@
 import itertools
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import psycopg
+from psycopg import sql
 import pytest
 from psycopg.conninfo import make_conninfo
 
@@ -64,3 +66,28 @@ def database_url(pg_cluster):
 @pytest.fixture
 def clock():
     return FakeClock()
+
+
+R18_OLD_PASSWORD = "SYNTHETIC-OLD-PASSWORD-r18"
+
+
+@pytest.fixture
+def make_role(database_url):
+    created = []
+
+    def make(attributes="LOGIN NOINHERIT", password=R18_OLD_PASSWORD):
+        name = f"r18_{uuid.uuid4().hex[:10]}"
+        with psycopg.connect(database_url, autocommit=True) as conn:
+            conn.execute(sql.SQL("CREATE ROLE {} " + attributes + " PASSWORD {}").format(
+                sql.Identifier(name), sql.Literal(password)))
+        created.append(name)
+        return name
+
+    yield make
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        conn.execute("ALTER TABLE audit_events ENABLE TRIGGER ALL")
+        for name in created:
+            conn.execute(sql.SQL("REASSIGN OWNED BY {} TO CURRENT_USER").format(
+                sql.Identifier(name)))
+            conn.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(name)))
+            conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(name)))

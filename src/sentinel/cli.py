@@ -24,6 +24,9 @@ def main(argv: list[str] | None = None) -> int:
     session.add_argument("--capability", action="append", choices=ALL_CAPABILITIES,
                          help="repeatable; defaults to all analyst capabilities")
     session.add_argument("--hours", type=int, default=8)
+    grant = commands.add_parser("grant-runtime", help="create/refresh the least-privilege "
+                                "API role (run as the schema owner)")
+    grant.add_argument("--role", default="sentinel_runtime")
     dev = commands.add_parser("devdb", help="disposable local Postgres under .agent/devdb")
     dev.add_argument("action", choices=("start", "stop"))
     dev.add_argument("--port", type=int, default=55432)
@@ -35,6 +38,12 @@ def main(argv: list[str] | None = None) -> int:
     if not url:
         print("Set SENTINEL_DATABASE_URL first.", file=sys.stderr)
         return 2
+    if args.command == "grant-runtime":
+        from sentinel.db import roles
+        # A password, if wanted, comes from the environment, never the command line.
+        roles.grant_runtime(url, args.role, os.environ.get("SENTINEL_RUNTIME_PASSWORD"))
+        print(f"runtime role {args.role} granted")
+        return 0
     if args.command == "migrate":
         applied = db.migrate(url)
         print("Applied: " + (", ".join(applied) if applied else "nothing pending"))

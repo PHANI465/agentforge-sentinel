@@ -21,7 +21,7 @@ All of these run locally without model keys or paid services. One opt-in live te
 $env:SENTINEL_LIVE_CLAUDE = "1"; uv run --locked python -m pytest -q tests/test_investigators.py -k live
 ```
 
-Regenerate draft schema exports after intentional contract/dependency changes with `uv run --locked python scripts/export_contracts.py`, then review the diff.
+Regenerate draft schema exports after intentional contract/dependency changes with `uv run --locked python scripts/export_contracts.py`, then review the diff. The HTTP v1 contract (OpenAPI + examples, docs/api/README.md) is regenerated with `uv run --locked python scripts/export_http_contract.py` (needs local Postgres binaries); pytest fails if it drifts.
 
 ## Run the thin path locally
 

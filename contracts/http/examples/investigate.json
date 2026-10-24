@@ -1,0 +1,295 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "expected_revision": 1
+    },
+    "method": "POST",
+    "path": "/v1/cases/5e000000-0000-4000-8000-000000000009/investigations"
+  },
+  "response": {
+    "action_intents": [
+      {
+        "action": null,
+        "approval": null,
+        "intent": {
+          "case_id": "5e000000-0000-4000-8000-000000000009",
+          "case_revision": 3,
+          "evidence_snapshot_sha256": "9319c96d9fee1955c257b8913885c1dbe8828320a9c80587cd959b7bc98e401f",
+          "id": "5e000000-0000-4000-8000-00000000001a",
+          "parameters": {
+            "amount": {
+              "currency": "USD",
+              "currency_exponent": 2,
+              "minor_units": 250000,
+              "schema_version": "1.0"
+            },
+            "operation": "simulated_hold",
+            "schema_version": "1.0",
+            "transaction_id": "5e000000-0000-4000-8000-000000000007"
+          },
+          "policy": {
+            "name": "simulated-action-policy",
+            "schema_version": "1.0",
+            "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+            "version": "p1"
+          },
+          "schema_version": "1.0",
+          "scope": {
+            "schema_version": "1.0",
+            "session_id": "5e000000-0000-4000-8000-000000000002",
+            "tenant_id": "5e000000-0000-4000-8000-000000000001"
+          }
+        },
+        "intent_sha256": "378f4f78ef0f9cb9d3bc7c58666e293deb5fca9e4bf50d6c85f70fea5707a9ff"
+      }
+    ],
+    "agent_runs": [
+      {
+        "finding": {
+          "operation": "simulated_hold",
+          "rationale": "Large amount with 3 prior transactions in the last hour.",
+          "reason_code": "velocity_pattern",
+          "schema_version": "1.0"
+        },
+        "run": {
+          "budget": {
+            "max_delegations": 0,
+            "max_output_tokens": 1024,
+            "max_steps": 4,
+            "max_tool_calls": 4,
+            "schema_version": "1.0",
+            "timeout_seconds": 5
+          },
+          "case_id": "5e000000-0000-4000-8000-000000000009",
+          "case_revision": 2,
+          "config": {
+            "name": "deterministic-investigator",
+            "schema_version": "1.0",
+            "sha256": "f786d618952834fd1a108b27d3cff98c8eb1b8f52177e013eec2ec5aa1d40908",
+            "version": "i1"
+          },
+          "failure_code": null,
+          "id": "5e000000-0000-4000-8000-000000000017",
+          "input_snapshot_sha256": "9319c96d9fee1955c257b8913885c1dbe8828320a9c80587cd959b7bc98e401f",
+          "principal_id": "3610840e-2855-5ff4-96d8-e6f386c34dea",
+          "role": "investigator",
+          "schema_version": "1.0",
+          "scope": {
+            "schema_version": "1.0",
+            "session_id": "5e000000-0000-4000-8000-000000000002",
+            "tenant_id": "5e000000-0000-4000-8000-000000000001"
+          },
+          "status": "completed",
+          "tool_profile": {
+            "name": "no-tools",
+            "schema_version": "1.0",
+            "sha256": "9260913bc49e607b7d106f163933feaf215e7c84ae9e30152bd4e56d8dbb3762",
+            "version": "n1"
+          }
+        }
+      }
+    ],
+    "alert": {
+      "created_at": "2026-10-23T17:00:00Z",
+      "features": {
+        "name": "thin-path-features",
+        "schema_version": "1.0",
+        "sha256": "e26c85a55b8cbb9de536a2b55bca69328b28c72299205534b34c0be5b445d01b",
+        "version": "f1"
+      },
+      "features_as_of": "2026-10-23T17:00:00Z",
+      "id": "5e000000-0000-4000-8000-000000000008",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "score": 1.0,
+      "score_semantics": "heuristic",
+      "scorer": {
+        "name": "velocity-amount-rules",
+        "schema_version": "1.0",
+        "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+        "version": "r1"
+      },
+      "scoring_kind": "rule",
+      "threshold": 0.5,
+      "threshold_policy": {
+        "name": "alert-threshold",
+        "schema_version": "1.0",
+        "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+        "version": "t1"
+      },
+      "transaction_id": "5e000000-0000-4000-8000-000000000007"
+    },
+    "case": {
+      "alert_id": "5e000000-0000-4000-8000-000000000008",
+      "created_at": "2026-10-23T17:00:00Z",
+      "evidence_ids": [
+        "5e000000-0000-4000-8000-00000000000a",
+        "5e000000-0000-4000-8000-00000000000b"
+      ],
+      "id": "5e000000-0000-4000-8000-000000000009",
+      "pins": {
+        "agent_config": {
+          "name": "deterministic-investigator",
+          "schema_version": "1.0",
+          "sha256": "f786d618952834fd1a108b27d3cff98c8eb1b8f52177e013eec2ec5aa1d40908",
+          "version": "i1"
+        },
+        "dataset": {
+          "name": "api-synthetic-ingest",
+          "schema_version": "1.0",
+          "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+          "version": "d1"
+        },
+        "evidence_snapshot_sha256": "9319c96d9fee1955c257b8913885c1dbe8828320a9c80587cd959b7bc98e401f",
+        "policy": {
+          "name": "simulated-action-policy",
+          "schema_version": "1.0",
+          "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+          "version": "p1"
+        },
+        "schema_version": "1.0",
+        "scorer": {
+          "name": "velocity-amount-rules",
+          "schema_version": "1.0",
+          "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+          "version": "r1"
+        },
+        "threshold_policy": {
+          "name": "alert-threshold",
+          "schema_version": "1.0",
+          "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+          "version": "t1"
+        },
+        "tool_config": {
+          "name": "no-tools",
+          "schema_version": "1.0",
+          "sha256": "9260913bc49e607b7d106f163933feaf215e7c84ae9e30152bd4e56d8dbb3762",
+          "version": "n1"
+        }
+      },
+      "revision": 3,
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "state": "awaiting_approval",
+      "updated_at": "2026-10-23T17:00:06Z"
+    },
+    "evidence": [
+      {
+        "available_at": "2026-10-23T17:00:00Z",
+        "case_id": "5e000000-0000-4000-8000-000000000009",
+        "content_sha256": "7497379ecb8c99ead0e9dbc17e2bbd1645dffa8ed36e4c472e7a34abded1ec49",
+        "facts": [
+          {
+            "name": "amount_minor",
+            "schema_version": "1.0",
+            "value": 250000
+          }
+        ],
+        "id": "5e000000-0000-4000-8000-00000000000a",
+        "observed_at": "2026-10-23T17:00:00Z",
+        "schema_version": "1.0",
+        "scope": {
+          "schema_version": "1.0",
+          "session_id": "5e000000-0000-4000-8000-000000000002",
+          "tenant_id": "5e000000-0000-4000-8000-000000000001"
+        },
+        "source": "synthetic_transaction",
+        "source_ref": "transactions:5e000000-0000-4000-8000-000000000007"
+      },
+      {
+        "available_at": "2026-10-23T17:00:00Z",
+        "case_id": "5e000000-0000-4000-8000-000000000009",
+        "content_sha256": "de6d2781e7b012cec42999a3bc8c52a65dcc3e4490901c0cc4491a3a5a1c0f4e",
+        "facts": [
+          {
+            "name": "transaction_count_1h",
+            "schema_version": "1.0",
+            "value": 3
+          }
+        ],
+        "id": "5e000000-0000-4000-8000-00000000000b",
+        "observed_at": "2026-10-23T17:00:00Z",
+        "schema_version": "1.0",
+        "scope": {
+          "schema_version": "1.0",
+          "session_id": "5e000000-0000-4000-8000-000000000002",
+          "tenant_id": "5e000000-0000-4000-8000-000000000001"
+        },
+        "source": "historical_aggregate",
+        "source_ref": "velocity-1h:5e000000-0000-4000-8000-000000000007"
+      }
+    ],
+    "scoring": {
+      "alerted": true,
+      "features": {
+        "name": "thin-path-features",
+        "schema_version": "1.0",
+        "sha256": "e26c85a55b8cbb9de536a2b55bca69328b28c72299205534b34c0be5b445d01b",
+        "version": "f1"
+      },
+      "features_as_of": "2026-10-23T17:00:00Z",
+      "prior_count_1h": 3,
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "score": 1.0,
+      "score_semantics": "heuristic",
+      "scored_at": "2026-10-23T17:00:00Z",
+      "scorer": {
+        "name": "velocity-amount-rules",
+        "schema_version": "1.0",
+        "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+        "version": "r1"
+      },
+      "scoring_kind": "rule",
+      "threshold": 0.5,
+      "threshold_policy": {
+        "name": "alert-threshold",
+        "schema_version": "1.0",
+        "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+        "version": "t1"
+      },
+      "transaction_id": "5e000000-0000-4000-8000-000000000007"
+    },
+    "transaction": {
+      "account_id": "00000000-0000-4000-8000-0000000000a1",
+      "amount": {
+        "currency": "USD",
+        "currency_exponent": 2,
+        "minor_units": 250000,
+        "schema_version": "1.0"
+      },
+      "dataset": {
+        "name": "api-synthetic-ingest",
+        "schema_version": "1.0",
+        "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+        "version": "d1"
+      },
+      "direction": "debit",
+      "external_id": "demo-large-1",
+      "id": "5e000000-0000-4000-8000-000000000007",
+      "ingested_at": "2026-10-23T17:00:00Z",
+      "occurred_at": "2026-10-23T17:00:00Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "synthetic": true
+    }
+  },
+  "status": 200
+}
