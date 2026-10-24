@@ -47,7 +47,7 @@ Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. T
 | Identity | Can | Cannot |
 | --- | --- | --- |
 | Schema owner / operator (migrations, `create-session`, `grant-runtime`) | DDL, migrations, issue sessions | (it is trusted; not tamper-proof) |
-| Runtime API role (`python -m sentinel.cli grant-runtime --role sentinel_runtime`) | SELECT/INSERT on the domain tables; UPDATE on `cases`, `agent_runs`, `approvals`; SELECT on `api_sessions` and `schema_migrations`; USAGE on the audit sequence | ALTER/DROP tables, drop or disable the audit triggers, CREATE in `public`, DELETE/TRUNCATE anywhere, UPDATE/DELETE `audit_events`, issue or modify sessions, record migrations, effectively GRANT anything |
+| Runtime API role (`python -m sentinel.cli grant-runtime --role sentinel_runtime`) | SELECT/INSERT on the domain tables; UPDATE on `cases`, `agent_runs`, `approvals`; SELECT on `api_sessions` and `schema_migrations`; USAGE on the audit sequence | ALTER/DROP the managed tables, drop or disable the audit triggers, CREATE in any non-system schema, DELETE/TRUNCATE on managed tables, UPDATE/DELETE `audit_events`, issue or modify sessions (no INSERT/UPDATE on `api_sessions`, including column-level and via PUBLIC), record migrations, effectively GRANT anything. Holds within the scope below; verified after granting |
 
 - **Existing roles are verified, never trusted or silently demoted** (review R18). Before any password or privilege change, `grant_runtime` checks an existing role for:
   - attributes: it must be exactly LOGIN + NOINHERIT, with no SUPERUSER, CREATEDB, CREATEROLE, REPLICATION or BYPASSRLS;
@@ -55,11 +55,25 @@ Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. T
   - ownership anywhere (`pg_shdepend`, database owner);
   - CREATE on any database;
   - direct schema privileges other than USAGE on `public`;
-  - privileges on unmanaged relations;
+  - privileges (table- or column-level) on unmanaged relations, matched by exact OID;
   - grant options, function grants and default privileges;
   - whether it is the connecting operator.
 
   Any finding raises `UnsafeRoleError` listing the reasons, with no credentials, and leaves attributes, password, memberships, grants and the PUBLIC schema setting unchanged (tested by snapshot). A verified runtime role is refreshed idempotently: stale table grants are revoked and the password can be rotated.
+- **The environment is verified too** (review R18 follow-up), for new and existing roles alike, because a runtime role also receives whatever PUBLIC holds. Refused before any change:
+  - PUBLIC table or column privileges on a managed object beyond its grant map. For example, `GRANT UPDATE (capabilities) ON public.api_sessions TO PUBLIC` would let any runtime role rewrite session capabilities.
+  - Any PUBLIC privilege on an unmanaged non-system relation.
+  - PUBLIC `CREATE` on a non-system schema other than `public` (this tool revokes PUBLIC's `CREATE` on `public`).
+  - PUBLIC `CREATE` on a database.
+
+  The tool never rewrites shared PUBLIC grants to make a candidate pass; the operator must fix the environment deliberately. A PUBLIC privilege that is already inside the map (for example SELECT on a managed table) is accepted.
+- **Exact object identity.** Managed objects are `public.<name>`, resolved by OID; grants are applied to schema-qualified names. A same-name table in another schema is unmanaged, and a candidate grant on it is refused.
+- **Atomic and verified.** Role creation, password change, the PUBLIC `CREATE` revoke on `public`, and all grants run in one transaction. Before commit, effective privileges (direct and via PUBLIC: `has_table_privilege` and `has_any_column_privilege` for every table privilege kind, plus `has_schema_privilege` CREATE on every non-system schema) must match the map exactly. Otherwise everything rolls back.
+- **Scope of these guarantees:**
+  - covered: the current database's relations, columns and schemas, and the cluster's databases (CREATE);
+  - accepted as PostgreSQL defaults: PUBLIC's default EXECUTE on functions and TEMP on the database;
+  - not scanned: objects in other databases of the cluster, large objects, and privileges a superuser or owner grants after `grant-runtime` ran (rerun it to re-verify);
+  - nothing here is a general PostgreSQL security audit.
 - `grant_runtime` refuses to run if any table lacks an explicit entry in `RUNTIME_PRIVILEGES`, and a test pins the table set, so every new migration must decide its grants.
 - It also revokes `CREATE` on schema `public` from PUBLIC (PostgreSQL 14 allows it by default).
 - A runtime password, if used, comes from `SENTINEL_RUNTIME_PASSWORD`, never the command line.

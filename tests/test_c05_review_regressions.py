@@ -17,35 +17,13 @@ from sentinel import observability
 from sentinel.db import roles
 from test_thin_path import ANALYST, Harness, alerting_case, approve_pending
 
-OLD_PASSWORD = "SYNTHETIC-OLD-PASSWORD-r18"
+from conftest import R18_OLD_PASSWORD as OLD_PASSWORD
 # Resolved with a fallback so these tests exercise grant_runtime on code that predates the
 # error class (there they fail with DID NOT RAISE, i.e. the unsafe role was accepted).
 UnsafeRoleError = getattr(roles, "UnsafeRoleError", Exception)
 
 
 # ---- R18 ---------------------------------------------------------------------------------
-
-@pytest.fixture
-def make_role(database_url):
-    created = []
-
-    def make(attributes="LOGIN NOINHERIT", password=OLD_PASSWORD):
-        name = f"r18_{uuid.uuid4().hex[:10]}"
-        with psycopg.connect(database_url, autocommit=True) as conn:
-            conn.execute(sql.SQL("CREATE ROLE {} " + attributes + " PASSWORD {}").format(
-                sql.Identifier(name), sql.Literal(password)))
-        created.append(name)
-        return name
-
-    yield make
-    with psycopg.connect(database_url, autocommit=True) as conn:
-        conn.execute("ALTER TABLE audit_events ENABLE TRIGGER ALL")
-        for name in created:
-            conn.execute(sql.SQL("REASSIGN OWNED BY {} TO CURRENT_USER").format(
-                sql.Identifier(name)))
-            conn.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(name)))
-            conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(name)))
-
 
 def snapshot(database_url, role):
     """Everything a rejection must leave unchanged: attributes, password hash, memberships,

@@ -8,8 +8,8 @@
 - Owner: Claude Code. Accepted dependency: C01 at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. No C02 code imported.
 - Tool and worktree: Claude Code, E:\PHANI\sentinel-wt\claude-backend-reliability (branch task/claude-backend-reliability)
 - Updated: 2026-10-23
-- State: R18–R20 corrections ready for Codex re-review. 0119ca7 was CHANGES REQUESTED (docs/reviews/0119ca7.md on task/coordination).
-- Code reference tested before this note: working tree on top of 0119ca73e6ae3b4df9f9eeffcea8b15911f716e6 (strict checks rerun after the correction commit; reported in chat)
+- State: remaining-R18 correction ready for Codex re-review. b3b34ac was CHANGES REQUESTED for R18 only (docs/reviews/b3b34ac.md); R19/R20 and the operator notes were resolved there and are unchanged.
+- Code reference tested before this note: working tree on top of b3b34acfc79fbca3856877594e8b030dc14a66e0 (strict checks rerun after the follow-up commit; reported in chat)
 - Owned/changed paths: src/sentinel/observability.py (new), src/sentinel/db/roles.py (new), src/sentinel/api.py (middleware, metrics, logging), src/sentinel/service.py (overview single statement, investigator deadline and fault handling, events), src/sentinel/db/__init__.py (connect timeout), src/sentinel/cli.py (`grant-runtime`), tests/test_reliability.py (new), tests/test_db_roles.py (new), docs/security/README.md (new), this note. contracts/ and web/ are unchanged; the HTTP examples and OpenAPI are byte-identical.
 
 ## Implemented
@@ -86,9 +86,36 @@ Test-first evidence: on 0119ca7, `tests/test_c05_review_regressions.py` gave 22 
   - the ownership case uses an owned sequence, because an unmanaged table trips the existing grant-map check instead.
 - After the fix: focused C05 suites (regressions 28 + roles 17 + reliability 19) pass, 64/64.
 
+## Review follow-up: remaining R18 effective privileges (on top of b3b34ac)
+
+Changed paths: src/sentinel/db/roles.py, tests/conftest.py (the shared `make_role` fixture moved here; it was in test_c05_review_regressions.py), tests/test_c05_review_regressions.py (fixture import only), tests/test_c05_r18_followup.py (new), docs/security/README.md, this note. contracts/ and web/ are unchanged; the R19/R20/logging code is untouched.
+
+- **`environment_reasons`** (runs for new and existing roles before any change) refuses:
+  - PUBLIC table or column privileges on managed objects beyond the map;
+  - any PUBLIC privilege on unmanaged non-system relations;
+  - PUBLIC CREATE on non-system schemas other than `public`;
+  - PUBLIC CREATE on databases.
+
+  Shared PUBLIC grants are never rewritten to make a candidate pass.
+- **Exact identity:** managed objects are resolved by OID (`to_regclass('public.<name>')`). Candidate table and column ACLs are matched by OID, and grants use schema-qualified identifiers. Messages show explicit `schema.relation`.
+- **One transaction:** CREATE ROLE, the password change, the public-schema CREATE revoke and the grants commit together. `verify_effective` compares effective privileges (direct and via PUBLIC, table and column level, schema CREATE) with the map before commit and rolls back on any mismatch.
+- **Narrowed claims:** docs state the covered scope (current database's relations, columns and schemas; databases' CREATE). PUBLIC's default function EXECUTE and database TEMP are accepted. Other databases' objects are not scanned. The unconditional "no CREATE in any schema" statement is replaced by the scoped, verified one.
+
+Test-first evidence: on b3b34ac, `tests/test_c05_r18_followup.py` gave 4 failed, 2 passed. The failures were DID NOT RAISE for:
+- PUBLIC UPDATE(capabilities) on public.api_sessions;
+- a candidate DELETE on probe_other.api_sessions (same name, other schema);
+- PUBLIC CREATE on schema probe_other;
+- PUBLIC SELECT on an unmanaged probe_other.notes.
+
+The 2 that passed are guards: PUBLIC SELECT inside the map is allowed, and effective privileges exactly match the map after a refresh that removes stale direct DELETE/TRUNCATE and column-UPDATE grants (the case the review confirmed already worked).
+
+Each refusal test snapshots role attributes, password hash and all table, column and schema ACLs naming the role or PUBLIC, and compares them after refusal without printing them. It also confirms a brand-new role is refused and not created.
+
+Two fixes before counting: the `make_role` fixture moved into conftest (pytest registers fixtures by attribute name, so an aliased import was not found); and messages now use explicit schema-qualified names (`regclass::text` drops `public.`). After the fix: the 6 follow-up + 28 review regressions + 17 role + 19 reliability tests all pass (70).
+
 ## Next action
 
-Codex: re-review the R18–R20 correction commit. `X-Request-ID` stays an optional, undeclared diagnostic header (no UI reliance) until an accepted HTTP revision declares it.
+Codex: re-review the remaining-R18 follow-up commit. `X-Request-ID` stays an optional, undeclared diagnostic header (no UI reliance) until an accepted HTTP revision declares it.
 
 ## Coordination and provenance
 
