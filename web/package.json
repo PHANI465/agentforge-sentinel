@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "test": "vitest run",
-    "test:e2e": "node e2e/support/scan-artifacts.mjs --self-test && playwright test --reporter=line"
+    "test:e2e": "node e2e/support/scan-artifacts.mjs --self-test && node e2e/support/shutdown-harness.mjs && playwright test --reporter=line"
   },
   "dependencies": {
     "@fontsource/public-sans": "^5.2.5",

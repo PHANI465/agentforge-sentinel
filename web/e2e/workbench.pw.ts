@@ -3,7 +3,7 @@ import path from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { api, connect, credentialRecoverable } from "./support/session";
 import { inspectCase, postActionDirect, restart, scenario, seed, stackStatus } from "./support/stack";
-import { runtimeDir } from "./support/runtime";
+import { failureProbeMarker, runtimeDir } from "./support/runtime";
 
 test.describe.configure({ mode: "serial" });
 
@@ -488,18 +488,14 @@ test("sign-out and reload do not recover the session credential", async ({ page 
   expect(await credentialRecoverable(page)).toBe(false);
 });
 
-test("saves a post-login failure artifact without the session credential", async ({ page }, testInfo) => {
+test("records a real post-login failure without the session credential", async ({ page }) => {
+  test.fail();
   await connect(page, "analyst");
-  const snapshot = await page.locator("body").ariaSnapshot();
-  await testInfo.attach("deliberate-failure", {
-    body: `Error: artifact probe\n\n${snapshot}\n`,
-    contentType: "text/plain",
-  });
-  const leaked = await page.evaluate(async (text) => {
+  await expect(page.getByRole("heading", { name: "Case queue" })).toBeVisible();
+  const leaked = await page.evaluate(async () => {
     const token = await window.sentinelTakeToken();
-    return text.includes(token);
-  }, snapshot);
+    return document.body.innerText.includes(token);
+  });
   expect(leaked).toBe(false);
-  expect(snapshot).toContain("Case queue");
-  expect(snapshot).not.toContain("Session token");
+  expect(false, failureProbeMarker).toBe(true);
 });

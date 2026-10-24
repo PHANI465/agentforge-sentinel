@@ -1,30 +1,16 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, lstatSync, readdirSync, readFileSync, rmdirSync, rmSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
-import { webRoot, readRuntime, runtimeDir, type RuntimeFile } from "./support/runtime";
+import { executeViteAction, interpretStop, planChildShutdown, queryProcess, recoveryDocument, runAuthority } from "./support/process-identity.mjs";
+import { failureProbeMarker, readRuntime, runtimeDir, runtimePath, webRoot, type RuntimeFile } from "./support/runtime";
 
-type StopReport = {
-  ok?: boolean;
-  state_removed?: boolean;
-  errors?: string[];
-};
+type StopReport = { ok?: boolean; errors?: string[] };
+type ScanReport = { result: string; files: number; hits: number; code?: string };
 
-function commandLine(pid: number): string {
-  const result = spawnSync(
-    "powershell",
-    ["-NoProfile", "-Command", `(Get-CimInstance Win32_Process -Filter "ProcessId=${pid}").CommandLine`],
-    { encoding: "utf8", windowsHide: true },
-  );
-  return result.stdout || "";
-}
-
-function pidAlive(pid: number): boolean {
-  const result = spawnSync("tasklist", ["/FI", `PID eq ${pid}`, "/FO", "CSV", "/NH"], {
-    encoding: "utf8",
-    windowsHide: true,
-  });
-  return (result.stdout || "").includes(`"${pid}"`);
+function run(command: string, args: string[]) {
+  const result = spawnSync(command, args, { encoding: "utf8", windowsHide: true });
+  return { status: result.status, stdout: result.stdout ?? "" };
 }
 
 function portOpen(port: number): Promise<boolean> {
@@ -54,7 +40,7 @@ function sanitize(text: string): string {
   return text.replace(/postgresql:\/\/\S+/gi, "[dsn]").replace(/Bearer\s+\S+/gi, "Bearer [redacted]");
 }
 
-function stopStack(manifestPath: string): StopReport {
+function stopStack(manifestPath: string): StopReport | null {
   const result = spawnSync(
     "uv",
     ["run", "--locked", "python", "tests/support/browser_stack.py", "stop", "--manifest", manifestPath],
@@ -70,21 +56,32 @@ function stopStack(manifestPath: string): StopReport {
       timeout: 180_000,
     },
   );
-  if (result.error || !result.stdout) return { ok: false, errors: ["stop command failed"] };
+  if (result.error || result.status !== 0 || !result.stdout) return null;
   try {
     return JSON.parse(result.stdout) as StopReport;
   } catch {
-    return { ok: false, errors: [sanitize(result.stdout).slice(0, 200)] };
+    return null;
   }
 }
 
-function secretsFrom(manifestPath: string): string[] {
-  if (!existsSync(manifestPath)) return [];
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
-    tokens?: Record<string, string>;
-    database_url?: string;
-  };
-  return [...Object.values(manifest.tokens ?? {}), manifest.database_url ?? ""].filter((item) => item.length > 0);
+function readJson(file: string): unknown {
+  return JSON.parse(readFileSync(file, "utf8"));
+}
+
+function currentRunId(): string {
+  const parsed = readJson(path.join(runtimeDir, "current-run.json")) as { runId?: unknown };
+  return typeof parsed.runId === "string" ? parsed.runId : "";
+}
+
+function retainedSecrets(file: string, runId: string): string[] | null {
+  try {
+    const parsed = readJson(file) as { runId?: unknown; secrets?: unknown };
+    if (parsed.runId !== runId || !Array.isArray(parsed.secrets)) return null;
+    const secrets = parsed.secrets.filter((item): item is string => typeof item === "string" && item.length > 0);
+    return secrets.length === parsed.secrets.length && secrets.length > 0 ? secrets : null;
+  } catch {
+    return null;
+  }
 }
 
 function removeVerifiedEmpty(stackDir: string, parentDir: string): boolean {
@@ -101,7 +98,7 @@ function removeVerifiedEmpty(stackDir: string, parentDir: string): boolean {
   return true;
 }
 
-function scan(secrets: string[]): { result: string; files: number; hits: number } {
+function scan(secrets: string[], exclude: string[]): ScanReport {
   const result = spawnSync(process.execPath, [path.join(webRoot, "e2e", "support", "scan-artifacts.mjs")], {
     cwd: webRoot,
     encoding: "utf8",
@@ -109,10 +106,96 @@ function scan(secrets: string[]): { result: string; files: number; hits: number 
     input: JSON.stringify({
       secrets,
       dirs: [path.join(webRoot, "test-results"), runtimeDir],
+      exclude,
+      requireSecrets: true,
     }),
   });
-  if (!result.stdout) return { result: "fail", files: 0, hits: -1 };
-  return JSON.parse(result.stdout) as { result: string; files: number; hits: number };
+  if (result.status === null || !result.stdout) return { result: "fail", files: 0, hits: -1, code: "scan_failed" };
+  try {
+    return JSON.parse(result.stdout) as ScanReport;
+  } catch {
+    return { result: "fail", files: 0, hits: -1, code: "scan_unreadable" };
+  }
+}
+
+function markerState(dir: string): "present" | "absent" | "unreadable" {
+  if (!existsSync(dir)) return "absent";
+  const pending = [dir];
+  let found = false;
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current) continue;
+    let entries;
+    try {
+      entries = readdirSync(current, { withFileTypes: true });
+    } catch {
+      return "unreadable";
+    }
+    for (const entry of entries) {
+      const full = path.join(current, entry.name);
+      if (entry.isSymbolicLink()) return "unreadable";
+      if (entry.isDirectory()) {
+        pending.push(full);
+        continue;
+      }
+      if (!entry.isFile()) return "unreadable";
+      try {
+        if (readFileSync(full, "utf8").includes(failureProbeMarker)) found = true;
+      } catch {
+        return "unreadable";
+      }
+    }
+  }
+  return found ? "present" : "absent";
+}
+
+function ownedApiStillRunning(runtime: RuntimeFile): "yes" | "no" | "unknown" {
+  const api = runtime.api;
+  if (!api?.pid || !api.creation || !api.commandLine || !api.executable) return "unknown";
+  const observed = queryProcess(api.pid, run);
+  if (!observed.available) return "unknown";
+  if (!observed.found || !observed.creation || !observed.executable) return "no";
+  const sameProcess =
+    observed.creation === api.creation &&
+    observed.executable.replaceAll("/", "\\").toLowerCase() === api.executable.replaceAll("/", "\\").toLowerCase();
+  return sameProcess ? "yes" : "no";
+}
+
+function preserve(runtime: RuntimeFile, reasons: string[]): void {
+  const recoveryPath = path.join(runtimeDir, "recovery.json");
+  if (existsSync(recoveryPath)) {
+    try {
+      const existing = readJson(recoveryPath) as { runId?: unknown };
+      if (existing.runId !== runtime.runId) {
+        writeFileSync(path.join(runtimeDir, "recovery.previous.json"), readFileSync(recoveryPath));
+      }
+    } catch {
+      writeFileSync(path.join(runtimeDir, "recovery.previous.json"), readFileSync(recoveryPath));
+    }
+  }
+  writeFileSync(
+    recoveryPath,
+    `${JSON.stringify(
+      recoveryDocument({
+        runId: runtime.runId,
+        reasons,
+        manifestPath: runtime.manifestPath,
+        vitePid: runtime.vite?.pid,
+        stackDir: runtime.stackDir,
+      }),
+    )}\n`,
+  );
+}
+
+function previousStackDir(): string {
+  const previous = path.join(runtimeDir, "runtime.previous.json");
+  if (!existsSync(previous)) return "";
+  try {
+    const parsed = readJson(previous) as { stackDir?: unknown };
+    return typeof parsed.stackDir === "string" ? parsed.stackDir : "";
+  } catch {
+    return "";
+  }
 }
 
 export default async function globalTeardown(): Promise<void> {
@@ -120,48 +203,79 @@ export default async function globalTeardown(): Promise<void> {
     await stopOwnedStack();
   } finally {
     rmSync(path.join(runtimeDir, "vite-port.txt"), { force: true });
+    rmSync(path.join(runtimeDir, "current-run.json"), { force: true });
   }
 }
 
 async function stopOwnedStack(): Promise<void> {
+  let runId = "";
+  try {
+    runId = currentRunId();
+  } catch {
+    runId = "";
+  }
   let runtime: RuntimeFile;
   try {
     runtime = readRuntime();
   } catch {
-    return;
+    throw new Error(runAuthority(runId, undefined).reason);
   }
-  const manifestPath = runtime.manifestPath;
-  const secrets = secretsFrom(manifestPath);
-  let manifest: { api?: { port?: number; pid?: number }; database?: { port?: number }; state_dir?: string } = {};
-  if (existsSync(manifestPath)) {
-    try {
-      manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as typeof manifest;
-    } catch {
-      manifest = {};
+  const auth = runAuthority(runId, runtime.runId);
+  if (!auth.ok) throw new Error(auth.reason);
+
+  const secrets = retainedSecrets(runtime.secretsPath, runId);
+  const problems: string[] = [];
+  if (!secrets) problems.push("secrets_unavailable");
+  const manifestPresent = existsSync(runtime.manifestPath);
+  const stopped = manifestPresent ? interpretStop(stopStack(runtime.manifestPath)) : interpretStop({ ok: true });
+  if (!stopped.success) problems.push(stopped.reason);
+  const apiPort = runtime.api?.port;
+  const dbPort = runtime.database?.port;
+  if (!Number.isInteger(apiPort) || !Number.isInteger(dbPort)) problems.push("ports_unrecorded");
+  const apiClosed = Number.isInteger(apiPort) ? await waitClosed(apiPort as number) : false;
+  const dbClosed = Number.isInteger(dbPort) ? await waitClosed(dbPort as number) : false;
+  if (!apiClosed || !dbClosed) problems.push("owned_ports_open");
+  const apiState = ownedApiStillRunning(runtime);
+  if (apiState === "yes") problems.push("owned_api_still_running");
+  if (apiState === "unknown") problems.push("api_identity_unavailable");
+  const emptyRemoved = existsSync(runtime.stackDir) ? removeVerifiedEmpty(runtime.stackDir, path.dirname(runtime.stackDir)) : false;
+  const decision = planChildShutdown({
+    childExited: false,
+    expected: runtime.vite,
+    observed: queryProcess(runtime.vite?.pid ?? 0, run),
+  });
+  const killed = executeViteAction(decision, run);
+  if (decision.action === "refuse" || killed.reason === "taskkill_failed") problems.push(killed.reason);
+  if (existsSync(runtime.manifestPath)) problems.push("manifest_still_present");
+  const exclude = [runtime.stackDir, runtime.secretsPath, path.join(runtimeDir, "owned-secrets.previous.json"), previousStackDir()].filter(
+    (item) => item.length > 0,
+  );
+  if (secrets) {
+    const scanned = scan(secrets, exclude);
+    if (scanned.result !== "pass" || scanned.hits !== 0 || scanned.code) {
+      problems.push(`credential_scan ${scanned.code ?? scanned.result} files=${scanned.files} hits=${scanned.hits}`);
     }
   }
-  const apiPort = manifest.api?.port;
-  const dbPort = manifest.database?.port;
-  const apiPid = manifest.api?.pid;
-  const stackDir = manifest.state_dir ?? path.dirname(manifestPath);
-  const stop = existsSync(manifestPath) ? stopStack(manifestPath) : { ok: true, state_removed: true, errors: [] };
-  const apiClosed = apiPort ? await waitClosed(apiPort) : true;
-  const dbClosed = dbPort ? await waitClosed(dbPort) : true;
-  const apiGone = apiPid ? !pidAlive(apiPid) : true;
-  const emptyRemoved = !existsSync(stackDir) ? false : removeVerifiedEmpty(stackDir, path.dirname(stackDir));
-  if (runtime.vitePid && pidAlive(runtime.vitePid) && commandLine(runtime.vitePid).includes("vite.js")) {
-    spawnSync("taskkill", ["/PID", String(runtime.vitePid), "/T", "/F"], { windowsHide: true });
+  const marker = markerState(path.join(webRoot, "test-results"));
+  if (marker !== "present") problems.push(marker === "unreadable" ? "failure_artifact_unreadable" : "controlled_failure_artifact_missing");
+  if (emptyRemoved) problems.push("removed_empty_owned_directory");
+  const hard = problems.filter((item) => item !== "removed_empty_owned_directory");
+  if (hard.length > 0) {
+    preserve(runtime, hard.map((item) => sanitize(item)));
+    throw new Error(hard.map((item) => sanitize(item)).join("; "));
   }
-  const scanned = scan(secrets);
-  const problems: string[] = [];
-  if (!stop.ok) problems.push(`stop incomplete: ${sanitize((stop.errors ?? []).join("; "))}`);
-  if (!apiClosed || !dbClosed) problems.push("owned API or database port still accepts connections");
-  if (!apiGone) problems.push("owned API process still running");
-  if (existsSync(manifestPath)) problems.push("private manifest still present");
-  if (scanned.result !== "pass" || scanned.hits !== 0) {
-    problems.push(`credential scan ${scanned.result} files=${scanned.files} hits=${scanned.hits}`);
+  rmSync(runtime.secretsPath, { force: true });
+  rmSync(runtimePath, { force: true });
+  const previousRuntime = path.join(runtimeDir, "runtime.previous.json");
+  const previousDir = previousStackDir();
+  if (!previousDir || !existsSync(previousDir)) rmSync(previousRuntime, { force: true });
+  const recoveryPath = path.join(runtimeDir, "recovery.json");
+  if (existsSync(recoveryPath)) {
+    try {
+      const existing = readJson(recoveryPath) as { runId?: unknown };
+      if (existing.runId === runId) rmSync(recoveryPath, { force: true });
+    } catch {
+      // Leave an unreadable recovery file in place.
+    }
   }
-  if (emptyRemoved) problems.push("removed one verified empty owned stack directory");
-  const hard = problems.filter((item) => !item.startsWith("removed one verified"));
-  if (hard.length > 0) throw new Error(hard.join("; "));
 }

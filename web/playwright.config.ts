@@ -1,5 +1,6 @@
 import { defineConfig } from "@playwright/test";
 import { spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,7 +45,30 @@ function chosenPort(): number {
   }
 }
 
+function chosenRun(): string {
+  mkdirSync(runtimeDir, { recursive: true });
+  const runFile = path.join(runtimeDir, "current-run.json");
+  try {
+    const fd = openSync(runFile, "wx");
+    try {
+      const runId = randomBytes(16).toString("hex");
+      writeFileSync(fd, JSON.stringify({ runId }));
+      return runId;
+    } finally {
+      closeSync(fd);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    const parsed = JSON.parse(readFileSync(runFile, "utf8")) as { runId?: unknown };
+    if (typeof parsed.runId !== "string" || !/^[0-9a-f]{32}$/.test(parsed.runId)) {
+      throw new Error("current run id is invalid");
+    }
+    return parsed.runId;
+  }
+}
+
 const port = chosenPort();
+const runId = chosenRun();
 const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
@@ -66,7 +90,7 @@ export default defineConfig({
     screenshot: "off",
   },
   webServer: {
-    command: `node e2e/support/serve.mjs --port ${port}`,
+    command: `node e2e/support/serve.mjs --port ${port} --run-id ${runId}`,
     url: `${baseURL}/`,
     timeout: 180_000,
     reuseExistingServer: false,

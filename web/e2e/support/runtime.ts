@@ -9,11 +9,26 @@ export const repoRoot = path.resolve(webRoot, "..");
 export const runtimeDir = path.join(webRoot, "e2e", ".runtime");
 export const runtimePath = path.join(runtimeDir, "runtime.json");
 
+export const failureProbeMarker = "controlled post-login failure probe";
+
+export type ProcessIdentity = {
+  pid: number;
+  creation: string;
+  executable: string;
+  commandLine: string;
+  script?: string;
+};
+
 export type RuntimeFile = {
+  runId: string;
   manifestPath: string;
+  stackDir: string;
+  secretsPath: string;
   baseURL: string;
   apiOrigin: string;
-  vitePid: number;
+  api: ProcessIdentity & { port: number };
+  database: { port: number };
+  vite: ProcessIdentity & { script: string };
 };
 
 export function readRuntime(): RuntimeFile {

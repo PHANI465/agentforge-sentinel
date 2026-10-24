@@ -35,11 +35,11 @@ npm ci
 npx playwright install chromium
 ```
 
-`npm run test:e2e` is the one browser command. It self-tests the artifact scanner, then Playwright starts `web/e2e/support/serve.mjs`. That process starts the accepted C02 stack with `tests/support/browser_stack.py start --parent-dir web/e2e/.runtime/stacks`, reads the printed manifest path and `base_url` (no token), and starts Vite on `127.0.0.1` at the port in `e2e/.runtime/vite-port.txt` with `SENTINEL_API_ORIGIN` set to that API. Playwright opens the Vite URL. Ports are not assumed to be 8000 or 5173. `SENTINEL_LIVE_CLAUDE` is `0`.
+`npm run test:e2e` is the one browser command. It self-tests the artifact scanner, runs the shutdown harness, then Playwright starts `web/e2e/support/serve.mjs`. That process starts the accepted C02 stack with `tests/support/browser_stack.py start --parent-dir web/e2e/.runtime/stacks`, reads the printed manifest path and `base_url` (no token), and starts Vite on `127.0.0.1` at the port in `e2e/.runtime/vite-port.txt` with `SENTINEL_API_ORIGIN` set to that API. The run id in `e2e/.runtime/current-run.json` is passed to the server. Playwright opens the Vite URL. Ports are not assumed to be 8000 or 5173. `SENTINEL_LIVE_CLAUDE` is `0`.
 
 The suite is serial on one disposable database. Short-lived approvals are seeded with `browser_stack.py seed` immediately before use. Expired approvals use the C02 backdated fixture. Restart coverage uses `restart-api` and `restart-db`.
 
-Teardown always runs. It stops only the stack named by the recorded manifest, then checks that the recorded API and database ports refuse connections. It terminates the recorded Vite process only after the command line contains `vite.js`. It does not kill by process name and does not delete another run's database. If the owned `sentinel-browser-*` directory is a real directory, directly inside the recorded parent, and empty, teardown removes that empty directory. It then scans `web/test-results` and `web/e2e/.runtime` (stack directories excluded) and fails the run if a session token, `database_url`, or `postgresql://` appears. A successful run leaves no API process, database process, or manifest.
+Teardown reads only the runtime record whose run id matches `current-run.json`. A stale `runtime.json` is not authority and is not used to stop a stack or kill a process. Vite is terminated only when its recorded creation time, executable, command line, and this worktree's `vite.js` path still match the live process. An exited child is not killed by a recycled PID. A foreign or reused PID is refused, and the refusal is kept in `e2e/.runtime/recovery.json` without token values. The C02 stop result is checked; a failed stop keeps that recovery record. Teardown does not kill by process name and does not delete another run's database. If the owned `sentinel-browser-*` directory is a real directory, directly inside the recorded parent, and empty, teardown removes that empty directory. The scanner then checks `web/test-results` and `web/e2e/.runtime`, excluding only the exact owned stack directory and the exact private secrets file. A missing secret set, an unreadable artifact, or a directory named `stacks` inside `test-results` cannot produce a clean scan. A successful run leaves no API process, database process, manifest, or secrets file.
 
 ### This run
 
@@ -47,7 +47,7 @@ Windows 10, Node `v24.22.1`, npm `10.9.2`, Playwright `1.64.1`, Chromium `156.0.
 
 ### Token and artifact policy
 
-Session bearers stay in the private C02 manifest, in the Playwright process, and in live `Authorization` headers. The sign-in field is set inside the page from a binding. Tests do not put the bearer in a Playwright fill or evaluate argument. Trace, video, and screenshot capture are off. The line reporter does not write an HTML or JSON report. Failure text is redacted before it is written to `e2e/.runtime/last-command.txt`. The scanner self-test plants a synthetic token and a fake DSN in a temporary tree, expects hits there, expects none in a clean file, prints only counts, and deletes the tree. A deliberate post-login accessibility snapshot is saved only after the page confirms the bearer is absent from that snapshot.
+Session bearers stay in the private C02 manifest, in `e2e/.runtime/owned-secrets.json` until the scan finishes, in the Playwright process, and in live `Authorization` headers. The sign-in field is set inside the page from a binding. Tests do not put the bearer in a Playwright fill or evaluate argument. Trace, video, and screenshot capture are off. The line reporter does not write an HTML or JSON report. Failure text is redacted before it is written to `e2e/.runtime/last-command.txt`. The scanner self-test plants a synthetic token and a fake DSN, including under a directory named `stacks`, expects those hits, expects an unreadable input and an empty secret set to fail closed, prints only counts and codes, and deletes the tree. The shutdown harness intercepts taskkill and stack stop and checks reused, foreign, missing, and exited process decisions without touching a live process. The last browser test is an expected post-login failure. Playwright writes its real `error-context.md`, and teardown requires that artifact and a clean scan of it.
 
 ### Flows covered
 
@@ -66,13 +66,17 @@ Playwright drives the React UI. Postgres assertions come from `web/e2e/support/i
 11. The foreign case is absent. Foreign detail, audit, and investigate return `not_found`. The read-only session cannot approve or execute. The second actor's execute is `action_denied`. A denied approval writes no approval row.
 12. API restart and database restart keep the closed case, the same action id, and a replay of the original idempotency key.
 13. Sign-out and reload leave the session field empty. The bearer is not in the URL, cookie, `localStorage`, or `sessionStorage`.
-14. The saved post-login snapshot contains the queue and does not contain the bearer.
+14. After sign-in, an expected failure writes Playwright's `error-context.md`. The page text does not contain the bearer, and teardown's scan of that artifact reports no hits.
 
 A closed case leaves the executed proposal on its earlier revision, so the file shows that revision as approved and executed, plus the audit line. The current revision has no new proposal.
 
 ### UI correction found while running U02
 
 Two native clicks on Execute in the same turn both called the API, because `disabled` waits for a render. `Workbench` now ignores a second mutation until the first finishes. `src/ui/App.test.tsx` failed first with two execute calls, then passed with one. The browser suite then recorded one POST and one action row.
+
+### R21 and R22
+
+Reviewed commit `7190c59da14198960397ba02b1edfc35be244a80` killed any live PID whose command line contained `vite.js`, and it could scan with an empty secret set after the manifest was gone. The shutdown harness now refuses a foreign Vite path, a reused creation time, a missing identity, an already exited child, and a stale run id, without issuing taskkill. A failed stop keeps recovery metadata. The scanner detects a canary when the manifest is absent, scans an artifact directory named `stacks`, and fails closed on an unreadable path or a missing secret set. The browser suite still covers the original flows and ends with a real post-login failure artifact.
 
 ### Gaps
 
