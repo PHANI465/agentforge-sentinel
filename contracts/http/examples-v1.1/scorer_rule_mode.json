@@ -1,0 +1,39 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/scoring"
+  },
+  "response": {
+    "alert_rule": "score >= threshold",
+    "features": {
+      "name": "thin-path-features",
+      "schema_version": "1.0",
+      "sha256": "e26c85a55b8cbb9de536a2b55bca69328b28c72299205534b34c0be5b445d01b",
+      "version": "f1"
+    },
+    "mode": "rule",
+    "model": null,
+    "notes": [
+      "Rule heuristic r1 (velocity and amount); not a probability."
+    ],
+    "results_id": null,
+    "score_semantics": "heuristic",
+    "scorer": {
+      "name": "velocity-amount-rules",
+      "schema_version": "1.0",
+      "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+      "version": "r1"
+    },
+    "scoring_kind": "rule",
+    "threshold": 0.5,
+    "threshold_policy": {
+      "name": "alert-threshold",
+      "schema_version": "1.0",
+      "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+      "version": "t1"
+    }
+  },
+  "status": 200
+}

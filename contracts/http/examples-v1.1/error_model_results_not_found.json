@@ -1,0 +1,12 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/model-results/p2"
+  },
+  "response": {
+    "error": "not_found"
+  },
+  "status": 404
+}

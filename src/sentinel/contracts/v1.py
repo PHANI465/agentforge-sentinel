@@ -24,6 +24,12 @@ Version = Annotated[str, Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-
 Revision = Annotated[StrictInt, Field(ge=1, le=2_147_483_647)]
 UnitScore = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False, strict=True)]
 Currency = Literal["USD", "INR", "GBP", "JPY"]
+# "uncalibrated_score" (v1.1): a trained model's ranking score in [0, 1]; not a probability.
+ScoreSemantics = Literal["heuristic", "estimated_probability", "uncalibrated_score"]
+FEATURE_NAMES_F1 = ("amount_minor", "is_credit", "is_foreign_currency", "account_age_days",
+                    "count_1h", "count_24h", "small_count_1h", "same_currency_sum_24h",
+                    "credit_sum_24h", "seconds_since_prev", "amount_to_median_bps",
+                    "prior_known_fraud")
 CURRENCY_EXPONENT = {"USD": 2, "INR": 2, "GBP": 2, "JPY": 0}
 MAX_MINOR_UNITS = 9_000_000_000_000
 
@@ -126,7 +132,7 @@ class Alert(Contract):
     features: ArtifactRef
     threshold_policy: ArtifactRef
     scoring_kind: Literal["rule", "model"]
-    score_semantics: Literal["heuristic", "estimated_probability"]
+    score_semantics: ScoreSemantics
     score: UnitScore
     threshold: UnitScore
 
@@ -134,8 +140,44 @@ class Alert(Contract):
     def scoring_snapshot(self):
         if self.features_as_of > self.created_at:
             raise ValueError("features are unavailable at the decision time")
-        if self.scoring_kind == "rule" and self.score_semantics != "heuristic":
-            raise ValueError("rule scores are not probabilities")
+        check_semantics(self.scoring_kind, self.score_semantics)
+        return self
+
+
+def check_semantics(kind: str, semantics: str) -> None:
+    if kind == "rule" and semantics != "heuristic":
+        raise ValueError("rule scores are heuristics, not probabilities")
+    if kind == "model" and semantics == "heuristic":
+        raise ValueError("model scores need model semantics")
+
+
+class ModelProvenance(Contract):
+    """v1.1: which accepted offline experiment produced a model score."""
+    protocol_version: Version
+    protocol_sha256: Digest
+    selection_sha256: Digest
+    candidate: Name
+    artifact_sha256: Digest
+    feature_version: Version
+    threshold_source: Literal["validation_frozen_threshold"]
+    results_id: Name
+
+
+class ScoringInputs(Contract):
+    """v1.1: the exact decision-time feature values a model scored (f1), and what they were
+    computed from. Hidden truth, scenario and future disclosures are never part of it."""
+    feature_version: Literal["f1"]
+    values: dict[str, Annotated[StrictInt, Field(ge=-1, le=MAX_MINOR_UNITS * 1000)]]
+    currency: Currency
+    history_rows: Annotated[StrictInt, Field(ge=0)]
+    disclosures_used: Annotated[StrictInt, Field(ge=0)]
+    profile_home_currency: Currency
+    profile_opened_at: Timestamp
+
+    @model_validator(mode="after")
+    def exact_feature_set(self):
+        if tuple(sorted(self.values)) != tuple(sorted(FEATURE_NAMES_F1)):
+            raise ValueError("inputs must hold exactly the f1 feature set")
         return self
 
 
@@ -149,11 +191,15 @@ class ScoringOutcome(Contract):
     features: ArtifactRef
     threshold_policy: ArtifactRef
     scoring_kind: Literal["rule", "model"]
-    score_semantics: Literal["heuristic", "estimated_probability"]
+    score_semantics: ScoreSemantics
     score: UnitScore
     threshold: UnitScore
     alerted: bool
     prior_count_1h: Annotated[StrictInt, Field(ge=0, le=MAX_MINOR_UNITS)]
+    # v1.1, model mode only. Omitted (not null) when absent, so v1 rule outcomes serialize
+    # byte-identically to the frozen v1 contract.
+    model: ModelProvenance | None = Field(default=None, exclude_if=lambda v: v is None)
+    inputs: ScoringInputs | None = Field(default=None, exclude_if=lambda v: v is None)
 
     @model_validator(mode="after")
     def decision_snapshot(self):
@@ -161,8 +207,9 @@ class ScoringOutcome(Contract):
             raise ValueError("features are unavailable at the decision time")
         if self.alerted != (self.score >= self.threshold):
             raise ValueError("alert flag disagrees with score and threshold")
-        if self.scoring_kind == "rule" and self.score_semantics != "heuristic":
-            raise ValueError("rule scores are not probabilities")
+        check_semantics(self.scoring_kind, self.score_semantics)
+        if (self.scoring_kind == "model") != (self.model is not None and self.inputs is not None):
+            raise ValueError("model outcomes (only) carry model provenance and inputs")
         return self
 
 

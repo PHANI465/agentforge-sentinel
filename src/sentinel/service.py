@@ -119,6 +119,12 @@ class Sentinel:
     investigator: Investigator
     clock: Callable[[], datetime] = utc_now
     metrics: Metrics | None = None
+    scorer: object = None  # RuleScorer by default; set once by the operator config
+
+    def __post_init__(self):
+        if self.scorer is None:
+            from sentinel.scorers import RuleScorer
+            self.scorer = RuleScorer()
 
     def _event(self, event: str, **fields) -> None:
         emit(LOG, event, logging.WARNING if event != "approval_expired" else logging.INFO,

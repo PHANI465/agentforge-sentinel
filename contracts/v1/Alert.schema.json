@@ -103,7 +103,8 @@
     "score_semantics": {
       "enum": [
         "heuristic",
-        "estimated_probability"
+        "estimated_probability",
+        "uncalibrated_score"
       ],
       "title": "Score Semantics",
       "type": "string"
