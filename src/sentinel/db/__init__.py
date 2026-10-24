@@ -9,8 +9,14 @@ from psycopg.rows import dict_row
 MIGRATIONS = Path(__file__).with_name("migrations")
 
 
+CONNECT_TIMEOUT_SECONDS = 10
+
+
 def connect(url: str) -> psycopg.Connection:
-    return psycopg.connect(url, row_factory=dict_row)
+    """Bounded connection attempts: an unreachable database fails in seconds, not minutes,
+    unless the URL sets its own connect_timeout."""
+    extra = {} if "connect_timeout" in url else {"connect_timeout": CONNECT_TIMEOUT_SECONDS}
+    return psycopg.connect(url, row_factory=dict_row, **extra)
 
 
 def migrate(url: str) -> list[str]:

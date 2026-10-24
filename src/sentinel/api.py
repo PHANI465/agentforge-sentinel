@@ -4,7 +4,9 @@ typed HTTP v1 contract (sentinel.contracts.http_v1, docs/api/README.md).
 """
 from __future__ import annotations
 
+import logging
 import os
+import time
 import uuid
 
 from fastapi import Depends, FastAPI, Query, Request
@@ -15,6 +17,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.json_schema import models_json_schema
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.routing import Match
 
 from sentinel import investigators
 from sentinel.contracts.http_v1 import (
@@ -25,7 +28,10 @@ from sentinel.contracts.v1 import (
     Approval, ApprovalDecisionInput, AuditEvent, ExecuteActionInput, InvestigationRequestInput,
     TransactionInput, TrustedContext, safe_validation_errors,
 )
+from sentinel.observability import Metrics, configure_logging, emit, request_id
 from sentinel.service import MAX_CURSOR_LENGTH, Sentinel, ServiceError
+
+HTTP_LOG = logging.getLogger("sentinel.http")
 
 MAX_BODY_BYTES = 16_384
 API_VERSION = "1.0.0"
@@ -43,6 +49,10 @@ def create_app(service: Sentinel | None = None) -> FastAPI:
     app = FastAPI(title="AgentForge Sentinel", version=API_VERSION, docs_url=None,
                   redoc_url=None)
     app.state.service = service
+    app.state.metrics = Metrics()
+    service.metrics = app.state.metrics
+    configure_logging()
+    app.add_middleware(RequestContext, metrics=app.state.metrics, router=app.router)
 
     @app.exception_handler(ServiceError)
     async def service_error(_request, error: ServiceError):
@@ -168,6 +178,68 @@ def openapi_document(app: FastAPI) -> dict:
                 operation["security"] = [{"bearer": []}]
     app.openapi_schema = doc
     return doc
+
+
+class RequestContext:
+    """Plain ASGI middleware (keeps request streaming intact): request ID, one safe event and
+    metrics per request, and containment of unexpected exceptions.
+
+    An unexpected exception is answered with the same plain-text 500 body as before (the
+    frozen C01 contract) and is not re-raised, so the server never logs its traceback or
+    message. Only the exception type name is recorded."""
+
+    BODY = b"Internal Server Error"
+
+    def __init__(self, app, metrics: Metrics, router):
+        self.app, self.metrics, self.router = app, metrics, router
+
+    def route_of(self, scope) -> str:
+        for route in self.router.routes:
+            match, _ = route.matches(scope)
+            if match in (Match.FULL, Match.PARTIAL):
+                return getattr(route, "path", "unmatched")
+        return "unmatched"
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        supplied = dict(scope.get("headers") or []).get(b"x-request-id")
+        rid = request_id(supplied.decode("latin-1") if supplied else None)
+        scope.setdefault("state", {})["request_id"] = rid
+        started = time.perf_counter()
+        status: dict = {"code": None}
+
+        async def send_with_id(message):
+            if message["type"] == "http.response.start":
+                status["code"] = message["status"]
+                headers = [h for h in message.get("headers", []) if h[0].lower() != b"x-request-id"]
+                message = {**message, "headers": [*headers, (b"x-request-id", rid.encode())]}
+            await send(message)
+
+        error_type = None
+        try:
+            await self.app(scope, receive, send_with_id)
+        except Exception as error:  # contained: type name only, never the message
+            error_type = type(error).__name__
+            if status["code"] is None:
+                status["code"] = 500
+                await send({"type": "http.response.start", "status": 500, "headers": [
+                    (b"content-type", b"text/plain; charset=utf-8"),
+                    (b"content-length", str(len(self.BODY)).encode()),
+                    (b"x-request-id", rid.encode())]})
+                await send({"type": "http.response.body", "body": self.BODY})
+        duration_ms = round((time.perf_counter() - started) * 1000, 1)
+        code = status["code"] or 500
+        route = self.route_of(scope)
+        self.metrics.observe(scope["method"], route, code, duration_ms)
+        outcome = ("unexpected_error" if error_type else "ok" if code < 400
+                   else "handled_error" if code < 500 else "server_error")
+        fields = {"request_id": rid, "method": scope["method"], "route": route, "status": code,
+                  "duration_ms": duration_ms, "outcome": outcome}
+        if error_type:
+            fields["error_type"] = error_type
+        emit(HTTP_LOG, "http_request", logging.ERROR if code >= 500 else logging.INFO,
+             **fields)
 
 
 async def read_limited(request: Request, limit: int) -> bytes:

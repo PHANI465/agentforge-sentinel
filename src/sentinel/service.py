@@ -10,8 +10,10 @@ import base64
 import binascii
 import hashlib
 import json
+import logging
 import secrets
 import uuid
+from concurrent import futures
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Callable
@@ -34,6 +36,12 @@ from sentinel.contracts.v1 import (
     intent_digest,
 )
 from sentinel.investigators import InvestigationView, Investigator, InvestigatorError
+from sentinel.observability import Metrics, emit
+
+LOG = logging.getLogger("sentinel.service")
+# The investigator gets its own budget; this grace lets an adapter's own timeout (a typed
+# InvestigatorError) win before the service-level deadline fires.
+INVESTIGATOR_GRACE_SECONDS = 2
 
 SYSTEM_ACTOR = uuid.uuid5(uuid.NAMESPACE_URL, "sentinel:system:ingest")
 # A running investigation older than its timeout plus this grace is presumed lost.
@@ -110,6 +118,13 @@ class Sentinel:
     database_url: str
     investigator: Investigator
     clock: Callable[[], datetime] = utc_now
+    metrics: Metrics | None = None
+
+    def _event(self, event: str, **fields) -> None:
+        emit(LOG, event, logging.WARNING if event != "approval_expired" else logging.INFO,
+             **fields)
+        if self.metrics is not None:
+            self.metrics.count(event)
 
     # ---- authentication -------------------------------------------------------------------
 
@@ -359,12 +374,18 @@ class Sentinel:
         _require(ctx, "read_case")
         scope = _scoped(ctx)
         where = "WHERE tenant_id = %s AND session_id = %s"
+        # One statement = one snapshot even under READ COMMITTED, so the counts agree with
+        # each other while ingestion/execution commit concurrently (C01 review follow-up).
         with db.connect(self.database_url) as conn:
-            by_state = {r["state"]: r["n"] for r in conn.execute(
-                f"SELECT state, count(*) AS n FROM cases {where} GROUP BY state", scope)}
-            counts = {table: conn.execute(f"SELECT count(*) AS n FROM {table} {where}",
-                                          scope).fetchone()["n"]
-                      for table in ("transactions", "alerts", "simulated_actions")}
+            row = conn.execute(
+                "SELECT (SELECT coalesce(json_object_agg(state, n), '{}'::json) FROM"
+                f" (SELECT state, count(*) AS n FROM cases {where} GROUP BY state) s) AS by_state,"
+                f" (SELECT count(*) FROM transactions {where}) AS transactions,"
+                f" (SELECT count(*) FROM alerts {where}) AS alerts,"
+                f" (SELECT count(*) FROM simulated_actions {where}) AS simulated_actions",
+                scope * 4).fetchone()
+        by_state = row["by_state"] or {}
+        counts = {k: row[k] for k in ("transactions", "alerts", "simulated_actions")}
         return {"cases_by_state": {state: by_state.get(state, 0) for state in CASE_STATES},
                 **counts,
                 "investigator": {"name": self.investigator.config.name,
@@ -381,13 +402,33 @@ class Sentinel:
     def investigate(self, ctx: TrustedContext, case_id: uuid.UUID, expected_revision: int,
                     ) -> dict:
         run, view = self.begin_investigation(ctx, case_id, expected_revision)
-        try:
-            finding: InvestigationFinding | None = self.investigator.investigate(view)
-            failure = None
-        except InvestigatorError as error:
-            finding, failure = None, error.code
+        finding, failure = self._run_investigator(run, view)
         self.finish_investigation(ctx, run, finding, failure)
         return self.get_case(ctx, case_id)
+
+    def _run_investigator(self, run: AgentRun, view) -> tuple[InvestigationFinding | None,
+                                                              str | None]:
+        """Run under a wall-clock deadline (budget + grace). A timeout or an unexpected
+        exception becomes a failed run (honest state), never a stuck `investigating` case.
+        The worker thread cannot be killed; if it finishes late its result is discarded,
+        because the run has already been recorded as failed."""
+        deadline = run.budget.timeout_seconds + INVESTIGATOR_GRACE_SECONDS
+        pool = futures.ThreadPoolExecutor(1, thread_name_prefix="investigator")
+        future = pool.submit(self.investigator.investigate, view)
+        try:
+            return future.result(timeout=deadline), None
+        except futures.TimeoutError:
+            self._event("investigation_timeout", run_id=str(run.id), seconds=deadline)
+            return None, "timeout"
+        except InvestigatorError as error:
+            self._event("investigation_failed", run_id=str(run.id), failure_code=error.code)
+            return None, error.code
+        except Exception as error:  # type name only: messages may carry provider output
+            self._event("investigation_failed", run_id=str(run.id),
+                        failure_code="provider_unavailable", error_type=type(error).__name__)
+            return None, "provider_unavailable"
+        finally:
+            pool.shutdown(wait=False)
 
     def begin_investigation(self, ctx, case_id, expected_revision) -> tuple[AgentRun,
                                                                              InvestigationView]:
@@ -528,6 +569,7 @@ class Sentinel:
         reopened = self._transition(conn, case, "open", now)
         self._audit(conn, ctx, reopened, uuid.uuid4(), SYSTEM_ACTOR, "system", "approval_expired",
                     "success", now)
+        self._event("approval_expired", case_id=str(case.id), revision=reopened.revision)
         return reopened
 
     # ---- approval and simulated execution --------------------------------------------------
