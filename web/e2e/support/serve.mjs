@@ -103,7 +103,9 @@ function stopStack() {
 
 function killVite() {
   if (!vite || vite.exitCode !== null || !vite.pid) return { killed: false, reason: "child_exited" };
-  if (!viteIdentity) return executeViteAction({ action: "terminate", pid: vite.pid, reason: "live_child" }, runCommand);
+  if (!viteIdentity?.creation || !viteIdentity.commandLine || !viteIdentity.executable || !viteIdentity.script) {
+    return { killed: false, reason: "identity_unavailable" };
+  }
   const decision = planChildShutdown({
     childExited: false,
     expected: viteIdentity,
@@ -125,7 +127,7 @@ function writeRecovery(reasons) {
   }
   writeFileSync(
     recoveryPath,
-    `${JSON.stringify(recoveryDocument({ runId, reasons, manifestPath, vitePid: viteIdentity?.pid, stackDir }))}\n`,
+    `${JSON.stringify(recoveryDocument({ runId, reasons, manifestPath, vitePid: vite?.pid, stackDir }))}\n`,
   );
 }
 

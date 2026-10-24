@@ -1,6 +1,5 @@
 import { defineConfig } from "@playwright/test";
 import { spawnSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -46,24 +45,34 @@ function chosenPort(): number {
 }
 
 function chosenRun(): string {
+  const invoked = process.env.SENTINEL_E2E_RUN_ID ?? "";
+  if (!/^[0-9a-f]{32}$/.test(invoked)) throw new Error("invocation_run_missing");
   mkdirSync(runtimeDir, { recursive: true });
+  for (const name of ["runtime.json", "recovery.json", "owned-secrets.json"]) {
+    const existing = path.join(runtimeDir, name);
+    if (!existsSync(existing)) continue;
+    let recorded = "";
+    try {
+      recorded = String((JSON.parse(readFileSync(existing, "utf8")) as { runId?: unknown }).runId ?? "");
+    } catch {
+      throw new Error("stale_run_needs_recovery");
+    }
+    if (recorded !== invoked) throw new Error("stale_run_needs_recovery");
+  }
   const runFile = path.join(runtimeDir, "current-run.json");
   try {
     const fd = openSync(runFile, "wx");
     try {
-      const runId = randomBytes(16).toString("hex");
-      writeFileSync(fd, JSON.stringify({ runId }));
-      return runId;
+      writeFileSync(fd, JSON.stringify({ runId: invoked }));
+      return invoked;
     } finally {
       closeSync(fd);
     }
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     const parsed = JSON.parse(readFileSync(runFile, "utf8")) as { runId?: unknown };
-    if (typeof parsed.runId !== "string" || !/^[0-9a-f]{32}$/.test(parsed.runId)) {
-      throw new Error("current run id is invalid");
-    }
-    return parsed.runId;
+    if (parsed.runId !== invoked) throw new Error("stale_run_needs_recovery");
+    return invoked;
   }
 }
 
