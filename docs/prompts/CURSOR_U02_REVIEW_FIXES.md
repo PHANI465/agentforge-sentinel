@@ -1,3 +1,5 @@
+Current re-review: bb318a1 retains R21 wrapper/config gaps; preserve R22 corrections. Follow docs/prompts/CURSOR_U02_R21_FOLLOWUP.md and docs/reviews/bb318a1.md from latest task/coordination. Earlier assignments below are scope/history; do not repeat resolved changes.
+
 # Cursor U02: correct R21/R22
 
 Continue task/cursor-browser-e2e in E:/PHANI/sentinel-wt/cursor-browser-e2e. Reviewed 7190c59da14198960397ba02b1edfc35be244a80 has CHANGES REQUESTED. Preserve newer work and the existing U01+C02 integration base ab82c3e, mutation guard and all meaningful browser flows. Do not restart U01 or merge C05/main for these fixes.

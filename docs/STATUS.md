@@ -11,7 +11,7 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 - Codex independently re-reviewed R1-R8 and found no new blocking defect in those corrections. Focused regressions: 13 passed. Strict clean-commit check: passed; full pytest 106 passed / 1 intentional live-Claude skip, 21 handoff tests, 15 schema exports, Ruff and Node checks.
 - Review scope and limitations: [c6d369f review](reviews/c6d369f.md). Claude's live-call, real-server restart and isolation-canary evidence was not independently repeated by Codex.
 - C01 is separately accepted at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. See reviews/2e6c232.md. U01/C02/C05 include that application dependency. task/coordination carries current instructions on the older c6 source; do not use its tip or old main as their application base.
-- G0 and G1 remain partial. U01 deb1037 is accepted with R14-R17 resolved. Bounded real-browser hold and escalation paths work; full U02 browser-to-database acceptance, a trained model, hosted staging and public BYOK remain incomplete.
+- G0 and G1 remain partial. U01 deb1037 is accepted with R14-R17 resolved. Bounded real-browser hold and escalation paths work; C04's offline trained model is accepted; full U02 browser acceptance, trained API inference, hosted staging and public BYOK remain incomplete.
 
 ## Delivery and review snapshot
 
@@ -20,9 +20,10 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 | C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01 continues |
 | C02 browser fixtures | 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 | ACCEPTED: Windows local fixtures; R11/R12/R13 resolved; full U02 still pending |
 | U01 analyst UI | deb10370352dc62b0abfa2a5776c185494fcb04e | ACCEPTED: R14-R17 resolved; U02 ready with accepted C02 |
-| U02 browser acceptance | 7190c59da14198960397ba02b1edfc35be244a80 | CHANGES REQUESTED: R21 exact process ownership; R22 complete credential/artifact verification |
+| U02 browser acceptance | bb318a1d283b1802e6f87e484393b50bf4a7673b | CHANGES REQUESTED: remaining R21 wrapper/config wiring; R22 corrections verified in reviewed scope |
 | C05 backend reliability | a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd | ACCEPTED: R18-R20 and operator notes resolved within local backend scope; combined stack pending |
-| C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | ACCEPTED: synthetic-data/historical-feature scope; C04 ready with explicit label-maturity protocol |
+| C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | ACCEPTED: synthetic-data/historical-feature scope; C04 separately accepted |
+| C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 ready |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -30,15 +31,15 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor now implements [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 7190c59 is delivered with R21/R22 changes requested; see [the review](reviews/7190c59.md) and [Cursor follow-up](prompts/CURSOR_U02_REVIEW_FIXES.md). C05 a8294f6 is separately accepted; see [the acceptance](reviews/a8294f6.md). R18-R20 and operator notes are resolved. Preserve its tested C01-based branch for later combined-stack verification; do not interrupt Cursor's current U02 dependency snapshot. C03 is accepted and Claude starts [C04](prompts/CLAUDE_C04.md). WSL changes, GitHub provisioning and main integration remain pending.
+U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor now implements [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 bb318a1 retains R21 entry-point gaps; see [the re-review](reviews/bb318a1.md) and [Cursor follow-up](prompts/CURSOR_U02_R21_FOLLOWUP.md). Preserve resolved R22 corrections. C05 a8294f6 is separately accepted; see [the acceptance](reviews/a8294f6.md). R18-R20 and operator notes are resolved. Preserve its tested C01-based branch for later combined-stack verification; do not interrupt Cursor's current U02 dependency snapshot. C04 09b5378 is accepted; see [the acceptance](reviews/09b5378.md). Claude starts [C07](prompts/CLAUDE_C07.md) in a dedicated integration worktree; U03 still waits for its accepted HTTP dependency. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Immediate executable queue
 
-1. Cursor corrects U02 7190c59 R21/R22 on its existing U01+C02 branch using prompts/CURSOR_U02_REVIEW_FIXES.md; the browser acceptance is not complete.
-2. C03 a8e716c is accepted. Claude starts C04 in its dedicated worktree from that exact commit using prompts/CLAUDE_C04.md; define label maturity before fitting.
-3. Preserve accepted C05 a8294f6 and U01 deb1037. Combine accepted backend/frontend/browser packages only with the later integrated checks; main remains unchanged.
-4. Codex reviews corrected U02, C04 when delivered, and pending C06/C08. C07/U03 retain their model/result-contract gates.
-5. Existing laptop/subscriptions/free resources only. WSL/GitHub provisioning and hosted release remain pending; no live-model ordinary tests or extra spending.
+1. Cursor corrects remaining U02 R21 wrapper/config wiring on bb318a1 using prompts/CURSOR_U02_R21_FOLLOWUP.md; preserve R22 and accepted U01/C02 dependencies.
+2. C04 09b5378 is accepted. Claude starts C07 using prompts/CLAUDE_C07.md, including named accepted C05/C02 dependencies in its dedicated worktree; publish the HTTP candidate early.
+3. U03 waits for explicit Codex acceptance of the C07 model-results HTTP dependency. No UI model-field invention or premature serving acceptance.
+4. Codex reviews corrected U02, C07 deliveries and pending C06/C08. Main/hosting/public-BYOK gates remain separate; all combined-stack checks must run after integration.
+5. Existing laptop/subscriptions/free resources only. No live-model ordinary tests, extra spending, WSL changes or GitHub provisioning is implied.
 
 ## Evidence history
 

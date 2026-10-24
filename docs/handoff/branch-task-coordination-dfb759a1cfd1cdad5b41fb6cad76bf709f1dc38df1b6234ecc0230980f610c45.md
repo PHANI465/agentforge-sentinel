@@ -128,3 +128,12 @@ Reviewed exact U02 7190c59 read-only. Independent25 frontend tests, typecheck/bu
 C03 a8e716c passed independent21 data tests (6.95s), Ruff,21 helpers,15 schemas and Node, and is accepted within the source-checkout synthetic-data/feature scope. Default split independently confirmed20 eligible fraud /0 legitimate rows; C04 must define a mature longer history and evaluation protocol. Partial manifest-summary verification and output-only max_rows are explicit bounded caveats with ML snapshot guards. See docs/reviews/a8e716c.md and docs/prompts/CLAUDE_C04.md. Owner127+1 full result remains attributed.
 
 Implementation branches/main unchanged; no provider calls, installs, outside databases or foreign process actions. Accepted U01/C02/C05 remain accepted. Cursor and Claude have disjoint next tasks; C06/C08 and model-serving/hosting/integrator gates remain. Previously checked coordination reference: af5dccd21595ca1889d7e3563f59798d3959bf07. Final checks after this documentation commit belong in the ignored report/final chat.
+
+
+## C04 accepted; U02 entry-point R21 remains
+
+Accepted C04 09b5378150faed06caa73b0384b9ff095c095eb8 after independent 29 ML tests (39.61s), Ruff, 21 helpers, 15 schemas, Node and a full frozen --reproduce=true run. Tracked protocol/selection/artifact/report hashes stayed unchanged. Protocol digest unchanged from 0ecd476; final report correction changes only selection_sha256. Owner 156+1 strict result remains attributed. See docs/reviews/09b5378.md and new C07 assignment.
+
+U02 bb318a1 passes independent scanner self-test,20 intercepted helper checks,25 frontend tests/typecheck/build. Actual entry-point probe still shows missing-identity taskkill fallback/no recovery and stale run-ID adoption; every mutation was intercepted and no real process/filesystem state was changed. R21 remains open; R22 corrections address reviewed cases. Owner 14-browser/215+1 evidence remains attributed; no unsafe browser rerun was launched. See docs/reviews/bb318a1.md and prompts/CURSOR_U02_R21_FOLLOWUP.md.
+
+New disjoint tasks: Claude C07 (named accepted C04+C05+C02 dependencies; early contract handoff) and Cursor remaining U02 R21. U03/CI/hosting/integrator gates remain; C06/C08 pending. No implementation branch/main edits, installs, live LLM/provider calls or external databases by Codex; only local CPU training/reproduction and safe probes. Previously checked coordination reference: dbfd758c3616ecbd8b0a6ac4fc667c88bd579281. Final after-commit checks belong in the ignored report/final chat.

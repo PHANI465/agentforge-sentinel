@@ -1,3 +1,5 @@
+Completed: C04 is accepted at 09b5378150faed06caa73b0384b9ff095c095eb8 for offline synthetic training/evaluation. Preserve its frozen p1 artifacts/results. See docs/reviews/09b5378.md; the next task is docs/prompts/CLAUDE_C07.md from latest coordination. Do not repeat the historical C04 assignment below.
+
 # Claude C04: trained fraud baselines and reproducible evaluation
 
 C03 is ACCEPTED at a8e716cdec38fad1c316c6ffa2b722601b50b41d. C05 a8294f6 is separately accepted and stays intact. Cursor corrects U02 R21/R22 in its own worktree. Your next substantive task is C04; implement models, artifacts and evidence, not only a plan.
