@@ -208,7 +208,8 @@ class ScoringOutcome(Contract):
         if self.alerted != (self.score >= self.threshold):
             raise ValueError("alert flag disagrees with score and threshold")
         check_semantics(self.scoring_kind, self.score_semantics)
-        if (self.scoring_kind == "model") != (self.model is not None and self.inputs is not None):
+        present = (self.model is not None, self.inputs is not None)
+        if present != ((True, True) if self.scoring_kind == "model" else (False, False)):
             raise ValueError("model outcomes (only) carry model provenance and inputs")
         return self
 

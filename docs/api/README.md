@@ -150,6 +150,10 @@ Status: **candidate for Codex review; not accepted.** U03 must not consume it un
 2. Run `sentinel.cli migrate` (applies `0004_scoring_profiles.sql`), then `grant-runtime` (adds SELECT on `account_profiles` and `fraud_disclosures`).
 3. Run `create-session`, then load inputs for that tenant and session as the schema owner:
    - `python -m sentinel.cli provision-accounts --tenant T --session S --file profiles.jsonl`, with one `{"account_id", "home_currency", "opened_at"}` object per line;
-   - `python -m sentinel.cli record-disclosures --tenant T --session S --file disclosures.jsonl`, with `{"external_id", "account_id", "is_fraud", "disclosed_at"}` per line. Only disclosures with `disclosed_at <= decision time` count.
+   - `python -m sentinel.cli record-disclosures --tenant T --session S --file disclosures.jsonl`, with `{"external_id", "account_id", "is_fraud", "disclosed_at"}` per line. A disclosure counts for a decision only if it was both disclosed (`disclosed_at`) and recorded by this service (`recorded_at`) by that decision's time.
+   - Loads are synchronized with model decisions per account (decision 0006, R23):
+     - a load waits for in-flight decisions on its accounts, and those decisions wait for it;
+     - a load never changes a decision already in progress; later decisions see it;
+     - files load in chunks of at most 256 rows, each committed separately and reported, so a failure leaves earlier chunks committed.
 4. Start the API with `SENTINEL_SCORER=model:hgb_balanced@p1` and the runtime-role URL. Leaving it unset, or setting `rule`, keeps the default rule.
 5. Switching scorers never rescores stored outcomes or cases.

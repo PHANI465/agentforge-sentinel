@@ -59,6 +59,9 @@ class ServiceError(Exception):
 
 
 MAX_CURSOR_LENGTH = 200
+# Distinct accounts one operator batch may lock at once (advisory locks share the server's
+# lock table); the CLI loads larger files in chunks of this size, one transaction each.
+MAX_LOCKED_ACCOUNTS = 256
 
 
 def encode_cursor(created_at: datetime, case_id) -> str:
@@ -171,14 +174,13 @@ class Sentinel:
         _require(ctx, "ingest_transaction")
         input_sha = canonical_digest("sentinel.transaction-input.v1", data.model_dump(mode="json"))
         tenant, session = _scoped(ctx)
-        account_key = f"{tenant}:{session}:{data.account_id}"
         for _ in range(2):
             try:
                 with db.connect(self.database_url) as conn, conn.transaction():
                     # One decision per account at a time, so each sees exactly the history
                     # committed before its decision time, which is read after the lock (R3).
-                    conn.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
-                                 (account_key,))
+                    # Operator profile/disclosure writers take the same lock (R23).
+                    self._lock_accounts(conn, tenant, session, [data.account_id])
                     now = self.clock()
                     if data.occurred_at > now:
                         raise ServiceError("future_event_time", 422)
@@ -288,11 +290,14 @@ class Sentinel:
             " AND (ingested_at, external_id) < (%s, %s)",
             (tenant, session, txn.account_id, txn.occurred_at - timedelta(days=30),
              txn.occurred_at, now, txn.external_id))]
+        # Available = recorded by this service by the decision time (writers stamp
+        # recorded_at after taking this account's lock, which this decision holds), and
+        # disclosed by then; a backdated disclosed_at alone is not availability (R23).
         known = conn.execute(
             "SELECT count(*) AS n FROM fraud_disclosures WHERE tenant_id = %s"
             " AND session_id = %s AND account_id = %s AND is_fraud AND disclosed_at <= %s"
-            " AND external_id <> %s",
-            (tenant, session, txn.account_id, now, txn.external_id)).fetchone()["n"]
+            " AND recorded_at <= %s AND external_id <> %s",
+            (tenant, session, txn.account_id, now, now, txn.external_id)).fetchone()["n"]
         account = {"home_currency": profile["home_currency"],
                    "opened_at": profile["opened_at"].isoformat()}
         row = txn.model_dump(mode="json")
@@ -313,10 +318,30 @@ class Sentinel:
 
     # ---- operator provisioning (CLI only; no HTTP route) ------------------------------------
 
+    @staticmethod
+    def _lock_accounts(conn, tenant_id, session_id, account_ids) -> list[int]:
+        """Take the scoped account decision locks (transaction-scoped) in one global order:
+        ascending lock key, deduplicated, so overlapping batches cannot deadlock. Returns the
+        keys in the order taken."""
+        tenant, session = uuid.UUID(str(tenant_id)), uuid.UUID(str(session_id))
+        names = sorted({f"{tenant}:{session}:{uuid.UUID(str(a))}" for a in account_ids})
+        if len(names) > MAX_LOCKED_ACCOUNTS:
+            raise ServiceError("batch_too_large", 413)
+        keys = [row["k"] for row in conn.execute(
+            "SELECT DISTINCT hashtextextended(n, 0) AS k FROM unnest(%s::text[]) AS n"
+            " ORDER BY k", (names,))]
+        for key in keys:
+            conn.execute("SELECT pg_advisory_xact_lock(%s)", (key,))
+        return keys
+
     def provision_accounts(self, tenant_id, session_id, accounts: list[dict]) -> int:
-        """Upsert account profiles for one scope. Operator credentials, not the API."""
-        now = self.clock()
+        """Upsert account profiles for one scope. Operator credentials, not the API. Takes
+        every affected account's decision lock first and stamps provisioned_at only then, so
+        a decision in flight keeps the profile it read and later decisions see this one."""
         with db.connect(self.database_url) as conn, conn.transaction():
+            self._lock_accounts(conn, tenant_id, session_id,
+                                [a["account_id"] for a in accounts])
+            now = self.clock()
             for a in accounts:
                 conn.execute(
                     "INSERT INTO account_profiles (tenant_id, session_id, account_id,"
@@ -329,9 +354,12 @@ class Sentinel:
         return len(accounts)
 
     def record_disclosures(self, tenant_id, session_id, disclosures: list[dict]) -> int:
-        """Record disclosed outcomes with the time they became known (append-only)."""
-        now = self.clock()
+        """Record disclosed outcomes (append-only). recorded_at, the availability time, is
+        read after every affected account's decision lock is held (see provision_accounts)."""
         with db.connect(self.database_url) as conn, conn.transaction():
+            self._lock_accounts(conn, tenant_id, session_id,
+                                [d["account_id"] for d in disclosures])
+            now = self.clock()
             for d in disclosures:
                 conn.execute(
                     "INSERT INTO fraud_disclosures (tenant_id, session_id, external_id,"

@@ -57,10 +57,16 @@ def main(argv: list[str] | None = None) -> int:
         import json
         rows = [json.loads(line) for line in args.file.read_text(encoding="utf-8").splitlines()
                 if line.strip()]
+        from sentinel.service import MAX_LOCKED_ACCOUNTS
         service = Sentinel(url, from_environment())
         load = (service.provision_accounts if args.command == "provision-accounts"
                 else service.record_disclosures)
-        print(f"{args.command}: {load(args.tenant, args.session, rows)} rows")
+        # Each chunk is one transaction under its accounts' decision locks; a failure leaves
+        # earlier chunks committed (reported), so loads are rerunnable per chunk.
+        loaded = 0
+        for start in range(0, len(rows), MAX_LOCKED_ACCOUNTS):
+            loaded += load(args.tenant, args.session, rows[start:start + MAX_LOCKED_ACCOUNTS])
+            print(f"{args.command}: {loaded}/{len(rows)} rows committed")
         return 0
     if args.command == "migrate":
         applied = db.migrate(url)
