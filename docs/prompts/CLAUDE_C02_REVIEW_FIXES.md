@@ -1,3 +1,5 @@
+Current state: C02 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 is ACCEPTED for the reviewed Windows local fixture scope; R11/R12/R13 are resolved. See docs/reviews/0e72b0b.md. No further blocking C02 correction is requested. Claude's current dispatch is docs/prompts/CLAUDE_C05_REVIEW_FIXES.md; the brief below is historical context, not a request to repeat completed work.
+
 Current follow-up: C02 66214bb was re-reviewed and still has R11/R12 changes requested; R13 is corrected. Read docs/prompts/CLAUDE_C02_FOLLOWUP.md and docs/reviews/66214bb.md from the latest task/coordination reference. The original correction brief below remains historical context, not acceptance or the current dispatch.
 
 # Claude: C02 review corrections R11-R13

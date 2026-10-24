@@ -23,4 +23,4 @@ Write a deferred mutation-refresh regression that fails on 5055321. Correct quer
 
 Keep the fix bounded. Retain existing direct reversed-response, duplicate-Next, escalation, expiry and contrast tests. Run frontend tests and typecheck/build, update your handoff, stage explicit owned paths, commit, then run normal strict checks after the final commit. Ordinary checks stay deterministic with live Claude off; no audit retry, package migration or new dependency is required for this fix. Return exact SHA, actual failing-first/new tests, final results and gaps.
 
-U02 remains a separate task gated on accepted corrected U01 and C02. Do not consume an unaccepted C02 commit or start U02 early. Do not merge main.
+C02 is accepted at 0e72b0bd599ff1707ca5b2507d65a0927894cbe0. U02 remains separate and waits for acceptance of corrected U01; only then include this C02 commit and read its docs/api/browser-fixtures.md (start uses --parent-dir). Keep tokens out of saved artifacts, including captured request headers and traces; authenticated tracing stays disabled unless complete redaction is verified. Do not import unaccepted C05 or merge main.

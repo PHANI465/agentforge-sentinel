@@ -1,3 +1,5 @@
+Current state: C02 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 is ACCEPTED for the reviewed Windows local fixture scope; R11/R12/R13 are resolved. See docs/reviews/0e72b0b.md. No further blocking C02 correction is requested. Claude's current dispatch is docs/prompts/CLAUDE_C05_REVIEW_FIXES.md; the brief below is historical context, not a request to repeat completed work.
+
 # Claude C02 re-review follow-up: remaining R11/R12
 
 Continue task/claude-browser-fixtures in E:/PHANI/sentinel-wt/claude-browser-fixtures. Reviewed candidate is 66214bb466fe9810df5a306f12137606ba2c0251; it is NOT accepted. R13 is corrected. R11/R12 have the remaining concrete failures below. Preserve the existing commits and unfamiliar/uncommitted work; inspect actual Git state first. No reset or main merge.

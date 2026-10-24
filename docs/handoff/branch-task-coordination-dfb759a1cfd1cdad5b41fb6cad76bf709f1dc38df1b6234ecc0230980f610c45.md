@@ -85,3 +85,11 @@ Reviewed exact 5055321cfa810a2108d184e5542785cf44977edc, accepted C01 ancestor r
 Cursor receives docs/prompts/CURSOR_U01_R15_FOLLOWUP.md, preserving completed corrections and fixing only this query-context failure. Fresh strict results, if completed in parallel, are recorded externally. Reviewer loopback resources/ports and the verified disposable directory were cleaned; no model calls or implementation edits. C02 retains its separate review gate; U02 waits for accepted U01 and C02. Main remains unchanged.
 
 Previously checked coordination reference: 8924b73c9af18437b8da1149871a017ed89a584b. Final checks after this documentation commit belong in the ignored report/final chat.
+
+## C02 accepted; C05 reviewed with changes requested
+
+C02 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 passes independent process-free17 and combined40 focused tests (367.59s), Ruff,21 helper tests,15 schemas,HTTP frozen exports and Node. R11/R12/R13 resolved within Windows local scope. Final empty-directory rmdir failure is an explicit nonblocking/manual-cleanup caveat; no active resource or secret is left. Full215 strict record belongs to Claude; no independent full repeat is claimed.
+
+C05 0119ca73e6ae3b4df9f9eeffcea8b15911f716e6 passes independent36 focused tests and ordinary compatibility/helper checks but has concrete R18 unsafe existing roles, R19 timeout parsing and R20 unbounded HTTP-method metric labels. See docs/reviews/0119ca7.md and docs/prompts/CLAUDE_C05_REVIEW_FIXES.md. Optional X-Request-ID remains diagnostic; C01 bodies/status/OpenAPI stay frozen and no UI dependency or new endpoint is added.
+
+Cursor finishes U01 R15, then after acceptance consumes accepted C02 for U02; C05 remains unaccepted. Implementation worktrees and main were not changed. Reviewer probes/stacks were owned and cleaned; no models or unrelated databases were touched. Previously checked coordination reference: b4e9438c169bf73671eabfba84075d3030ecd649. Final checks after this documentation commit belong in the ignored report/final chat.
