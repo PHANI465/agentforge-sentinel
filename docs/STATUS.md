@@ -20,7 +20,7 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 | C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01 continues |
 | C02 browser fixtures | 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 | ACCEPTED: Windows local fixtures; R11/R12/R13 resolved; full U02 still pending |
 | U01 analyst UI | deb10370352dc62b0abfa2a5776c185494fcb04e | ACCEPTED: R14-R17 resolved; U02 ready with accepted C02 |
-| C05 backend reliability | b3b34acfc79fbca3856877594e8b030dc14a66e0 | CHANGES REQUESTED: R18 effective PUBLIC grants/object identity; R19/R20 and operator notes resolved |
+| C05 backend reliability | a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd | ACCEPTED: R18-R20 and operator notes resolved within local backend scope; combined stack pending |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
@@ -29,14 +29,14 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor now implements [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 is ready for implementation; its full browser-to-database acceptance is still pending. Claude corrects remaining C05 R18 using [the re-review](reviews/b3b34ac.md) and [follow-up](prompts/CLAUDE_C05_R18_FOLLOWUP.md); R19/R20 and the operator notes are resolved on its existing C01-based worktree. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
+U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor now implements [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 is ready for implementation; its full browser-to-database acceptance is still pending. C05 a8294f6 is separately accepted; see [the acceptance](reviews/a8294f6.md). R18-R20 and operator notes are resolved. Preserve its tested C01-based branch for later combined-stack verification; do not interrupt Cursor's current U02 dependency snapshot. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Immediate executable queue
 
 1. Cursor implements U02 in its dedicated task branch/worktree from accepted U01 deb1037 plus accepted C02 0e72b0b, using prompts/CURSOR_U02.md.
-2. Claude corrects remaining C05 R18 effective privileges using prompts/CLAUDE_C05_R18_FOLLOWUP.md and returns a new tested commit; R19/R20 and operator notes are resolved.
-3. Keep C05 separate until its corrections are reviewed. The later integrator reruns all combined backend/frontend/browser and export checks; keep C01 frozen.
-4. Codex reviews corrected C05 and delivered C03/C06/C08. C04 still awaits accepted C03; U02 has both accepted dependencies and awaits actual browser-suite completion.
+2. C05 a8294f6 is accepted; Claude preserves the tested branch. No further R18-R20 correction is assigned.
+3. Finish Cursor's current U02 on its accepted U01/C02 snapshot. The later integrator includes accepted C05 and reruns combined backend/frontend/browser and export checks; keep C01 frozen.
+4. Codex reviews delivered C03/C06/C08. C04 still awaits accepted C03; U02 has its accepted dependencies and awaits actual browser-suite completion.
 5. Main, WSL/GitHub provisioning, hosted release and model expansion remain outside this acceptance.
 
 ## Evidence history

@@ -110,3 +110,12 @@ Reviewed clean b3b34acfc79fbca3856877594e8b030dc14a66e0 independently. Focused64
 Fresh owned probes confirmed an effective PUBLIC column UPDATE on api_sessions survives refresh and changed one synthetic session's capabilities. Same-name unmanaged relation grants and effective PUBLIC schema CREATE also bypass the current validation. R18 remains changes-requested; R19/R20, OFF behavior and operator scope notes are resolved. See docs/reviews/b3b34ac.md and docs/prompts/CLAUDE_C05_R18_FOLLOWUP.md. Initial direct-column-grant persistence hypothesis was disproved and is not a finding.
 
 Implementation worktrees and main were not edited. Probe clusters stopped/state removed; no models/external databases/installations. Cursor U02 keeps accepted U01/C02 and continues independently. C03/C06/C08 and model gates are unchanged. Previously checked coordination reference: 35c2acb03228e67156bc58cb58bbb924d3331916. Final checks after this documentation commit belong in the ignored report/final chat.
+
+
+## C05 a8294f6 accepted
+
+Reviewed exact a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd. R18-R20 and operator notes are resolved within the local backend scope. The effective PUBLIC/column and exact managed-object corrections pass independent70 focused tests plus Ruff,21 helpers,15 schemas,HTTP exports/examples and Node. Independent atomicity probes confirm rollback of new-role setup, existing password/grant refresh and a real SQL failure. Probe cluster stopped/state removed. Owner full245+1 counts remain attributed; matching clean strict metadata was verified. Frozen contracts/web and earlier accepted fixes are unchanged.
+
+See docs/reviews/a8294f6.md for scope and limits. Cursor is already running U02: keep its current accepted U01/C02 snapshot stable, preserve C05 for later combined-stack checks, and do not rebase or edit its worktree. C03/C06/C08 review and C04/C07/U03 gates remain. No source edits, model calls, installs, external databases or main merge by Codex.
+
+Previously checked coordination reference: 0c8f472b437ba38d6af5d60c42ba8e02a3156a5d. Final checks after this documentation commit belong in the ignored report/final chat.

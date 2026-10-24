@@ -8,7 +8,7 @@ Your current task is U02. Read and follow:
     git show task/coordination:docs/prompts/CURSOR_U02.md
     git show task/coordination:docs/TASK_QUEUE.md
 
-Use the dedicated U02 branch/worktree and exact accepted dependencies in that prompt. Preserve the U01 checkout and existing work. Do not use task/coordination or old main as the application base. Do not import unaccepted C05. No main merge.
+Use the dedicated U02 branch/worktree and exact accepted dependencies in that prompt. Preserve the U01 checkout and existing work. Do not use task/coordination or old main as the application base. Finish the named U01/C02-based U02 snapshot; C05 a8294f6 is accepted separately for later integration. No main merge.
 
 Cursor owns the actual analyst UI, browser tests, frontend lock/workflow and docs/ui/. Claude owns backend/data/ML; Codex owns review and central coordination. No concurrent edits in another tool's checkout. Tokens stay in private test memory/manifests and necessary live authorization headers, never saved artifacts. Ordinary tests use the deterministic investigator and disposable local database, not subscriptions or provider calls.
 

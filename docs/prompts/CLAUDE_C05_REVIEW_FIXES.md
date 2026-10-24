@@ -1,3 +1,5 @@
+Completed: C05 is accepted at a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd; R18-R20 and operator notes are resolved. See docs/reviews/a8294f6.md from latest task/coordination. Preserve the accepted branch; the correction instructions below are historical and must not be repeated.
+
 Current follow-up: b3b34ac resolves R19/R20 and both operator notes; R18 retains an effective PUBLIC privilege/object-identity gap. Read docs/prompts/CLAUDE_C05_R18_FOLLOWUP.md and docs/reviews/b3b34ac.md from latest task/coordination. The original assignment below is historical; do not repeat resolved corrections.
 
 # Claude C05: correct R18-R20

@@ -1,3 +1,5 @@
+Completed: C05 is accepted at a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd; R18-R20 and operator notes are resolved. See docs/reviews/a8294f6.md from latest task/coordination. Preserve the accepted branch; the correction instructions below are historical and must not be repeated.
+
 # Claude C05: remaining R18 effective privileges
 
 Continue task/claude-backend-reliability in E:/PHANI/sentinel-wt/claude-backend-reliability. Reviewed candidate b3b34acfc79fbca3856877594e8b030dc14a66e0 remains CHANGES REQUESTED for R18. R19/R20 and both operator notes are resolved; preserve them. Inspect actual HEAD/status and preserve newer work. C01 2e6c232 stays the application dependency, without C02.

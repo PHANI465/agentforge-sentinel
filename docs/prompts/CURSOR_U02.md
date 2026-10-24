@@ -12,7 +12,7 @@ Read current instructions explicitly:
 
 ## Branch and ownership
 
-Use task/cursor-browser-e2e in E:/PHANI/sentinel-wt/cursor-browser-e2e, starting from accepted U01 deb1037. If this task branch/worktree already exists, inspect its ownership, HEAD and changes and reuse it safely; never reset or overwrite unfamiliar work. Otherwise create the dedicated task worktree. Include accepted C02 0e72b0b in this task branch, resolving only legitimate task-dependency conflicts, and record the merge/integration base. This dependency merge is not a main merge. Leave the accepted U01 worktree intact. Do not import unaccepted C05 or merge task/coordination just to copy its docs.
+Use task/cursor-browser-e2e in E:/PHANI/sentinel-wt/cursor-browser-e2e, starting from accepted U01 deb1037. If this task branch/worktree already exists, inspect its ownership, HEAD and changes and reuse it safely; never reset or overwrite unfamiliar work. Otherwise create the dedicated task worktree. Include accepted C02 0e72b0b in this task branch, resolving only legitimate task-dependency conflicts, and record the merge/integration base. This dependency merge is not a main merge. Leave the accepted U01 worktree intact. Keep this U02 dependency combination stable. C05 a8294f6 is accepted separately and joins later combined-stack verification; do not interrupt/rebase running U02 work to include it. Do not merge task/coordination just to copy its docs.
 
 Own web/ (including browser tests, small test adapters and package/lock), docs/ui/, your task handoff and the frontend workflow if needed. Do not edit src/sentinel/, contracts/, backend migrations, Python dependencies or accepted tests/support/ helpers. Request backend changes with an exact reproducible request, response/status and dependency SHA rather than inventing routes or changing the API contract. Models and subscription runtimes are off.
 
@@ -51,4 +51,4 @@ Retain the current unit/regression and contrast tests. Run npm test, typecheck/b
 
 Update docs/ui/workflow.md with setup/run/teardown, actual browser/platform, fixture dependencies, token/artifact policy, tested flows and gaps. Record meaningful failing regressions for any UI correction made during U02. Stage explicit owned files, inspect for secrets, commit, then run final checks after the final commit. Return exact SHA, dependency/merge base, actual counts and commands, browser-to-database evidence, cleanup and remaining gaps. Do not claim Linux/macOS/CI/hosting or production fraud effectiveness without running/verifying them.
 
-Do not merge main. C05 b3b34ac remains unaccepted for R18 effective privileges; R19/R20 are resolved and the remaining correction stays with Claude; C07/U03 remain behind the model gates.
+Do not merge main. C05 a8294f6 is separately accepted with R18-R20 resolved; its later integration requires the combined backend/frontend/browser checks. Finish the current U02 snapshot first. C07/U03 remain behind the model gates.
