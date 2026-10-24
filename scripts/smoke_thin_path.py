@@ -3,6 +3,8 @@ between them. Prints only ids, states and codes; reads the token from SENTINEL_T
 
     python scripts/smoke_thin_path.py investigate      # ingest + investigate; prints case id
     python scripts/smoke_thin_path.py execute CASE_ID  # approve + execute + retry + audit
+    python scripts/smoke_thin_path.py model --account ID  # model mode: needs a provisioned
+                                                       # profile for ID; investigates
 """
 from __future__ import annotations
 
@@ -52,6 +54,39 @@ def investigate(http: httpx.Client) -> None:
     print(f"CASE_ID={case['id']}")
 
 
+def model(http: httpx.Client, account: str) -> None:
+    info = expect(http.get("/v1/scoring"), 200)
+    print(f"scorer mode={info['mode']} semantics={info['score_semantics']}"
+          f" threshold={info['threshold']} results={info['results_id']}")
+    now, run = datetime.now(timezone.utc), uuid.uuid4().hex[:8]
+    body = {"external_id": f"smoke-model-{run}-0", "account_id": str(uuid.uuid4()),
+            "direction": "debit", "amount": {"currency": "USD", "minor_units": 1500,
+                                             "currency_exponent": 2},
+            "occurred_at": now.isoformat()}
+    missing = http.post("/v1/transactions", json=body)
+    print(f"unprovisioned status={missing.status_code} error={missing.json().get('error')}")
+    for i, (currency, minor, minutes_ago) in enumerate([("USD", 1500, 30), ("GBP", 250_000, 0)]):
+        body = {"external_id": f"smoke-model-{run}-{i + 1}", "account_id": account,
+                "direction": "debit", "amount": {"currency": currency, "minor_units": minor,
+                                                 "currency_exponent": 2},
+                "occurred_at": (now - timedelta(minutes=minutes_ago)).isoformat()}
+        result = expect(http.post("/v1/transactions", json=body), 201)
+        scoring = result["scoring"]
+        print(f"txn {i + 1} kind={scoring['scoring_kind']} score={scoring['score']}"
+              f" alerted={scoring['alerted']} history_rows={scoring['inputs']['history_rows']}"
+              f" artifact={scoring['model']['artifact_sha256'][:12]}")
+    replay = expect(http.post("/v1/transactions", json=body), 201)
+    print(f"replay replayed={replay['replayed']} same={replay['scoring'] == scoring}")
+    case = result["case"]
+    if case:
+        print(f"case pins scorer={case['pins']['scorer']['name']} state={case['state']}")
+        view = expect(http.post(f"/v1/cases/{case['id']}/investigations",
+                                json={"expected_revision": case["revision"]}), 200)
+        print(f"investigation status={view['agent_runs'][-1]['run']['status']}"
+              f" case state={view['case']['state']} revision={view['case']['revision']}")
+        print(f"CASE_ID={case['id']}")
+
+
 def execute(http: httpx.Client, case_id: str) -> None:
     view = expect(http.get(f"/v1/cases/{case_id}"), 200)
     intent = view["action_intents"][-1]["intent"]
@@ -74,13 +109,18 @@ def execute(http: httpx.Client, case_id: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("stage", choices=("investigate", "execute"))
+    parser.add_argument("stage", choices=("investigate", "execute", "model"))
+    parser.add_argument("--account", help="model stage: a provisioned account id")
     parser.add_argument("case_id", nargs="?")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     args = parser.parse_args()
     with client(args.base_url) as http:
         if args.stage == "investigate":
             investigate(http)
+        elif args.stage == "model":
+            if not args.account:
+                parser.error("model needs --account")
+            model(http, args.account)
         elif args.case_id:
             execute(http, args.case_id)
         else:

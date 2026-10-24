@@ -47,7 +47,7 @@ Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. T
 | Identity | Can | Cannot |
 | --- | --- | --- |
 | Schema owner / operator (migrations, `create-session`, `grant-runtime`) | DDL, migrations, issue sessions | (it is trusted; not tamper-proof) |
-| Runtime API role (`python -m sentinel.cli grant-runtime --role sentinel_runtime`) | SELECT/INSERT on the domain tables; UPDATE on `cases`, `agent_runs`, `approvals`; SELECT on `api_sessions` and `schema_migrations`; USAGE on the audit sequence | ALTER/DROP the managed tables, drop or disable the audit triggers, CREATE in any non-system schema, DELETE/TRUNCATE on managed tables, UPDATE/DELETE `audit_events`, issue or modify sessions (no INSERT/UPDATE on `api_sessions`, including column-level and via PUBLIC), record migrations, effectively GRANT anything. Holds within the scope below; verified after granting |
+| Runtime API role (`python -m sentinel.cli grant-runtime --role sentinel_runtime`) | SELECT/INSERT on the domain tables; UPDATE on `cases`, `agent_runs`, `approvals`; SELECT on `api_sessions`, `schema_migrations`, `account_profiles` and `fraud_disclosures` (C07 model inputs; written only by the operator CLI); USAGE on the audit sequence | ALTER/DROP the managed tables, drop or disable the audit triggers, CREATE in any non-system schema, DELETE/TRUNCATE on managed tables, UPDATE/DELETE `audit_events`, issue or modify sessions (no INSERT/UPDATE on `api_sessions`, including column-level and via PUBLIC), record migrations, effectively GRANT anything. Holds within the scope below; verified after granting |
 
 - **Existing roles are verified, never trusted or silently demoted** (review R18). Before any password or privilege change, `grant_runtime` checks an existing role for:
   - attributes: it must be exactly LOGIN + NOINHERIT, with no SUPERUSER, CREATEDB, CREATEROLE, REPLICATION or BYPASSRLS;
@@ -79,6 +79,13 @@ Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. T
 - A runtime password, if used, comes from `SENTINEL_RUNTIME_PASSWORD`, never the command line.
 - Tests: the full thin path runs as the runtime role (sessions issued by the operator), 11 forbidden statements are rejected, a non-owner GRANT has no effect, and migration as the runtime role fails.
 - **Limit:** the owner or a superuser can still alter anything, including dropping the triggers. These roles limit a leaked runtime credential; they do not make storage tamper-proof, and they do not prevent injection in general. Queries are parameterized, and identifiers in SQL come from constants or validated names.
+
+## Trained model serving (C07)
+
+- **Only the registered artifact is loaded.** `SENTINEL_SCORER=model:hgb_balanced@p1` is the only model value. The packaged protocol, selection and manifest identities must match `sentinel.scorers.REGISTRY` before C04's `load_trusted` deserializes the installed `ml/artifacts/p1/model.joblib`, whose hash is checked again there. No path, URL or file from a request, visitor or environment variable selects an artifact. Any mismatch stops startup, and the rule is never substituted.
+- **Model inputs are operator data.** Account profiles and fraud disclosures are loaded with `sentinel.cli provision-accounts` / `record-disclosures` as the schema owner. The runtime role can only read them (tested: UPDATE/DELETE/INSERT refused). No HTTP route writes them, and a model cannot change them.
+- **The score is not an authorization.** A model score only opens a case. Investigation, approval and simulated execution keep every existing server-side guard, and a model never approves.
+- **Results are server-owned files.** `GET /v1/model-results/{id}` maps only the registry id `p1` to packaged files verified by digest. The id never becomes a path.
 
 ## Contract notes (for Codex and Cursor)
 

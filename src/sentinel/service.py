@@ -30,7 +30,8 @@ from sentinel.contracts.guards import (
 from sentinel.contracts.v1 import (
     ActionIntent, AgentRun, Alert, Approval, ApprovalDecisionInput, AuditEvent, Case, CasePins,
     EscalateParameters, EvidenceItem, ExecuteActionInput, Fact, HoldParameters,
-    InvestigationFinding, RunBudget, Scope, ScoringOutcome, SimulatedAction, Transaction,
+    InvestigationFinding, RunBudget, Scope, ScoringInputs, ScoringOutcome, SimulatedAction,
+    Transaction,
     TransactionInput,
     TrustedContext, canonical_digest, evidence_content_digest, evidence_snapshot_digest,
     intent_digest,
@@ -212,13 +213,19 @@ class Sentinel:
             " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
             (txn.id, tenant, session, txn.external_id, txn.account_id, txn.occurred_at,
              txn.ingested_at, input_sha, _dump(txn)))
-        score = scoring.rule_score(txn, prior)
+        scorer = self.scorer
+        if scorer.mode == "model":
+            score, inputs = self._model_score(conn, ctx, txn, now)
+            prior = inputs.values["count_1h"]
+            extra = {"model": scorer.model, "inputs": inputs}
+        else:
+            score, extra = scoring.rule_score(txn, prior), {}
         outcome = ScoringOutcome(
             transaction_id=txn.id, scope=ctx.scope, scored_at=now, features_as_of=now,
-            scorer=scoring.SCORER, features=scoring.FEATURES,
-            threshold_policy=scoring.THRESHOLD_POLICY, scoring_kind="rule",
-            score_semantics="heuristic", score=score, threshold=scoring.THRESHOLD,
-            alerted=score >= scoring.THRESHOLD, prior_count_1h=prior)
+            scorer=scorer.scorer, features=scorer.features,
+            threshold_policy=scorer.threshold_policy, scoring_kind=scorer.scoring_kind,
+            score_semantics=scorer.score_semantics, score=score, threshold=scorer.threshold,
+            alerted=score >= scorer.threshold, prior_count_1h=prior, **extra)
         conn.execute("INSERT INTO scoring_outcomes (transaction_id, tenant_id, session_id, score,"
                      " alerted, body) VALUES (%s, %s, %s, %s, %s, %s)",
                      (txn.id, tenant, session, score, outcome.alerted, _dump(outcome)))
@@ -226,9 +233,9 @@ class Sentinel:
             return self._ingest_result(conn, ctx, txn.id, replayed=False)
         alert = Alert(
             id=uuid.uuid4(), scope=ctx.scope, transaction_id=txn.id, created_at=now,
-            features_as_of=now, scorer=scoring.SCORER, features=scoring.FEATURES,
-            threshold_policy=scoring.THRESHOLD_POLICY, scoring_kind="rule",
-            score_semantics="heuristic", score=score, threshold=scoring.THRESHOLD)
+            features_as_of=now, scorer=scorer.scorer, features=scorer.features,
+            threshold_policy=scorer.threshold_policy, scoring_kind=scorer.scoring_kind,
+            score_semantics=scorer.score_semantics, score=score, threshold=scorer.threshold)
         conn.execute("INSERT INTO alerts (id, tenant_id, session_id, transaction_id, body)"
                      " VALUES (%s, %s, %s, %s, %s)", (alert.id, tenant, session, txn.id,
                                                       _dump(alert)))
@@ -241,8 +248,8 @@ class Sentinel:
                               "transaction_count_1h", prior)))
         case = Case(
             id=case_id, scope=ctx.scope, alert_id=alert.id, revision=1, state="open",
-            pins=CasePins(dataset=scoring.DATASET, scorer=scoring.SCORER,
-                          threshold_policy=scoring.THRESHOLD_POLICY, policy=scoring.ACTION_POLICY,
+            pins=CasePins(dataset=scoring.DATASET, scorer=scorer.scorer,
+                          threshold_policy=scorer.threshold_policy, policy=scoring.ACTION_POLICY,
                           agent_config=self.investigator.config, tool_config=scoring.TOOL_PROFILE,
                           evidence_snapshot_sha256=evidence_snapshot_digest(evidence)),
             evidence_ids=tuple(item.id for item in evidence), created_at=now, updated_at=now)
@@ -259,6 +266,80 @@ class Sentinel:
             self._audit(conn, ctx, case, correlation, SYSTEM_ACTOR, "system", event_type,
                         "success", now)
         return self._ingest_result(conn, ctx, txn.id, replayed=False)
+
+    def _model_score(self, conn, ctx, txn: Transaction, now: datetime):
+        """Exact f1 at the decision key (now, external_id) via the accepted C03 code. Only
+        rows ingested before this decision and disclosures known by now are used; a missing
+        account profile is refused, never defaulted."""
+        import numpy as np  # ml extra; rule mode never imports it
+
+        from data_pipeline.features import compute
+
+        tenant, session = _scoped(ctx)
+        profile = conn.execute(
+            "SELECT home_currency, opened_at FROM account_profiles WHERE tenant_id = %s"
+            " AND session_id = %s AND account_id = %s",
+            (tenant, session, txn.account_id)).fetchone()
+        if profile is None:
+            raise ServiceError("account_profile_missing", 422)
+        history = [row["body"] for row in conn.execute(
+            "SELECT body FROM transactions WHERE tenant_id = %s AND session_id = %s"
+            " AND account_id = %s AND occurred_at >= %s AND occurred_at < %s"
+            " AND (ingested_at, external_id) < (%s, %s)",
+            (tenant, session, txn.account_id, txn.occurred_at - timedelta(days=30),
+             txn.occurred_at, now, txn.external_id))]
+        known = conn.execute(
+            "SELECT count(*) AS n FROM fraud_disclosures WHERE tenant_id = %s"
+            " AND session_id = %s AND account_id = %s AND is_fraud AND disclosed_at <= %s"
+            " AND external_id <> %s",
+            (tenant, session, txn.account_id, now, txn.external_id)).fetchone()["n"]
+        account = {"home_currency": profile["home_currency"],
+                   "opened_at": profile["opened_at"].isoformat()}
+        row = txn.model_dump(mode="json")
+        values = compute(row, account, history, known)
+        values.pop("external_id")
+        scorer = self.scorer
+        names = list(scorer.protocol["features"])
+        X = np.empty((1, len(names) + 1), dtype=object)
+        X[0, :len(names)] = [float(values[n]) for n in names]
+        X[0, len(names)] = txn.amount.currency
+        score = round(float(scorer.pipeline.predict_proba(X)[0, 1]), 12)
+        inputs = ScoringInputs(
+            feature_version=scorer.accepted.feature_version, values=values,
+            currency=txn.amount.currency, history_rows=len(history), disclosures_used=known,
+            profile_home_currency=profile["home_currency"],
+            profile_opened_at=profile["opened_at"])
+        return score, inputs
+
+    # ---- operator provisioning (CLI only; no HTTP route) ------------------------------------
+
+    def provision_accounts(self, tenant_id, session_id, accounts: list[dict]) -> int:
+        """Upsert account profiles for one scope. Operator credentials, not the API."""
+        now = self.clock()
+        with db.connect(self.database_url) as conn, conn.transaction():
+            for a in accounts:
+                conn.execute(
+                    "INSERT INTO account_profiles (tenant_id, session_id, account_id,"
+                    " home_currency, opened_at, provisioned_at) VALUES (%s, %s, %s, %s, %s, %s)"
+                    " ON CONFLICT (tenant_id, session_id, account_id) DO UPDATE SET"
+                    " home_currency = EXCLUDED.home_currency, opened_at = EXCLUDED.opened_at,"
+                    " provisioned_at = EXCLUDED.provisioned_at",
+                    (tenant_id, session_id, a["account_id"], a["home_currency"],
+                     a["opened_at"], now))
+        return len(accounts)
+
+    def record_disclosures(self, tenant_id, session_id, disclosures: list[dict]) -> int:
+        """Record disclosed outcomes with the time they became known (append-only)."""
+        now = self.clock()
+        with db.connect(self.database_url) as conn, conn.transaction():
+            for d in disclosures:
+                conn.execute(
+                    "INSERT INTO fraud_disclosures (tenant_id, session_id, external_id,"
+                    " account_id, is_fraud, disclosed_at, recorded_at)"
+                    " VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (tenant_id, session_id, d["external_id"], d["account_id"],
+                     d["is_fraud"], d["disclosed_at"], now))
+        return len(disclosures)
 
     @staticmethod
     def _evidence(ctx, case_id, txn, now, source, ref, name, value) -> EvidenceItem:

@@ -70,7 +70,7 @@ Every **handled** error (the codes below, plus unknown routes/methods and reques
 | 405 | `method_not_allowed` |
 | 409 | `stale_case_revision`, `case_not_investigable`, `investigation_in_progress`, `investigation_recovered`, `investigation_superseded`, `approval_expired`, `approval_exists`, `approval_not_available`, `approval_outside_validity`, `case_not_executable`, `stale_agent_config`, `stale_evidence_snapshot`, `stale_policy`, `stale_action_intent`, `inactive_policy`, `idempotency_conflict`, `conflict`, evidence-verification codes (`evidence_*`, `incomplete_evidence_snapshot`, `duplicate_evidence`) |
 | 413 | `body_too_large` |
-| 422 | `invalid_request` (body or query/path validation), `invalid_cursor`, `future_event_time` |
+| 422 | `invalid_request` (body or query/path validation), `invalid_cursor`, `future_event_time`, `account_profile_missing` (v1.1, model mode only) |
 
 For a 409, re-read authoritative state before offering the next step. Codes are stable within v1; new codes may be added, so the UI should show a generic message for an unknown code.
 
@@ -105,7 +105,7 @@ Not in the frozen set (C02 will supply fixtures): investigator failure, a reject
 
 ## HTTP v1.1 revision (C07 contract candidate)
 
-Status: **candidate for Codex review; not accepted.** U03 must not consume it until Codex accepts it by commit. The revision is explicit and additive:
+Status: **candidate for Codex review; not accepted.** U03 must not consume it until Codex accepts it by commit. The C07 inference increment adds model-mode examples and one error code without changing the reviewed shapes. The revision is explicit and additive:
 
 - **Active snapshot:** `contracts/http/openapi.v1.1.json`, with `info.version` 1.1.0.
 - **Legacy snapshot:** `contracts/http/openapi.v1.json` is **frozen**. It is checked by SHA-256 (`scripts/export_http_contract.py`, `LEGACY_V1_SHA256`) and never regenerated.
@@ -135,12 +135,21 @@ Status: **candidate for Codex review; not accepted.** U03 must not consume it un
 - **Scenario:** `scenario` appears only in offline `slices`, as hidden synthetic truth. It is never a model input or a live field.
 - **Coexisting scorers:** a case or outcome keeps the scorer that produced it. Switching the server's scorer never rescores old records. The UI should show each record's own `scoring_kind`, `score_semantics` and `scorer`, not assume the current `/v1/scoring` applies to history.
 
-### New error codes (planned with the inference increment)
+### New error code
 
-- `422 account_profile_missing`: model mode cannot score a transaction whose account has no provisioned profile (home currency and opened-at). Nothing is stored, and nothing falls back to the rule.
+- `422 account_profile_missing`: model mode cannot score a transaction whose account has no provisioned profile (home currency and opened-at) in the caller's scope. Nothing is stored, and nothing falls back to the rule (example `examples-v1.1/error_account_profile_missing.json`).
 - A server configured with a model that fails its identity binding does not start; there is no runtime fallback.
 
-### Pending in this candidate
+### Model-mode examples
 
-- No model-mode ingest/case example exists yet. Those examples depend on the decision-time feature provider (account profiles and fraud disclosures), which is the next increment.
-- The `ScoringOutcome.model` and `inputs` shapes above are frozen for review.
+`ingest_model_alert`, `ingest_model_replay` and `case_detail_model` in `examples-v1.1/` come from a real model-mode server. They show `scoring.model`, `scoring.inputs`, the frozen threshold and case pins naming `hgb_balanced`. The replay is byte-identical apart from `replayed: true`.
+
+### Operator notes (model mode)
+
+1. Install with the ml extra: `uv sync --locked --extra ml`, or install the wheel plus the lock's ml pins. Rule mode does not need it.
+2. Run `sentinel.cli migrate` (applies `0004_scoring_profiles.sql`), then `grant-runtime` (adds SELECT on `account_profiles` and `fraud_disclosures`).
+3. Run `create-session`, then load inputs for that tenant and session as the schema owner:
+   - `python -m sentinel.cli provision-accounts --tenant T --session S --file profiles.jsonl`, with one `{"account_id", "home_currency", "opened_at"}` object per line;
+   - `python -m sentinel.cli record-disclosures --tenant T --session S --file disclosures.jsonl`, with `{"external_id", "account_id", "is_fraud", "disclosed_at"}` per line. Only disclosures with `disclosed_at <= decision time` count.
+4. Start the API with `SENTINEL_SCORER=model:hgb_balanced@p1` and the runtime-role URL. Leaving it unset, or setting `rule`, keeps the default rule.
+5. Switching scorers never rescores stored outcomes or cases.

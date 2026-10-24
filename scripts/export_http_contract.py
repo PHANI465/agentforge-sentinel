@@ -31,6 +31,7 @@ LEGACY_V1 = OUT / "openapi.v1.json"
 LEGACY_V1_SHA256 = "35b4448dd3d4c0e9b5cdaf5b0ac24dd6f90df773aaf8cab9fd217f8739851196"
 START = datetime(2026, 10, 23, 17, 0, tzinfo=timezone.utc)
 ACCOUNT = "00000000-0000-4000-8000-0000000000a1"
+MODEL_ACCOUNT = "00000000-0000-4000-8000-0000000000a2"
 ANALYST = frozenset({"ingest_transaction", "read_case", "approve_action",
                      "execute_simulated_action"})
 
@@ -165,31 +166,54 @@ def examples_v11(database_url: str) -> dict[str, dict]:
 
     clock = _Clock()
     out: dict[str, dict] = {}
+    # Load the model before the deterministic uuid sequence: first-time imports in the ml
+    # stack may call uuid4, which would shift every id depending on what ran before.
+    scorer = ModelScorer(REGISTRY["hgb_balanced@p1"])
     with mock.patch("uuid.uuid4", _uuid_sequence()):
         rule = Sentinel(database_url, DeterministicInvestigator(), clock)
         token = rule.create_session(ANALYST)[0]
         limited = rule.create_session(frozenset({"ingest_transaction"}))[0]
-        model = Sentinel(database_url, DeterministicInvestigator(), clock,
-                         scorer=ModelScorer(REGISTRY["hgb_balanced@p1"]))
+        model = Sentinel(database_url, DeterministicInvestigator(), clock, scorer=scorer)
         for prefix, service in (("rule", rule), ("model", model)):
             client = TestClient(create_app(service))
 
-            def call(name, path, auth=token):
-                response = client.get(path, headers={"Authorization": f"Bearer {auth}"})
-                out[name] = {"request": {"method": "GET", "path": path, "authenticated": True,
-                                         "body": None},
+            def call(name, path, auth=token, method="GET", body=None):
+                response = client.request(method, path, json=body,
+                                          headers={"Authorization": f"Bearer {auth}"})
+                out[name] = {"request": {"method": method, "path": path, "authenticated": True,
+                                         "body": body},
                              "status": response.status_code, "response": response.json()}
+                return response.json()
 
             call(f"scorer_{prefix}_mode", "/v1/scoring")
             if prefix == "model":
                 call("model_results_p1", "/v1/model-results/p1")
                 call("error_model_results_not_found", "/v1/model-results/p2")
                 call("error_model_results_permission", "/v1/model-results/p1", auth=limited)
+                body = {"external_id": "model-demo-1", "account_id": MODEL_ACCOUNT,
+                        "direction": "debit",
+                        "amount": {"currency": "GBP", "minor_units": 250_000,
+                                   "currency_exponent": 2},
+                        "occurred_at": clock().isoformat().replace("+00:00", "Z")}
+                call("error_account_profile_missing", "/v1/transactions", method="POST",
+                     body=body)
+                # Operator provisioning (CLI in deployments; no HTTP route exists for it).
+                scope = model.authenticate(token).scope
+                model.provision_accounts(scope.tenant_id, scope.session_id, [
+                    {"account_id": MODEL_ACCOUNT, "home_currency": "USD",
+                     "opened_at": "2026-09-01T00:00:00Z"}])
+                clock.now += timedelta(seconds=1)
+                case = call("ingest_model_alert", "/v1/transactions", method="POST",
+                            body=body)["case"]
+                call("ingest_model_replay", "/v1/transactions", method="POST", body=body)
+                call("case_detail_model", f"/v1/cases/{case['id']}")
     return out
 
 
 EXAMPLE_MODELS_V11 = {"scorer_rule_mode": "ScorerInfo", "scorer_model_mode": "ScorerInfo",
-                      "model_results_p1": "ModelResults"}
+                      "model_results_p1": "ModelResults", "ingest_model_alert": "IngestResponse",
+                      "ingest_model_replay": "IngestResponse",
+                      "case_detail_model": "CaseDetail"}
 
 
 def expected_files(database_url: str) -> dict[Path, bytes]:

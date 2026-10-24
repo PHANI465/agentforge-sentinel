@@ -55,6 +55,9 @@ RUNTIME_PRIVILEGES: dict[str, tuple[str, ...]] = {
     "simulated_actions": ("SELECT", "INSERT"),
     "audit_events": ("SELECT", "INSERT"),
     "schema_migrations": ("SELECT",),
+    # C07: provisioned by the operator; the API only reads them for decision-time features.
+    "account_profiles": ("SELECT",),
+    "fraud_disclosures": ("SELECT",),
 }
 SEQUENCES = ("audit_events_seq_seq",)
 SCHEMA = "public"

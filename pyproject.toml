@@ -25,11 +25,16 @@ ml = [
     "scikit-learn>=1.5,<2",
 ]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+# sentinel lives under src/; the C03/C04 packages the model scorer needs stay at the root.
+package-dir = { "" = "src", "ml" = "ml", "data_pipeline" = "data_pipeline" }
+packages = ["sentinel", "sentinel.contracts", "sentinel.db", "ml", "data_pipeline"]
 
 [tool.setuptools.package-data]
 "sentinel.db" = ["migrations/*.sql"]
+# Only the accepted p1 identity files; tests, evals and training snapshots are not shipped.
+"ml" = ["protocol.json", "runs/p1/*.json", "artifacts/p1/*", "results/p1/*"]
+"data_pipeline" = ["manifests/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
