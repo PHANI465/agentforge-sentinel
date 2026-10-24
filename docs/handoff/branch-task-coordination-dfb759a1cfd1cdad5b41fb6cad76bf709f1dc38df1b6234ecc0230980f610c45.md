@@ -61,3 +61,11 @@ Reviewed c3fd83df78f2d8e90598508f3779c33a3fdad0a5 read-only. Focused real-socket
 Cursor U01 continues untouched on accepted C01. U02 stays gated on accepted corrected C02. Claude receives docs/prompts/CLAUDE_C02_REVIEW_FIXES.md; C05 may follow its correction handoff in a separate worktree from accepted C01. C06's independent checker edits and C02's 900-second timeout require an explicit future merge.
 
 This update changes coordination documents only. Previously checked coordination reference: f6236672685fe9508a645f62fac7d9fdb4e21fd6. Final check evidence after this doc commit belongs in the ignored report/final chat. No source worktree or main was modified.
+
+## U01 review: changes requested
+
+Reviewed exact Cursor U01 98ce8aef4a3cc7b1cab4b685ff671ee4acc88e6a against accepted C01 2e6c232. Frontend tests/build pass; a real browser/API/disposable-Postgres hold path works. A valid escalation response blanks the UI (R14); independent deferred-response rendering reproduces lost current selection (R15). Review also requests current-state expiry instructions (R16) and readable queue amounts (R17). Full findings/evidence are in docs/reviews/98ce8ae.md; Cursor receives docs/prompts/CURSOR_U01_REVIEW_FIXES.md.
+
+No application source or task checkout was edited by Codex. All owned review servers/ports and the disposable directory were cleaned up. The interrupted strict-check report is not a pass; fresh completed checks, if run, are recorded externally against their exact commit. npm audit metadata egress was rejected by automatic approval review; no bypass/retry or independent audit success is claimed.
+
+C02 R11-R13 and other backend review gates remain unchanged. Main was not merged. Previously verified coordination reference: a0b4c0afc723b9f0a954be553392ee80e8100dcc. Final checks after this coordination commit belong in the ignored report/final chat, not this tracked note.
