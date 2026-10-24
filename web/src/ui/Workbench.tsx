@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { SentinelClient } from "../api/client";
 import { allows } from "../api/case";
 import { investigatorLabel } from "../api/format";
@@ -15,6 +15,25 @@ import type {
 import { CaseFile } from "./CaseFile";
 import { IngestForm } from "./IngestForm";
 import { Queue } from "./Queue";
+
+class CasePaneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <p className="case" role="alert">
+          This case could not be shown. The queue is unchanged.
+        </p>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function capabilityLine(session: SessionView): string {
   const granted = [
@@ -48,29 +67,47 @@ export function Workbench({
   const [replayed, setReplayed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loadingQueue, setLoadingQueue] = useState(true);
+  const [queuePending, setQueuePending] = useState(false);
   const attempt = useRef<ExecutionAttempt | null>(null);
+  const caseGeneration = useRef(0);
+  const queueGeneration = useRef(0);
+  const queueFlight = useRef(false);
+  const selectedRef = useRef<string | null>(null);
   const pageIndex = cursors.length - 1;
+
+  const finishQueue = useCallback((generation: number) => {
+    if (generation !== queueGeneration.current) return;
+    queueFlight.current = false;
+    setQueuePending(false);
+    setLoadingQueue(false);
+  }, []);
 
   const loadQueue = useCallback(
     async (cursor: string | null, filter: CaseState | "") => {
+      const generation = ++queueGeneration.current;
+      queueFlight.current = true;
+      setQueuePending(true);
+      setLoadingQueue(true);
       const result = await client.listCases(token, { limit: 25, state: filter, cursor });
+      if (generation !== queueGeneration.current) return;
       if (!result.ok) {
         if (result.code === "invalid_cursor") {
           setCursors([null]);
           const first = await client.listCases(token, { limit: 25, state: filter, cursor: null });
-          if (first.ok) {
-            setPage(first.data);
-            setLoadingQueue(false);
-          }
+          if (generation !== queueGeneration.current) return;
+          if (first.ok) setPage(first.data);
+          else setNotice(first.message);
+          finishQueue(generation);
+          return;
         }
-        setLoadingQueue(false);
         setNotice(result.message);
+        finishQueue(generation);
         return;
       }
       setPage(result.data);
-      setLoadingQueue(false);
+      finishQueue(generation);
     },
-    [client, token],
+    [client, finishQueue, token],
   );
 
   const loadOverview = useCallback(async () => {
@@ -81,17 +118,20 @@ export function Workbench({
 
   const loadCase = useCallback(
     async (caseId: string) => {
+      const generation = ++caseGeneration.current;
       const [nextDetail, nextAudit] = await Promise.all([
         client.caseDetail(token, caseId),
         client.audit(token, caseId),
       ]);
+      if (generation !== caseGeneration.current || selectedRef.current !== caseId) return false;
       if (!nextDetail.ok) {
         setNotice(nextDetail.message);
-        return;
+        return true;
       }
       setDetail(nextDetail.data);
       setAudit(nextAudit.ok ? nextAudit.data : []);
       if (!nextAudit.ok) setNotice(nextAudit.message);
+      return true;
     },
     [client, token],
   );
@@ -100,7 +140,8 @@ export function Workbench({
     async (caseId: string | null) => {
       await loadOverview();
       await loadQueue(cursors[pageIndex] ?? null, stateFilter);
-      if (caseId) await loadCase(caseId);
+      const currentId = selectedRef.current ?? caseId;
+      if (currentId) await loadCase(currentId);
     },
     [cursors, loadCase, loadOverview, loadQueue, pageIndex, stateFilter],
   );
@@ -111,29 +152,30 @@ export function Workbench({
   }, [loadOverview, loadQueue]);
 
   async function selectCase(caseId: string) {
+    selectedRef.current = caseId;
     setSelectedId(caseId);
     setReplayed(false);
     setNotice(null);
     setBusy(true);
-    await loadCase(caseId);
-    setBusy(false);
+    const applied = await loadCase(caseId);
+    if (applied) setBusy(false);
   }
 
   async function changeFilter(filter: CaseState | "") {
     setStateFilter(filter);
     setCursors([null]);
-    setBusy(true);
     await loadQueue(null, filter);
-    setBusy(false);
   }
 
   async function mutate(task: () => Promise<{ refreshCase: boolean; ambiguous: boolean; message: string | null }>) {
     if (!detail) return;
+    const caseId = detail.case.id;
     setBusy(true);
     const outcome = await task();
+    if (selectedRef.current !== caseId) return;
     setNotice(outcome.message);
-    if (outcome.refreshCase) await refresh(detail.case.id);
-    setBusy(false);
+    if (outcome.refreshCase) await refresh(caseId);
+    if (selectedRef.current === caseId) setBusy(false);
   }
 
   return (
@@ -203,16 +245,17 @@ export function Workbench({
             state={stateFilter}
             selectedId={selectedId}
             hasPrevious={pageIndex > 0}
-            busy={busy}
+            busy={busy || queuePending}
             onState={(filter) => void changeFilter(filter)}
             onSelect={(caseId) => void selectCase(caseId)}
             onPrevious={() => {
+              if (queueFlight.current || pageIndex <= 0) return;
               const next = cursors.slice(0, -1);
               setCursors(next);
               void loadQueue(next[next.length - 1] ?? null, stateFilter);
             }}
             onNext={() => {
-              if (!page?.next_cursor) return;
+              if (queueFlight.current || !page?.next_cursor) return;
               const cursor = page.next_cursor;
               setCursors((current) => [...current, cursor]);
               void loadQueue(cursor, stateFilter);
@@ -223,14 +266,18 @@ export function Workbench({
               client={client}
               token={token}
               onRecorded={(caseId) => {
+                if (caseId) {
+                  selectedRef.current = caseId;
+                  setSelectedId(caseId);
+                }
                 void refresh(caseId);
-                if (caseId) setSelectedId(caseId);
               }}
             />
           ) : (
             <p className="queue">This session cannot record transactions.</p>
           )}
         </div>
+        <CasePaneBoundary key={selectedId ?? "none"}>
         {detail && selectedId === detail.case.id ? (
           <CaseFile
             detail={detail}
@@ -286,6 +333,7 @@ export function Workbench({
         ) : (
           <p className="case">Select a case to read its evidence, proposal, and audit.</p>
         )}
+        </CasePaneBoundary>
       </div>
     </>
   );

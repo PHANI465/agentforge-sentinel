@@ -1,4 +1,4 @@
-import type { Currency, InvestigatorInfo, Money } from "./types";
+import type { ActionParameters, Currency, InvestigatorInfo, Money } from "./types";
 import { CURRENCY_EXPONENT } from "./types";
 
 const UNCONFIRMED = "The server did not confirm a result. Reload before trying that step again.";
@@ -110,6 +110,20 @@ export function operationLabel(operation: string): string {
   if (operation === "simulated_hold") return "Simulated hold";
   if (operation === "escalate") return "Escalate";
   return operation;
+}
+
+export function describeProposal(parameters: ActionParameters): string {
+  if (parameters.operation === "escalate") {
+    return `Escalate transaction ${parameters.transaction_id}, reason ${parameters.reason_code}`;
+  }
+  return `Simulated hold of ${formatMoney(parameters.amount)} on transaction ${parameters.transaction_id}`;
+}
+
+export function describeRecorded(parameters: ActionParameters): string {
+  if (parameters.operation === "escalate") {
+    return `Escalation of transaction ${parameters.transaction_id} for ${parameters.reason_code} was recorded`;
+  }
+  return `Simulated hold of ${formatMoney(parameters.amount)} was recorded`;
 }
 
 export function factLabel(name: string, value: number): string {

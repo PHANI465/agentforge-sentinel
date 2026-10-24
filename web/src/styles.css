@@ -142,7 +142,15 @@ h2 {
   cursor: pointer;
 }
 
-.row.selected {
+button.row:hover {
+  background: #d5e3db;
+}
+
+.row.selected,
+button.row.selected,
+button.row.selected:hover,
+button.row.selected:focus,
+button.row.selected:focus-visible {
   background: var(--sheet);
   box-shadow: inset 4px 0 0 var(--stamp);
 }
@@ -231,6 +239,29 @@ button.secondary {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+button.row,
+button.row:hover,
+button.row:focus,
+button.row:focus-visible,
+button.row.selected,
+button.row.selected:hover,
+button.row.selected:focus,
+button.row.selected:focus-visible,
+button.row strong {
+  color: var(--ink);
+}
+
+button.row .meta {
+  color: var(--muted);
+}
+
+button.row .alert-score,
+button.row:hover .alert-score,
+button.row:focus-visible .alert-score,
+button.row.selected .alert-score {
+  color: var(--alert);
 }
 
 .rationale {

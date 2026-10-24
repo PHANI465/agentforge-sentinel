@@ -16,4 +16,6 @@ npm run dev
 
 Ordinary UI tests use the frozen HTTP examples and a fake client. They do not call a model. Browser tests against disposable Postgres wait for accepted C02 and are not part of these commands.
 
+`npm test` also covers review R14–R17. An escalation renders `transaction_id` and `reason_code` and does not invent an amount. Detail and audit stay on the case that was selected, and a queue response cannot overwrite a newer filter or page. The re-investigation sentence appears only for an open case whose current revision has no proposal; a historical `approval_expired` event stays in the audit after recovery, approval, and closure. Queue amounts use the ink foreground on the desk, on hover, on keyboard focus, and on the selected row. Score text keeps the alert color.
+
 No AgentForge UI source is reused. `web/package-lock.json` is the frontend lock. Backend checks stay on the Python helper; this workflow is the frontend addition for the integrator to wire beside them.

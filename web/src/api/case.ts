@@ -17,6 +17,8 @@ export function allows(session: SessionView, capability: Capability, human = fal
   return session.capabilities.includes(capability);
 }
 
-export function approvalExpired(audit: AuditEvent[]): boolean {
+/** Recovery applies only to an open case with no proposal for its current revision. */
+export function recoveryRequired(detail: CaseDetail, audit: AuditEvent[]): boolean {
+  if (detail.case.state !== "open" || currentIntent(detail)) return false;
   return audit.some((event) => event.event_type === "approval_expired");
 }

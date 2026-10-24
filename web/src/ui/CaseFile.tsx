@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
-import { allows, approvalExpired, currentIntent, earlierIntents } from "../api/case";
+import { allows, currentIntent, earlierIntents, recoveryRequired } from "../api/case";
 import {
   artifactLabel,
+  describeProposal,
+  describeRecorded,
   eventLabel,
   factLabel,
   failureLabel,
@@ -116,7 +118,7 @@ export function CaseFile({
       <div className="block">
         <h3>Proposed action</h3>
         {intent ? <Proposal intent={intent} /> : <p>No action is proposed for revision {detail.case.revision}.</p>}
-        {approvalExpired(audit) ? (
+        {recoveryRequired(detail, audit) ? (
           <p>An earlier approval expired. Investigate this revision before making a new decision.</p>
         ) : null}
         <div className="actions">
@@ -156,8 +158,7 @@ export function CaseFile({
         {intent?.approval?.decision === "rejected" ? <p>This proposal was rejected.</p> : null}
         {intent?.action ? (
           <p>
-            {operationLabel(intent.action.intent.parameters.operation)} of{" "}
-            {formatMoney(intent.action.intent.parameters.amount)} was recorded
+            {describeRecorded(intent.action.intent.parameters)}
             {intent.action.mode === "simulated" ? " as a simulation" : ""}. State {intent.action.state}.
           </p>
         ) : null}
@@ -169,8 +170,7 @@ export function CaseFile({
           <ul>
             {history.map((item) => (
               <li key={item.intent.id}>
-                Revision {item.intent.case_revision}: {operationLabel(item.intent.parameters.operation)} of{" "}
-                {formatMoney(item.intent.parameters.amount)}
+                Revision {item.intent.case_revision}: {describeProposal(item.intent.parameters)}
                 {item.approval ? `, ${item.approval.decision}` : ""}
                 {item.action ? ", executed" : ""}
               </li>
@@ -198,10 +198,7 @@ function Proposal({ intent }: { intent: NonNullable<ReturnType<typeof currentInt
   const parameters = intent.intent.parameters;
   return (
     <div>
-      <p>
-        {operationLabel(parameters.operation)} of {formatMoney(parameters.amount)} on transaction{" "}
-        {parameters.transaction_id}
-      </p>
+      <p>{describeProposal(parameters)}</p>
       <p className="meta">
         Policy {artifactLabel(intent.intent.policy)}. Bound to revision {intent.intent.case_revision}.
       </p>

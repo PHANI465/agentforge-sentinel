@@ -87,6 +87,47 @@ describe("case file", () => {
     void onInvestigate;
   });
 
+  it("renders an accepted escalation without inventing an amount", () => {
+    const escalated = structuredClone(investigated);
+    const transactionId = escalated.transaction.id;
+    const escalation = {
+      operation: "escalate" as const,
+      transaction_id: transactionId,
+      reason_code: "unusual_amount" as const,
+    };
+    escalated.action_intents[0].intent.parameters = escalation;
+    escalated.action_intents[0].action = {
+      id: "action-escalate",
+      approval_id: "approval-escalate",
+      idempotency_key: "00000000-0000-4000-8000-0000e0000099",
+      state: "succeeded",
+      mode: "simulated",
+      created_at: "2026-10-23T17:00:06Z",
+      completed_at: "2026-10-23T17:00:06Z",
+      intent: {
+        ...escalated.action_intents[0].intent,
+        parameters: escalation,
+      },
+    };
+    escalated.action_intents.unshift({
+      ...structuredClone(escalated.action_intents[0]),
+      intent: {
+        ...escalated.action_intents[0].intent,
+        id: "older-escalate",
+        case_revision: 1,
+        parameters: escalation,
+      },
+      approval: null,
+      action: null,
+    });
+    renderCase(escalated, session, []);
+    expect(screen.getAllByText(new RegExp(`Escalate transaction ${transactionId}, reason unusual_amount`)).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Escalation of transaction .*unusual_amount was recorded/)).toBeInTheDocument();
+    expect(screen.queryByText(/Amount unavailable/)).not.toBeInTheDocument();
+    expect(screen.queryByText("0.00 USD")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+  });
+
   it("shows a provider failure without a rationale", async () => {
     const failed = structuredClone(investigated);
     failed.case = { ...failed.case, state: "open", revision: 4 };
@@ -107,5 +148,48 @@ describe("case file", () => {
     expect(screen.queryByText(/Large amount/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Investigate case" }));
     expect(onInvestigate).toHaveBeenCalledOnce();
+  });
+
+  it("keeps a historical expiry in the audit without repeating the recovery instruction", () => {
+    const expired: AuditEvent[] = [
+      { ...audit[0], id: "expired-event", event_type: "approval_expired", case_revision: 1 },
+    ];
+    const recovered = structuredClone(investigated);
+    renderCase(recovered, session, expired);
+    expect(screen.getByText(/Approval expired/)).toBeInTheDocument();
+    expect(screen.queryByText(/Investigate this revision before making a new decision/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+
+    const approved = structuredClone(recovered);
+    approved.action_intents[0].approval = {
+      id: "approval-fresh",
+      decision: "approved",
+      actor_id: session.actor_id,
+      actor_kind: "human",
+      decided_at: "2026-10-23T17:00:06Z",
+      expires_at: "2026-10-23T17:05:06Z",
+      consumed_at: null,
+    };
+    renderCase(approved, session, expired);
+    expect(screen.getByRole("button", { name: "Execute simulated hold" })).toBeInTheDocument();
+    expect(screen.queryByText(/Investigate this revision before making a new decision/)).not.toBeInTheDocument();
+
+    const closed = structuredClone(recovered);
+    closed.case = { ...closed.case, state: "closed", revision: 4 };
+    closed.action_intents[0].intent = { ...closed.action_intents[0].intent, case_revision: 4 };
+    closed.action_intents[0].action = {
+      id: "action-closed",
+      approval_id: "approval-closed",
+      idempotency_key: "00000000-0000-4000-8000-0000e0000098",
+      state: "succeeded",
+      mode: "simulated",
+      created_at: "2026-10-23T17:00:06Z",
+      completed_at: "2026-10-23T17:00:06Z",
+      intent: closed.action_intents[0].intent,
+    };
+    renderCase(closed, session, expired);
+    expect(screen.getByText(/was recorded/)).toBeInTheDocument();
+    expect(screen.queryByText(/Investigate this revision before making a new decision/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Approval expired/).length).toBeGreaterThan(0);
   });
 });

@@ -136,11 +136,19 @@ export interface AgentRunView {
   finding: InvestigationFinding | null;
 }
 
-export interface ActionParameters {
-  operation: "simulated_hold" | "escalate";
-  amount: Money;
+export interface HoldParameters {
+  operation: "simulated_hold";
   transaction_id: string;
+  amount: Money;
 }
+
+export interface EscalateParameters {
+  operation: "escalate";
+  transaction_id: string;
+  reason_code: "velocity_pattern" | "unusual_amount" | "insufficient_evidence";
+}
+
+export type ActionParameters = HoldParameters | EscalateParameters;
 
 export interface ActionIntent {
   id: string;
