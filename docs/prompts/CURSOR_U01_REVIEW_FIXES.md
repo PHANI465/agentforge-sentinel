@@ -8,7 +8,7 @@ Read current instructions explicitly:
     git show task/coordination:docs/reviews/98ce8ae.md
     git show task/coordination:docs/prompts/CURSOR_U01_REVIEW_FIXES.md
 
-Own web/ and docs/ui/, plus your existing branch handoff. Leave backend source, HTTP/domain contracts, migrations, Python dependencies and central STATUS/TASK_QUEUE to their owners. No main merge. C02 c3fd83d still has R11-R13 changes requested; do not consume it or start U02 until Codex explicitly accepts a corrected C02 commit. U03 keeps its model-contract gate.
+Own web/ and docs/ui/, plus your existing branch handoff. Leave backend source, HTTP/domain contracts, migrations, Python dependencies and central STATUS/TASK_QUEUE to their owners. No main merge. C02 66214bb still has R11/R12 changes requested (R13 corrected); do not consume it or start U02 until Codex explicitly accepts corrected C02 and U01. U03 keeps its model-contract gate.
 
 Fix these on your existing branch:
 

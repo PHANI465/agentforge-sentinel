@@ -1,3 +1,5 @@
+Current follow-up: C02 66214bb was re-reviewed and still has R11/R12 changes requested; R13 is corrected. Read docs/prompts/CLAUDE_C02_FOLLOWUP.md and docs/reviews/66214bb.md from the latest task/coordination reference. The original correction brief below remains historical context, not acceptance or the current dispatch.
+
 # Claude: C02 review corrections R11-R13
 
 C01 remains accepted at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. Cursor is actively implementing U01 and must continue undisturbed.

@@ -69,3 +69,11 @@ Reviewed exact Cursor U01 98ce8aef4a3cc7b1cab4b685ff671ee4acc88e6a against accep
 No application source or task checkout was edited by Codex. All owned review servers/ports and the disposable directory were cleaned up. The interrupted strict-check report is not a pass; fresh completed checks, if run, are recorded externally against their exact commit. npm audit metadata egress was rejected by automatic approval review; no bypass/retry or independent audit success is claimed.
 
 C02 R11-R13 and other backend review gates remain unchanged. Main was not merged. Previously verified coordination reference: a0b4c0afc723b9f0a954be553392ee80e8100dcc. Final checks after this coordination commit belong in the ignored report/final chat, not this tracked note.
+
+## Corrected C02 re-review: remaining R11/R12 failures
+
+Reviewed exact 66214bb466fe9810df5a306f12137606ba2c0251 without implementation edits. Safe intercepted probes confirm nested pg and pg/data junctions are accepted before a foreign-resolving PostgreSQL stop command. Actual Windows locked-file probes confirm partial removal loses the marker and prevents the documented retry. A separate intercepted status-error probe reports success/removes state when shutdown fails and status is unknown. R13 response/description corrections match accepted API semantics. See docs/reviews/66214bb.md and docs/prompts/CLAUDE_C02_FOLLOWUP.md.
+
+Ruff, HTTP and domain exports, Node transport and 21 helper regressions passed independently on clean 66214bb. Automatic approval review rejected the focused process-suite command for the known nested-path risk; it did not run and was not bypassed/retried. Claude's 23/198-test and strict evidence remains attributed to Claude. Review probes were isolated and cleaned; no foreign process was touched.
+
+C02 and U01 remain changes-requested; U02 waits for both accepted corrected packages. C05 is already authorized in its own worktree from accepted C01 without C02 code. Main and implementation source remain unchanged. Previously checked coordination reference: 46ecd6f513432c010c2562a41a7310c6600c02c7. Final checks on this documentation commit belong in the ignored report/final chat.
