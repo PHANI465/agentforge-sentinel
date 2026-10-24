@@ -93,3 +93,11 @@ C02 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 passes independent process-free17 a
 C05 0119ca73e6ae3b4df9f9eeffcea8b15911f716e6 passes independent36 focused tests and ordinary compatibility/helper checks but has concrete R18 unsafe existing roles, R19 timeout parsing and R20 unbounded HTTP-method metric labels. See docs/reviews/0119ca7.md and docs/prompts/CLAUDE_C05_REVIEW_FIXES.md. Optional X-Request-ID remains diagnostic; C01 bodies/status/OpenAPI stay frozen and no UI dependency or new endpoint is added.
 
 Cursor finishes U01 R15, then after acceptance consumes accepted C02 for U02; C05 remains unaccepted. Implementation worktrees and main were not changed. Reviewer probes/stacks were owned and cleaned; no models or unrelated databases were touched. Previously checked coordination reference: b4e9438c169bf73671eabfba84075d3030ecd649. Final checks after this documentation commit belong in the ignored report/final chat.
+
+## U01 deb1037 accepted; Cursor U02 dispatched
+
+Reviewed exact deb10370352dc62b0abfa2a5776c185494fcb04e, C01 ancestry retained. The unchanged independent delayed-refresh probe now keeps Closed rows and requests all->closed->closed. R14-R17 are resolved. Independent24 frontend tests/build and Ruff,21 helper tests,15 schemas,HTTP exports and Node passed. Backend/dependencies are unchanged from independently checked5055321; the owner's strict175+1 report is attributed separately rather than repeated.
+
+U02 is now ready with U01 deb1037 plus accepted C02 0e72b0b. docs/prompts/CURSOR_U02.md assigns a dedicated task worktree, real browser/API/Postgres flows, committed-response loss/idempotency assertions, isolation/restart cases and token-safe artifacts/cleanup. C05 remains changes-requested; main was not merged. No implementation source was edited by Codex.
+
+Previously checked coordination reference: f721cfed9db1a2f20b5b516f69f5335ed68800c1. Final checks after this documentation commit belong in the ignored report/final chat.

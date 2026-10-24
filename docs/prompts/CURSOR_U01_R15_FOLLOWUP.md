@@ -1,3 +1,5 @@
+Current state: U01 deb10370352dc62b0abfa2a5776c185494fcb04e is ACCEPTED; R14-R17 are resolved. See docs/reviews/deb1037.md. The current Cursor dispatch is docs/prompts/CURSOR_U02.md. The correction brief below is historical context, not a request to repeat completed work.
+
 # Cursor U01: finish the remaining R15 delayed-refresh race
 
 Continue task/cursor-analyst-ui in E:/PHANI/sentinel-wt/cursor-analyst-ui. Reviewed commit is 5055321cfa810a2108d184e5542785cf44977edc, parent 98ce8ae. Accepted C01 2e6c232 remains an ancestor. R14/R16/R17 are accepted within their correction scope; do not repeat or redesign them. U01 package acceptance still waits for the one remaining R15 failure below.

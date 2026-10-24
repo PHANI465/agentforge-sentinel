@@ -1,3 +1,5 @@
+Current state: U01 deb10370352dc62b0abfa2a5776c185494fcb04e is ACCEPTED; R14-R17 are resolved. See docs/reviews/deb1037.md. The current Cursor dispatch is docs/prompts/CURSOR_U02.md. The correction brief below is historical context, not a request to repeat completed work.
+
 Current dispatch: U01 5055321 resolves R14/R16/R17; only the R15 delayed-refresh query-context counterexample remains. Read docs/prompts/CURSOR_U01_R15_FOLLOWUP.md and docs/reviews/5055321.md from current task/coordination. The original correction brief below is historical scope, not a request to redo resolved work.
 
 # Cursor U01 review corrections: R14-R17
