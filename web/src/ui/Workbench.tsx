@@ -73,6 +73,7 @@ export function Workbench({
   const queueGeneration = useRef(0);
   const queueFlight = useRef(false);
   const selectedRef = useRef<string | null>(null);
+  const queryRef = useRef<{ filter: CaseState | ""; cursor: string | null }>({ filter: "", cursor: null });
   const pageIndex = cursors.length - 1;
 
   const finishQueue = useCallback((generation: number) => {
@@ -89,12 +90,27 @@ export function Workbench({
       setQueuePending(true);
       setLoadingQueue(true);
       const result = await client.listCases(token, { limit: 25, state: filter, cursor });
-      if (generation !== queueGeneration.current) return;
+      const stillCurrent = () =>
+        generation === queueGeneration.current &&
+        queryRef.current.filter === filter &&
+        queryRef.current.cursor === cursor;
+      if (!stillCurrent()) {
+        if (generation === queueGeneration.current) finishQueue(generation);
+        return;
+      }
       if (!result.ok) {
         if (result.code === "invalid_cursor") {
+          queryRef.current = { filter, cursor: null };
           setCursors([null]);
           const first = await client.listCases(token, { limit: 25, state: filter, cursor: null });
-          if (generation !== queueGeneration.current) return;
+          const retryCurrent =
+            generation === queueGeneration.current &&
+            queryRef.current.filter === filter &&
+            queryRef.current.cursor === null;
+          if (!retryCurrent) {
+            if (generation === queueGeneration.current) finishQueue(generation);
+            return;
+          }
           if (first.ok) setPage(first.data);
           else setNotice(first.message);
           finishQueue(generation);
@@ -139,11 +155,12 @@ export function Workbench({
   const refresh = useCallback(
     async (caseId: string | null) => {
       await loadOverview();
-      await loadQueue(cursors[pageIndex] ?? null, stateFilter);
+      const query = queryRef.current;
+      await loadQueue(query.cursor, query.filter);
       const currentId = selectedRef.current ?? caseId;
       if (currentId) await loadCase(currentId);
     },
-    [cursors, loadCase, loadOverview, loadQueue, pageIndex, stateFilter],
+    [loadCase, loadOverview, loadQueue],
   );
 
   useEffect(() => {
@@ -162,6 +179,7 @@ export function Workbench({
   }
 
   async function changeFilter(filter: CaseState | "") {
+    queryRef.current = { filter, cursor: null };
     setStateFilter(filter);
     setCursors([null]);
     await loadQueue(null, filter);
@@ -251,14 +269,17 @@ export function Workbench({
             onPrevious={() => {
               if (queueFlight.current || pageIndex <= 0) return;
               const next = cursors.slice(0, -1);
+              const cursor = next[next.length - 1] ?? null;
+              queryRef.current = { filter: queryRef.current.filter, cursor };
               setCursors(next);
-              void loadQueue(next[next.length - 1] ?? null, stateFilter);
+              void loadQueue(cursor, queryRef.current.filter);
             }}
             onNext={() => {
               if (queueFlight.current || !page?.next_cursor) return;
               const cursor = page.next_cursor;
+              queryRef.current = { filter: queryRef.current.filter, cursor };
               setCursors((current) => [...current, cursor]);
-              void loadQueue(cursor, stateFilter);
+              void loadQueue(cursor, queryRef.current.filter);
             }}
           />
           {allows(session, "ingest_transaction") ? (

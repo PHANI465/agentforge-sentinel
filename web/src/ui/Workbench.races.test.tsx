@@ -208,4 +208,51 @@ describe("request ownership", () => {
     expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled();
     expect((filter as HTMLSelectElement).value).toBe("closed");
   });
+
+  it("keeps a closed filter when a delayed approval refresh resumes", async () => {
+    const queries: string[] = [];
+    const refreshOverview = deferred<ApiResult<Overview>>();
+    const waiting = withIdentity(base, "case-wait", "all-state-row", "Waiting rationale");
+    const closedDetail = withIdentity(base, "case-closed", "closed-only", "Closed rationale");
+    closedDetail.case = { ...closedDetail.case, state: "closed" };
+    let overviews = 0;
+    const client = {
+      overview: vi.fn(async () => {
+        overviews += 1;
+        if (overviews === 1) return ok(overview);
+        return refreshOverview.promise;
+      }),
+      listCases: vi.fn(async (_token: string, query: { state?: string }) => {
+        const state = query.state ?? "";
+        queries.push(state);
+        if (state === "closed") return ok(page([summary(closedDetail, "closed-only")]));
+        return ok(page([summary(waiting, "all-state-row")], "cursor-all"));
+      }),
+      caseDetail: vi.fn(async () => ok(waiting)),
+      audit: vi.fn(async () => ok([])),
+      ingest: vi.fn(),
+      investigate: vi.fn(),
+      decide: vi.fn(async () => ok({ id: "approval-refresh", decision: "approved" as const })),
+      execute: vi.fn(),
+    } as unknown as SentinelClient;
+    const user = userEvent.setup();
+    render(<Workbench client={client} token="memory-token" session={session} onSignOut={vi.fn()} />);
+    await user.click(await screen.findByRole("button", { name: /all-state-row/ }));
+    await user.click(await screen.findByRole("button", { name: "Approve" }));
+    await waitFor(() => expect(overviews).toBe(2));
+    const detailReads = vi.mocked(client.caseDetail).mock.calls.length;
+    const filter = screen.getByLabelText("Case state");
+    await user.selectOptions(filter, "closed");
+    expect(await screen.findByRole("button", { name: /closed-only/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /all-state-row/ })).not.toBeInTheDocument();
+    expect(filter).toHaveValue("closed");
+    await act(async () => {
+      refreshOverview.resolve(ok(overview));
+    });
+    await waitFor(() => expect(vi.mocked(client.caseDetail).mock.calls.length).toBeGreaterThan(detailReads));
+    expect(screen.getByRole("button", { name: /closed-only/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /all-state-row/ })).not.toBeInTheDocument();
+    expect(filter).toHaveValue("closed");
+    expect(queries.slice(queries.indexOf("closed") + 1).every((state) => state === "closed")).toBe(true);
+  });
 });
