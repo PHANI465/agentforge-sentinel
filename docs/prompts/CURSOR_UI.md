@@ -1,15 +1,12 @@
 # Cursor: current UI and browser assignment
 
-U01 is ACCEPTED at deb10370352dc62b0abfa2a5776c185494fcb04e. R14-R17 are resolved; do not repeat those corrections. See docs/reviews/deb1037.md.
+U01 deb1037 and C02 0e72b0b are accepted. Delivered U02 7190c59da14198960397ba02b1edfc35be244a80 has CHANGES REQUESTED for R21 exact process ownership and R22 complete credential/artifact verification.
 
-C02 is ACCEPTED at 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 for Windows local fixtures. C01 remains frozen at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529.
-
-Your current task is U02. Read and follow:
-    git show task/coordination:docs/prompts/CURSOR_U02.md
+Read and follow:
+    git show task/coordination:docs/prompts/CURSOR_U02_REVIEW_FIXES.md
+    git show task/coordination:docs/reviews/7190c59.md
     git show task/coordination:docs/TASK_QUEUE.md
 
-Use the dedicated U02 branch/worktree and exact accepted dependencies in that prompt. Preserve the U01 checkout and existing work. Do not use task/coordination or old main as the application base. Finish the named U01/C02-based U02 snapshot; C05 a8294f6 is accepted separately for later integration. No main merge.
+Continue task/cursor-browser-e2e in its existing worktree. Preserve all delivered work, the mutation guard and its exact accepted U01/C02 integration base. Do not reset or merge C05/main to resolve these runner issues. docs/prompts/CURSOR_U02.md remains the full acceptance scope.
 
-Cursor owns the actual analyst UI, browser tests, frontend lock/workflow and docs/ui/. Claude owns backend/data/ML; Codex owns review and central coordination. No concurrent edits in another tool's checkout. Tokens stay in private test memory/manifests and necessary live authorization headers, never saved artifacts. Ordinary tests use the deterministic investigator and disposable local database, not subscriptions or provider calls.
-
-U03 remains gated on accepted C07/model-results contracts. Its charts/counts must match real reports and retain synthetic-data limitations.
+Claude independently starts C04 from accepted C03 a8e716c. C05 a8294f6 stays accepted and unchanged for later combined-stack verification. Cursor owns web/, frontend tests/lock and docs/ui/; Codex owns review and central coordination. U03 remains gated on accepted C07/model-results contracts. Ordinary tests use synthetic data and deterministic investigators, without live subscriptions or provider calls.

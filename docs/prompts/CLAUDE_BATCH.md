@@ -1,3 +1,5 @@
+Current dispatch: C03 a8e716c is accepted and C04 is ready using docs/prompts/CLAUDE_C04.md from latest task/coordination. C01/C02/C05 are accepted and stay intact. C06/C08 await review; Cursor owns U02 R21/R22. The batch below is the broader backlog; do not repeat completed packages.
+
 # Claude implementation batch
 
 Current next step: C01 is accepted at 2e6c232. Read CLAUDE_C02.md from the latest task/coordination reference. The C01 correction prompt below is historical; C03/C06/C08 still await review. This current phase supersedes the initial execution order below.

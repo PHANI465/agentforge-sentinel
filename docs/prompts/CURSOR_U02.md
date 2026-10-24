@@ -1,3 +1,5 @@
+Current review: U02 7190c59 has changes requested for R21/R22. Read docs/prompts/CURSOR_U02_REVIEW_FIXES.md and docs/reviews/7190c59.md from latest task/coordination. Preserve the delivered implementation; the full assignment below remains its intended acceptance scope.
+
 # Cursor U02: real browser -> API -> disposable Postgres
 
 U01 is ACCEPTED at deb10370352dc62b0abfa2a5776c185494fcb04e. C02 is ACCEPTED at 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 for Windows local fixtures. C01's frozen HTTP contract remains 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. U02 is now ready. Preserve the completed U01 corrections; do not restart R14-R17.

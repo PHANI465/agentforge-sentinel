@@ -119,3 +119,12 @@ Reviewed exact a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd. R18-R20 and operator no
 See docs/reviews/a8294f6.md for scope and limits. Cursor is already running U02: keep its current accepted U01/C02 snapshot stable, preserve C05 for later combined-stack checks, and do not rebase or edit its worktree. C03/C06/C08 review and C04/C07/U03 gates remain. No source edits, model calls, installs, external databases or main merge by Codex.
 
 Previously checked coordination reference: 0c8f472b437ba38d6af5d60c42ba8e02a3156a5d. Final checks after this documentation commit belong in the ignored report/final chat.
+
+
+## U02 reviewed; C03 accepted; C04 dispatched
+
+Reviewed exact U02 7190c59 read-only. Independent25 frontend tests, typecheck/build, Ruff,15 schemas and Node passed. Safe intercepted exact-source probe confirmed R21 foreign Vite PID targeting and R22 false-clean scanning when secret values are unavailable or artifact subfolders share excluded names. No real process was terminated and no browser stack was launched after the unsafe target was confirmed. Owner14-browser/215+1 strict evidence remains attributed. See docs/reviews/7190c59.md and docs/prompts/CURSOR_U02_REVIEW_FIXES.md.
+
+C03 a8e716c passed independent21 data tests (6.95s), Ruff,21 helpers,15 schemas and Node, and is accepted within the source-checkout synthetic-data/feature scope. Default split independently confirmed20 eligible fraud /0 legitimate rows; C04 must define a mature longer history and evaluation protocol. Partial manifest-summary verification and output-only max_rows are explicit bounded caveats with ML snapshot guards. See docs/reviews/a8e716c.md and docs/prompts/CLAUDE_C04.md. Owner127+1 full result remains attributed.
+
+Implementation branches/main unchanged; no provider calls, installs, outside databases or foreign process actions. Accepted U01/C02/C05 remain accepted. Cursor and Claude have disjoint next tasks; C06/C08 and model-serving/hosting/integrator gates remain. Previously checked coordination reference: af5dccd21595ca1889d7e3563f59798d3959bf07. Final checks after this documentation commit belong in the ignored report/final chat.
