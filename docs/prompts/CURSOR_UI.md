@@ -1,13 +1,9 @@
-# Cursor: accepted browser work and next dependency
+# Cursor: U03 contract/UI increment is ready
 
-U02 is ACCEPTED at 5f2855553ac0a445d96914730a89fc3722682830. R21/R22 are resolved. Independent 12 entry-point checks, 20 planning checks, 25 frontend tests/typecheck/build and 14 real browser/API/Postgres tests plus cleanup passed on Windows. See docs/reviews/5f28555.md.
+U02 remains accepted at 5f2855553ac0a445d96914730a89fc3722682830; preserve its tested branch/worktree. R21/R22 are resolved.
 
-Preserve task/cursor-browser-e2e and its exact accepted U01+C02 integration. No further R21/R22 fixes, main merge or automatic C05/C07 merge are assigned. Keep your technical docs/handoff intact.
+The HTTP v1.1 schema and nine examples at 62def106af74821040ac54535b8efe87341ca10b are now accepted as a UI development dependency only. The complete C07 backend is changes-requested for R23 and must not be merged or treated as accepted. See docs/reviews/62def10.md.
 
-Read current coordination before the next implementation:
-    git show task/coordination:docs/TASK_QUEUE.md
-    git show task/coordination:docs/reviews/5f28555.md
+Start the dedicated U03 frontend increment using docs/prompts/CURSOR_U03.md, read from latest task/coordination together with AGENTS.md, STATUS and TASK_QUEUE. Base task/cursor-model-analysis on accepted U02 5f28555; consume the named contract artifacts without merging the unaccepted backend. Implement actual frontend types/client/components and fixture-based checks now; real new-feature browser/API/Postgres acceptance follows an explicitly accepted corrected backend. Never substitute fixtures for failed live calls or label this first increment complete U03.
 
-Claude continues C07 in its own backend worktree using docs/prompts/CLAUDE_C07.md. U03 starts only after Codex explicitly accepts its named model-results HTTP dependency. Until then, do not invent endpoints/fields, fabricate charts or call mock-only results completed. The accepted C04 report/model card may inform planning, but is not an accepted serving contract.
-
-Cursor owns web/, frontend tests/lock and docs/ui/; Codex owns review and central coordination. Later combined-stack checks must rerun after accepted backend/frontend integration. Linux/macOS/CI/hosting/public access remain unverified by this acceptance.
+Cursor owns web/ and docs/ui/, Claude owns the R23 backend correction, Codex owns reviews and central coordination. Keep exact SHA handoffs; there is no automatic cross-tool messaging. No main merge, provider usage, CI/WSL provisioning or hosting is assigned.

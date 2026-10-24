@@ -1,9 +1,9 @@
 # Handoff: task/coordination
 
-- Task and acceptance criteria: independently re-review c6d369f; run focused and normal checks; publish a shared Claude implementation batch and required Cursor assignment.
+- Current task: review C07 62def10, verify model/contract/wheel behavior and decision-time availability, then dispatch disjoint Claude/Cursor follow-ups. Earlier sections below preserve prior reviews.
 - Tool and worktree: Codex, E:\PHANI\agentforge-sentinel.
-- Updated: October 23, 2026, America/Phoenix.
-- State: review and coordination ready; implementation packages not yet executed.
+- Updated: October 24, 2026, America/Phoenix.
+- Current state: C07 backend changes-requested for R23; v1.1 schema/examples accepted only for the Cursor U03 frontend increment. Accepted U02/C04/C05 remain unchanged. Latest evidence and next actions are in the final section below.
 - Code reference tested before this note: c6d369f6043a8c9ec86d8f56cf05670e81fba81d, clean task/thin-path.
 - Final check evidence: run strict helper after the final documentation commit; see final chat / ignored .agent/last-check.json for that commit. No self-referential SHA is claimed here.
 - Owned/changed paths: AGENTS.md, README.md, docs/STATUS.md, docs/VERIFICATION.md, docs/TASK_QUEUE.md, docs/prompts/CLAUDE_BATCH.md, docs/prompts/CURSOR_UI.md, docs/reviews/c6d369f.md and this note. No application source changed.
@@ -145,3 +145,11 @@ Accepted exact 5f2855553ac0a445d96914730a89fc3722682830 within Windows-local U01
 Ruff, 21 helper regressions, 15 schemas,HTTP v1 OpenAPI/examples and Node passed independently. Owner 215+1 full strict count remains attributed; matching clean report metadata verified. No implementation edits, installs, provider calls, external database or unrelated process stops by Codex. Accepted U01/C02/C03/C04/C05 and main remain unchanged.
 
 Cursor preserves accepted U02 and waits for accepted C07 model-results contract before U03. Claude continues its existing C07 task without an automatic dependency rebase. C06/C08, combined-stack, CI/Linux, hosting/public-BYOK and main-integrator gates remain. Previously checked coordination reference: 587943800bbea20753bac9c9587320b9e41e971b. Final checks after this documentation commit belong in the ignored report/final chat.
+
+## C07 review: R23 and limited v1.1 artifact acceptance
+
+Reviewed exact clean 62def106af74821040ac54535b8efe87341ca10b. Independent 37 focused tests passed (139.87 s), including installed-wheel inference; Ruff, 21 helpers, 15 schemas, HTTP v1/v1.1 exports/examples and Node passed. Frozen p1/C01 files and accepted C04/C05/C02 ancestry were checked. Owner full 372+1 result remains attributed; exact clean metadata matches.
+
+Two actual-Postgres/operator interleavings reproduced future availability entering a decision captured one second earlier, once for a backdated disclosure and once for a mutable profile. Owned probe cluster stopped/state removed. C07 backend and decision 0006 are not accepted; Claude follows prompts/CLAUDE_C07_REVIEW_FIXES.md. The stable v1.1 schema/examples alone are accepted at 62def10 for Cursor U03 types/client/components, without merging the unaccepted backend; real-stack completion waits for a corrected accepted C07. See reviews/62def10.md and prompts/CURSOR_U03.md.
+
+Accepted U02 branch and all implementation source/main remain unchanged. No new provider calls, external databases, WSL/GitHub provisioning or hosting. C06/C08 and combined-stack/main gates remain. Previously checked coordination reference: b7ec25bde913e04189e369a41c2a65a9b5e20bf0. Final after-commit checks belong in the ignored report/final chat.

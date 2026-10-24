@@ -21,7 +21,9 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | U02 browser acceptance | 5f2855553ac0a445d96914730a89fc3722682830 | ACCEPTED: R21/R22 resolved; independent 14 real browser tests and cleanup passed on Windows |
 | C05 backend reliability | a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd | ACCEPTED: R18-R20 and operator notes resolved within local backend scope; combined stack pending |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | ACCEPTED: synthetic-data/historical-feature scope; C04 separately accepted |
-| C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 ready |
+| C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 separately reviewed |
+| C07 model serving | 62def106af74821040ac54535b8efe87341ca10b | BACKEND CHANGES REQUESTED: R23; v1.1 schema/examples accepted for UI development only |
+| U03 model/analysis UI | not delivered | CONTRACT/UI INCREMENT READY; real-stack acceptance waits for corrected accepted C07 |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -29,14 +31,14 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor completed [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 5f28555 is accepted with R21/R22 resolved; see [the acceptance](reviews/5f28555.md). Preserve its tested U01+C02 branch for later combined C05/C07 integration. Cursor's next implementation, U03, waits for an explicitly accepted C07 model-results HTTP dependency. C05 a8294f6 is separately accepted; see [the acceptance](reviews/a8294f6.md). R18-R20 and operator notes are resolved. Preserve its tested C01-based branch for later combined-stack verification; keep the accepted U02 dependency snapshot stable until combined-stack verification. C04 09b5378 is accepted; see [the acceptance](reviews/09b5378.md). Claude starts [C07](prompts/CLAUDE_C07.md) in a dedicated integration worktree; U03 still waits for its accepted HTTP dependency. WSL changes, GitHub provisioning and main integration remain pending.
+U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor completed [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 5f28555 is accepted with R21/R22 resolved; see [the acceptance](reviews/5f28555.md). Preserve its tested U01+C02 branch for later combined C05/C07 integration. The v1.1 schema/examples at 62def10 are accepted as a UI development dependency only; Cursor starts the U03 contract/UI increment from accepted U02. Full C07 backend acceptance waits for R23. C05 a8294f6 is separately accepted; see [the acceptance](reviews/a8294f6.md). R18-R20 and operator notes are resolved. Preserve its tested C01-based branch for later combined-stack verification; keep the accepted U02 dependency snapshot stable until combined-stack verification. C04 09b5378 is accepted; see [the acceptance](reviews/09b5378.md). Claude fixes R23 using [the correction prompt](prompts/CLAUDE_C07_REVIEW_FIXES.md). Cursor follows [the U03 prompt](prompts/CURSOR_U03.md), without merging unaccepted backend code. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Current execution order
 
 1. U02 5f28555 is accepted. Cursor preserves the tested branch; no further R21/R22 correction is assigned.
-2. Claude continues C07 using prompts/CLAUDE_C07.md and its named accepted dependencies. Publish the model-results HTTP candidate early; do not interrupt the task merely to merge UI work.
-3. Cursor starts U03 only after explicit Codex acceptance of that C07 dependency; current U02 acceptance does not freeze any new model endpoints or fields.
-4. Codex reviews C07 deliveries and pending C06/C08. The later integrator combines accepted U02/C05/C07 and reruns backend/frontend/browser and export checks; main remains unchanged.
+2. Claude fixes C07 R23 on the current model-serving branch using prompts/CLAUDE_C07_REVIEW_FIXES.md; backend 62def10 is not accepted.
+3. Cursor starts the U03 contract/UI increment from accepted U02 using prompts/CURSOR_U03.md. v1.1 schema/examples at 62def10 are accepted only as a UI dependency; real-stack acceptance waits for corrected full C07 acceptance.
+4. Codex re-reviews the C07 correction and reviews pending C06/C08. The later integrator combines accepted U02/C05/C07 and reruns backend/frontend/browser and export checks; main remains unchanged.
 5. Existing laptop/subscriptions/free resources only. Linux/CI, hosted/public-BYOK, WSL/GitHub provisioning and main-integrator designation remain separate gates.
 
 ## Packages and acceptance
@@ -131,18 +133,18 @@ Add the small seeded generation/training/evaluation job only once C03/C04 are ac
 
 Acceptance: each command reproduced locally; workflow syntax reviewed; real CI results distinguished from unexecuted configuration. An absent remote/runner is recorded as unverified, not green. Do not configure an external repository, purchase compute or expose secrets merely to obtain a badge.
 
-### C07 - Controlled trained-scorer integration - Claude - READY; CONTRACT REVIEW BEFORE U03
+### C07 - Controlled trained-scorer integration - Claude - CHANGES REQUESTED AT 62def10: R23
 
 Branch: task/claude-model-serving. Own the scorer interface, explicit rule/model configuration, model artifact verification, service integration and backend compatibility tests.
 
 Only load trusted locally produced artifacts from the accepted training pipeline; no arbitrary uploaded pickle/joblib. Pin model/feature/threshold versions on every outcome/case. Preserve recorded replay scores and old case provenance. Missing or incompatible artifacts fail clearly.
-Freeze any new HTTP fields before Cursor extends the UI.
+The v1.1 schema/examples at 62def10 are accepted for Cursor development only. Full backend acceptance waits for R23; see reviews/62def10.md and prompts/CLAUDE_C07_REVIEW_FIXES.md.
 
 Acceptance: actual trained inference in the API, parity with offline feature/scoring fixtures, rule baseline retained explicitly, replay/upgrade tests and no label leakage or fabricated probability claims.
 
-### U03 - Model and analysis views - CURSOR REQUIRED - BLOCKED ON C07 HTTP CONTRACT
+### U03 - Model and analysis views - CURSOR REQUIRED - CONTRACT/UI INCREMENT READY; REAL-STACK GATE PENDING
 
-Own web/ extensions. Show actual scorer/version/score semantics, reproducible experiment results/error slices and clearly labeled synthetic limitations. Charts must match backend/report fixtures; keep currencies separate.
+Use prompts/CURSOR_U03.md. Base the dedicated frontend task on accepted U02 5f28555 and consume frozen v1.1 artifacts at 62def10 without merging its unaccepted backend. Hand off contract/UI work first; real new-feature browser/API/Postgres acceptance waits for an explicitly accepted corrected C07. Own web/ extensions. Show actual scorer/version/score semantics, reproducible experiment results/error slices and clearly labeled synthetic limitations. Charts must match backend/report fixtures; keep currencies separate.
 Acceptance: typed build/tests, browser assertions for actual values and correct labeling for rule versus trained-model mode.
 
 ### C08 - Deployment and operator preparation - Claude - LOCAL PACKAGE DELIVERED, REVIEW PENDING

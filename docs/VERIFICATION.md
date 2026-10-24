@@ -175,3 +175,9 @@ The strict `scripts/agent_check.py` result after the commit is reported in the f
 Verified October 23, 2026 with Python 3.11.3, Pydantic 2.14.1, pytest 8.4.2, Ruff 0.17.2, Node 22.13.1. Ruff passed; 51 contract/schema tests passed; 21 helper regressions passed; 11 schema exports verified; the Node transport check passed. That was working-tree evidence before Git existed. The source hashes listed then for `v1.py`, `pyproject.toml` and `uv.lock` describe that earlier state; this increment changed those three files. Historical handoff-kit verification is in HANDOFF_VERIFICATION_HISTORY.md.
 
 The Node check verifies basic JSON transport and money bounds, not generated frontend types or full schema validation. Pure hash/precondition checks do not establish data authenticity or HTTP authorization; the integration tests above cover those boundaries only for this local path.
+
+## Independent C07 review: 62def10
+
+On October 24, 2026, 37 focused model/HTTP v1.1/isolated installed-wheel tests passed in 139.87 s. Ruff, 21 helper tests, 15 schema exports, legacy/new HTTP snapshot/examples and Node passed. Accepted dependency ancestry and unchanged C04/C01 frozen files were verified. Claude's exact clean strict metadata was inspected; its full 372 passed / 1 live-Claude skip remains owner-attributed.
+
+Two deterministic interleavings on a fresh real Postgres cluster confirmed post-cutoff disclosure/profile writes enter the captured model decision. The actual model scored both paths. Cluster stopped and state removed. C07 backend has R23 changes requested; v1.1 schema/examples are separately accepted as a UI development dependency. No new-feature browser integration, Linux/macOS, CI, hosting, throughput/memory measurement or provider call is claimed. See reviews/62def10.md. Final checks on the subsequent coordination commit are recorded in the ignored report/final chat, not inside its own tracked note.
