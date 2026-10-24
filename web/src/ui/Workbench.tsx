@@ -72,6 +72,7 @@ export function Workbench({
   const caseGeneration = useRef(0);
   const queueGeneration = useRef(0);
   const queueFlight = useRef(false);
+  const mutation = useRef(false);
   const selectedRef = useRef<string | null>(null);
   const queryRef = useRef<{ filter: CaseState | ""; cursor: string | null }>({ filter: "", cursor: null });
   const pageIndex = cursors.length - 1;
@@ -186,14 +187,19 @@ export function Workbench({
   }
 
   async function mutate(task: () => Promise<{ refreshCase: boolean; ambiguous: boolean; message: string | null }>) {
-    if (!detail) return;
+    if (!detail || mutation.current) return;
+    mutation.current = true;
     const caseId = detail.case.id;
     setBusy(true);
-    const outcome = await task();
-    if (selectedRef.current !== caseId) return;
-    setNotice(outcome.message);
-    if (outcome.refreshCase) await refresh(caseId);
-    if (selectedRef.current === caseId) setBusy(false);
+    try {
+      const outcome = await task();
+      if (selectedRef.current !== caseId) return;
+      setNotice(outcome.message);
+      if (outcome.refreshCase) await refresh(caseId);
+      if (selectedRef.current === caseId) setBusy(false);
+    } finally {
+      mutation.current = false;
+    }
   }
 
   return (

@@ -2,3 +2,7 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+e2e/.runtime/
+test-results/
+playwright-report/
+blob-report/

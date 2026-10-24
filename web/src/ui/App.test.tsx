@@ -180,6 +180,41 @@ describe("workbench actions", () => {
     expect(keys).toEqual([keys[0], keys[0]]);
     expect(stored.size).toBe(1);
   });
+
+  it("sends one execution when the control is activated twice before it can disable", async () => {
+    const user = userEvent.setup();
+    const detail = structuredClone(investigated);
+    detail.action_intents[0].approval = {
+      ...fixture<CaseDetail["action_intents"][0]["approval"] & object>("approval.json"),
+      id: approval.id,
+      decision: "approved",
+    };
+    let calls = 0;
+    let release: (value: ApiResult<ExecuteResponse>) => void = () => undefined;
+    const gate = new Promise<ApiResult<ExecuteResponse>>((resolve) => {
+      release = resolve;
+    });
+    const client = {
+      overview: vi.fn(async () => ok(overview)),
+      listCases: vi.fn(async () => ok(pageFor(detail))),
+      caseDetail: vi.fn(async () => ok(detail)),
+      audit: vi.fn(async () => ok(audit)),
+      investigate: vi.fn(),
+      decide: vi.fn(),
+      ingest: vi.fn(),
+      execute: vi.fn(() => {
+        calls += 1;
+        return gate;
+      }),
+    } as unknown as SentinelClient;
+    render(<Harness client={client} />);
+    await user.click(await screen.findByRole("button", { name: /2500\.00 USD/ }));
+    const execute = await screen.findByRole("button", { name: "Execute simulated hold" });
+    execute.click();
+    execute.click();
+    expect(calls).toBe(1);
+    release(ok({ action: fixture<ExecuteResponse>("execute.json").action, replayed: false }));
+  });
 });
 
 function Harness({ client }: { client: SentinelClient }) {
