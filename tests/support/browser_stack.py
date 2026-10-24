@@ -44,6 +44,9 @@ PREFIX = "sentinel-browser-"
 MARKER = ".sentinel-browser-stack"
 # The only top-level entries a helper-owned state directory may contain at deletion time.
 OWNED_ENTRIES = {"stack.json", MARKER, "pg", "api.log"}
+# Paths the helper itself reads, writes or hands to pg_ctl. Each must be a real (not
+# redirected) entry resolving inside the owned directory whenever it exists.
+CRITICAL_PATHS = ("stack.json", MARKER, "api.log", "pg", "pg/data")
 
 
 class StackError(RuntimeError):
@@ -144,6 +147,7 @@ class Stack:
         self.state_dir = Path(state_dir)
         self.manifest = manifest or {}
         self._process: subprocess.Popen | None = None
+        self._manifest_removed = False
 
     @property
     def path(self) -> Path:
@@ -166,8 +170,24 @@ class Stack:
         if not isinstance(recorded, str) or canonical(directory) != os.path.normcase(recorded):
             raise StackError("manifest is not in the state directory it records")
         stack = cls(Path(recorded), data)
-        stack.verify_owned()
+        stack.guard()
         return stack
+
+    def guard(self) -> None:
+        """Operation-boundary check, repeated before every PostgreSQL command, helper write
+        and deletion (a loaded object is not proof of the current filesystem shape): the
+        directory is ours, and every critical child that exists is a real entry resolving
+        inside it. Not-yet-created children are allowed. This is not a defence against an
+        adversary racing the filesystem between the check and the operation."""
+        self.verify_owned()
+        root = canonical(self.state_dir)
+        for relative in CRITICAL_PATHS:
+            path = self.state_dir / relative
+            if not os.path.lexists(path):
+                continue
+            expected = os.path.join(root, os.path.normcase(relative.replace("/", os.sep)))
+            if is_redirect(path) or canonical(path) != expected:
+                raise StackError(f"redirected or foreign path refused: {relative}")
 
     def verify_owned(self) -> None:
         """The directory is ours: expected name, canonical path and a matching marker."""
@@ -189,25 +209,80 @@ class Stack:
             raise StackError("ownership marker does not match the manifest")
 
     def _remove_owned(self) -> str | None:
-        """Delete the verified directory. Returns an error instead of deleting anything
-        unexpected (unrelated files, links or junctions)."""
+        """Delete the verified directory in a fixed order, so every failure leaves a state a
+        plain `stop` retry can finish (review R12):
+          1. removable contents (pg/, api.log), each re-checked right before deletion;
+             on failure the marker and manifest are untouched, so the stack still loads;
+          2. the manifest (the only copy of the tokens);
+          3. the ownership marker; if this fails, a marker-only directory remains, which
+             `stop --manifest` finishes after re-verifying the marker (finish_marker_only);
+          4. the now-empty directory.
+        Unexpected entries, links or junctions anywhere stop the removal before step 1."""
         try:
-            self.verify_owned()
+            self.guard()
         except StackError as error:
             return f"not removed: {error}"
-        unexpected = sorted(set(os.listdir(self.state_dir)) - OWNED_ENTRIES)
+        entries = set(os.listdir(self.state_dir))
+        unexpected = sorted(entries - OWNED_ENTRIES)
         if unexpected:
             return f"not removed: unexpected entries {unexpected}"
         links = redirects_below(self.state_dir)
         if links:
             return f"not removed: links inside state directory {links[:5]}"
+        root = canonical(self.state_dir)
+        for name in sorted(entries - {"stack.json", MARKER}):
+            target = self.state_dir / name
+            if is_redirect(target) or os.path.dirname(canonical(target)) != root:
+                return f"not removed: {name} no longer resolves inside the state directory"
+            try:
+                if target.is_dir():
+                    shutil.rmtree(target)
+                else:
+                    target.unlink()
+            except OSError as error:
+                return (f"removal incomplete ({name}: {type(error).__name__}); ownership "
+                        "marker and manifest kept, retry stop")
         try:
-            shutil.rmtree(self.state_dir)
+            self.path.unlink(missing_ok=True)
         except OSError as error:
-            return f"removal incomplete: {type(error).__name__}"
+            return f"removal incomplete (manifest: {type(error).__name__}); retry stop"
+        self._manifest_removed = True
+        try:
+            (self.state_dir / MARKER).unlink()
+        except OSError as error:
+            return (f"finalization incomplete (ownership marker: {type(error).__name__}); "
+                    f"only the marker remains, rerun stop --manifest {self.path}")
+        try:
+            os.rmdir(self.state_dir)
+        except OSError as error:
+            return f"finalization incomplete (empty directory: {type(error).__name__})"
         return None
 
+    @staticmethod
+    def finish_marker_only(directory: Path) -> None:
+        """Finish a removal that stopped after the manifest was deleted. Acts only on a
+        `sentinel-browser-*` directory containing exactly a valid marker that records this
+        very directory; never creates or repairs ownership."""
+        directory = Path(directory)
+        if not directory.name.startswith(PREFIX) or is_redirect(directory):
+            raise StackError("not a helper-owned directory")
+        if sorted(os.listdir(directory)) != [MARKER]:
+            raise StackError("not a marker-only stack directory")
+        marker = directory / MARKER
+        if is_redirect(marker):
+            raise StackError("ownership marker is redirected")
+        try:
+            recorded = json.loads(marker.read_text(encoding="utf-8")).get("state_dir")
+        except (OSError, ValueError, AttributeError):
+            raise StackError("ownership marker is unreadable") from None
+        if recorded != canonical(directory):
+            raise StackError("ownership marker does not record this directory")
+        marker.unlink()
+        os.rmdir(directory)
+
     def _cluster(self) -> devdb.Cluster:
+        """The owned cluster, after a fresh path guard (every pg_ctl use goes through here)."""
+        self.guard()
         bin_dir = devdb.find_pg_bin()
         if bin_dir is None:
             raise StackError("PostgreSQL initdb not found; set SENTINEL_PG_BIN")
@@ -215,6 +290,7 @@ class Stack:
                              self.manifest["database"]["port"])
 
     def _save(self) -> None:
+        self.guard()
         self.path.write_text(json.dumps(self.manifest, indent=2, sort_keys=True) + "\n",
                              encoding="utf-8")
         try:
@@ -266,6 +342,7 @@ class Stack:
         if healthy(port):
             raise StackError(f"port {port} already serves an API")
         module, factory = self.manifest["app"].split(":")
+        self.guard()  # api.log must be a real file inside the owned directory
         env = {**os.environ, "SENTINEL_DATABASE_URL": self.manifest["database_url"],
                "SENTINEL_INVESTIGATOR": "deterministic", "SENTINEL_LIVE_CLAUDE": "0",
                "SENTINEL_MODE": "local"}
@@ -319,26 +396,34 @@ class Stack:
         except StackError as error:
             api_ok = False
             errors.append(f"api: {error}")
-        db_ok = True
-        if self.manifest.get("database", {}).get("started"):
-            cluster = self._cluster()
-            try:
-                cluster.stop()
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-                errors.append("database: pg_ctl stop failed")
-            db_ok = not _cluster_running(cluster)
-            if db_ok:
-                self.manifest["database"]["started"] = False
-            elif not any(e.startswith("database") for e in errors):
-                errors.append("database: still running")
+        try:
+            state = self.db_state()
+            if state in ("running", "unknown"):
+                try:
+                    self._cluster().stop()
+                except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+                    errors.append("database: pg_ctl stop failed")
+                state = self.db_state()
+        except StackError as error:
+            state = "unknown"
+            errors.append(f"database: {error}")
+        db_ok = state in DB_STOPPED
+        if db_ok:
+            self.manifest.setdefault("database", {})["started"] = False
+        else:
+            errors.append(f"database: state {state}, not verified stopped")
         removed = False
+        self._manifest_removed = False
         if api_ok and db_ok:
             problem = self._remove_owned()
             removed = problem is None
             if problem:
                 errors.append(problem)
-        if not removed and self.state_dir.exists():
-            self._save()  # the recovery record reflects what is still running
+        if not removed and not self._manifest_removed and self.path.exists():
+            try:
+                self._save()  # the recovery record reflects what may still be running
+            except (StackError, OSError) as error:
+                errors.append(f"recovery record not rewritten: {error}")
         return {"ok": api_ok and db_ok and removed, "api_stopped": api_ok,
                 "database_stopped": db_ok, "state_removed": removed, "errors": errors}
 
@@ -350,13 +435,23 @@ class Stack:
 
     def restart_db(self, timeout: float = 60) -> None:
         """Stop and start the PostgreSQL server itself (pg_ctl); the API reconnects."""
-        cluster = self._cluster()
-        cluster.stop()
-        if _cluster_running(cluster):
-            raise StackError("database did not stop")
-        cluster.start()
-        if not wait_until(lambda: _cluster_running(cluster), timeout):
+        self._cluster().stop()
+        if self.db_state() != "stopped":
+            raise StackError("database not verified stopped")
+        self._cluster().start()
+        if not wait_until(lambda: self.db_state() == "running", timeout):
             raise StackError("database did not restart")
+
+    def db_state(self) -> str:
+        """running | stopped (pg_ctl status 3) | absent | uninitialized | unknown.
+        Anything that is not affirmative evidence counts as unknown, never as stopped."""
+        cluster = self._cluster()
+        data = cluster.data_dir
+        if not os.path.lexists(data):
+            return "absent"
+        if not (data / "PG_VERSION").exists() and not (data / "postmaster.pid").exists():
+            return "uninitialized"  # no server can run without PG_VERSION
+        return pg_status(cluster)
 
     def seed(self, name: str, ordinal: int) -> dict:
         if name not in scenarios.SCENARIOS:
@@ -371,16 +466,29 @@ class Stack:
         return record
 
     def status(self) -> dict:
-        cluster = self._cluster()
+        state = self.db_state()
+        database = "up" if state == "running" else "unknown" if state == "unknown" else "down"
         return {"api": "up" if healthy(self.manifest["api"]["port"]) else "down",
-                "database": "up" if _cluster_running(cluster) else "down"}
+                "database": database}
+
+
+DB_STOPPED = {"stopped", "absent", "uninitialized"}
+
+
+def pg_status(cluster: devdb.Cluster) -> str:
+    """pg_ctl status: 0 running, 3 not running (PostgreSQL 14 docs); 4 (inaccessible data
+    directory), other codes, errors and timeouts are unknown."""
+    try:
+        status = subprocess.run([str(cluster.bin_dir / "pg_ctl"), "-D", str(cluster.data_dir),
+                                 "status"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return {0: "running", 3: "stopped"}.get(status.returncode, "unknown")
 
 
 def _cluster_running(cluster: devdb.Cluster) -> bool:
-    status = subprocess.run([str(cluster.bin_dir / "pg_ctl"), "-D", str(cluster.data_dir),
-                             "status"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL)
-    return status.returncode == 0
+    return pg_status(cluster) == "running"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -407,6 +515,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"SENTINEL_STACK_MANIFEST={stack.path}")
             print(f"base_url={stack.manifest['api']['base_url']} "
                   f"scenarios={','.join(sorted(stack.manifest['scenarios']))}")
+            return 0
+        if args.command == "stop" and not os.path.lexists(args.manifest) \
+                and args.manifest.parent.is_dir():
+            Stack.finish_marker_only(args.manifest.parent)
+            print(json.dumps({"ok": True, "api_stopped": True, "database_stopped": True,
+                              "state_removed": True, "errors": []}))
             return 0
         stack = Stack.load(args.manifest)
         if args.command == "seed":

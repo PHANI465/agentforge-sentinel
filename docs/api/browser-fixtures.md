@@ -22,7 +22,7 @@ uv run --locked python tests/support/browser_stack.py start [--parent-dir DIR] [
 uv run --locked python tests/support/browser_stack.py seed --manifest PATH --scenario NAME --ordinal N
 uv run --locked python tests/support/browser_stack.py restart-api --manifest PATH
 uv run --locked python tests/support/browser_stack.py restart-db --manifest PATH
-uv run --locked python tests/support/browser_stack.py status --manifest PATH   # {"api":"up|down","database":"up|down"}
+uv run --locked python tests/support/browser_stack.py status --manifest PATH   # {"api":"up|down","database":"up|down|unknown"}
 uv run --locked python tests/support/browser_stack.py stop --manifest PATH     # {"ok":..,"api_stopped":..,"database_stopped":..,"state_removed":..,"errors":[..]}
 ```
 
@@ -32,9 +32,17 @@ uv run --locked python tests/support/browser_stack.py stop --manifest PATH     #
 - **`seed`** prints one scenario record as JSON (no tokens). `ordinal` ≥ 1 is single-use per stack and gives stable IDs.
 - **`restart-api`** kills only the recorded uvicorn process tree (identity checked by PID **and** process start time) and starts a new process on the same port. **`restart-db`** stops and starts the PostgreSQL server with `pg_ctl`; the API reconnects on its next request.
 - **`stop`** stops the API and database and verifies both (process gone, port closed, `pg_ctl status`). Nothing is terminated by process name, and a PID whose start time no longer matches is never killed.
-  - Only when **both** are verified does it delete the private directory (manifest with tokens, process identity, database files), and only after re-checking ownership. It refuses to delete if the directory contains anything unexpected or any link/junction.
-  - Any incomplete step returns `ok: false` with `errors` (exit code 1) and **keeps the manifest, including tokens**, as the recovery record, so `stop` can be retried. Those tokens only authorize the disposable local database.
+  - **Database state** is explicit: `running` (pg_ctl status 0), `stopped` (status 3, documented "not running"), `absent` (no data directory), `uninitialized` (no `PG_VERSION`/`postmaster.pid`, so no server can run there), or `unknown`. Unknown covers status 4 (inaccessible data directory), any other code, errors and timeouts, and it never counts as stopped. Only running/unknown trigger `pg_ctl stop`, followed by a fresh status check.
+  - Only when **both** API and database are verified does it delete the private directory, after re-checking ownership. It refuses if the directory contains anything unexpected or any link/junction. Deletion order:
+    1. removable contents (`pg/`, `api.log`), each re-checked just before deletion;
+    2. the manifest (tokens);
+    3. the ownership marker;
+    4. the empty directory.
+  - If step 1 fails (for example a file locked on Windows), the marker and manifest are untouched and a plain `stop` retry finishes. If step 3 fails, only the marker remains, without tokens; `stop --manifest <same path>` then removes it, but only for a `sentinel-browser-*` directory containing exactly a marker that records that very directory.
+  - Any incomplete step returns `ok: false` with `errors` (exit code 1) and **keeps the manifest, including tokens**, as the recovery record unless step 2 already ran. Those tokens only authorize the disposable local database.
 - **Ownership checks** (all commands taking `--manifest`): the manifest must sit in the canonical directory it records, the directory name must start with `sentinel-browser-`, neither path may be a link or junction, and the directory's `.sentinel-browser-stack` marker must match the manifest's random owner value. Anything else is rejected before any process or file is touched.
+  - The **path guard** is repeated at every operation boundary: before each `pg_ctl` call (stop/start/status/restart), before opening `api.log`, before rewriting the manifest and before each deletion. A previously loaded stack is not trusted. Every critical child that exists (`stack.json`, marker, `api.log`, `pg`, `pg/data`) must be a real entry whose canonical path is inside the owned directory; a junction or symlink is refused with no process operation. Children not yet created are allowed during startup.
+  - This guards against accidental redirection, not against an adversary racing the filesystem between a check and the operation.
 
 Suggested Playwright wiring: `globalSetup` runs `start` and reads the manifest path; `globalTeardown` runs `stop`. Tests that need a fresh, time-sensitive record call `seed` just before use.
 
@@ -92,7 +100,7 @@ Sessions expire 8 hours after `start`.
 
 ## Verification
 
-`tests/test_browser_fixtures.py` (13 tests, real sockets) and `tests/test_browser_fixtures_review.py` (10 tests: ownership, failure-safe cleanup, corrected expectations) cover:
+`tests/test_browser_fixtures.py` (13 tests, real sockets), `tests/test_browser_fixtures_review.py` (10 tests: ownership, failure-safe cleanup, corrected expectations) and `tests/test_browser_fixtures_followup.py` (17 process-free intercepted tests: nested redirection, partial removal, database state) cover:
 - documented states for all scenarios;
 - foreign-session denial; limited capabilities and second actor;
 - live provider failure and retry; seeded failed-run recovery;
