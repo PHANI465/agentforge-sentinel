@@ -28,7 +28,9 @@ from sentinel.contracts.v1 import (
     Approval, ApprovalDecisionInput, AuditEvent, ExecuteActionInput, InvestigationRequestInput,
     TransactionInput, TrustedContext, safe_validation_errors,
 )
-from sentinel.observability import Metrics, configure_logging, emit, request_id
+from sentinel.observability import (
+    Metrics, configure_logging, emit, method_label, request_id,
+)
 from sentinel.service import MAX_CURSOR_LENGTH, Sentinel, ServiceError
 
 HTTP_LOG = logging.getLogger("sentinel.http")
@@ -184,9 +186,11 @@ class RequestContext:
     """Plain ASGI middleware (keeps request streaming intact): request ID, one safe event and
     metrics per request, and containment of unexpected exceptions.
 
-    An unexpected exception is answered with the same plain-text 500 body as before (the
-    frozen C01 contract) and is not re-raised, so the server never logs its traceback or
-    message. Only the exception type name is recorded."""
+    An unexpected exception raised before response headers start is answered with the
+    same plain-text 500 body as before (the frozen C01 contract). After headers have
+    started (no current endpoint streams) the response cannot be replaced; the event then
+    records the started status. In both cases the exception is not re-raised, so the server
+    never logs its traceback or message; only the exception type name is recorded."""
 
     BODY = b"Internal Server Error"
 
@@ -231,10 +235,11 @@ class RequestContext:
         duration_ms = round((time.perf_counter() - started) * 1000, 1)
         code = status["code"] or 500
         route = self.route_of(scope)
-        self.metrics.observe(scope["method"], route, code, duration_ms)
+        method = method_label(scope["method"])
+        self.metrics.observe(method, route, code, duration_ms)
         outcome = ("unexpected_error" if error_type else "ok" if code < 400
                    else "handled_error" if code < 500 else "server_error")
-        fields = {"request_id": rid, "method": scope["method"], "route": route, "status": code,
+        fields = {"request_id": rid, "method": method, "route": route, "status": code,
                   "duration_ms": duration_ms, "outcome": outcome}
         if error_type:
             fields["error_type"] = error_type

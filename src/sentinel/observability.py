@@ -19,6 +19,9 @@ from collections import Counter, defaultdict
 REQUEST_ID_HEADER = "X-Request-ID"
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{7,63}$")
 LATENCY_BUCKETS_MS = (5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000)
+# The method is client-controlled: anything outside this vocabulary shares one label, so
+# metric and log cardinality stay fixed (review R20).
+HTTP_METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"})
 _ALLOWED_FIELDS = {"request_id", "method", "route", "status", "duration_ms", "outcome",
                    "error_type", "case_id", "revision", "run_id", "failure_code", "seconds"}
 
@@ -29,6 +32,10 @@ def request_id(supplied: str | None) -> str:
     if supplied and _SAFE_REQUEST_ID.fullmatch(supplied):
         return supplied
     return secrets.token_hex(16)
+
+
+def method_label(method: str) -> str:
+    return method if method in HTTP_METHODS else "OTHER"
 
 
 def emit(logger: logging.Logger, event: str, level: int = logging.INFO, **fields) -> None:
@@ -43,12 +50,19 @@ def emit(logger: logging.Logger, event: str, level: int = logging.INFO, **fields
 
 def configure_logging() -> None:
     """Attach a stderr handler to the `sentinel` logger once (SENTINEL_LOG_LEVEL, default
-    INFO; `off` disables). Uvicorn configures only its own loggers."""
+    INFO). `off` removes that handler, stops propagation to root handlers and disables
+    sentinel loggers entirely; a later non-off call re-enables them. Uvicorn configures only
+    its own loggers."""
     level = os.environ.get("SENTINEL_LOG_LEVEL", "INFO").upper()
     root = logging.getLogger("sentinel")
+    ours = [h for h in root.handlers if getattr(h, "_sentinel", False)]
     if level == "OFF":
-        root.addHandler(logging.NullHandler())
+        for handler in ours:
+            root.removeHandler(handler)
+        root.setLevel(logging.CRITICAL + 10)
+        root.propagate = False
         return
+    root.propagate = True
     if not any(getattr(h, "_sentinel", False) for h in root.handlers):
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(logging.Formatter("%(message)s"))

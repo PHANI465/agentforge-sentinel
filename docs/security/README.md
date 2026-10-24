@@ -5,25 +5,25 @@ Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. T
 ## Request IDs, events and metrics
 
 - **Request ID.** Every HTTP response carries `X-Request-ID`. A client-supplied `X-Request-ID` is echoed only if it matches `^[A-Za-z0-9][A-Za-z0-9._-]{7,63}$`. Anything else (short, long, spaces, line breaks, markup) is replaced by a random 32-hex ID from `secrets`, which is independent of domain UUIDs.
-- **One event per request.** The logger is `sentinel.http`, writing JSON lines to stderr via `configure_logging`. `SENTINEL_LOG_LEVEL` defaults to INFO; set it to `off` to disable.
+- **One event per request.** The logger is `sentinel.http`, writing JSON lines to stderr via `configure_logging`. `SENTINEL_LOG_LEVEL` defaults to INFO. `off` removes the sentinel stderr handler, stops propagation to any root handler and disables sentinel loggers; a later non-off configuration re-enables them. Tests cover first-use off with a root handler, and INFO → off → INFO.
 
   ```json
   {"event":"http_request","request_id":"…","method":"GET","route":"/v1/cases/{case_id}","status":200,"duration_ms":4.2,"outcome":"ok"}
   ```
 
-  `outcome` is `ok`, `handled_error` (4xx), `server_error`, or `unexpected_error` (which adds `error_type`, the exception **class name** only). `route` is the template, never the raw path or query string.
+  `outcome` is `ok`, `handled_error` (4xx), `server_error`, or `unexpected_error` (which adds `error_type`, the exception **class name** only). `route` is the template, never the raw path or query string. `method` is one of GET/HEAD/POST/PUT/PATCH/DELETE/OPTIONS, or `OTHER`: methods are client-controlled, so unsupported ones share one label (review R20).
 - **Service events** (logger `sentinel.service`), each also counted in metrics:
   - `approval_expired` (`case_id`, `revision`);
   - `investigation_failed` (`run_id`, `failure_code`, and `error_type` for unexpected exceptions);
   - `investigation_timeout` (`run_id`, `seconds`).
 - **Allowlist.** `observability.emit` rejects any field outside the allowlist and any non-scalar value. Tokens, header values, query strings, bodies, exception messages, model context and DSNs cannot be logged through it.
-- **Metrics.** `app.state.metrics.snapshot()` gives request counts by `METHOD route status`, latency buckets (≤5 … ≤5000 ms, >5000) by `METHOD route`, and event counts. They are in-process only; there is no HTTP endpoint (see "Contract notes").
+- **Metrics.** `app.state.metrics.snapshot()` gives request counts by `METHOD route status` (bounded: fixed method vocabulary plus `OTHER`, route templates plus `unmatched`, and real status codes), latency buckets (≤5 … ≤5000 ms, >5000) by `METHOD route`, and event counts. They are in-process only; there is no HTTP endpoint (see "Contract notes").
 
 ## Unexpected failures
 
-- **Containment.** A plain-ASGI middleware catches any exception that escapes the application, including storage outages and FastAPI `ResponseValidationError`. It answers with the **same plain-text `500 Internal Server Error` body as C01** (the frozen R10 behavior) plus `X-Request-ID`, and does not re-raise. The server therefore never logs the exception traceback or message. This was verified on a real uvicorn process: a canary in the exception message, a bearer token and a DSN host were all absent from uvicorn's stdout/stderr, and no traceback was printed.
+- **Containment.** A plain-ASGI middleware catches any exception that escapes the application, including storage outages and FastAPI `ResponseValidationError`, and does not re-raise it. If the failure happens **before response headers start**, which covers every current endpoint (none streams), it answers with the **same plain-text `500 Internal Server Error` body as C01** (the frozen R10 behavior) plus `X-Request-ID`. A failure after headers have started cannot be replaced: the client sees an incomplete response, and the event records the already-started status. The server therefore never logs the exception traceback or message. This was verified on a real uvicorn process: a canary in the exception message, a bearer token and a DSN host were all absent from uvicorn's stdout/stderr, and no traceback was printed.
 - **Clients.** They still need the C01 fallback (`docs/api/README.md`) for non-JSON 5xx, proxies and network failures.
-- **Connection timeout.** `db.connect` bounds attempts with `connect_timeout=10` s unless the URL sets its own. Before this, an unreachable database took about 130 s to fail.
+- **Connection timeout.** `db.connect` bounds attempts with `connect_timeout=10` s unless the connection string sets its own. Options are parsed with psycopg's `conninfo_to_dict` (libpq rules, keyword and URI forms), so text such as `application_name=connect_timeout_probe` or a password containing those characters does not disable the default (review R19). Before this, an unreachable database took about 130 s to fail.
 - **Access logs.** uvicorn's **default access log prints the query string** (verified). Tokens are never in queries, but cursors and filters are. Run uvicorn with `--no-access-log` (as `scripts/local_stack.py` and the browser stack do) or rely on the `sentinel.http` events instead.
 
 ## Investigations: faults, timeouts, cancellation
@@ -31,6 +31,7 @@ Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. T
 - The investigator runs under a wall-clock deadline of its budget `timeout_seconds` plus 2 s grace. The grace lets an adapter's own typed timeout, such as the Claude CLI's, win first.
   - **On timeout:** the run is `failed` with `failure_code: timeout` and the case returns to `open`. The worker thread cannot be killed; if it finishes later, its result is discarded (tested: no intent, no revision change).
   - **On an unexpected investigator exception:** the run is `failed` with `provider_unavailable` and the case reopens. It no longer stays stuck in `investigating` until crash recovery. Only the exception class is logged.
+- **No process-wide work cap.** Each request runs at most one investigator worker, but nothing bounds the total number of late workers across concurrent requests. That is a limitation for later public/load acceptance, not a claimed guarantee.
 - **Client disconnects** do not cancel server work. Every write path is a single transaction and is idempotent on retry (ingestion by `external_id`; execution by `idempotency_key`), so a client that loses a response retries with the same key.
 
 ## Consistency and contention (tests in `tests/test_reliability.py`)
@@ -48,6 +49,17 @@ Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. T
 | Schema owner / operator (migrations, `create-session`, `grant-runtime`) | DDL, migrations, issue sessions | (it is trusted; not tamper-proof) |
 | Runtime API role (`python -m sentinel.cli grant-runtime --role sentinel_runtime`) | SELECT/INSERT on the domain tables; UPDATE on `cases`, `agent_runs`, `approvals`; SELECT on `api_sessions` and `schema_migrations`; USAGE on the audit sequence | ALTER/DROP tables, drop or disable the audit triggers, CREATE in `public`, DELETE/TRUNCATE anywhere, UPDATE/DELETE `audit_events`, issue or modify sessions, record migrations, effectively GRANT anything |
 
+- **Existing roles are verified, never trusted or silently demoted** (review R18). Before any password or privilege change, `grant_runtime` checks an existing role for:
+  - attributes: it must be exactly LOGIN + NOINHERIT, with no SUPERUSER, CREATEDB, CREATEROLE, REPLICATION or BYPASSRLS;
+  - role memberships (`SET ROLE` reach);
+  - ownership anywhere (`pg_shdepend`, database owner);
+  - CREATE on any database;
+  - direct schema privileges other than USAGE on `public`;
+  - privileges on unmanaged relations;
+  - grant options, function grants and default privileges;
+  - whether it is the connecting operator.
+
+  Any finding raises `UnsafeRoleError` listing the reasons, with no credentials, and leaves attributes, password, memberships, grants and the PUBLIC schema setting unchanged (tested by snapshot). A verified runtime role is refreshed idempotently: stale table grants are revoked and the password can be rotated.
 - `grant_runtime` refuses to run if any table lacks an explicit entry in `RUNTIME_PRIVILEGES`, and a test pins the table set, so every new migration must decide its grants.
 - It also revokes `CREATE` on schema `public` from PUBLIC (PostgreSQL 14 allows it by default).
 - A runtime password, if used, comes from `SENTINEL_RUNTIME_PASSWORD`, never the command line.
@@ -56,7 +68,7 @@ Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. T
 
 ## Contract notes (for Codex and Cursor)
 
-- **Added, non-breaking:** an `X-Request-ID` response header on every response. It is not yet declared in `contracts/http/openapi.v1.json`, which is byte-unchanged. Proposed: declare it in a future contract revision. UIs may display it for support, but must not rely on it for authorization.
+- **Added, non-breaking:** an optional diagnostic `X-Request-ID` response header. It is not declared in `contracts/http/openapi.v1.json`, which is byte-unchanged. Per the C05 review decision, the UI must not rely on it (and must tolerate its absence) until an accepted HTTP revision declares it. It is never authorization.
 - **Proposed, not implemented** (each would change the frozen contract): a JSON `500 {"error":"internal_error"}` body, and an authenticated metrics endpoint.
 
 ## Not verified

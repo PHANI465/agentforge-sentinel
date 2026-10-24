@@ -8,8 +8,8 @@
 - Owner: Claude Code. Accepted dependency: C01 at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. No C02 code imported.
 - Tool and worktree: Claude Code, E:\PHANI\sentinel-wt\claude-backend-reliability (branch task/claude-backend-reliability)
 - Updated: 2026-10-23
-- State: ready for Codex review
-- Code reference tested before this note: working tree on top of 2e6c232 (strict checks rerun after the commit; reported in chat)
+- State: R18–R20 corrections ready for Codex re-review. 0119ca7 was CHANGES REQUESTED (docs/reviews/0119ca7.md on task/coordination).
+- Code reference tested before this note: working tree on top of 0119ca73e6ae3b4df9f9eeffcea8b15911f716e6 (strict checks rerun after the correction commit; reported in chat)
 - Owned/changed paths: src/sentinel/observability.py (new), src/sentinel/db/roles.py (new), src/sentinel/api.py (middleware, metrics, logging), src/sentinel/service.py (overview single statement, investigator deadline and fault handling, events), src/sentinel/db/__init__.py (connect timeout), src/sentinel/cli.py (`grant-runtime`), tests/test_reliability.py (new), tests/test_db_roles.py (new), docs/security/README.md (new), this note. contracts/ and web/ are unchanged; the HTTP examples and OpenAPI are byte-identical.
 
 ## Implemented
@@ -45,12 +45,50 @@
 ## Not verified / gaps
 
 - Linux/macOS/CI. Metrics are process-local with no export endpoint. Log shipping and retention are undesigned.
-- `X-Request-ID` is not yet declared in OpenAPI (byte-frozen). JSON 500 bodies and a metrics endpoint are proposed only.
+- `X-Request-ID` is not declared in OpenAPI (byte-frozen; no UI reliance). JSON 500 bodies and a metrics endpoint remain proposals only.
+- No process-wide cap on late investigator workers. A failure after response headers start cannot become a clean 500 (no current endpoint streams).
 - An investigator worker past its deadline keeps running until it returns, since threads can't be killed. The Claude adapter's own subprocess timeout bounds that case.
+
+## Review correction: R18–R20 and operator notes (on top of 0119ca7)
+
+Changed paths: src/sentinel/db/roles.py, src/sentinel/db/__init__.py, src/sentinel/observability.py, src/sentinel/api.py, tests/test_c05_review_regressions.py (new), docs/security/README.md, this note. contracts/ and web/ are unchanged; the OpenAPI and 21 examples are byte-identical; the 500 body and status are unchanged.
+
+- **R18:** an existing role is checked first by `unsafe_reasons`:
+  - attributes: exactly LOGIN + NOINHERIT, none of SUPERUSER/CREATEDB/CREATEROLE/REPLICATION/BYPASSRLS;
+  - no memberships (SET ROLE reach);
+  - owns nothing (`pg_shdepend` owner entries plus database owner);
+  - no CREATE on any database;
+  - no direct schema privilege beyond USAGE on public;
+  - no privileges on unmanaged relations, no grant options, no function grants, no default privileges;
+  - not the connecting operator.
+
+  Any reason raises `UnsafeRoleError` before any password, privilege or PUBLIC-schema change. Operators are never demoted. A verified runtime role refreshes idempotently.
+- **R19:** `connect_timeout` is detected with `psycopg.conninfo.conninfo_to_dict` (keyword and URI forms). Explicit values, including 0, are preserved.
+- **R20:** the metric and log `method` comes from a fixed vocabulary plus `OTHER`; responses are unchanged.
+- **Operator notes:**
+  - `SENTINEL_LOG_LEVEL=off` now removes the sentinel handler, stops propagation and disables sentinel loggers (first use and INFO→off), and re-enables on a later non-off call;
+  - the 500-containment prose is narrowed to failures before headers start;
+  - the lack of a process-wide late-worker cap is stated as a limitation.
+
+Test-first evidence: on 0119ca7, `tests/test_c05_review_regressions.py` gave 22 failed, 6 passed.
+- R18 (all DID NOT RAISE: the old code accepted the role and changed it):
+  - 7 attribute variants (SUPERUSER, CREATEROLE, CREATEDB, BYPASSRLS, REPLICATION, INHERIT, NOLOGIN);
+  - an existing superuser;
+  - direct schema CREATE and database CREATE;
+  - membership, ownership, grant option;
+  - the operator identity.
+- R19: 4 misleading-value URLs got no timeout.
+- R20: 64 `XMETHOD…` labels stored; the injected method was logged verbatim.
+- Log off: 2 cases still emitted.
+- The 6 that passed: plain/explicit-timeout URLs and the safe refresh, which already worked.
+- Two test fixes before counting:
+  - the R18 tests resolve `UnsafeRoleError` with a fallback, so the old code's `grant_runtime` actually runs (DID NOT RAISE) instead of failing on a missing class;
+  - the ownership case uses an owned sequence, because an unmanaged table trips the existing grant-map check instead.
+- After the fix: focused C05 suites (regressions 28 + roles 17 + reliability 19) pass, 64/64.
 
 ## Next action
 
-Codex: review C05 (error containment versus the frozen contract, role grants, investigator deadline semantics). Decide whether to declare `X-Request-ID` in the next contract revision before Cursor relies on it.
+Codex: re-review the R18–R20 correction commit. `X-Request-ID` stays an optional, undeclared diagnostic header (no UI reliance) until an accepted HTTP revision declares it.
 
 ## Coordination and provenance
 

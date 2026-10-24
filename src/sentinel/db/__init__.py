@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import psycopg
+from psycopg.conninfo import conninfo_to_dict
 from psycopg.rows import dict_row
 
 MIGRATIONS = Path(__file__).with_name("migrations")
@@ -14,8 +15,10 @@ CONNECT_TIMEOUT_SECONDS = 10
 
 def connect(url: str) -> psycopg.Connection:
     """Bounded connection attempts: an unreachable database fails in seconds, not minutes,
-    unless the URL sets its own connect_timeout."""
-    extra = {} if "connect_timeout" in url else {"connect_timeout": CONNECT_TIMEOUT_SECONDS}
+    unless the connection string sets its own connect_timeout. Options are parsed with
+    libpq's rules (keyword and URI forms), so text inside other values does not count."""
+    explicit = "connect_timeout" in conninfo_to_dict(url)
+    extra = {} if explicit else {"connect_timeout": CONNECT_TIMEOUT_SECONDS}
     return psycopg.connect(url, row_factory=dict_row, **extra)
 
 
