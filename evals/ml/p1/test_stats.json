@@ -5,6 +5,6 @@
     "python": "3.11.3",
     "scikit_learn": "1.9.1"
   },
-  "peak_rss_mib": 481.0,
-  "stage_seconds": 40.02
+  "peak_rss_mib": 483.0,
+  "stage_seconds": 38.17
 }

@@ -42,7 +42,8 @@ class Paths:
 
 def _write(path: Path, document: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # Bytes, not text mode: identical LF output on every platform.
+    path.write_bytes((json.dumps(document, indent=2, sort_keys=True) + "\n").encode("utf-8"))
 
 
 def _deterministic(provenance: dict) -> dict:
@@ -172,7 +173,8 @@ def test(paths: Paths, reproduce: bool = False) -> dict:
     uncertainty = protocol["uncertainty"]
     document = {
         "protocol_version": protocol["protocol_version"], "protocol_sha256": digest,
-        "selection_sha256": artifact.sha256(selection_path),
+        # Canonical digest of the parsed record: independent of line endings/checkout.
+        "selection_sha256": proto.digest(selection),
         "label_view": protocol["label_views"]["test"],
         "split": dataset.describe(test_split), "selected": selection["selected"],
         "frozen_threshold": threshold, "candidates": results,

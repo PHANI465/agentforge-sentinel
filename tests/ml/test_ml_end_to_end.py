@@ -74,3 +74,16 @@ def test_changed_protocol_after_selection_refuses_test(paths):
 def test_test_without_selection_is_refused(paths):
     with pytest.raises(run.StageError, match="no frozen selection"):
         run.test(paths)
+
+
+def test_outputs_are_lf_and_provenance_is_line_ending_independent(paths):
+    """Regression: Windows text-mode writes produced CRLF files, and the report hashed the
+    selection file's raw bytes, so a fresh LF checkout could not reproduce the report."""
+    run.select(paths)
+    report = run.test(paths)
+    written = [p for root in (paths.run, paths.artifacts, paths.evals)
+               for p in root.rglob("*") if p.is_file() and p.suffix != ".joblib"]
+    assert written and all(b"\r\n" not in p.read_bytes() for p in written), \
+        [p.name for p in written if b"\r\n" in p.read_bytes()]
+    selection = json.loads((paths.run / "selection.json").read_text(encoding="utf-8"))
+    assert report["selection_sha256"] == proto.digest(selection)

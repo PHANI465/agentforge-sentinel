@@ -46,8 +46,9 @@ def save(directory: Path, model, manifest: dict) -> dict:
     full = {**manifest, "format": FORMAT, "environment": environment(),
             "models_code_sha256": sha256(MODELS_CODE),
             "artifact_file": MODEL_FILE, "artifact_sha256": sha256(directory / MODEL_FILE)}
-    (directory / MANIFEST_FILE).write_text(json.dumps(full, indent=2, sort_keys=True) + "\n",
-                                           encoding="utf-8")
+    # Bytes, not text mode: identical LF output on every platform.
+    (directory / MANIFEST_FILE).write_bytes(
+        (json.dumps(full, indent=2, sort_keys=True) + "\n").encode("utf-8"))
     return full
 
 

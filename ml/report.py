@@ -20,7 +20,7 @@ def _svg(path: Path, points: list[tuple[float, float]], title: str) -> None:
     w, h, pad = 420, 320, 40
     xy = " ".join(f"{pad + r * (w - 2 * pad):.1f},{h - pad - p * (h - 2 * pad):.1f}"
                   for r, p in points)
-    path.write_text(
+    path.write_bytes((  # bytes, not text mode: identical LF output on every platform
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" '
         f'viewBox="0 0 {w} {h}" font-family="sans-serif" font-size="11">\n'
         f'<rect width="{w}" height="{h}" fill="white"/>\n'
@@ -30,7 +30,7 @@ def _svg(path: Path, points: list[tuple[float, float]], title: str) -> None:
         f'<text x="{w / 2 - 20}" y="{h - 10}">recall</text>\n'
         f'<text x="5" y="{h / 2}">precision</text>\n'
         f'<polyline points="{xy}" fill="none" stroke="#1f6feb" stroke-width="1.5"/>\n'
-        f'</svg>\n', encoding="utf-8")
+        f'</svg>\n').encode("utf-8"))
 
 
 def write(out: Path, protocol, selection, document, split, scores) -> None:
@@ -81,4 +81,4 @@ def write(out: Path, protocol, selection, document, split, scores) -> None:
               f"{unc['precision_at_capacity']}", "",
               f"Brier {document['calibration']['brier']} (scores are not calibrated "
               "probabilities).", ""]
-    (out / "report.md").write_text("\n".join(lines), encoding="utf-8")
+    (out / "report.md").write_bytes("\n".join(lines).encode("utf-8"))

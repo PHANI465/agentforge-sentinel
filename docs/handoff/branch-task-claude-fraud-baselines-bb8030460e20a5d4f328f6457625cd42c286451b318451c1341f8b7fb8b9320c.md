@@ -10,7 +10,7 @@
 - Tool and worktree: Claude Code, E:\PHANI\sentinel-wt\claude-fraud-baselines (branch task/claude-fraud-baselines)
 - Updated: 2026-10-24
 - State: ready for Codex review. C07 waits for acceptance.
-- Commits: 0ecd476 froze the protocol and pipeline **before** any selection or test score. The results commit follows. Final strict checks run after the final commit; reported in chat.
+- Commits: 0ecd476 froze the protocol and pipeline **before** any selection or test score; e43732f added the results; the following commit fixes LF output and canonical selection provenance (see Verified). Final strict checks run after the final commit; reported in chat.
 - Owned/changed paths: ml/ (new package, protocol.json, runs/p1/, artifacts/p1/), tests/ml/ (new), evals/ml/p1/ (new), docs/ml/experiment-protocol.md and docs/ml/model-card.md (new), pyproject.toml and uv.lock (new optional `ml` extra; numpy/narwhals age limits), this note. No data_pipeline/, src/, contracts/, migrations or web/ changes.
 
 ## Implemented
@@ -47,7 +47,7 @@
 
 ## Verified (Windows 11, `uv sync --locked --extra dev --extra ml`, `SENTINEL_LIVE_CLAUDE=0`)
 
-- `tests/ml`: 28 passed. They cover:
+- `tests/ml`: 29 passed. They cover:
   - hand-computed AP vs trapezoid; ties and per-day reset; the frozen threshold;
   - as-of eligibility with unknowns excluded; single-class refusal;
   - feature/label separation; preprocessing fit isolation; rule parity with `sentinel.scoring.rule_score`;
@@ -62,6 +62,12 @@
   - `python -m ml test --reproduce`: `{"reproduced": true}`;
   - a plain rerun of `test` is refused.
 - An apparent coincidence (identical top-k counts for rule_r1 and logreg_balanced on validation) was checked: the flagged sets overlap on only 243 of 435 rows, so it is not a bug.
+- **Second real bug, found after the results commit e43732f and fixed test-first:**
+  - Windows text-mode writes produced CRLF working copies of the generated JSON/MD/SVG files.
+  - `test_report.json` recorded the selection record's SHA-256 over those raw bytes, so a fresh LF checkout could not reproduce the report.
+  - Regression `test_outputs_are_lf_and_provenance_is_line_ending_independent` failed on that code and passes now: outputs are written as LF bytes, and the selection is identified by the canonical digest of its parsed JSON.
+  - Because the stored field's definition changed, the frozen test report was regenerated **once** with the unchanged protocol, selection and artifact. Compared with the first run, every field except `selection_sha256` is identical (all metrics, slices, bootstrap), and `--reproduce` returns true.
+  - This was a provenance-format correction, not iteration on test results; the first report is quoted in this note.
 - Protocol-validation disclosure: before freezing, I inspected class counts (only) of every split, including test, as the prompt requires. No model scores existed then.
 
 ## Not verified / gaps
