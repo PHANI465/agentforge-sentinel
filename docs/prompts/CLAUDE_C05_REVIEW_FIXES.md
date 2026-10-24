@@ -1,3 +1,5 @@
+Current follow-up: b3b34ac resolves R19/R20 and both operator notes; R18 retains an effective PUBLIC privilege/object-identity gap. Read docs/prompts/CLAUDE_C05_R18_FOLLOWUP.md and docs/reviews/b3b34ac.md from latest task/coordination. The original assignment below is historical; do not repeat resolved corrections.
+
 # Claude C05: correct R18-R20
 
 Continue task/claude-backend-reliability in E:/PHANI/sentinel-wt/claude-backend-reliability. Reviewed candidate 0119ca73e6ae3b4df9f9eeffcea8b15911f716e6 has changes requested. Keep accepted C01 2e6c232 as its application base; no C02 merge is required. Preserve all existing/newer work and inspect actual HEAD/status before editing.

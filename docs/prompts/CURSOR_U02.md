@@ -51,4 +51,4 @@ Retain the current unit/regression and contrast tests. Run npm test, typecheck/b
 
 Update docs/ui/workflow.md with setup/run/teardown, actual browser/platform, fixture dependencies, token/artifact policy, tested flows and gaps. Record meaningful failing regressions for any UI correction made during U02. Stage explicit owned files, inspect for secrets, commit, then run final checks after the final commit. Return exact SHA, dependency/merge base, actual counts and commands, browser-to-database evidence, cleanup and remaining gaps. Do not claim Linux/macOS/CI/hosting or production fraud effectiveness without running/verifying them.
 
-Do not merge main. C05 R18-R20 remains Claude's separate correction task; C07/U03 remain behind the model gates.
+Do not merge main. C05 b3b34ac remains unaccepted for R18 effective privileges; R19/R20 are resolved and the remaining correction stays with Claude; C07/U03 remain behind the model gates.

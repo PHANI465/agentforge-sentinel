@@ -101,3 +101,12 @@ Reviewed exact deb10370352dc62b0abfa2a5776c185494fcb04e, C01 ancestry retained. 
 U02 is now ready with U01 deb1037 plus accepted C02 0e72b0b. docs/prompts/CURSOR_U02.md assigns a dedicated task worktree, real browser/API/Postgres flows, committed-response loss/idempotency assertions, isolation/restart cases and token-safe artifacts/cleanup. C05 remains changes-requested; main was not merged. No implementation source was edited by Codex.
 
 Previously checked coordination reference: f721cfed9db1a2f20b5b516f69f5335ed68800c1. Final checks after this documentation commit belong in the ignored report/final chat.
+
+
+## C05 b3b34ac re-review: R19/R20 resolved, R18 remains
+
+Reviewed clean b3b34acfc79fbca3856877594e8b030dc14a66e0 independently. Focused64 tests passed (202.09s); Ruff,21 helpers,15 schemas,HTTP exports/examples and Node passed. Frozen contracts/web unchanged and owner strict metadata matches the candidate. Full239+1 counts remain owner-attributed.
+
+Fresh owned probes confirmed an effective PUBLIC column UPDATE on api_sessions survives refresh and changed one synthetic session's capabilities. Same-name unmanaged relation grants and effective PUBLIC schema CREATE also bypass the current validation. R18 remains changes-requested; R19/R20, OFF behavior and operator scope notes are resolved. See docs/reviews/b3b34ac.md and docs/prompts/CLAUDE_C05_R18_FOLLOWUP.md. Initial direct-column-grant persistence hypothesis was disproved and is not a finding.
+
+Implementation worktrees and main were not edited. Probe clusters stopped/state removed; no models/external databases/installations. Cursor U02 keeps accepted U01/C02 and continues independently. C03/C06/C08 and model gates are unchanged. Previously checked coordination reference: 35c2acb03228e67156bc58cb58bbb924d3331916. Final checks after this documentation commit belong in the ignored report/final chat.

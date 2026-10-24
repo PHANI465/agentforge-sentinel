@@ -18,7 +18,7 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | C01 HTTP contract | 2e6c2329aafe28b2e7c31ef5078d554cb66ca529 | ACCEPTED: R9/R10 resolved; U01 continues |
 | C02 browser fixtures | 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 | ACCEPTED: Windows local fixtures; R11/R12/R13 resolved; full U02 still pending |
 | U01 analyst UI | deb10370352dc62b0abfa2a5776c185494fcb04e | ACCEPTED: R14-R17 resolved; U02 ready with accepted C02 |
-| C05 backend reliability | 0119ca73e6ae3b4df9f9eeffcea8b15911f716e6 | CHANGES REQUESTED: R18 existing-role privileges, R19 timeout parsing, R20 metric labels |
+| C05 backend reliability | b3b34acfc79fbca3856877594e8b030dc14a66e0 | CHANGES REQUESTED: R18 effective PUBLIC grants/object identity; R19/R20 and operator notes resolved |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
@@ -27,12 +27,12 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor now implements [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 is ready for implementation; its full browser-to-database acceptance is still pending. Claude corrects C05 R18-R20 using [the review](reviews/0119ca7.md) and [prompt](prompts/CLAUDE_C05_REVIEW_FIXES.md), without merging C02 into that task. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
+U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor now implements [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 is ready for implementation; its full browser-to-database acceptance is still pending. Claude corrects remaining C05 R18 using [the re-review](reviews/b3b34ac.md) and [follow-up](prompts/CLAUDE_C05_R18_FOLLOWUP.md); R19/R20 and the operator notes are resolved, without merging C02 into that task. C04 still waits for accepted C03. WSL changes, GitHub provisioning and main integration remain pending.
 
 ## Current execution order
 
 1. Cursor starts U02 using prompts/CURSOR_U02.md, accepted U01 deb1037 and C02 0e72b0b, preserving the accepted U01 worktree.
-2. Claude corrects C05 0119ca7 R18-R20 on its existing branch; C02 0e72b0b is accepted and requires no further blocking correction.
+2. Claude corrects C05 b3b34ac remaining R18 effective privileges on its existing branch; R19/R20 and operator notes are resolved. C02 0e72b0b is accepted.
 3. Codex reviews corrected C05 and separately delivered C03/C06/C08. Cursor has both accepted U02 dependencies (U01 deb1037 and C02 0e72b0b); C04 needs accepted C03.
 4. C07/U03 follow their model gates. All final integrated checks remain necessary; passing checks on one task do not validate another task or a future merge.
 5. Existing budget only, no live-model ordinary tests, no repeated work to consume quota and no main merge by implementers.
@@ -110,7 +110,7 @@ Report average precision, precision/recall at stated review capacity, false posi
 
 Acceptance: actual saved trusted local artifact, reproducible small seeded run, pinned code/data/feature/model/threshold manifests, model card, error slices and a documented comparison with uncertainty. Never claim real-bank effectiveness or guaranteed savings from synthetic results. No GPU/cloud purchase.
 
-### C05 - Backend reliability, observability and secret safety - Claude - CHANGES REQUESTED AT 0119ca7
+### C05 - Backend reliability, observability and secret safety - Claude - R18 CHANGES REQUESTED AT b3b34ac
 
 Branch: task/claude-backend-reliability. Own backend logging/diagnostics, security/failure tests, local role/migration setup and docs/security/. Coordinate any overlapping service.py or migration changes with C01 rather than writing both branches concurrently.
 
