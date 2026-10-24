@@ -1,3 +1,5 @@
+Completed: U02 is accepted at 5f2855553ac0a445d96914730a89fc3722682830 with R21/R22 resolved. See docs/reviews/5f28555.md and the current docs/prompts/CURSOR_UI.md dispatcher from latest coordination. The instructions below are scope/history; do not repeat completed fixes.
+
 Current re-review: bb318a1 retains R21 wrapper/config gaps; preserve R22 corrections. Follow docs/prompts/CURSOR_U02_R21_FOLLOWUP.md and docs/reviews/bb318a1.md from latest task/coordination. Earlier assignments below are scope/history; do not repeat resolved changes.
 
 Current review: U02 7190c59 has changes requested for R21/R22. Read docs/prompts/CURSOR_U02_REVIEW_FIXES.md and docs/reviews/7190c59.md from latest task/coordination. Preserve the delivered implementation; the full assignment below remains its intended acceptance scope.

@@ -1,10 +1,13 @@
-# Cursor: current browser assignment
+# Cursor: accepted browser work and next dependency
 
-U01 deb1037 and C02 0e72b0b stay accepted. U02 bb318a1d283b1802e6f87e484393b50bf4a7673b retains R21 entry-point wiring gaps. Preserve R22's retained-secret/failure-artifact corrections, all real flows and the mutation guard.
+U02 is ACCEPTED at 5f2855553ac0a445d96914730a89fc3722682830. R21/R22 are resolved. Independent 12 entry-point checks, 20 planning checks, 25 frontend tests/typecheck/build and 14 real browser/API/Postgres tests plus cleanup passed on Windows. See docs/reviews/5f28555.md.
 
-Read and follow from latest coordination:
-    git show task/coordination:docs/prompts/CURSOR_U02_R21_FOLLOWUP.md
-    git show task/coordination:docs/reviews/bb318a1.md
+Preserve task/cursor-browser-e2e and its exact accepted U01+C02 integration. No further R21/R22 fixes, main merge or automatic C05/C07 merge are assigned. Keep your technical docs/handoff intact.
+
+Read current coordination before the next implementation:
     git show task/coordination:docs/TASK_QUEUE.md
+    git show task/coordination:docs/reviews/5f28555.md
 
-Continue the existing task/cursor-browser-e2e worktree and named accepted dependencies. Test the actual wrapper/config paths with all destructive commands intercepted before a real browser rerun. Do not merge C05/main, reset work or repeat U01. Claude separately starts C07 from accepted C04 in its own worktree. U03 remains gated on explicitly accepted C07 model-results contracts. No backend/Python-dependency or central coordination edits by Cursor.
+Claude continues C07 in its own backend worktree using docs/prompts/CLAUDE_C07.md. U03 starts only after Codex explicitly accepts its named model-results HTTP dependency. Until then, do not invent endpoints/fields, fabricate charts or call mock-only results completed. The accepted C04 report/model card may inform planning, but is not an accepted serving contract.
+
+Cursor owns web/, frontend tests/lock and docs/ui/; Codex owns review and central coordination. Later combined-stack checks must rerun after accepted backend/frontend integration. Linux/macOS/CI/hosting/public access remain unverified by this acceptance.

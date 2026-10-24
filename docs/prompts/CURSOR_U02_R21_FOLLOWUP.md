@@ -1,3 +1,5 @@
+Completed: U02 is accepted at 5f2855553ac0a445d96914730a89fc3722682830 with R21/R22 resolved. See docs/reviews/5f28555.md and the current docs/prompts/CURSOR_UI.md dispatcher from latest coordination. The instructions below are scope/history; do not repeat completed fixes.
+
 # Cursor U02: remaining R21 entry-point wiring
 
 Continue task/cursor-browser-e2e in E:/PHANI/sentinel-wt/cursor-browser-e2e. Reviewed bb318a1d283b1802e6f87e484393b50bf4a7673b still has R21 changes requested. Preserve all newer work, the U01+C02 dependency base, duplicate-activation guard, R22 scanner/failure-artifact fixes and existing real flows. Do not restart U01/U02 or merge C05/main.

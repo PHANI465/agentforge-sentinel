@@ -1,4 +1,4 @@
-Current dispatch: C04 09b5378 is accepted; start C07 using docs/prompts/CLAUDE_C07.md from latest task/coordination. C03/C05 remain accepted. Cursor owns remaining U02 R21 wiring; U03 waits for an accepted C07 HTTP dependency. Earlier dispatches below are history, not permission to repeat completed tasks.
+Current dispatch: C04 09b5378 is accepted; start C07 using docs/prompts/CLAUDE_C07.md from latest task/coordination. C03/C05 remain accepted. U02 5f28555 is accepted and preserved; Cursor's next implementation is U03 after an accepted C07 HTTP dependency. Earlier dispatches below are history, not permission to repeat completed tasks.
 
 Current dispatch: C03 a8e716c is accepted and C04 is ready using docs/prompts/CLAUDE_C04.md from latest task/coordination. C01/C02/C05 are accepted and stay intact. C06/C08 await review; Cursor owns U02 R21/R22. The batch below is the broader backlog; do not repeat completed packages.
 

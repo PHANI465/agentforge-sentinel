@@ -1,6 +1,6 @@
 # Claude C07: controlled trained scorer in the API
 
-C04 is ACCEPTED at 09b5378150faed06caa73b0384b9ff095c095eb8 for offline synthetic training/evaluation. Preserve its protocol, selection, artifact and results. C05 a8294f6, C02 0e72b0b and C01 2e6c232 are accepted separately. Cursor corrects remaining U02 R21 in its own worktree; do not import its unaccepted runner branch or edit web/.
+C04 is ACCEPTED at 09b5378150faed06caa73b0384b9ff095c095eb8 for offline synthetic training/evaluation. Preserve its protocol, selection, artifact and results. C05 a8294f6, C02 0e72b0b and C01 2e6c232 are accepted separately. U02 5f28555 is separately accepted and preserved for later combined-stack verification; keep this C07 task's existing named dependency base stable and do not edit web/. U03 still waits for an explicitly accepted C07 HTTP dependency.
 
 Read current coordination without merging it for application code:
     git show task/coordination:AGENTS.md
