@@ -16,7 +16,6 @@ Run `uv sync --locked --extra dev --extra ml` in the backend checkout. Rule-only
 ```powershell
 uv run --locked python tests/support/browser_stack.py start [--parent-dir DIR] [--scorer rule|model] [--model-fixtures]
 uv run --locked python tests/support/browser_stack.py restart-api --manifest PATH [--scorer rule|model]
-uv run --locked python tests/support/browser_stack.py status --manifest PATH   # adds "scorer": "rule" | "model:hgb_balanced@p1"
 ```
 
 - **`--scorer`:** selects the API's scorer through the production `SENTINEL_SCORER`. `model` maps to `model:hgb_balanced@p1`, the only registered model; no artifact path or other value can be passed. The default is `rule`, as before.
@@ -26,6 +25,7 @@ uv run --locked python tests/support/browser_stack.py status --manifest PATH   #
   - Stored outcomes and cases keep their own scorer identity, and replays return them unchanged.
 - **`restart-db`:** unchanged. Model outcomes, inputs and audit persist across both restarts.
 - **`start` output:** the line now ends with `scorer=rule|model`. It still prints no tokens.
+- **`status` output is unchanged** (`{"api":..,"database":..}`, exactly as in C02). Read the current mode from the manifest's `api.scorer`, which `start` and `restart-api` keep current.
 
 ## Database roles
 

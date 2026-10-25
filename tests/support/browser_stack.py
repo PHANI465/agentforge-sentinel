@@ -496,7 +496,7 @@ class Stack:
         state = self.db_state()
         database = "up" if state == "running" else "unknown" if state == "unknown" else "down"
         return {"api": "up" if healthy(self.manifest["api"]["port"]) else "down",
-                "database": database, "scorer": self.manifest["api"].get("scorer", "rule")}
+                "database": database}  # exact C02 shape; the mode is manifest api.scorer
 
 
 DB_STOPPED = {"stopped", "absent", "uninitialized"}
