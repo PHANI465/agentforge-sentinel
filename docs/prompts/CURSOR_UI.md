@@ -1,3 +1,5 @@
+Current ownership update: Cursor allowance is exhausted. Codex continues the preserved I02 work in a separate worktree; see latest docs/prompts/I02_CODEX_TAKEOVER.md. Preserve the original Cursor checkout. The original Cursor assignment below is reference/history during this handoff.
+
 # Cursor I02 Part B is ready
 
 I01 is ACCEPTED at 7dd9428c70a7741af1c4781d22fd6b184f957444; see docs/reviews/7dd9428.md from latest task/coordination. Your Part A 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 is accepted with N1 resolved.

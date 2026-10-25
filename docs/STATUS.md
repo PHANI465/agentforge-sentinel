@@ -98,3 +98,7 @@ U03 a5716e2 passed independent37 frontend tests/typecheck/build and nine exact f
 ## I01 acceptance and I02 Part B dependency
 
 I01 7dd9428 passed independent 10 real-process tests in 160.73s, Ruff, 21 helpers, 15 schemas, HTTP exports and Node. Exact accepted parents/protected-source equality and owner clean strict metadata were verified. Full 396+1, 40 C02 tests and 14 old rule-browser tests remain Claude-attributed. Final status compatibility and 1800-second checker bound are accepted; model-mode browser acceptance is I02's remaining work. Read reviews/7dd9428.md and prompts/CURSOR_I02_PART_B.md. Earlier candidate/waiting observations are historical.
+
+## Active I02 handoff after Cursor allowance exhaustion
+
+Cursor is unavailable under its existing allowance. Its contribution is preserved at E:/PHANI/sentinel-wt/cursor-model-integration (e0e1b05 plus seven saved edits), with an exact byte snapshot. Codex continues in the isolated task/codex-i02-completion worktree from the same base; initial candidate 4df18f2. No new spending, production backend change or main merge is assigned. Final browser/backend checks are pending; this is an ownership checkpoint, not completion acceptance. Current active owner and provenance: prompts/I02_CODEX_TAKEOVER.md. Earlier Cursor execution instructions are superseded while quota is exhausted.
