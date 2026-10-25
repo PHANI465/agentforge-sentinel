@@ -337,8 +337,8 @@ export interface ReliabilityBin {
   lo: number;
   hi: number;
   n: number;
-  mean_score: number;
-  fraud_rate: number;
+  mean_score: number | null;
+  fraud_rate: number | null;
 }
 
 export interface SplitCounts {

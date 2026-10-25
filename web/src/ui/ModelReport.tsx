@@ -13,6 +13,10 @@ function splitTitle(key: string): string {
   return key;
 }
 
+function reportedStatistic(value: number | null): string {
+  return value === null ? "not reported" : formatScore(value);
+}
+
 function sliceCaption(dimension: string): string {
   if (dimension === "currency") return "Currency slices, kept separate";
   if (dimension === "scenario") {
@@ -356,8 +360,8 @@ export function ModelReport({ results }: { results: ModelResults }) {
                     <td>{formatScore(bin.lo)}</td>
                     <td>{formatScore(bin.hi)}</td>
                     <td>{formatCount(bin.n)}</td>
-                    <td>{formatScore(bin.mean_score)}</td>
-                    <td>{formatScore(bin.fraud_rate)}</td>
+                    <td>{reportedStatistic(bin.mean_score)}</td>
+                    <td>{reportedStatistic(bin.fraud_rate)}</td>
                   </tr>
                 ))}
               </tbody>

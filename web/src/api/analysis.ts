@@ -37,6 +37,22 @@ function rate(value: unknown): number | null | undefined {
   return parsed === null ? undefined : parsed;
 }
 
+/** Present number or null. Missing and non-numeric values are invalid. */
+function requiredNullableFinite(record: Record<string, unknown>, key: string): number | null | undefined {
+  if (!Object.hasOwn(record, key)) return undefined;
+  const item = record[key];
+  if (item === null) return null;
+  const parsed = finite(item);
+  return parsed === null ? undefined : parsed;
+}
+
+/** Omitted or null becomes null. A non-count is invalid. */
+function optionalCount(record: Record<string, unknown>, key: string): number | null | undefined {
+  if (!Object.hasOwn(record, key) || record[key] === null) return null;
+  const parsed = count(record[key]);
+  return parsed === null ? undefined : parsed;
+}
+
 export function acceptArtifact(value: unknown): ArtifactRef | null {
   if (!isRecord(value)) return null;
   const name = text(value.name);
@@ -190,15 +206,23 @@ function acceptSplit(value: unknown): SplitCounts | null {
   const fraud = count(value.fraud);
   const unknown = count(value.unknown_excluded);
   const days = count(value.decision_days);
-  const observable = value.labels_observable_by_horizon;
-  if (rows === null || legitimate === null || fraud === null || unknown === null || days === null) return null;
-  if (observable !== null && count(observable) === null) return null;
+  const observable = optionalCount(value, "labels_observable_by_horizon");
+  if (
+    rows === null ||
+    legitimate === null ||
+    fraud === null ||
+    unknown === null ||
+    days === null ||
+    observable === undefined
+  ) {
+    return null;
+  }
   return {
     rows,
     legitimate,
     fraud,
     unknown_excluded: unknown,
-    labels_observable_by_horizon: observable === null ? null : (observable as number),
+    labels_observable_by_horizon: observable,
     decision_days: days,
   };
 }
@@ -219,9 +243,9 @@ function acceptBin(value: unknown): ReliabilityBin | null {
   const lo = finite(value.lo);
   const hi = finite(value.hi);
   const n = count(value.n);
-  const mean = finite(value.mean_score);
-  const fraudRate = finite(value.fraud_rate);
-  if (lo === null || hi === null || n === null || mean === null || fraudRate === null) return null;
+  const mean = requiredNullableFinite(value, "mean_score");
+  const fraudRate = requiredNullableFinite(value, "fraud_rate");
+  if (lo === null || hi === null || n === null || mean === undefined || fraudRate === undefined) return null;
   return { lo, hi, n, mean_score: mean, fraud_rate: fraudRate };
 }
 

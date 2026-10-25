@@ -5,8 +5,8 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { App } from "../App";
-import type { SentinelClient } from "../api/client";
-import { formatScore } from "../api/format";
+import { createClient, type SentinelClient } from "../api/client";
+import { formatScore, unconfirmedMessage } from "../api/format";
 import type { ApiResult, CaseDetail, CasePage, ModelResults, Overview, ScorerInfo, SessionView } from "../api/types";
 import { CaseFile } from "./CaseFile";
 import { ModelSection, ScorerStrip, useAnalysis } from "./AnalysisPanel";
@@ -315,6 +315,89 @@ describe("model analysis view", () => {
     expect(within(inputs).getByRole("row", { name: /amount_minor/ })).toHaveTextContent("250000");
     expect(within(inputs).queryByText(/scenario/i)).not.toBeInTheDocument();
     expect(document.querySelector("img")).toBeNull();
+  });
+});
+
+describe("nullable report statistics", () => {
+  function rawReport(): {
+    calibration: { reliability: Array<Record<string, unknown>> };
+    splits: Record<string, Record<string, unknown>>;
+  } {
+    return structuredClone(response<typeof report>("model_results_p1.json")) as unknown as {
+      calibration: { reliability: Array<Record<string, unknown>> };
+      splits: Record<string, Record<string, unknown>>;
+    };
+  }
+
+  function clientFor(body: unknown) {
+    return createClient(async (input) => {
+      const path = String(input);
+      const payload = path.startsWith("/v1/model-results/") ? body : modelScorer;
+      return new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+  }
+
+  it("shows null bin statistics and an omitted horizon as not reported", async () => {
+    const body = rawReport();
+    body.calibration.reliability[0] = { lo: 0, hi: 0.1, n: 0, mean_score: null, fraud_rate: null };
+    body.calibration.reliability[1] = { ...body.calibration.reliability[1], fraud_rate: null };
+    body.calibration.reliability[2] = { ...body.calibration.reliability[2], mean_score: null };
+    delete body.splits.test.labels_observable_by_horizon;
+    render(<AnalysisHarness client={clientFor(body)} token="memory-token" />);
+
+    const bins = await screen.findByRole("table", { name: "Reliability bins" });
+    const binRows = within(bins).getAllByRole("row");
+    const emptyCells = within(binRows[1]).getAllByRole("cell");
+    expect(emptyCells[2]).toHaveTextContent("0");
+    expect(emptyCells[3]).toHaveTextContent("not reported");
+    expect(emptyCells[4]).toHaveTextContent("not reported");
+    expect(emptyCells[3]).not.toHaveTextContent("0");
+    expect(emptyCells[4]).not.toHaveTextContent("0");
+
+    const partialFraud = within(binRows[2]).getAllByRole("cell");
+    expect(partialFraud[3]).toHaveTextContent("0.165465");
+    expect(partialFraud[4]).toHaveTextContent("not reported");
+
+    const partialMean = within(binRows[3]).getAllByRole("cell");
+    expect(partialMean[0]).toHaveTextContent("0.2");
+    expect(partialMean[3]).toHaveTextContent("not reported");
+    expect(partialMean[4]).toHaveTextContent("0.5");
+
+    const observedZero = within(bins).getByRole("row", { name: /0\.589552/ });
+    expect(within(observedZero).getAllByRole("cell")[4]).toHaveTextContent("0");
+    expect(within(observedZero).getAllByRole("cell")[3]).toHaveTextContent("0.589552");
+
+    const counts = screen.getByRole("table", { name: "Train, validation, and test counts" });
+    const testRow = within(counts).getByRole("row", { name: /^Test\b/ });
+    const horizon = within(testRow).getAllByRole("cell")[4];
+    expect(horizon).toHaveTextContent("not reported");
+    expect(horizon).not.toHaveTextContent("2219");
+    expect(horizon).not.toHaveTextContent("0");
+    expect(within(counts).getByRole("row", { name: /^Train\b/ }).textContent).toContain("not reported");
+    expect(screen.getByText(CANARY)).toBeInTheDocument();
+    expect(screen.getAllByText("4.0295386895426815e-6").length).toBeGreaterThan(0);
+  });
+
+  it("does not render a benchmark when a required bin statistic is missing or mistyped", async () => {
+    const missing = rawReport();
+    delete missing.calibration.reliability[0].mean_score;
+    const omitted = render(<AnalysisHarness client={clientFor(missing)} token="memory-token" />);
+    expect(await screen.findByText(unconfirmedMessage())).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "offline synthetic benchmark" })).not.toBeInTheDocument();
+    expect(screen.queryByText(CANARY)).not.toBeInTheDocument();
+    omitted.unmount();
+
+    const mistyped = rawReport();
+    mistyped.calibration.reliability[0].fraud_rate = "0";
+    delete mistyped.splits.validation.labels_observable_by_horizon;
+    mistyped.splits.test.labels_observable_by_horizon = "2219";
+    render(<AnalysisHarness client={clientFor(mistyped)} token="memory-token" />);
+    expect(await screen.findByText(unconfirmedMessage())).toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: "Reliability bins" })).not.toBeInTheDocument();
+    expect(screen.queryByText("2219")).not.toBeInTheDocument();
   });
 });
 

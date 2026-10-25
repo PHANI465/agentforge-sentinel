@@ -16,6 +16,8 @@ The configured scorer comes only from `GET /v1/scoring`. It is separate from the
 
 When scoring returns `results_id`, the page loads `GET /v1/model-results/{results_id}` and renders that body: the offline synthetic benchmark label, limitations, split windows and delayed-label text, baseline average precision beside trapezoidal precision-recall area, the frozen-threshold counts beside the daily top-k counts, uncertainty intervals, calibration bins, currency and scenario slices, and the reported precision-recall points. Scenario slices are captioned as offline hidden synthetic truth. Currency rows stay in their own table. The chart is those precision-recall points. No ROC series, live metric, or tenant total is added.
 
+A reliability bin may leave `mean_score` or `fraud_rate` null, including an empty bin where both are null. Those cells say "not reported". A reported zero stays zero. `labels_observable_by_horizon` may be omitted; that is the same as null and the split table says "not reported". Omitting `lo`, `hi`, `n`, `mean_score`, or `fraud_rate`, or sending a non-number for those statistics, leaves the report unconfirmed. The frozen p1 example file is unchanged.
+
 Stored model inputs, when the case payload includes them, show the feature values, transaction currency, and profile home currency separately.
 
 ## Failures
