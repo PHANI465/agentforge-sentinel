@@ -26,6 +26,7 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 | C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 separately reviewed |
 | C07 model serving | 275509af655a81a62bba28e74e9d8ab6c8d9cf5f | ACCEPTED: local backend; R23 resolved; v1.1 unchanged; combined-stack acceptance pending |
 | U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | ACCEPTED current-p1 frontend increment; full model-browser acceptance pending; I01/I02 assigned |
+| I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; preserve this branch; Part B waits for accepted I01 |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -37,11 +38,11 @@ U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base
 
 ## Immediate executable queue
 
-1. Claude starts I01 using prompts/CLAUDE_I01.md: a dedicated task branch from accepted C07 275509a, include accepted U03 a5716e2, and deliver real deterministic model-browser fixture/lifecycle support. Preserve accepted checkouts.
-2. Cursor starts I02 Part A now using prompts/CURSOR_I02.md: nullable/optional report-field compatibility on a dedicated branch from accepted U03. Part B waits for the explicitly accepted I01 SHA, then verifies actual browser/API/Postgres model flows and old regressions.
-3. Codex reviews I01/I02 handoffs and pending C06/C08. No new model/features are needed before the integrated path is proved. Current-p1 U03 review: reviews/a5716e2.md.
+1. Claude continues I01 using prompts/CLAUDE_I01.md. The combined dependency base 5488a61 and fixture candidate e0ff81f are observed, but I01 has no accepted final SHA. Inspect the existing running backend job before starting anything else, then finish planned browser compatibility, owned commits and final clean strict checks.
+2. Cursor I02 Part A is accepted at 50856be; N1 is resolved (reviews/50856be.md). Preserve it. Part B waits until Codex explicitly names an accepted I01 SHA; do not merge the candidate just because a branch exists.
+3. Codex reviews the final I01 handoff, then assigns I02 Part B against the accepted fixture SHA. C06/C08 remain separately review-pending. The 37-versus-44 frontend test counts are expected between the separate dependency and Part A branches.
 4. Main still holds baseline 507538e. Main-integrator designation and remote provisioning remain separate; no merge or push is implied.
-5. Preserve the laptop/subscriptions/free-resource budget. Live LLMs stay off in integration tests; Linux/CI, hosting/public-BYOK and measured performance remain later gates.
+5. Keep the laptop/subscriptions/free-resource budget and deterministic investigator for integration. Linux/CI, hosting/public-BYOK and measured performance retain their gates.
 
 ## Evidence history
 
@@ -88,3 +89,7 @@ C07 275509a passed independent 50 focused tests (142.83 s), Ruff, 21 helpers, 15
 ## Integration assignments after U03 review
 
 U03 a5716e2 passed independent37 frontend tests/typecheck/build and nine exact fixture-copy comparisons. Current-p1 increment accepted; legal nullable calibration fields and an omitted optional split field need N1 compatibility correction during I02. No full model-browser or new backend acceptance is claimed by those UI checks. Claude follows prompts/CLAUDE_I01.md; Cursor follows prompts/CURSOR_I02.md. These are task-branch integration assignments, not a main merge. C06/C08 remain review-pending.
+
+## I02 Part A accepted while I01 checks continue
+
+50856be passed independent 16 focused tests/typecheck/build and the original parser/fixture-copy probe. N1 is resolved; full 44 and strict 215+1 remain Cursor-attributed. Claude's I01 candidate is still work in progress; an active backend test process was observed and no final I01 acceptance is recorded. See reviews/50856be.md. Preserve accepted checkouts and avoid duplicate background jobs.

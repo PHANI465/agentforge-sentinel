@@ -19,3 +19,7 @@ Required real new-feature assertions:
 - Cross-session/read denial, missing/failed report routes and delayed responses/sign-out have honest UI states and no fixture substitution. Model rationale remains inert.
 
 Capture token-safe failure artifacts and report exact process/database cleanup. Run frontend tests/typecheck/build, the full real browser command, relevant exports/helpers and strict checks on the final clean committed tree. Record dependencies and actual new versus old coverage. Do not claim Linux/CI/hosting verification or production fraud detection. No live model/provider calls, remote setup or main merge.
+
+## Current Part A checkpoint
+
+Part A is now accepted at 50856be3da54ffdadd6cda7a0fcd5e59a9b21733; N1 is resolved. Preserve that branch. Part B still waits for an explicitly accepted final I01 SHA; neither 5488a61 nor the observed candidate e0ff81f is accepted for it. Read the current docs/prompts/CURSOR_UI.md dispatcher and STATUS/TASK_QUEUE. The Part A instructions above are completed scope/history.

@@ -192,4 +192,8 @@ docs/PROJECT_CHECKPOINT.md and the standalone owner-facing HTML artifact summari
 
 ## U03 a5716e2 current p1 frontend review
 
-Independent37 frontend tests passed in37.85s; typecheck and production build passed. All nine v1.1 copies match62def10 Git blobs. A direct parser probe confirmed legal nullable-empty-bin and omitted-optional-field variants validate in the accepted backend DTO but are rejected by the current frontend; these do not occur in frozen p1 and are assigned as N1 in I02. U03 accepted only for the current-p1 contract/UI increment. No new browser/backend run is claimed. Owner14 old-backend browser and strict215+1 results remain attributed. See reviews/a5716e2.md. I01/I02 now cover real-model integration; main and implementation sources were unchanged.
+Independent37 frontend tests passed in37.85s; typecheck and production build passed. All nine v1.1 copies match62def10 Git blobs. A direct parser probe confirmed legal nullable-empty-bin and omitted-optional-field variants validate in the accepted backend DTO but are rejected by the current frontend; these do not occur in frozen p1 and are assigned as N1 in I02. U03 accepted only for the current-p1 contract/UI increment. No new browser/backend run is claimed. Owner14 old-backend browser and strict 215+1 results remain attributed. See reviews/a5716e2.md. I01/I02 now cover real-model integration; main and implementation sources were unchanged.
+
+## I02 Part A 50856be review
+
+Independent16 focused tests passed in 6.01s, followed by typecheck/build. The exact actual-parser probe now accepts all three current/nullable/omitted variants; nine golden fixture copies remain byte-identical. N1 resolved; Part A accepted. Cursor's full 44/frontend and strict 215+1 remain attributed. An I01 pytest process was observed, but no final I01 commit or Part B acceptance is claimed. See reviews/50856be.md. No implementation worktree edits or provider calls by Codex.

@@ -1,7 +1,7 @@
-# Cursor next assignment I02
+# Cursor I02 Part A accepted and Part B dependency pending
 
-U03 a5716e252af2077a507767a3f819ddf44ea41c12 is accepted as the current-p1 contract/UI increment (docs/reviews/a5716e2.md). Preserve its clean checkout and accepted U02. Full model-browser acceptance is still pending.
+Part A is accepted at 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 on task/cursor-model-integration. N1 is resolved. Independent16 focused parser/UI tests, typecheck/build and actual-parser/golden-fixture checks passed; see latest task/coordination:docs/reviews/50856be.md. Preserve the clean branch and accepted U03/U02 checkouts.
 
-Read latest task/coordination:docs/prompts/CURSOR_I02.md and start Part A on the dedicated task/cursor-model-integration branch/worktree: nullable/optional report-field compatibility and focused regressions. Claude is assigned I01 real model-browser fixtures using accepted C07 275509a plus U03 a5716e2. Cursor Part B consumes I01 only after its exact SHA is accepted; no invented fixtures/endpoints or claim of full integration beforehand.
+Part B still waits for Codex to explicitly accept and name the exact I01 fixture SHA. Claude's dependency merge5488a61 and candidate e0ff81f are not that acceptance. Do not merge them or invent real-model browser completion. Read current STATUS/TASK_QUEUE before continuing.
 
-Current STATUS/TASK_QUEUE and docs/reviews/a5716e2.md carry the review decision. Codex reviews C06/C08 separately. No main merge, provider calls, external database, WSL/GitHub provisioning or hosting is assigned.
+When the final I01 handoff is accepted, follow the existing docs/prompts/CURSOR_I02.md Part B scope with that exact SHA. No further Part A rewrite is assigned. No main merge, provider call, external database, WSL/GitHub provisioning or hosting.
