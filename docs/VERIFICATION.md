@@ -201,3 +201,13 @@ Independent16 focused tests passed in 6.01s, followed by typecheck/build. The ex
 ## I01 7dd9428 acceptance
 
 Independent10 real-process tests passed in 160.73s. Ruff, 21 helper tests, 15 schemas, HTTP v1/v1.1 exports/examples and Node passed. Exact merge parents and no production/contract/model/frontend/dependency delta from 5488a61 were verified. Owner strict metadata matches clean 7dd9428; full 396+1 (838s test report), 40 C02 tests and 14 old rule-browser tests remain attributed. Status shape is preserved and 1800s still bounds full checks. Cursor Part B now consumes 7dd9428 plus accepted Part A 50856be. No new model-browser/CI/platform/hosting acceptance, source edits, provider calls or main merge by Codex. See reviews/7dd9428.md.
+
+## I02 Part B completion after Cursor quota exhaustion
+
+Candidate f38e92023481a55db1ecf8bcdbe917140bd5d7cd, task/codex-i02-completion, based on e0e1b05 with accepted I01 7dd9428 and Part A 50856be. Cursor's original seven uncommitted files and snapshot hashes still match; the original checkout was not edited. Codex carried those edits into an isolated branch and fixed three test/helper problems: JSON exponent spelling, request-only missing-profile fixture parsing, and a page binding that kept the first session token.
+
+Final browser run metadata reports passed with no unexpected failures for the 19 serial tests, including one expected post-login failure whose real artifact is scanned. Scanner self-test and 20 shutdown / 12 entrypoint checks preceded the suite. Afterward no private current-run/runtime/recovery/secrets/port records remained and the owned stacks directory was empty. The command session ended before its final terminal output was retained; the observed Playwright last-run metadata and cleanup state are the final browser evidence, not an invented captured shell exit code.
+
+44 frontend unit tests and production build passed on 4df18f2; frontend product source/package bytes are unchanged at f38e920. Final f38e920 e2e-inclusive typecheck passed. Final clean f38e920 strict report records all five checks passed: Ruff; pytest 396 passed and one live-Claude skip; 21 helper tests; 15 schema exports; Node transport. The exact ignored report belongs to that worktree. Root coordination has older c6 application code; its separate checks must not be reported as this integrated application's checks.
+
+The base-to-candidate diff changes no production src/, contracts/, ml/, data_pipeline/, Python dependencies or checker policy. No live provider, owner API key, external database, main merge, remote or deployment. Windows only; synthetic data and simulated actions. Independent review of Codex finishing changes is pending via prompts/CLAUDE_I02_REVIEW.md.

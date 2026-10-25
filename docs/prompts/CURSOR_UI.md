@@ -1,4 +1,4 @@
-Current ownership update: Cursor allowance is exhausted. Codex continues the preserved I02 work in a separate worktree; see latest docs/prompts/I02_CODEX_TAKEOVER.md. Preserve the original Cursor checkout. The original Cursor assignment below is reference/history during this handoff.
+Current ownership update: Cursor allowance is exhausted. Codex completed the isolated I02 candidate f38e920 with passing local checks; Claude review is next through docs/prompts/CLAUDE_I02_REVIEW.md. Preserve the original Cursor checkout and do not restart it. The original Cursor assignment below is reference/history during this handoff.
 
 # Cursor I02 Part B is ready
 

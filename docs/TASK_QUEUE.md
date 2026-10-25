@@ -1,5 +1,13 @@
 # Shared implementation queue
 
+## Latest checkpoint: Cursor quota handoff completed locally
+
+Codex completed the saved I02 Part B implementation at **f38e92023481a55db1ecf8bcdbe917140bd5d7cd**, branch task/codex-i02-completion in E:/PHANI/sentinel-wt/codex-i02-completion. Cursor remains an implementation contributor: its original seven edited files and exact byte snapshot are preserved. No need to purchase more Cursor usage to continue this work.
+
+The combined local browser/model/API/Postgres path passes the 19-scenario browser suite (including the intentional failure used for credential-artifact checks). The last-run metadata reports passed with no unexpected failures; private lifecycle records were removed and the owned stack folder is empty. The scanner and 20 shutdown / 12 entrypoint harness checks preceded it. Frontend product code passed 44 unit tests and build on 4df18f2; that code is unchanged at final f38e920, whose e2e-inclusive typecheck passed. The final clean f38e920 strict check passed: Ruff, 396 pytest tests plus one opt-in live-Claude skip, 21 helper tests, 15 schemas and Node transport.
+
+This is implementation verification by Codex, not independent review of Codex's own finishing changes. **Next: Claude's focused read-only review** using docs/prompts/CLAUDE_I02_REVIEW.md. Cursor's original checkout stays inactive while its allowance is exhausted. Main remains baseline 507538e; no push, remote, deployment or paid model call occurred. C06/C08 review, Linux/CI, hosting/public BYOK, measured serving capacity and later multi-agent expansion remain separate work. Earlier pending statements below are dated history.
+
 Planning date: October 23, 2026. The owner asked to use Claude heavily today and explicitly requires Cursor to contribute. This is the next executable queue, not a promise that every package fits before a subscription reset.
 
 ## Current accepted evidence and coordination
@@ -26,6 +34,7 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | ACCEPTED current-p1 frontend increment; full model-browser acceptance pending; I01/I02 assigned |
 | I01 model-browser fixtures | 7dd9428c70a7741af1c4781d22fd6b184f957444 | ACCEPTED: Windows local fixture/lifecycle dependency; ten independent real-process tests passed |
 | I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; Part B ready against exact I01 7dd9428 |
+| I02 Part B continuation | f38e92023481a55db1ecf8bcdbe917140bd5d7cd | IMPLEMENTATION VERIFIED on Windows; external review pending; Cursor original preserved |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -37,11 +46,10 @@ U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base
 
 ## Current execution order
 
-1. I01 is accepted at 7dd9428c70a7741af1c4781d22fd6b184f957444. Claude preserves the tested fixture checkout; no further I01 correction is assigned.
-2. Cursor starts I02 Part B now using prompts/CURSOR_I02_PART_B.md. Include that exact I01 SHA on the existing integration branch above accepted Part A 50856be; install/use dev and ml extras. Preserve the parser fix and accepted component checkouts.
-3. I02 must prove actual model/browser/API/Postgres behavior, restart/replay and permissions, and retain the old rule-mode browser suite. Codex reviews that final handoff and separately reviews pending C06/C08. The I01 timeout 1800 change must survive later C06 integration.
-4. Main remains baseline 507538e. Main-integrator designation and remote provisioning are still separate gates; no main merge or push is implied.
-5. Keep the laptop/subscriptions/free-resource budget and deterministic investigator. Linux/CI, public hosting/BYOK and measured production capacity remain unverified.
+1. Preserve final I02 candidate f38e920 and the original saved Cursor checkout. Follow prompts/CLAUDE_I02_REVIEW.md for the independent read-only review; no new Cursor run is needed.
+2. Address concrete review findings in an explicitly owned task worktree. Do not describe the implementer's passing checks as independent acceptance.
+3. Codex separately reviews pending C06/C08, then coordinates a named integrated-release task. Preserve I01's 1800-second checker bound when joining C06.
+4. Main remains baseline 507538e. Main integration, remote provisioning, Linux/CI and hosting are separate gates. Deterministic investigations and the existing-resource budget remain.
 
 ## Packages and acceptance
 
