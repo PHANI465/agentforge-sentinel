@@ -1,12 +1,12 @@
 # Shared implementation queue
 
-## Latest checkpoint: Cursor quota handoff completed locally
+## Latest checkpoint: combined local model/browser integration accepted
 
 Codex completed the saved I02 Part B implementation at **f38e92023481a55db1ecf8bcdbe917140bd5d7cd**, branch task/codex-i02-completion in E:/PHANI/sentinel-wt/codex-i02-completion. Cursor remains an implementation contributor: its original seven edited files and exact byte snapshot are preserved. No need to purchase more Cursor usage to continue this work.
 
 The combined local browser/model/API/Postgres path passes the 19-scenario browser suite (including the intentional failure used for credential-artifact checks). The last-run metadata reports passed with no unexpected failures; private lifecycle records were removed and the owned stack folder is empty. The scanner and 20 shutdown / 12 entrypoint harness checks preceded it. Frontend product code passed 44 unit tests and build on 4df18f2; that code is unchanged at final f38e920, whose e2e-inclusive typecheck passed. The final clean f38e920 strict check passed: Ruff, 396 pytest tests plus one opt-in live-Claude skip, 21 helper tests, 15 schemas and Node transport.
 
-This is implementation verification by Codex, not independent review of Codex's own finishing changes. **Next: Claude's focused read-only review** using docs/prompts/CLAUDE_I02_REVIEW.md. Cursor's original checkout stays inactive while its allowance is exhausted. Main remains baseline 507538e; no push, remote, deployment or paid model call occurred. C06/C08 review, Linux/CI, hosting/public BYOK, measured serving capacity and later multi-agent expansion remain separate work. Earlier pending statements below are dated history.
+**I02 Part B is accepted at f38e920 after Claude's independent review**, forwarded by the owner: no blocking findings, independent 44 frontend tests/build/typecheck and 19 real browser tests (exit 0), plus a negative session-binding probe and seven error-hygiene probes. See [the acceptance record](reviews/f38e920.md). Two low test-hardening suggestions are tracked as non-blocking H01; the accepted commit stays unchanged. Next: Codex reviews already-delivered C06/C08 for release preparation. Cursor can remain closed. Main remains baseline 507538e; Linux/CI, hosting/public BYOK and production claims remain unverified. Earlier pending statements below are dated history.
 
 Planning date: October 23, 2026. The owner asked to use Claude heavily today and explicitly requires Cursor to contribute. This is the next executable queue, not a promise that every package fits before a subscription reset.
 
@@ -27,14 +27,14 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | C02 browser fixtures | 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 | ACCEPTED: Windows local fixtures; R11/R12/R13 resolved; U02 separately accepted |
 | U01 analyst UI | deb10370352dc62b0abfa2a5776c185494fcb04e | ACCEPTED: R14-R17 resolved; U02 separately accepted |
 | U02 browser acceptance | 5f2855553ac0a445d96914730a89fc3722682830 | ACCEPTED: R21/R22 resolved; independent 14 real browser tests and cleanup passed on Windows |
-| C05 backend reliability | a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd | ACCEPTED: R18-R20 and operator notes resolved within local backend scope; combined stack pending |
+| C05 backend reliability | a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd | ACCEPTED: R18-R20 and operator notes resolved within local backend scope; local browser integration now accepted at f38e920 |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | ACCEPTED: synthetic-data/historical-feature scope; C04 separately accepted |
 | C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 separately reviewed |
-| C07 model serving | 275509af655a81a62bba28e74e9d8ab6c8d9cf5f | ACCEPTED: local backend; R23 resolved; v1.1 unchanged; combined-stack acceptance pending |
-| U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | ACCEPTED current-p1 frontend increment; full model-browser acceptance pending; I01/I02 assigned |
+| C07 model serving | 275509af655a81a62bba28e74e9d8ab6c8d9cf5f | ACCEPTED: local backend; R23 resolved; v1.1 unchanged; local browser integration accepted at f38e920 |
+| U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | ACCEPTED current-p1 frontend; real model-browser integration accepted at f38e920 |
 | I01 model-browser fixtures | 7dd9428c70a7741af1c4781d22fd6b184f957444 | ACCEPTED: Windows local fixture/lifecycle dependency; ten independent real-process tests passed |
-| I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; Part B ready against exact I01 7dd9428 |
-| I02 Part B continuation | f38e92023481a55db1ecf8bcdbe917140bd5d7cd | IMPLEMENTATION VERIFIED on Windows; external review pending; Cursor original preserved |
+| I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; included in accepted Part B f38e920 |
+| I02 Part B continuation | f38e92023481a55db1ecf8bcdbe917140bd5d7cd | ACCEPTED: independent Claude review; Windows local model/browser integration; two non-blocking H01 suggestions |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -46,10 +46,11 @@ U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base
 
 ## Current execution order
 
-1. Preserve final I02 candidate f38e920 and the original saved Cursor checkout. Follow prompts/CLAUDE_I02_REVIEW.md for the independent read-only review; no new Cursor run is needed.
-2. Address concrete review findings in an explicitly owned task worktree. Do not describe the implementer's passing checks as independent acceptance.
-3. Codex separately reviews pending C06/C08, then coordinates a named integrated-release task. Preserve I01's 1800-second checker bound when joining C06.
-4. Main remains baseline 507538e. Main integration, remote provisioning, Linux/CI and hosting are separate gates. Deterministic investigations and the existing-resource budget remain.
+1. Preserve accepted I02 f38e920 and the original Cursor checkout. Claude review is complete; do not dispatch the old review prompt again.
+2. Codex reviews delivered C06 e7fc868 (CI) and C08 9ab183e (local operations). Neither package is accepted by implication from I02.
+3. Track H01 as a non-blocking browser maintenance follow-up. Keep accepted f38e920 unchanged; any later implementation gets separate ownership and exact validation.
+4. Define the release integration from accepted application dependencies after those reviews. Preserve I01's 1800-second checker bound when joining C06.
+5. Main remains baseline 507538e. Main integration, remote provisioning, Linux/CI and hosting are separate gates. Deterministic investigations and the existing-resource budget remain.
 
 ## Packages and acceptance
 
@@ -188,6 +189,10 @@ U03 a5716e2 passed independent37 frontend tests/typecheck/build and nine exact f
 
 I01 7dd9428 passed independent 10 real-process tests in 160.73s, Ruff, 21 helpers, 15 schemas, HTTP exports and Node. Exact accepted parents/protected-source equality and owner clean strict metadata were verified. Full 396+1, 40 C02 tests and 14 old rule-browser tests remain Claude-attributed. Final status compatibility and 1800-second checker bound are accepted; model-mode browser acceptance is I02's remaining work. Read reviews/7dd9428.md and prompts/CURSOR_I02_PART_B.md. Earlier candidate/waiting observations are historical.
 
-## Active I02 handoff after Cursor allowance exhaustion
+## Historical I02 ownership handoff before final acceptance
 
 Cursor is unavailable under its existing allowance. Its contribution is preserved at E:/PHANI/sentinel-wt/cursor-model-integration (e0e1b05 plus seven saved edits), with an exact byte snapshot. Codex continues in the isolated task/codex-i02-completion worktree from the same base; initial candidate 4df18f2. No new spending, production backend change or main merge is assigned. Final browser/backend checks are pending; this is an ownership checkpoint, not completion acceptance. Current active owner and provenance: prompts/I02_CODEX_TAKEOVER.md. Earlier Cursor execution instructions are superseded while quota is exhausted.
+
+## H01: optional browser-test hardening after I02 acceptance
+
+Non-blocking; unassigned, not implemented. Preserve accepted f38e920. In a later explicitly owned browser-maintenance increment, enforce a read-only transaction/session before any query in both inspect_case.py connection paths (or choose an appropriate SELECT-only role), and assert zero action_count and approval_count in the fresh model case immediately before Approve. Verify actual read-only rejection of a write and retain the real browser proof. Report the new commit and relevant checks separately. The startup-PID secondary check and serial-mode dependency remain informational observations; no cleanup or false-pass gap was found. See reviews/f38e920.md.

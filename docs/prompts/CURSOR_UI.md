@@ -1,4 +1,4 @@
-Current ownership update: Cursor allowance is exhausted. Codex completed the isolated I02 candidate f38e920 with passing local checks; Claude review is next through docs/prompts/CLAUDE_I02_REVIEW.md. Preserve the original Cursor checkout and do not restart it. The original Cursor assignment below is reference/history during this handoff.
+Current ownership update: Cursor allowance is exhausted. Codex completed I02 at f38e920, now accepted after Claude independent review; see docs/reviews/f38e920.md. Preserve both the accepted continuation and original Cursor checkout. No Cursor work or repeated I02 review is currently assigned. Next release work: C06/C08 review. The original Cursor assignment below is reference/history.
 
 # Cursor I02 Part B is ready
 
