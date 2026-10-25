@@ -18,6 +18,8 @@
   - `docs/api/model-browser-fixtures.md`, `docs/api/browser-fixtures.md` (I01 note);
   - this note.
 
+  Also changed: `scripts/agent_check.py` (timeout only; see gaps).
+
   Not modified: `web/` (including its lock and the browser runner), `docs/ui/`, the public HTTP contracts and examples, the p1 report and artifact, production `src/`, STATUS and TASK_QUEUE.
 
 ## Implemented
@@ -75,7 +77,7 @@ Windows 11, `uv sync --locked --extra dev --extra ml`, PostgreSQL 14.17 disposab
 - **Browser coverage:** no real-model browser test exists yet; that is Cursor's I02. N1 (nullable `ReliabilityBin` fields / optional `labels_observable_by_horizon` in `web/src/api/analysis.ts`) is Cursor's and is not addressed here.
 - **Unhandled 500:** the response body is plain text, not JSON. This is pre-existing and documented in C05 as a proposed contract change.
 - **ml extra:** model fixtures need it. Rule-only stacks still work without it; this was not separately re-run in a dev-only environment.
-- **Strict-check time:** the full suite now takes about 13–16 minutes, close to the 900 s per-check limit in `agent_check.py`. The strict result after commit is reported in chat.
+- **Strict-check time:** the first strict run, at 7b3c0b6, **failed** on a timeout, not on any test. All 396 tests passed in 886 s, but the pytest check exceeded the 900 s per-command limit once startup was added. Following the accepted C02 precedent (300 → 900 s), `scripts/agent_check.py` `CHECK_TIMEOUT_SECONDS` is now 1800 s with the reason recorded. Every check still runs in full, and a hang still fails. No `CHECKS` entry changed. C06 (`task/claude-backend-ci`) edits the `CHECKS` list in the same file, in a separate hunk, so the integrator should merge both. The suite's growth (now about 15 min) is a real cost worth trimming later.
 
 ## Next action
 
