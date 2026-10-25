@@ -4,6 +4,8 @@ The owner explicitly requires Cursor to contribute. You own the analyst interfac
 
 Open a dedicated Cursor worktree. Read AGENTS.md, docs/STATUS.md, docs/TASK_QUEUE.md, relevant decisions and the accepted C01 HTTP contract/fixtures. Read the current coordination queue from its named Git reference; files in another worktree are not your working copy.
 
+C01 update: submitted commit 0a6fb0e is NOT accepted; R9/R10 corrections are pending. Read the latest queue with git show task/coordination:docs/TASK_QUEUE.md. Do not treat a passing strict check as acceptance.
+
 Before coding, record your base/dependency commit. U01 waits for Codex's acceptance of the C01 contract commit. If it is not available yet, produce a short UI task/design note and identify the exact missing contract; do not invent endpoints or implement a mock-only app as completed functionality.
 
 Implement U01 in web/ and docs/ui/:
@@ -11,7 +13,7 @@ Implement U01 in web/ and docs/ui/:
 - Session-token entry in memory only; connection/mode state, sign-out, scoped case queue/overview, case detail/evidence and audit.
 - Recorded score and artifact/semantics labels; distinguish rule baseline, deterministic investigator and local Claude mode.
 - Exact server-built action details, human approve/reject and separate execute, clear permissions, expired/reopened cases, provider failures and idempotent replay. Keep one execution idempotency key across an ambiguous network retry; test a lost response with one persisted action.
-- Safe loading/error/empty states; refresh server truth on 409; keyboard/accessibility support.
+- Safe loading/error/empty states; refresh server truth on 409; keyboard/accessibility support. Handle non-JSON 5xx, empty/invalid response bodies and network failures with a safe generic message; do not assume every failure parses as ErrorResponse. An ambiguous execution response retains its original idempotency key.
 - Model rationale is inert text. Do not enable raw HTML or store tokens in URLs/localStorage/sessionStorage.
 
 Then implement U02 after C02's accepted backend fixture: real browser -> API -> disposable Postgres tests for successful execution, rejection, expiration/reopening, stale revision, duplicate retry, cross-session denial and persistence/restart. Ordinary browser tests use the deterministic investigator, not a subscription/model call.

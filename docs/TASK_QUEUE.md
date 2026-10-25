@@ -11,19 +11,34 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 - No automatic cross-tool messaging or shared runtime memory is assumed. Shared Git commits, this queue, acceptance artifacts and task handoffs are the synchronization mechanism.
 - Central queue and STATUS changes belong to Codex. Implementers update their own task handoff, technical documentation and task evidence. Bring the commit/summary back for review.
 
+## Delivery and review snapshot
+
+Latest owner-provided handoff, with branch commits verified by Codex:
+
+| Package | Delivered commit | Review state |
+| --- | --- | --- |
+| C01 HTTP contract | 0a6fb0ec8e63fd686ac7e4cf6bbfb7bd22a105b0 | CHANGES REQUESTED: R9 malformed cursor; R10 error-contract accuracy |
+| C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | DELIVERED, CODEX REVIEW PENDING |
+| C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
+| C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
+
+C01's existing tests pass (40 focused, 146 full / 1 live skip), but independent HTTP probes reproduce R9/R10. Read [the review](reviews/0a6fb0e.md) and [the immediate Claude follow-up](prompts/CLAUDE_REVIEW_FOLLOWUP.md). C03/C06/C08 checks and runtime measurements remain attributed to Claude until independently reviewed. Delivery is not acceptance; the four task branches have not been integrated.
+
+C02 and Cursor U01 wait for accepted corrected C01. C05 is parked until accepted C01 because it overlaps backend paths. C04 waits for accepted C03; C07 waits for accepted C04. WSL changes and GitHub provisioning are undecided and do not block the C01 corrections.
+
 ## How to make progress today
 
-1. Claude completes C01 as a small, tested commit and immediately hands off its HTTP contract for review. Accepted C01 unblocks Cursor U01 and Claude C02 independently.
-2. While C01 awaits review, Claude can work on independent C03, C05 or C06 in its own worktree. C04 starts only after accepted C03; C02 starts only after accepted C01. Do not build dependent changes on an unaccepted API/schema change.
-3. Cursor starts U01 when Codex marks the C01 contract accepted, then U02 with C02's accepted fixture. Cursor uses its own branch/worktree, separate from Claude.
-4. Codex reviews each bounded increment and coordinates integration. Implementers do not merge into main themselves.
-5. Claude uses remaining allowance on ready, useful tasks. Each task ends in a tested commit and an honest handoff. Stop the affected mode on quota exhaustion; preserve work rather than switching to paid API fallback or repeatedly retrying.
+1. Claude fixes C01 R9/R10 first on its existing branch and immediately hands off the new tested commit. Do not repeat the delivered packages.
+2. Codex re-reviews corrected C01 and separately reviews delivered C03/C06/C08. Those three packages are not implicitly accepted by this queue.
+3. After C01 acceptance, Cursor U01 and Claude C02 can proceed independently in separate worktrees. C05 starts from accepted C01 and coordinates any API/migration edits. C04 starts only after accepted C03.
+4. Cursor U02 follows accepted C02 plus U01; C07/U03 follow their model gates. Implementers do not merge main.
+5. Use remaining allowance for ready work and concrete review corrections. If every dependency is blocked, provide an honest handoff rather than bypassing a gate, buying API capacity or repeatedly rebuilding completed work.
 
 Do not try to spend quota for its own sake. The objective is reviewed working increments before the reset. Browser tests and ordinary CI use the deterministic investigator; real subscription calls are opt-in, targeted and recorded separately.
 
 ## Packages and acceptance
 
-### C01 - HTTP boundary for a real analyst queue - Claude - READY
+### C01 - HTTP boundary for a real analyst queue - Claude - CHANGES REQUESTED
 
 Branch: task/claude-api-contracts. Own backend API/service/contracts, contract exports, backend tests and docs/api/.
 Dependency: reviewed coordination base. Preserve existing endpoints and the corrected approval/idempotency behavior.
@@ -74,7 +89,7 @@ Include a process restart scenario where practical; distinguish it from reconstr
 
 Acceptance: reproducible fresh-environment run with teardown, traces/screenshots sanitized, no live-model calls, real response/audit assertions and failing regressions for meaningful UI mistakes. Record actual commands and limitations.
 
-### C03 - Reproducible synthetic financial data and historical features - Claude - INDEPENDENT READY
+### C03 - Reproducible synthetic financial data and historical features - Claude - DELIVERED, REVIEW PENDING
 
 Branch: task/claude-fraud-data. Own data_pipeline/, tests/data/, small reviewed fixtures, data manifests and docs/ml/data-card.md. Start from the accepted coordination base; this task does not edit API/contracts or web/.
 
@@ -94,7 +109,7 @@ Report average precision, precision/recall at stated review capacity, false posi
 
 Acceptance: actual saved trusted local artifact, reproducible small seeded run, pinned code/data/feature/model/threshold manifests, model card, error slices and a documented comparison with uncertainty. Never claim real-bank effectiveness or guaranteed savings from synthetic results. No GPU/cloud purchase.
 
-### C05 - Backend reliability, observability and secret safety - Claude - INDEPENDENT READY
+### C05 - Backend reliability, observability and secret safety - Claude - PARKED ON ACCEPTED C01
 
 Branch: task/claude-backend-reliability. Own backend logging/diagnostics, security/failure tests, local role/migration setup and docs/security/. Coordinate any overlapping service.py or migration changes with C01 rather than writing both branches concurrently.
 
@@ -104,7 +119,7 @@ Provide a least-privilege local database role design and tests: runtime cannot a
 
 Acceptance: injected DB/provider faults produce honest states and safe errors; canaries absent from captured outputs; existing approval/replay/scoping tests pass; privileges and audit guarantees are accurately documented. Do not claim universal injection prevention or tamper-proof storage.
 
-### C06 - Reproducible checks and backend CI - Claude - INDEPENDENT READY
+### C06 - Reproducible checks and backend CI - Claude - DELIVERED, REVIEW PENDING
 
 Branch: task/claude-backend-ci. Own backend CI workflows, Python test/setup tooling, package-build verification and docs/ci/. Coordinate pyproject/uv.lock ownership with C04; no frontend source edits.
 
@@ -127,7 +142,7 @@ Acceptance: actual trained inference in the API, parity with offline feature/sco
 Own web/ extensions. Show actual scorer/version/score semantics, reproducible experiment results/error slices and clearly labeled synthetic limitations. Charts must match backend/report fixtures; keep currencies separate.
 Acceptance: typed build/tests, browser assertions for actual values and correct labeling for rule versus trained-model mode.
 
-### C08 - Deployment and operator preparation - Claude - READY FOR LOCAL WORK; HOSTING GATED
+### C08 - Deployment and operator preparation - Claude - LOCAL PACKAGE DELIVERED, REVIEW PENDING
 
 Own local container/dev scripts and docs/runbooks/. Produce a reproducible local API/Postgres setup, migration/upgrade/rollback runbook, synthetic smoke commands and restricted staging design using deterministic investigations.
 Verify current platform/plan limits from official sources before selecting hosting. Existing subscriptions/free allowances only. Keep owner subscription execution local/private and separate from public BYOK.

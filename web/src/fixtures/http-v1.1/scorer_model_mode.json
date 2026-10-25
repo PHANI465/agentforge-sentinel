@@ -1,0 +1,51 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/scoring"
+  },
+  "response": {
+    "alert_rule": "score >= threshold",
+    "features": {
+      "name": "sentinel-features",
+      "schema_version": "1.0",
+      "sha256": "ee990c82579426b02fef4536ec2c6328d16ddfa5de05aa9059d35fd1af080593",
+      "version": "f1"
+    },
+    "mode": "model",
+    "model": {
+      "artifact_sha256": "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b",
+      "candidate": "hgb_balanced",
+      "feature_version": "f1",
+      "protocol_sha256": "bed52b8108bd855f4fa467c2e992e5e33c9a37871dec7664129d58b0dba561e9",
+      "protocol_version": "p1",
+      "results_id": "p1",
+      "schema_version": "1.0",
+      "selection_sha256": "940e85502435426861537aff20074249b8ea6c30193f57309b15b3610e09293b",
+      "threshold_source": "validation_frozen_threshold"
+    },
+    "notes": [
+      "Uncalibrated model score in [0, 1] used for ranking; not a fraud probability.",
+      "Alerts use the frozen validation threshold (score >= threshold), not the offline daily top-k batch policy.",
+      "Trained and evaluated on synthetic data only."
+    ],
+    "results_id": "p1",
+    "score_semantics": "uncalibrated_score",
+    "scorer": {
+      "name": "hgb_balanced",
+      "schema_version": "1.0",
+      "sha256": "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b",
+      "version": "p1"
+    },
+    "scoring_kind": "model",
+    "threshold": 4.0295386895426815e-06,
+    "threshold_policy": {
+      "name": "c04-frozen-threshold",
+      "schema_version": "1.0",
+      "sha256": "3a9573a2d92d1757d9b3a080e35b85b3c6c8b7e14932e3a32de0cd92abc40625",
+      "version": "p1"
+    }
+  },
+  "status": 200
+}
