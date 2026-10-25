@@ -1,3 +1,5 @@
+Current assignment (October 25): C06/C08 changes requested. Read docs/prompts/CLAUDE_RELEASE_REVIEW_FIXES.md from latest task/coordination. I02 f38e920 is accepted; do not repeat its review or resume superseded C01 fixes below.
+
 # Claude follow-up after four delivered packages
 
 Historical correction prompt: R9/R10 are completed and C01 is accepted at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. Use CLAUDE_C02.md from the latest task/coordination reference for the next task. The pending instructions below describe the earlier review stage; do not repeat them.

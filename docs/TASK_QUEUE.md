@@ -1,5 +1,16 @@
 # Shared implementation queue
 
+## Current work: C06/C08 reviews completed; corrections assigned
+
+I02 f38e920 remains accepted and unchanged. C06 e7fc868 and C08 9ab183e now have **changes requested**, not acceptance. Read reviews/e7fc868.md (R25 unexpected-skip gate; R27 current ML dependency/CI refresh) and reviews/9ab183e.md (R24 process/cluster ownership and shutdown; R26 executable rollback).
+
+Independent evidence: C06 offline package checker passed for its historical two-migration package; C08 real backup/restore test passed (21.56s). Intercepted lifecycle/rollback probes reproduced C08 failures without real process kills or foreign connections. A real two-skip pytest run passed C06's current grep gate; an isolated accepted f38e920 dev-only environment failed collection with seven missing numpy/joblib errors. No Linux/GitHub run or hosted release is claimed.
+
+**Next: Claude follows docs/prompts/CLAUDE_RELEASE_REVIEW_FIXES.md** on the two existing task branches, includes accepted f38e920 as their explicit task dependency, and returns corrected exact commits. Preserve I01's 1800-second checker bound when joining C06's sixth package command. Cursor stays inactive. H01 remains non-blocking and unassigned. Main integration follows package re-review; main remains 507538e.
+
+
+Portable checkpoint refreshed: E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html and matching .md. It contains the accepted I02 state, 18 completed-process steps and current corrections. Desktop/mobile layout, 13 section anchors, zero external resources/page errors and current-state assertions passed; summary and mobile layout were visually inspected.
+
 ## Latest checkpoint: combined local model/browser integration accepted
 
 Codex completed the saved I02 Part B implementation at **f38e92023481a55db1ecf8bcdbe917140bd5d7cd**, branch task/codex-i02-completion in E:/PHANI/sentinel-wt/codex-i02-completion. Cursor remains an implementation contributor: its original seven edited files and exact byte snapshot are preserved. No need to purchase more Cursor usage to continue this work.
@@ -35,8 +46,8 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | I01 model-browser fixtures | 7dd9428c70a7741af1c4781d22fd6b184f957444 | ACCEPTED: Windows local fixture/lifecycle dependency; ten independent real-process tests passed |
 | I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; included in accepted Part B f38e920 |
 | I02 Part B continuation | f38e92023481a55db1ecf8bcdbe917140bd5d7cd | ACCEPTED: independent Claude review; Windows local model/browser integration; two non-blocking H01 suggestions |
-| C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
-| C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
+| C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | CHANGES REQUESTED: R25/R27; refresh for accepted model backend; no GitHub/Linux run |
+| C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | CHANGES REQUESTED: R24/R26; ownership-safe lifecycle and executable rollback |
 
 C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03 is separately accepted; see [the review](reviews/a8e716c.md). C06/C08 remain pending review; none of these branches has been integrated into main.
 
@@ -46,11 +57,11 @@ U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base
 
 ## Current execution order
 
-1. Preserve accepted I02 f38e920 and the original Cursor checkout. Claude review is complete; do not dispatch the old review prompt again.
-2. Codex reviews delivered C06 e7fc868 (CI) and C08 9ab183e (local operations). Neither package is accepted by implication from I02.
-3. Track H01 as a non-blocking browser maintenance follow-up. Keep accepted f38e920 unchanged; any later implementation gets separate ownership and exact validation.
-4. Define the release integration from accepted application dependencies after those reviews. Preserve I01's 1800-second checker bound when joining C06.
-5. Main remains baseline 507538e. Main integration, remote provisioning, Linux/CI and hosting are separate gates. Deterministic investigations and the existing-resource budget remain.
+1. Claude implements the concrete C06 R25/R27 and C08 R24/R26 assignments in prompts/CLAUDE_RELEASE_REVIEW_FIXES.md, each on its existing task branch with accepted f38e920 included. Do not edit accepted component checkouts.
+2. Codex re-reviews the exact corrected commits and checks their integration with accepted I02. Neither old package is accepted by the new assignment.
+3. Preserve 1800-second backend checker timeout, the sixth package check and current dev/ml requirements. CI/Linux remains unverified until executed.
+4. H01 is a non-blocking later browser-maintenance increment, not part of these backend fixes. Cursor is not needed for the current work.
+5. After acceptance define the canonical release integration; main, remote/runner provisioning and hosting remain separate gates. No new spending or live provider calls.
 
 ## Packages and acceptance
 
@@ -135,7 +146,7 @@ Provide a least-privilege local database role design and tests: runtime cannot a
 
 Acceptance: injected DB/provider faults produce honest states and safe errors; canaries absent from captured outputs; existing approval/replay/scoping tests pass; privileges and audit guarantees are accurately documented. Do not claim universal injection prevention or tamper-proof storage.
 
-### C06 - Reproducible checks and backend CI - Claude - DELIVERED, REVIEW PENDING
+### C06 - Reproducible checks and backend CI - Claude - CHANGES REQUESTED R25/R27
 
 Branch: task/claude-backend-ci. Own backend CI workflows, Python test/setup tooling, package-build verification and docs/ci/. Coordinate pyproject/uv.lock ownership with C04; no frontend source edits.
 
@@ -158,7 +169,7 @@ Acceptance: actual trained inference in the API, parity with offline feature/sco
 The initial contract/UI increment is delivered at a5716e2 from accepted U02 5f28555 and frozen v1.1 artifacts at 62def10. It is accepted for the current-p1 frontend scope; preserve it. I01/I02 now cover combined-stack work. C07 is now separately accepted at 275509a, but is not in this branch. New-feature real-stack acceptance requires a later explicit integration assignment. See prompts/CURSOR_UI.md for current instructions; prompts/CURSOR_U03.md records the implementation scope. Own web/ extensions. Show actual scorer/version/score semantics, reproducible experiment results/error slices and clearly labeled synthetic limitations. Charts must match backend/report fixtures; keep currencies separate.
 Acceptance: typed build/tests, browser assertions for actual values and correct labeling for rule versus trained-model mode.
 
-### C08 - Deployment and operator preparation - Claude - LOCAL PACKAGE DELIVERED, REVIEW PENDING
+### C08 - Deployment and operator preparation - Claude - CHANGES REQUESTED R24/R26
 
 Own local container/dev scripts and docs/runbooks/. Produce a reproducible local API/Postgres setup, migration/upgrade/rollback runbook, synthetic smoke commands and restricted staging design using deterministic investigations.
 Verify current platform/plan limits from official sources before selecting hosting. Existing subscriptions/free allowances only. Keep owner subscription execution local/private and separate from public BYOK.

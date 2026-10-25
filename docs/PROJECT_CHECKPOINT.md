@@ -1,5 +1,16 @@
 # AgentForge Sentinel project checkpoint
 
+## Current work: C06/C08 reviews completed; corrections assigned
+
+I02 f38e920 remains accepted and unchanged. C06 e7fc868 and C08 9ab183e now have **changes requested**, not acceptance. Read reviews/e7fc868.md (R25 unexpected-skip gate; R27 current ML dependency/CI refresh) and reviews/9ab183e.md (R24 process/cluster ownership and shutdown; R26 executable rollback).
+
+Independent evidence: C06 offline package checker passed for its historical two-migration package; C08 real backup/restore test passed (21.56s). Intercepted lifecycle/rollback probes reproduced C08 failures without real process kills or foreign connections. A real two-skip pytest run passed C06's current grep gate; an isolated accepted f38e920 dev-only environment failed collection with seven missing numpy/joblib errors. No Linux/GitHub run or hosted release is claimed.
+
+**Next: Claude follows docs/prompts/CLAUDE_RELEASE_REVIEW_FIXES.md** on the two existing task branches, includes accepted f38e920 as their explicit task dependency, and returns corrected exact commits. Preserve I01's 1800-second checker bound when joining C06's sixth package command. Cursor stays inactive. H01 remains non-blocking and unassigned. Main integration follows package re-review; main remains 507538e.
+
+
+Portable checkpoint refreshed: E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html and matching .md. It contains the accepted I02 state, 18 completed-process steps and current corrections. Desktop/mobile layout, 13 section anchors, zero external resources/page errors and current-state assertions passed; summary and mobile layout were visually inspected.
+
 ## Latest checkpoint: combined local model/browser integration accepted
 
 Codex completed the saved I02 Part B implementation at **f38e92023481a55db1ecf8bcdbe917140bd5d7cd**, branch task/codex-i02-completion in E:/PHANI/sentinel-wt/codex-i02-completion. Cursor remains an implementation contributor: its original seven edited files and exact byte snapshot are preserved. No need to purchase more Cursor usage to continue this work.
