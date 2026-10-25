@@ -11,8 +11,9 @@ from typing import Annotated, Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 
 from sentinel.contracts.v1 import (
-    ActionIntent, AgentRun, Alert, Approval, Case, Digest, EvidenceItem, Id,
-    InvestigationFinding, Money, ScoringOutcome, SimulatedAction, Transaction,
+    ActionIntent, AgentRun, Alert, Approval, ArtifactRef, Case, Digest, EvidenceItem, Id,
+    InvestigationFinding, ModelProvenance, Money, ScoreSemantics, ScoringOutcome,
+    SimulatedAction, Transaction,
 )
 
 CaseState = Literal["open", "investigating", "awaiting_approval", "closed", "inconclusive"]
@@ -97,7 +98,7 @@ class CaseSummary(HttpBody):
     score: float
     threshold: float
     scoring_kind: Literal["rule", "model"]
-    score_semantics: Literal["heuristic", "estimated_probability"]
+    score_semantics: ScoreSemantics
 
 
 class CasePage(HttpBody):
@@ -138,3 +139,122 @@ class ExecuteResponse(HttpBody):
 class Health(HttpBody):
     status: Literal["ok"]
     investigator: str
+
+
+# ---- v1.1 additions (C07): scorer identity and frozen offline model results ---------------
+
+class PolicyStats(HttpBody):
+    flagged: int
+    tp: int
+    fp: int
+    fn: int
+    tn: int
+    precision: float | None
+    recall: float | None
+    false_positive_rate: float | None
+
+
+class ScorerInfo(HttpBody):
+    """The scorer this server is configured with. Set by the operator at startup; there is
+    no route that changes it."""
+    mode: Literal["rule", "model"]
+    scoring_kind: Literal["rule", "model"]
+    score_semantics: ScoreSemantics
+    scorer: ArtifactRef
+    features: ArtifactRef
+    threshold_policy: ArtifactRef
+    threshold: float
+    alert_rule: Literal["score >= threshold"]
+    model: ModelProvenance | None = Field(
+        description="Accepted offline experiment behind a model scorer; null for the rule.")
+    results_id: str | None = Field(description="GET /v1/model-results/{results_id}")
+    notes: list[str]
+
+
+class SplitCounts(HttpBody):
+    rows: int
+    fraud: int
+    legitimate: int
+    unknown_excluded: int
+    decision_days: int
+    labels_observable_by_horizon: int | None = None
+
+
+class ModelResultCandidate(HttpBody):
+    name: str
+    kind: str
+    validation_average_precision: float
+    test_average_precision: float
+    test_pr_auc_trapezoid: float
+    test_daily_top_k: PolicyStats
+    test_brier: float | None
+
+
+class ReliabilityBin(HttpBody):
+    lo: float
+    hi: float
+    n: int
+    mean_score: float | None
+    fraud_rate: float | None
+
+
+class SliceRow(PolicyStats):
+    dimension: Literal["currency", "scenario", "activity_count_24h", "test_week"]
+    value: str
+    rows: int
+    fraud: int
+
+
+class CurvePoint(HttpBody):
+    recall: float
+    precision: float
+
+
+class ResultsUncertainty(HttpBody):
+    method: str
+    replicates: int
+    accounts: int
+    skipped_one_class: int
+    average_precision: tuple[float, float] | None
+    recall_at_capacity: tuple[float, float] | None
+    precision_at_capacity: tuple[float, float] | None
+
+
+class ResultsCalibration(HttpBody):
+    brier: float
+    reliability: list[ReliabilityBin]
+    note: str
+
+
+class SelectedPolicy(HttpBody):
+    daily_top_k: PolicyStats
+    frozen_threshold: PolicyStats
+
+
+class ModelResults(HttpBody):
+    """Frozen C04 results, served from packaged server-owned files. Synthetic data; an
+    offline benchmark, not production or real-bank performance."""
+    results_id: str
+    label: Literal["offline synthetic benchmark"]
+    synthetic: Literal[True]
+    protocol_version: str
+    protocol_sha256: Digest
+    selection_sha256: Digest
+    artifact_sha256: Digest
+    selected: str
+    windows: dict[str, tuple[float, float]] = Field(
+        description="Days from the generator epoch, by decision time, [start, end)")
+    label_views: dict[str, str]
+    review_k_per_day: int
+    review_ranking: str
+    frozen_threshold: float
+    splits: dict[Literal["train", "validation", "test"], SplitCounts]
+    candidates: list[ModelResultCandidate]
+    selected_policy: SelectedPolicy
+    uncertainty: ResultsUncertainty
+    calibration: ResultsCalibration
+    slices: list[SliceRow] = Field(
+        description="Daily top-k on test. 'scenario' is hidden synthetic truth, used for "
+                    "offline slices only, never as a model input.")
+    pr_curve: list[CurvePoint] = Field(description="Selected model, test split")
+    limitations: list[str]

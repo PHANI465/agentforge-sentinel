@@ -2,6 +2,8 @@
 
 Audience: Cursor (U02 Playwright suite) and reviewers. The backend contract is unchanged: accepted C01 `2e6c232` (`docs/api/README.md`, `contracts/http/`).
 
+> **I01 update:** the API process now connects as the least-privilege runtime role `sentinel_browser_runtime` in every mode. Setup and seeding keep the owner connection (`database_url`). Opt-in model mode and model scenarios are documented in `docs/api/model-browser-fixtures.md`. Without the new flags, stacks are seeded exactly as below. `status` output is unchanged; the current mode is the manifest's `api.scorer`.
+
 ## What it gives you
 
 A disposable stack per test run:

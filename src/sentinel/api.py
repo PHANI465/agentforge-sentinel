@@ -4,10 +4,12 @@ typed HTTP v1 contract (sentinel.contracts.http_v1, docs/api/README.md).
 """
 from __future__ import annotations
 
+import logging
 import os
+import time
 import uuid
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, Path, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
@@ -15,20 +17,26 @@ from pydantic import BaseModel, ValidationError
 from pydantic.json_schema import models_json_schema
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.routing import Match
 
-from sentinel import investigators
+from sentinel import investigators, model_results, scorers
 from sentinel.contracts.http_v1 import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, CaseDetail, CasePage, CaseState, ErrorResponse,
-    ExecuteResponse, Health, IngestResponse, Overview, SessionView,
+    ExecuteResponse, Health, IngestResponse, ModelResults, Overview, ScorerInfo, SessionView,
 )
 from sentinel.contracts.v1 import (
     Approval, ApprovalDecisionInput, AuditEvent, ExecuteActionInput, InvestigationRequestInput,
     TransactionInput, TrustedContext, safe_validation_errors,
 )
+from sentinel.observability import (
+    Metrics, configure_logging, emit, method_label, request_id,
+)
 from sentinel.service import MAX_CURSOR_LENGTH, Sentinel, ServiceError
 
+HTTP_LOG = logging.getLogger("sentinel.http")
+
 MAX_BODY_BYTES = 16_384
-API_VERSION = "1.0.0"
+API_VERSION = "1.1.0"  # v1.1 (C07): additive; legacy v1 frozen in contracts/http
 _ERRORS = {status: {"model": ErrorResponse} for status in (401, 403, 404, 409, 413, 422)}
 # operation_id -> request model; bodies are read manually (size limit, code-only errors).
 REQUEST_BODIES: dict[str, type[BaseModel]] = {
@@ -39,10 +47,15 @@ REQUEST_BODIES: dict[str, type[BaseModel]] = {
 
 def create_app(service: Sentinel | None = None) -> FastAPI:
     if service is None:
-        service = Sentinel(os.environ["SENTINEL_DATABASE_URL"], investigators.from_environment())
+        service = Sentinel(os.environ["SENTINEL_DATABASE_URL"], investigators.from_environment(),
+                           scorer=scorers.from_environment())
     app = FastAPI(title="AgentForge Sentinel", version=API_VERSION, docs_url=None,
                   redoc_url=None)
     app.state.service = service
+    app.state.metrics = Metrics()
+    service.metrics = app.state.metrics
+    configure_logging()
+    app.add_middleware(RequestContext, metrics=app.state.metrics, router=app.router)
 
     @app.exception_handler(ServiceError)
     async def service_error(_request, error: ServiceError):
@@ -86,6 +99,26 @@ def create_app(service: Sentinel | None = None) -> FastAPI:
              operation_id="get_session")
     def get_session(token: str = Depends(bearer)):
         return service.session_view(token)
+
+    @app.get("/v1/scoring", response_model=ScorerInfo, responses=_ERRORS,
+             operation_id="get_scorer")
+    def get_scorer(ctx: TrustedContext = Depends(context)):
+        """v1.1: the configured scorer's identity, provenance and score semantics."""
+        if "read_case" not in ctx.capabilities:
+            raise ServiceError("permission_denied", 403)
+        return service.scorer.info()
+
+    @app.get("/v1/model-results/{results_id}", response_model=ModelResults, responses=_ERRORS,
+             operation_id="get_model_results")
+    def get_model_results(results_id: str = Path(max_length=32),
+                          ctx: TrustedContext = Depends(context)):
+        """v1.1: frozen offline C04 results (synthetic). Registry ids only, never a path."""
+        if "read_case" not in ctx.capabilities:
+            raise ServiceError("permission_denied", 403)
+        results = model_results.load(results_id)
+        if results is None:
+            raise ServiceError("not_found", 404)
+        return results
 
     @app.get("/v1/overview", response_model=Overview, responses=_ERRORS,
              operation_id="get_overview")
@@ -168,6 +201,71 @@ def openapi_document(app: FastAPI) -> dict:
                 operation["security"] = [{"bearer": []}]
     app.openapi_schema = doc
     return doc
+
+
+class RequestContext:
+    """Plain ASGI middleware (keeps request streaming intact): request ID, one safe event and
+    metrics per request, and containment of unexpected exceptions.
+
+    An unexpected exception raised before response headers start is answered with the
+    same plain-text 500 body as before (the frozen C01 contract). After headers have
+    started (no current endpoint streams) the response cannot be replaced; the event then
+    records the started status. In both cases the exception is not re-raised, so the server
+    never logs its traceback or message; only the exception type name is recorded."""
+
+    BODY = b"Internal Server Error"
+
+    def __init__(self, app, metrics: Metrics, router):
+        self.app, self.metrics, self.router = app, metrics, router
+
+    def route_of(self, scope) -> str:
+        for route in self.router.routes:
+            match, _ = route.matches(scope)
+            if match in (Match.FULL, Match.PARTIAL):
+                return getattr(route, "path", "unmatched")
+        return "unmatched"
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        supplied = dict(scope.get("headers") or []).get(b"x-request-id")
+        rid = request_id(supplied.decode("latin-1") if supplied else None)
+        scope.setdefault("state", {})["request_id"] = rid
+        started = time.perf_counter()
+        status: dict = {"code": None}
+
+        async def send_with_id(message):
+            if message["type"] == "http.response.start":
+                status["code"] = message["status"]
+                headers = [h for h in message.get("headers", []) if h[0].lower() != b"x-request-id"]
+                message = {**message, "headers": [*headers, (b"x-request-id", rid.encode())]}
+            await send(message)
+
+        error_type = None
+        try:
+            await self.app(scope, receive, send_with_id)
+        except Exception as error:  # contained: type name only, never the message
+            error_type = type(error).__name__
+            if status["code"] is None:
+                status["code"] = 500
+                await send({"type": "http.response.start", "status": 500, "headers": [
+                    (b"content-type", b"text/plain; charset=utf-8"),
+                    (b"content-length", str(len(self.BODY)).encode()),
+                    (b"x-request-id", rid.encode())]})
+                await send({"type": "http.response.body", "body": self.BODY})
+        duration_ms = round((time.perf_counter() - started) * 1000, 1)
+        code = status["code"] or 500
+        route = self.route_of(scope)
+        method = method_label(scope["method"])
+        self.metrics.observe(method, route, code, duration_ms)
+        outcome = ("unexpected_error" if error_type else "ok" if code < 400
+                   else "handled_error" if code < 500 else "server_error")
+        fields = {"request_id": rid, "method": method, "route": route, "status": code,
+                  "duration_ms": duration_ms, "outcome": outcome}
+        if error_type:
+            fields["error_type"] = error_type
+        emit(HTTP_LOG, "http_request", logging.ERROR if code >= 500 else logging.INFO,
+             **fields)
 
 
 async def read_limited(request: Request, limit: int) -> bytes:

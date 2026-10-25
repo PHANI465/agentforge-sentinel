@@ -2,16 +2,19 @@
 seeded with deterministic scenarios. Cursor's Playwright setup drives it through this CLI.
 
     uv run --locked python tests/support/browser_stack.py start [--parent-dir DIR]
+            [--scorer rule|model] [--model-fixtures]
         -> creates a fresh private sentinel-browser-* directory (inside DIR if given) and
            prints SENTINEL_STACK_MANIFEST=<path>; tokens are only inside that private file
     uv run --locked python tests/support/browser_stack.py seed --manifest P --scenario NAME --ordinal N
-    uv run --locked python tests/support/browser_stack.py restart-api --manifest P
+    uv run --locked python tests/support/browser_stack.py restart-api --manifest P [--scorer rule|model]
     uv run --locked python tests/support/browser_stack.py restart-db --manifest P
     uv run --locked python tests/support/browser_stack.py status --manifest P
     uv run --locked python tests/support/browser_stack.py stop --manifest P
 
-See docs/api/browser-fixtures.md. Nothing here adds an HTTP route; the API process runs the
-unchanged production app with a deterministic fixture investigator (fixture_app.py).
+See docs/api/browser-fixtures.md and docs/api/model-browser-fixtures.md. Nothing here adds an
+HTTP route; the API process runs the unchanged production app with a deterministic fixture
+investigator (fixture_app.py) and the registered scorer selected at start/restart, connected
+as a least-privilege runtime role (I01). Setup and seeding keep the operator connection.
 """
 from __future__ import annotations
 
@@ -34,7 +37,10 @@ for path in (str(SUPPORT), str(ROOT / "src")):
     if path not in sys.path:
         sys.path.insert(0, path)
 
+from psycopg.conninfo import make_conninfo  # noqa: E402
+
 from sentinel import db, devdb  # noqa: E402
+from sentinel.db import roles  # noqa: E402
 
 import scenarios  # noqa: E402
 
@@ -47,6 +53,10 @@ OWNED_ENTRIES = {"stack.json", MARKER, "pg", "api.log"}
 # Paths the helper itself reads, writes or hands to pg_ctl. Each must be a real (not
 # redirected) entry resolving inside the owned directory whenever it exists.
 CRITICAL_PATHS = ("stack.json", MARKER, "api.log", "pg", "pg/data")
+# The API's database role inside the disposable cluster (trust auth on loopback: no password).
+RUNTIME_ROLE = "sentinel_browser_runtime"
+# CLI scorer names -> SENTINEL_SCORER values; only registered scorers exist.
+SCORERS = {"rule": "rule", "model": "model:hgb_balanced@p1"}
 
 
 class StackError(RuntimeError):
@@ -300,10 +310,12 @@ class Stack:
 
     @classmethod
     def start(cls, parent: Path | None = None, *, app: str = DEFAULT_APP,
-              api_port: int | None = None, timeout: float = 60) -> "Stack":
+              api_port: int | None = None, timeout: float = 60, scorer: str = "rule",
+              model_fixtures: bool = False) -> "Stack":
         """Create, migrate, seed and serve in a fresh private directory (never an existing
         one). On failure everything started is stopped; state is removed only if both
-        shutdowns are verified, otherwise the recovery manifest is kept (review R12)."""
+        shutdowns are verified, otherwise the recovery manifest is kept (review R12).
+        `scorer` is a SENTINEL_SCORER value; the API refuses anything unregistered."""
         if parent is not None:
             Path(parent).mkdir(parents=True, exist_ok=True)
         base = Path(os.path.realpath(tempfile.mkdtemp(prefix=PREFIX, dir=parent)))
@@ -313,7 +325,9 @@ class Stack:
         stack = cls(base, {"version": MANIFEST_VERSION, "app": app, "owner": owner,
                            "state_dir": canonical(base),
                            "database": {"port": devdb.free_port(), "name": "browser"},
-                           "api": {"port": api_port or devdb.free_port()}})
+                           "api": {"port": api_port or devdb.free_port(), "scorer": scorer,
+                                   "database_user": RUNTIME_ROLE},
+                           "model_fixtures": model_fixtures})
         stack._save()
         try:
             cluster = stack._cluster()
@@ -322,7 +336,8 @@ class Stack:
             stack.manifest["database"]["started"] = True
             url = cluster.create_database("browser")
             db.migrate(url)
-            tokens, sessions, seeded = scenarios.seed_all(url)
+            roles.grant_runtime(url, RUNTIME_ROLE)  # operator setup; the API never owns
+            tokens, sessions, seeded = scenarios.seed_all(url, model_fixtures=model_fixtures)
             stack.manifest.update(database_url=url, tokens=tokens, sessions=sessions,
                                   scenarios=seeded, seeded_ordinals={})
             stack._save()
@@ -343,7 +358,12 @@ class Stack:
             raise StackError(f"port {port} already serves an API")
         module, factory = self.manifest["app"].split(":")
         self.guard()  # api.log must be a real file inside the owned directory
-        env = {**os.environ, "SENTINEL_DATABASE_URL": self.manifest["database_url"],
+        api = self.manifest["api"]
+        user = api.get("database_user")
+        url = self.manifest["database_url"]
+        env = {**os.environ,
+               "SENTINEL_DATABASE_URL": make_conninfo(url, user=user) if user else url,
+               "SENTINEL_SCORER": api.get("scorer", "rule"),
                "SENTINEL_INVESTIGATOR": "deterministic", "SENTINEL_LIVE_CLAUDE": "0",
                "SENTINEL_MODE": "local"}
         log = open(self.state_dir / "api.log", "ab")
@@ -427,9 +447,14 @@ class Stack:
         return {"ok": api_ok and db_ok and removed, "api_stopped": api_ok,
                 "database_stopped": db_ok, "state_removed": removed, "errors": errors}
 
-    def restart_api(self, timeout: float = 60) -> None:
-        """A new uvicorn process (new PID) on the same port and database."""
+    def restart_api(self, timeout: float = 60, scorer: str | None = None) -> None:
+        """A new uvicorn process (new PID) on the same port and database; optionally with
+        another registered scorer (test-only lifecycle; stored records keep their own
+        scorer identity)."""
         self.stop_api()
+        if scorer is not None:
+            self.manifest["api"]["scorer"] = scorer
+            self._save()
         self._start_api(timeout)
         self._save()
 
@@ -454,8 +479,10 @@ class Stack:
         return pg_status(cluster)
 
     def seed(self, name: str, ordinal: int) -> dict:
-        if name not in scenarios.SCENARIOS:
+        if name not in scenarios.ALL_SCENARIOS:
             raise StackError(f"unknown scenario {name!r}")
+        if name in scenarios.MODEL_SCENARIOS and not self.manifest.get("model_fixtures"):
+            raise StackError(f"{name} needs a stack started with --model-fixtures")
         used = self.manifest.setdefault("seeded_ordinals", {}).setdefault(name, [])
         if ordinal in used or ordinal < 1:
             raise StackError(f"ordinal {ordinal} already used (or < 1) for {name}")
@@ -469,7 +496,7 @@ class Stack:
         state = self.db_state()
         database = "up" if state == "running" else "unknown" if state == "unknown" else "down"
         return {"api": "up" if healthy(self.manifest["api"]["port"]) else "down",
-                "database": database}
+                "database": database}  # exact C02 shape; the mode is manifest api.scorer
 
 
 DB_STOPPED = {"stopped", "absent", "uninitialized"}
@@ -501,20 +528,28 @@ def main(argv: list[str] | None = None) -> int:
     start.add_argument("--api-port", type=int)
     start.add_argument("--timeout", type=float, default=60)
     start.add_argument("--app", default=DEFAULT_APP, help=argparse.SUPPRESS)
+    start.add_argument("--scorer", choices=sorted(SCORERS), default="rule")
+    start.add_argument("--model-fixtures", action="store_true",
+                       help="also seed the I01 model scenarios (needs the ml extra)")
     for name in ("seed", "restart-api", "restart-db", "status", "stop"):
         cmd = sub.add_parser(name)
         cmd.add_argument("--manifest", type=Path, required=True)
         if name == "seed":
-            cmd.add_argument("--scenario", required=True, choices=sorted(scenarios.SCENARIOS))
+            cmd.add_argument("--scenario", required=True,
+                             choices=sorted(scenarios.ALL_SCENARIOS))
             cmd.add_argument("--ordinal", type=int, required=True)
+        if name == "restart-api":
+            cmd.add_argument("--scorer", choices=sorted(SCORERS))
     args = parser.parse_args(argv)
     try:
         if args.command == "start":
             stack = Stack.start(args.parent_dir, app=args.app, api_port=args.api_port,
-                                timeout=args.timeout)
+                                timeout=args.timeout, scorer=SCORERS[args.scorer],
+                                model_fixtures=args.model_fixtures or args.scorer == "model")
             print(f"SENTINEL_STACK_MANIFEST={stack.path}")
             print(f"base_url={stack.manifest['api']['base_url']} "
-                  f"scenarios={','.join(sorted(stack.manifest['scenarios']))}")
+                  f"scenarios={','.join(sorted(stack.manifest['scenarios']))} "
+                  f"scorer={args.scorer}")
             return 0
         if args.command == "stop" and not os.path.lexists(args.manifest) \
                 and args.manifest.parent.is_dir():
@@ -526,8 +561,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "seed":
             print(json.dumps(stack.seed(args.scenario, args.ordinal), sort_keys=True))
         elif args.command == "restart-api":
-            stack.restart_api()
-            print(f"api restarted pid={stack.manifest['api']['pid']}")
+            stack.restart_api(scorer=SCORERS[args.scorer] if args.scorer else None)
+            print(f"api restarted pid={stack.manifest['api']['pid']} "
+                  f"scorer={stack.manifest['api']['scorer']}")
         elif args.command == "restart-db":
             stack.restart_db()
             print("database restarted")

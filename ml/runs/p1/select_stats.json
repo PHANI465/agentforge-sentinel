@@ -1,0 +1,37 @@
+{
+  "candidates": {
+    "hgb_balanced": {
+      "fit_seconds": 3.65,
+      "score_seconds": 0.09
+    },
+    "hgb_unweighted": {
+      "fit_seconds": 2.402,
+      "score_seconds": 0.101
+    },
+    "logreg_balanced": {
+      "fit_seconds": 0.167,
+      "score_seconds": 0.029
+    },
+    "logreg_unweighted": {
+      "fit_seconds": 0.11,
+      "score_seconds": 0.025
+    },
+    "rule_r1": {
+      "fit_seconds": 0.0,
+      "score_seconds": 0.006
+    }
+  },
+  "environment": {
+    "joblib": "1.6.0",
+    "numpy": "2.4.6",
+    "python": "3.11.3",
+    "scikit_learn": "1.9.1"
+  },
+  "peak_rss_mib": 483.1,
+  "snapshot_runtime": {
+    "feature_seconds": 17.67,
+    "generate_seconds": 3.56,
+    "peak_rss_mib": 483.1
+  },
+  "stage_seconds": 32.59
+}

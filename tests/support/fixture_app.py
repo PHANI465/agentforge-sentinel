@@ -5,12 +5,17 @@ imports this module.
 The fixture investigator behaves exactly like DeterministicInvestigator, except that a case
 whose transaction amount is PROVIDER_FAILURE_MINOR fails with `provider_unavailable`, every
 time. It makes no model or network call.
+
+The scorer comes from the production `scorers.from_environment()` (I01): SENTINEL_SCORER is
+unset/`rule` or a registered model key; anything else fails startup. No artifact path is
+ever taken from the environment or a request.
 """
 from __future__ import annotations
 
 import os
 import uuid
 
+from sentinel import scorers
 from sentinel.api import create_app as production_app
 from sentinel.investigators import DeterministicInvestigator, InvestigatorError
 from sentinel.scoring import artifact
@@ -36,7 +41,8 @@ class FixtureInvestigator(DeterministicInvestigator):
 
 
 def create_app():
-    return production_app(Sentinel(os.environ["SENTINEL_DATABASE_URL"], FixtureInvestigator()))
+    return production_app(Sentinel(os.environ["SENTINEL_DATABASE_URL"], FixtureInvestigator(),
+                                   scorer=scorers.from_environment()))
 
 
 def create_app_never_ready():
