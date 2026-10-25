@@ -1,7 +1,7 @@
-# Cursor I02 Part A accepted and Part B dependency pending
+# Cursor I02 Part B is ready
 
-Part A is accepted at 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 on task/cursor-model-integration. N1 is resolved. Independent16 focused parser/UI tests, typecheck/build and actual-parser/golden-fixture checks passed; see latest task/coordination:docs/reviews/50856be.md. Preserve the clean branch and accepted U03/U02 checkouts.
+I01 is ACCEPTED at 7dd9428c70a7741af1c4781d22fd6b184f957444; see docs/reviews/7dd9428.md from latest task/coordination. Your Part A 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 is accepted with N1 resolved.
 
-Part B still waits for Codex to explicitly accept and name the exact I01 fixture SHA. Claude's dependency merge5488a61 and candidate e0ff81f are not that acceptance. Do not merge them or invent real-model browser completion. Read current STATUS/TASK_QUEUE before continuing.
+Read and follow docs/prompts/CURSOR_I02_PART_B.md now. Reuse task/cursor-model-integration, include that exact I01 dependency while preserving Part A, use this worktree's locked dev/ml environment and implement real browser/API/Postgres model checks alongside the old rule suite. The final I01 status shape remains {api,database}; use GET /v1/scoring or manifest.api.scorer for mode.
 
-When the final I01 handoff is accepted, follow the existing docs/prompts/CURSOR_I02.md Part B scope with that exact SHA. No further Part A rewrite is assigned. No main merge, provider call, external database, WSL/GitHub provisioning or hosting.
+No further Part A rewrite or I01 backend work is assigned. Do not modify accepted checkouts, public contracts, backend lifecycle or main. Current queue and exact acceptance SHA govern; earlier waiting statements in old assignment history are superseded.

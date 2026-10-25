@@ -1,9 +1,9 @@
 # Handoff: task/coordination
 
-- Current task: review saved U03 and assign the next concrete model-workbench integration increments. Earlier sections below preserve prior reviews.
+- Current task: review the final I01 fixture/lifecycle package and dispatch I02 Part B on the exact accepted dependency. Earlier sections below preserve prior reviews.
 - Tool and worktree: Codex, E:\PHANI\agentforge-sentinel.
 - Updated: October 25, 2026, America/Phoenix.
-- Current state: C07 275509a accepted; U03 a5716e2 current-p1 frontend increment accepted. Claude I01 and Cursor I02 assigned for combined model-browser work. C06/C08 and main gates remain. Latest evidence is in the final section below.
+- Current state: C07/U03 and I02 Part A 50856be accepted. I01 7dd9428 accepted; Cursor I02 Part B ready on its existing branch with the exact fixture dependency. C06/C08, full model-browser acceptance and main gates remain. Latest evidence is in the final section below.
 - Code reference tested before this note: c6d369f6043a8c9ec86d8f56cf05670e81fba81d, clean task/thin-path.
 - Final check evidence: run strict helper after the final documentation commit; see final chat / ignored .agent/last-check.json for that commit. No self-referential SHA is claimed here.
 - Owned/changed paths: AGENTS.md, README.md, docs/STATUS.md, docs/VERIFICATION.md, docs/TASK_QUEUE.md, docs/prompts/CLAUDE_BATCH.md, docs/prompts/CURSOR_UI.md, docs/reviews/c6d369f.md and this note. No application source changed.
@@ -88,7 +88,7 @@ Previously checked coordination reference: 8924b73c9af18437b8da1149871a017ed89a5
 
 ## C02 accepted; C05 reviewed with changes requested
 
-C02 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 passes independent process-free17 and combined40 focused tests (367.59s), Ruff,21 helper tests,15 schemas,HTTP frozen exports and Node. R11/R12/R13 resolved within Windows local scope. Final empty-directory rmdir failure is an explicit nonblocking/manual-cleanup caveat; no active resource or secret is left. Full215 strict record belongs to Claude; no independent full repeat is claimed.
+C02 0e72b0bd599ff1707ca5b2507d65a0927894cbe0 passes independent process-free17 and combined40 focused tests (367.59s), Ruff, 21 helper tests, 15 schemas,HTTP frozen exports and Node. R11/R12/R13 resolved within Windows local scope. Final empty-directory rmdir failure is an explicit nonblocking/manual-cleanup caveat; no active resource or secret is left. Full215 strict record belongs to Claude; no independent full repeat is claimed.
 
 C05 0119ca73e6ae3b4df9f9eeffcea8b15911f716e6 passes independent36 focused tests and ordinary compatibility/helper checks but has concrete R18 unsafe existing roles, R19 timeout parsing and R20 unbounded HTTP-method metric labels. See docs/reviews/0119ca7.md and docs/prompts/CLAUDE_C05_REVIEW_FIXES.md. Optional X-Request-ID remains diagnostic; C01 bodies/status/OpenAPI stay frozen and no UI dependency or new endpoint is added.
 
@@ -96,7 +96,7 @@ Cursor finishes U01 R15, then after acceptance consumes accepted C02 for U02; C0
 
 ## U01 deb1037 accepted; Cursor U02 dispatched
 
-Reviewed exact deb10370352dc62b0abfa2a5776c185494fcb04e, C01 ancestry retained. The unchanged independent delayed-refresh probe now keeps Closed rows and requests all->closed->closed. R14-R17 are resolved. Independent24 frontend tests/build and Ruff,21 helper tests,15 schemas,HTTP exports and Node passed. Backend/dependencies are unchanged from independently checked5055321; the owner's strict175+1 report is attributed separately rather than repeated.
+Reviewed exact deb10370352dc62b0abfa2a5776c185494fcb04e, C01 ancestry retained. The unchanged independent delayed-refresh probe now keeps Closed rows and requests all->closed->closed. R14-R17 are resolved. Independent24 frontend tests/build and Ruff, 21 helper tests, 15 schemas,HTTP exports and Node passed. Backend/dependencies are unchanged from independently checked5055321; the owner's strict175+1 report is attributed separately rather than repeated.
 
 U02 is now ready with U01 deb1037 plus accepted C02 0e72b0b. docs/prompts/CURSOR_U02.md assigns a dedicated task worktree, real browser/API/Postgres flows, committed-response loss/idempotency assertions, isolation/restart cases and token-safe artifacts/cleanup. C05 remains changes-requested; main was not merged. No implementation source was edited by Codex.
 
@@ -105,7 +105,7 @@ Previously checked coordination reference: f721cfed9db1a2f20b5b516f69f5335ed6880
 
 ## C05 b3b34ac re-review: R19/R20 resolved, R18 remains
 
-Reviewed clean b3b34acfc79fbca3856877594e8b030dc14a66e0 independently. Focused64 tests passed (202.09s); Ruff,21 helpers,15 schemas,HTTP exports/examples and Node passed. Frozen contracts/web unchanged and owner strict metadata matches the candidate. Full239+1 counts remain owner-attributed.
+Reviewed clean b3b34acfc79fbca3856877594e8b030dc14a66e0 independently. Focused64 tests passed (202.09s); Ruff, 21 helpers, 15 schemas,HTTP exports/examples and Node passed. Frozen contracts/web unchanged and owner strict metadata matches the candidate. Full239+1 counts remain owner-attributed.
 
 Fresh owned probes confirmed an effective PUBLIC column UPDATE on api_sessions survives refresh and changed one synthetic session's capabilities. Same-name unmanaged relation grants and effective PUBLIC schema CREATE also bypass the current validation. R18 remains changes-requested; R19/R20, OFF behavior and operator scope notes are resolved. See docs/reviews/b3b34ac.md and docs/prompts/CLAUDE_C05_R18_FOLLOWUP.md. Initial direct-column-grant persistence hypothesis was disproved and is not a finding.
 
@@ -114,7 +114,7 @@ Implementation worktrees and main were not edited. Probe clusters stopped/state 
 
 ## C05 a8294f6 accepted
 
-Reviewed exact a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd. R18-R20 and operator notes are resolved within the local backend scope. The effective PUBLIC/column and exact managed-object corrections pass independent70 focused tests plus Ruff,21 helpers,15 schemas,HTTP exports/examples and Node. Independent atomicity probes confirm rollback of new-role setup, existing password/grant refresh and a real SQL failure. Probe cluster stopped/state removed. Owner full245+1 counts remain attributed; matching clean strict metadata was verified. Frozen contracts/web and earlier accepted fixes are unchanged.
+Reviewed exact a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd. R18-R20 and operator notes are resolved within the local backend scope. The effective PUBLIC/column and exact managed-object corrections pass independent70 focused tests plus Ruff, 21 helpers, 15 schemas,HTTP exports/examples and Node. Independent atomicity probes confirm rollback of new-role setup, existing password/grant refresh and a real SQL failure. Probe cluster stopped/state removed. Owner full245+1 counts remain attributed; matching clean strict metadata was verified. Frozen contracts/web and earlier accepted fixes are unchanged.
 
 See docs/reviews/a8294f6.md for scope and limits. Cursor is already running U02: keep its current accepted U01/C02 snapshot stable, preserve C05 for later combined-stack checks, and do not rebase or edit its worktree. C03/C06/C08 review and C04/C07/U03 gates remain. No source edits, model calls, installs, external databases or main merge by Codex.
 
@@ -125,7 +125,7 @@ Previously checked coordination reference: 0c8f472b437ba38d6af5d60c42ba8e02a3156
 
 Reviewed exact U02 7190c59 read-only. Independent25 frontend tests, typecheck/build, Ruff,15 schemas and Node passed. Safe intercepted exact-source probe confirmed R21 foreign Vite PID targeting and R22 false-clean scanning when secret values are unavailable or artifact subfolders share excluded names. No real process was terminated and no browser stack was launched after the unsafe target was confirmed. Owner14-browser/215+1 strict evidence remains attributed. See docs/reviews/7190c59.md and docs/prompts/CURSOR_U02_REVIEW_FIXES.md.
 
-C03 a8e716c passed independent21 data tests (6.95s), Ruff,21 helpers,15 schemas and Node, and is accepted within the source-checkout synthetic-data/feature scope. Default split independently confirmed20 eligible fraud /0 legitimate rows; C04 must define a mature longer history and evaluation protocol. Partial manifest-summary verification and output-only max_rows are explicit bounded caveats with ML snapshot guards. See docs/reviews/a8e716c.md and docs/prompts/CLAUDE_C04.md. Owner127+1 full result remains attributed.
+C03 a8e716c passed independent21 data tests (6.95s), Ruff, 21 helpers, 15 schemas and Node, and is accepted within the source-checkout synthetic-data/feature scope. Default split independently confirmed20 eligible fraud /0 legitimate rows; C04 must define a mature longer history and evaluation protocol. Partial manifest-summary verification and output-only max_rows are explicit bounded caveats with ML snapshot guards. See docs/reviews/a8e716c.md and docs/prompts/CLAUDE_C04.md. Owner127+1 full result remains attributed.
 
 Implementation branches/main unchanged; no provider calls, installs, outside databases or foreign process actions. Accepted U01/C02/C05 remain accepted. Cursor and Claude have disjoint next tasks; C06/C08 and model-serving/hosting/integrator gates remain. Previously checked coordination reference: af5dccd21595ca1889d7e3563f59798d3959bf07. Final checks after this documentation commit belong in the ignored report/final chat.
 
@@ -173,3 +173,9 @@ Accepted current-p1 frontend increment only; full U03 real-model browser accepta
 Reviewed 50856be3da54ffdadd6cda7a0fcd5e59a9b21733, clean, matching owner strict metadata. Independent16 focused tests (6.01s), typecheck/build and exact original-parser/fixture-copy probe passed. N1 resolved; Part A accepted. Owner 44 and strict 215+1 remain attributed. I01 branch advanced to candidate e0ff81f with one untracked test file; active backend pytest started 10:51 was observed through process-type flags only. No credentials/command lines or private chat contents were printed. This observation does not certify I01 or ongoing process state.
 
 Cursor preserves Part A and waits for the accepted final I01 SHA. Claude finishes the existing job, planned rule-browser check, owned commit and clean strict run; avoid duplicate suites and check real exit codes. Updated dispatch/queue without implementation edits, installs, live providers, foreign process stops or main merge. Previously checked coordination reference: 14477db1aba1463dc692ae505c85c1f5731ef8bc. Final after-commit checks belong in the ignored report/final chat.
+
+## I01 accepted and I02 Part B dispatched
+
+Accepted exact 7dd9428c70a7741af1c4781d22fd6b184f957444 after independent 10 real-process tests (160.73s), Ruff, 21 helpers, 15 schemas, HTTP export/example and Node checks. Exact accepted C07/U03 parent merge and unchanged protected paths verified. Status restored to the C02 shape; runtime-role API, actual model inputs/results, failed startup/restart, permissions and mode/replay behavior passed. Owner 396+1/40 C02/14 old-browser results remain attributed; matching clean strict report verified. Full new model-browser work is not yet accepted.
+
+Cursor follows prompts/CURSOR_I02_PART_B.md: retain 50856be, include exact 7dd9428, use own dev/ml extras, preserve safe lifecycle/secret scanning, verify actual model cases/report and old rule regressions. Claude preserves I01. No implementation checkout/main edits, dependency installs, live providers, remote or deployment by Codex. C06/C08 remain pending; keep 1800s checker timeout during later integration. Previously checked coordination reference: 94300b42b3293ec4c51a2d030ca9f0453d3a418d. Final after-commit evidence belongs in the ignored report/final chat.

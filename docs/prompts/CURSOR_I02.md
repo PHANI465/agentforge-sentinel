@@ -23,3 +23,7 @@ Capture token-safe failure artifacts and report exact process/database cleanup. 
 ## Current Part A checkpoint
 
 Part A is now accepted at 50856be3da54ffdadd6cda7a0fcd5e59a9b21733; N1 is resolved. Preserve that branch. Part B still waits for an explicitly accepted final I01 SHA; neither 5488a61 nor the observed candidate e0ff81f is accepted for it. Read the current docs/prompts/CURSOR_UI.md dispatcher and STATUS/TASK_QUEUE. The Part A instructions above are completed scope/history.
+
+## Part B dependency accepted
+
+I01 is now accepted at 7dd9428c70a7741af1c4781d22fd6b184f957444. Part A 50856be remains accepted. Follow the current docs/prompts/CURSOR_I02_PART_B.md dispatcher for actual model-browser work and retain both changes. All earlier waiting/candidate statements above are historical. Read the final fixture notes at 7dd9428; status has no scorer key. Use dev/ml extras and preserve the 1800-second checker timeout.

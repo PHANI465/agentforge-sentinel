@@ -24,7 +24,8 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 separately reviewed |
 | C07 model serving | 275509af655a81a62bba28e74e9d8ab6c8d9cf5f | ACCEPTED: local backend; R23 resolved; v1.1 unchanged; combined-stack acceptance pending |
 | U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | ACCEPTED current-p1 frontend increment; full model-browser acceptance pending; I01/I02 assigned |
-| I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; preserve this branch; Part B waits for accepted I01 |
+| I01 model-browser fixtures | 7dd9428c70a7741af1c4781d22fd6b184f957444 | ACCEPTED: Windows local fixture/lifecycle dependency; ten independent real-process tests passed |
+| I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; Part B ready against exact I01 7dd9428 |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -36,11 +37,11 @@ U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base
 
 ## Current execution order
 
-1. Claude continues I01 using prompts/CLAUDE_I01.md. The combined dependency base 5488a61 and fixture candidate e0ff81f are observed, but I01 has no accepted final SHA. Inspect the existing running backend job before starting anything else, then finish planned browser compatibility, owned commits and final clean strict checks.
-2. Cursor I02 Part A is accepted at 50856be; N1 is resolved (reviews/50856be.md). Preserve it. Part B waits until Codex explicitly names an accepted I01 SHA; do not merge the candidate just because a branch exists.
-3. Codex reviews the final I01 handoff, then assigns I02 Part B against the accepted fixture SHA. C06/C08 remain separately review-pending. The 37-versus-44 frontend test counts are expected between the separate dependency and Part A branches.
-4. Main still holds baseline 507538e. Main-integrator designation and remote provisioning remain separate; no merge or push is implied.
-5. Keep the laptop/subscriptions/free-resource budget and deterministic investigator for integration. Linux/CI, hosting/public-BYOK and measured performance retain their gates.
+1. I01 is accepted at 7dd9428c70a7741af1c4781d22fd6b184f957444. Claude preserves the tested fixture checkout; no further I01 correction is assigned.
+2. Cursor starts I02 Part B now using prompts/CURSOR_I02_PART_B.md. Include that exact I01 SHA on the existing integration branch above accepted Part A 50856be; install/use dev and ml extras. Preserve the parser fix and accepted component checkouts.
+3. I02 must prove actual model/browser/API/Postgres behavior, restart/replay and permissions, and retain the old rule-mode browser suite. Codex reviews that final handoff and separately reviews pending C06/C08. The I01 timeout 1800 change must survive later C06 integration.
+4. Main remains baseline 507538e. Main-integrator designation and remote provisioning are still separate gates; no main merge or push is implied.
+5. Keep the laptop/subscriptions/free-resource budget and deterministic investigator. Linux/CI, public hosting/BYOK and measured production capacity remain unverified.
 
 ## Packages and acceptance
 
@@ -174,3 +175,7 @@ U03 a5716e2 passed independent37 frontend tests/typecheck/build and nine exact f
 ## I02 Part A accepted while I01 checks continue
 
 50856be passed independent 16 focused tests/typecheck/build and the original parser/fixture-copy probe. N1 is resolved; full 44 and strict 215+1 remain Cursor-attributed. Claude's I01 candidate is still work in progress; an active backend test process was observed and no final I01 acceptance is recorded. See reviews/50856be.md. Preserve accepted checkouts and avoid duplicate background jobs.
+
+## I01 acceptance and I02 Part B dependency
+
+I01 7dd9428 passed independent 10 real-process tests in 160.73s, Ruff, 21 helpers, 15 schemas, HTTP exports and Node. Exact accepted parents/protected-source equality and owner clean strict metadata were verified. Full 396+1, 40 C02 tests and 14 old rule-browser tests remain Claude-attributed. Final status compatibility and 1800-second checker bound are accepted; model-mode browser acceptance is I02's remaining work. Read reviews/7dd9428.md and prompts/CURSOR_I02_PART_B.md. Earlier candidate/waiting observations are historical.

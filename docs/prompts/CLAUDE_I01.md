@@ -18,3 +18,7 @@ Goal: give I02 a reproducible real API/Postgres setup for the already accepted m
 Publish a small fixture/lifecycle contract and exact integration dependency SHA early; continue implementation while Codex reviews it. I02's N1 frontend fix can proceed independently, but its real-model browser tests consume the accepted I01 SHA. Keep ownership clear and don't edit Cursor's runner for it.
 
 Run affected C02/C05/C07/model/role tests, domain and HTTP exports, frontend compatibility commands on the combined dependency when practical, and strict checks after the final explicit-path commit. Attribute old versus new checks and disclose untested platforms. Hand off exact SHA, mode/session/scenario commands, private-manifest format, real results and resource cleanup. No main merge, remote setup, WSL changes or hosting.
+
+## Completed and accepted
+
+I01 is accepted at 7dd9428c70a7741af1c4781d22fd6b184f957444; see latest task/coordination:docs/reviews/7dd9428.md. Preserve that tested branch. Cursor is assigned I02 Part B on its own checkout; no additional I01 rewrite, Cursor runner edit or main merge is assigned by the original prompt above.

@@ -197,3 +197,7 @@ Independent37 frontend tests passed in37.85s; typecheck and production build pas
 ## I02 Part A 50856be review
 
 Independent16 focused tests passed in 6.01s, followed by typecheck/build. The exact actual-parser probe now accepts all three current/nullable/omitted variants; nine golden fixture copies remain byte-identical. N1 resolved; Part A accepted. Cursor's full 44/frontend and strict 215+1 remain attributed. An I01 pytest process was observed, but no final I01 commit or Part B acceptance is claimed. See reviews/50856be.md. No implementation worktree edits or provider calls by Codex.
+
+## I01 7dd9428 acceptance
+
+Independent10 real-process tests passed in 160.73s. Ruff, 21 helper tests, 15 schemas, HTTP v1/v1.1 exports/examples and Node passed. Exact merge parents and no production/contract/model/frontend/dependency delta from 5488a61 were verified. Owner strict metadata matches clean 7dd9428; full 396+1 (838s test report), 40 C02 tests and 14 old rule-browser tests remain attributed. Status shape is preserved and 1800s still bounds full checks. Cursor Part B now consumes 7dd9428 plus accepted Part A 50856be. No new model-browser/CI/platform/hosting acceptance, source edits, provider calls or main merge by Codex. See reviews/7dd9428.md.

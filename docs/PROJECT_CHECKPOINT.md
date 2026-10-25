@@ -247,3 +247,7 @@ Later on October 25, a5716e2 was accepted as the current-p1 frontend increment a
 ## Follow up after I02 Part A
 
 I02 Part A 50856be was accepted later on October 25 after independent 16 parser/UI tests, typecheck/build and the unchanged fixture/actual-parser probe. N1 is resolved. I01 remains in progress; an active backend test process was observed, so no duplicate suite or premature candidate merge is assigned. Cursor Part B waits for Codex's exact accepted final I01 SHA. Current STATUS/TASK_QUEUE resolve later changes beyond this dated checkpoint.
+
+## Follow up after I01 acceptance
+
+I01 7dd9428 was accepted after independent 10 real-process tests (160.73s), lint/helpers/schema/HTTP/Node checks and unchanged source/dependency verification. It combines accepted C07 and U03, provides real model fixtures and preserves status compatibility with the restricted runtime-role API. Full 396+1 and 14 rule-browser tests are Claude's evidence. Cursor Part B is now ready: include exact 7dd9428 above accepted 50856be and prove the new model views and workflow through the real browser/API/Postgres stack. Read current prompts/CURSOR_I02_PART_B.md and STATUS/TASK_QUEUE. Main, CI/hosting and full model-browser acceptance remain separate.
