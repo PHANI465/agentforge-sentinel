@@ -43,3 +43,8 @@ Uncommitted files are visible to another tool in the same checkout. Other worktr
 - Models cannot grant permissions, select tenant identity, authorize tools, approve cases or perform real financial actions. Server code enforces these boundaries. All initial transactions and actions are synthetic/simulated.
 - Do not rewrite attribution, bypass checks, force-push shared history, discard changes or alter user Git settings as routine setup. Follow the current user's authorization and request clarification only for a material unresolved conflict or destructive action.
 - When merging, the integrator reruns checks on the integrated commit and records evidence in the PR/release log. Accepted decisions are superseded with a new decision record rather than silently rewritten.
+
+
+## Current worktree I02 quota handoff
+
+On October 25 the owner reported that Cursor cannot continue because its allowance is exhausted. Cursor has already supplied the required substantive frontend/browser implementation. Codex is the sole active editor of this isolated continuation worktree, carrying forward the seven saved Cursor Part B files from e0e1b05. Cursor's original worktree stays untouched. This is a temporary ownership handoff for completing I02, not a main-integrator designation. Read the latest task/coordination instructions and this branch handoff; the historical package-status paragraphs above predate the accepted ML/UI integration.

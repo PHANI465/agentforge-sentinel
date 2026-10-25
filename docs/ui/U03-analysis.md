@@ -28,4 +28,9 @@ Stored model inputs, when the case payload includes them, show the feature value
 
 ## What is not accepted yet
 
-This increment does not start a model-mode API or seed profiles. `npm run test:e2e` still uses the accepted U02 rule-mode stack. On that stack the analysis view is unavailable, which is the expected older-route state. After Codex accepts a corrected C07 commit, a later step has to render these values from that API and Postgres and rerun the browser path.
+I02 Part B runs the browser against the accepted I01 stack in this worktree. The suite starts in rule mode with model fixtures, then restarts the API process into model mode. Rendered scorer, threshold, report, historical cases, a fresh model ingestion, and a missing profile come from that API and Postgres. A missing report response and a report that arrives after sign-out do not fill the page with the frozen benchmark.
+
+
+## Continuation ownership
+
+Cursor's saved Part B work is preserved in its original checkout. With the owner's report of exhausted Cursor allowance, Codex continues it in a separate task/codex-i02-completion worktree from the same e0e1b05 dependency merge. The browser suite and final clean-commit verification are required before the combined path is reported complete. No source, dependency, model or HTTP contract was replaced to work around quota.

@@ -1,9 +1,23 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { formatCount, formatScore } from "../src/api/format";
 import { api, connect, credentialRecoverable } from "./support/session";
-import { inspectCase, postActionDirect, restart, scenario, seed, stackStatus } from "./support/stack";
-import { failureProbeMarker, runtimeDir } from "./support/runtime";
+import {
+  inspectCase,
+  inspectPresence,
+  inspectScoring,
+  postActionDirect,
+  readManifest,
+  restart,
+  restartApi,
+  scenario,
+  seed,
+  stackStatus,
+  tokenFor,
+  type StoredScoring,
+} from "./support/stack";
+import { failureProbeMarker, readRuntime, runtimeDir } from "./support/runtime";
 
 test.describe.configure({ mode: "serial" });
 
@@ -498,4 +512,445 @@ test("records a real post-login failure without the session credential", async (
   });
   expect(leaked).toBe(false);
   expect(false, failureProbeMarker).toBe(true);
+});
+
+type TransactionBody = {
+  external_id: string;
+  account_id: string;
+  direction: "debit" | "credit";
+  amount: { currency: "USD" | "INR" | "GBP" | "JPY"; minor_units: number; currency_exponent: number };
+  occurred_at: string;
+};
+
+type ScorerPayload = {
+  mode: string;
+  scoring_kind: string;
+  score_semantics: string;
+  threshold: number;
+  results_id: string | null;
+  notes: string[];
+  scorer: { name: string; version: string; sha256: string };
+  features: { name: string; version: string; sha256: string };
+  threshold_policy: { name: string; version: string; sha256: string };
+  model: { artifact_sha256: string; candidate: string; results_id: string } | null;
+};
+
+type ReportPayload = {
+  label: string;
+  synthetic: boolean;
+  selected: string;
+  artifact_sha256: string;
+  frozen_threshold: number;
+  review_k_per_day: number;
+  limitations: string[];
+  candidates: Array<{ name: string; test_average_precision: number; test_pr_auc_trapezoid: number }>;
+  selected_policy: { frozen_threshold: { flagged: number }; daily_top_k: { flagged: number } };
+  uncertainty: { average_precision: [number, number] | null; method: string };
+  slices: Array<{ dimension: string; value: string }>;
+  pr_curve: Array<{ recall: number; precision: number }>;
+  calibration: { reliability: unknown[] };
+};
+
+type ModelRecord = {
+  case_id?: string;
+  request_body: TransactionBody;
+  expected_scoring: {
+    score: number;
+    threshold: number;
+    scoring_kind: string;
+    inputs?: { values: Record<string, number>; currency: string; profile_home_currency: string; history_rows: number; disclosures_used: number };
+    values?: Record<string, number>;
+    history_rows?: number;
+    disclosures_used?: number;
+    profile_home_currency?: string;
+  };
+};
+
+const MODEL_SCORE = 0.802130558706;
+const RECORDED_MODEL_SCORE = 0.61962960122;
+const MODEL_THRESHOLD = 4.0295386895426815e-06;
+const ARTIFACT_SHA = "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b";
+
+function modelRequest(name: string): Pick<ModelRecord, "request_body"> {
+  const record = readManifest().scenarios[name] as unknown as ModelRecord | undefined;
+  if (!record?.request_body) throw new Error(`missing model scenario ${name}`);
+  return record;
+}
+
+function modelRecord(name: string): ModelRecord {
+  const record = modelRequest(name) as ModelRecord;
+  if (!record.expected_scoring) throw new Error(`missing model scoring for ${name}`);
+  return record;
+}
+
+function tokenIsOwnedSecret(role: "analyst" | "ingest_only"): boolean {
+  const token = tokenFor(role);
+  const parsed = JSON.parse(readFileSync(readRuntime().secretsPath, "utf8")) as { secrets?: unknown };
+  return Array.isArray(parsed.secrets) && parsed.secrets.includes(token);
+}
+
+async function readApi(page: Page, apiPath: string): Promise<{ status: number; text: string; body: unknown }> {
+  return page.evaluate(async (path) => {
+    const token = await window.sentinelTakeToken();
+    const response = await fetch(path, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    });
+    const text = await response.text();
+    let body: unknown = null;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = null;
+    }
+    return { status: response.status, text, body };
+  }, apiPath);
+}
+
+async function recordBody(page: Page, body: TransactionBody, expected: string): Promise<void> {
+  await page.getByLabel("External id").fill(body.external_id);
+  await page.getByLabel("Account id").fill(body.account_id);
+  await page.getByLabel("Amount in minor units").fill(String(body.amount.minor_units));
+  await page.getByLabel("Currency").selectOption(body.amount.currency);
+  await page.getByLabel("Direction").selectOption(body.direction);
+  await page.getByLabel("Occurred at").fill(body.occurred_at);
+  await page.getByRole("button", { name: "Record transaction" }).click();
+  await expect(page.locator("form.ingest .status")).toContainText(expected);
+}
+
+function featureValues(record: ModelRecord): Record<string, number> {
+  return record.expected_scoring.inputs?.values ?? record.expected_scoring.values ?? {};
+}
+
+test.afterAll(() => {
+  try {
+    if (readManifest().api.scorer && readManifest().api.scorer !== "rule") restartApi("rule");
+  } catch {
+    // A stack that is already stopped stays with teardown.
+  }
+});
+
+test("renders the live model scorer and frozen report from the API", async ({ page }) => {
+  test.setTimeout(180_000);
+  const initial = readManifest().api;
+  expect(initial.scorer).toBe("rule");
+  expect(readManifest().model_fixtures).toBe(true);
+  expect(initial.database_user).toBe("sentinel_browser_runtime");
+  expect(tokenIsOwnedSecret("analyst")).toBe(true);
+  expect(tokenIsOwnedSecret("ingest_only")).toBe(true);
+  const switched = restartApi("model");
+  expect(switched.scorer).toBe("model:hgb_balanced@p1");
+  expect(switched.pid).not.toBe(initial.pid);
+  expect(switched.startTime).not.toBe(String(initial.start_time));
+  const status = stackStatus();
+  expect(status).toEqual({ api: "up", database: "up" });
+  expect(Object.keys(status).sort()).toEqual(["api", "database"]);
+
+  await connect(page, "analyst");
+  await expect(page.getByText("deterministic-fixture-investigator x1")).toBeVisible();
+  const scoringResponse = await readApi(page, "/v1/scoring");
+  expect(scoringResponse.status).toBe(200);
+  const scoring = scoringResponse.body as ScorerPayload;
+  expect(scoring.threshold).toBe(MODEL_THRESHOLD);
+  expect(scoring.threshold).toBeGreaterThan(0);
+  expect(scoring).toMatchObject({
+    mode: "model",
+    scoring_kind: "model",
+    score_semantics: "uncalibrated_score",
+    threshold: MODEL_THRESHOLD,
+    results_id: "p1",
+  });
+  expect(scoring.scorer).toMatchObject({ name: "hgb_balanced", version: "p1", sha256: ARTIFACT_SHA });
+  expect(scoring.model?.artifact_sha256).toBe(ARTIFACT_SHA);
+  expect(scoring.model?.candidate).toBe("hgb_balanced");
+  const scoringSection = page.locator("#scoring");
+  await expect(scoringSection).toContainText("hgb_balanced p1 (model, uncalibrated_score)");
+  await expect(scoringSection).toContainText("sentinel-features f1");
+  await expect(scoringSection.locator(".threshold-figure")).toHaveText("4.0295386895426815e-6");
+  await expect(scoringSection).toContainText("not a fraud probability");
+  await expect(scoringSection).not.toContainText("deterministic-fixture-investigator");
+  await expect(scoringSection).not.toContainText(ARTIFACT_SHA);
+
+  const reportResponse = await readApi(page, "/v1/model-results/p1");
+  expect(reportResponse.status).toBe(200);
+  const report = reportResponse.body as ReportPayload;
+  expect(report.label).toBe("offline synthetic benchmark");
+  expect(report.synthetic).toBe(true);
+  expect(report.artifact_sha256).toBe(ARTIFACT_SHA);
+  expect(report.frozen_threshold).toBe(MODEL_THRESHOLD);
+  expect(report.selected_policy.frozen_threshold.flagged).toBe(442);
+  expect(report.selected_policy.daily_top_k.flagged).toBe(510);
+  await expect(page.getByRole("heading", { name: "offline synthetic benchmark" })).toBeVisible();
+  await expect(page.getByText("Synthetic data. This is an offline benchmark, not a live tenant statistic and not a production result.")).toBeVisible();
+  const frozen = page.getByRole("table", { name: `Frozen online threshold ${formatScore(report.frozen_threshold)}` });
+  const daily = page.getByRole("table", { name: `Offline daily top-${formatCount(report.review_k_per_day)} review` });
+  await expect(frozen.getByText("442", { exact: true })).toBeVisible();
+  await expect(frozen.getByText("510", { exact: true })).toHaveCount(0);
+  await expect(daily.getByText("510", { exact: true })).toBeVisible();
+  await expect(daily.getByText("442", { exact: true })).toHaveCount(0);
+  const selected = report.candidates.find((item) => item.name === report.selected);
+  expect(selected).toBeTruthy();
+  const comparison = page.getByRole("table", { name: "Validation and test average precision" });
+  await expect(comparison.getByRole("row", { name: new RegExp(report.selected) })).toContainText(formatScore(selected?.test_average_precision));
+  await expect(comparison.getByRole("row", { name: new RegExp(report.selected) })).toContainText("selected");
+  await expect(comparison.getByRole("row", { name: new RegExp(report.selected) })).toContainText(formatScore(selected?.test_pr_auc_trapezoid));
+  if (report.uncertainty.average_precision) {
+    await expect(page.getByText(new RegExp(`${formatScore(report.uncertainty.average_precision[0])} to ${formatScore(report.uncertainty.average_precision[1])}`))).toBeVisible();
+  }
+  const currency = page.getByRole("table", { name: "Currency slices, kept separate" });
+  const scenarioTable = page.getByRole("table", { name: /Scenario slices/ });
+  await expect(scenarioTable).toContainText("Offline hidden synthetic truth");
+  for (const row of report.slices.filter((item) => item.dimension === "currency")) {
+    await expect(currency.getByRole("row", { name: new RegExp(row.value) })).toBeVisible();
+    await expect(scenarioTable.getByRole("row", { name: new RegExp(`^${row.value}\\b`) })).toHaveCount(0);
+  }
+  for (const row of report.slices.filter((item) => item.dimension === "scenario")) {
+    await expect(scenarioTable.getByRole("row", { name: new RegExp(row.value) })).toBeVisible();
+  }
+  await expect(page.getByRole("table", { name: "Reliability bins" }).getByRole("row")).toHaveCount(report.calibration.reliability.length + 1);
+  await page.getByRole("button", { name: "Show precision-recall points" }).click();
+  await expect(page.getByRole("table", { name: "Test precision-recall points" }).getByRole("row")).toHaveCount(report.pr_curve.length + 1);
+  for (const limitation of report.limitations) await expect(page.getByText(limitation)).toBeVisible();
+});
+
+test("stores nothing when a model ingestion has no account profile", async ({ page }) => {
+  const record = modelRequest("model_missing_profile");
+  await connect(page, "analyst");
+  await recordBody(page, record.request_body, "The account has no profile, so nothing was scored or stored.");
+  await expect(page.locator("form.ingest .status")).not.toContainText("A case was opened");
+  await expect(page.locator("form.ingest .status")).not.toContainText("Uncalibrated ranking");
+  await expect(page.locator("form.ingest .status")).not.toContainText("Rule score");
+  expect(inspectPresence(record.request_body.external_id)).toEqual({
+    alerts: 0,
+    cases: 0,
+    external_id: record.request_body.external_id,
+    scoring_outcomes: 0,
+    transactions: 0,
+  });
+});
+
+test("investigates, approves, and executes a fresh model score", async ({ page }) => {
+  test.setTimeout(180_000);
+  const seeded = seed("model_live_alert", 1) as unknown as ModelRecord;
+  expect(seeded.expected_scoring.score).toBe(MODEL_SCORE);
+  expect(seeded.expected_scoring.threshold).toBe(MODEL_THRESHOLD);
+  expect(seeded.expected_scoring.scoring_kind).toBe("model");
+  expect(seeded.expected_scoring.disclosures_used).toBe(0);
+  expect(seeded.expected_scoring.history_rows).toBe(0);
+  expect(seeded.expected_scoring.profile_home_currency).toBe("USD");
+  expect(seeded.expected_scoring.values).toMatchObject({
+    amount_minor: 250000,
+    is_foreign_currency: 0,
+    prior_known_fraud: 0,
+    account_age_days: 400,
+  });
+  await connect(page, "analyst");
+  await recordBody(page, seeded.request_body, "A case was opened.");
+  const status = page.locator("form.ingest .status");
+  await expect(status).toContainText(`Uncalibrated ranking ${formatScore(MODEL_SCORE)}`);
+  await expect(status).not.toContainText("Rule score");
+  const file = caseFile(page);
+  await expect(file).toContainText(`Synthetic transaction ${seeded.request_body.external_id}`);
+  await expect(file).toContainText("2500.00 USD");
+  await expect(file).toContainText(`Uncalibrated ranking ${formatScore(MODEL_SCORE)}, threshold ${formatScore(MODEL_THRESHOLD)}`);
+  await expect(file).toContainText("Not a fraud probability.");
+  await expect(file).toContainText("Transaction currency USD.");
+  await expect(file).toContainText("Profile home currency USD.");
+  await expect(file).toContainText("History rows 0. Disclosures used 0.");
+  const inputs = file.getByRole("table", { name: "Decision-time feature values" });
+  for (const [name, value] of Object.entries(featureValues(seeded))) {
+    await expect(inputs.getByRole("row", { name: new RegExp(`^${name}\\b`) })).toContainText(String(value));
+  }
+  const stored = inspectScoring({ externalId: seeded.request_body.external_id });
+  expect(stored.score).toBe(MODEL_SCORE);
+  expect(stored.scorer_sha256).toBe(ARTIFACT_SHA);
+  expect(stored.model_artifact_sha256).toBe(ARTIFACT_SHA);
+  expect(stored.model_results_id).toBe("p1");
+  expect(stored.feature_values).toEqual(featureValues(seeded));
+  const detail = await readApi(page, `/v1/cases/${stored.case_id}`);
+  expect(detail.status).toBe(200);
+  const body = detail.body as { scoring: { score: number; scorer: { sha256: string }; model: { artifact_sha256: string } } };
+  expect(body.scoring.score).toBe(stored.score);
+  expect(body.scoring.scorer.sha256).toBe(stored.scorer_sha256);
+  expect(body.scoring.model.artifact_sha256).toBe(stored.model_artifact_sha256);
+  await expect(file).not.toContainText(ARTIFACT_SHA);
+
+  await page.getByRole("button", { name: "Investigate case", exact: true }).click();
+  await expect(file.getByRole("heading", { name: "Awaiting approval" })).toBeVisible();
+  await expect(file).toContainText("Run by deterministic-fixture-investigator x1");
+  const text = await file.innerText();
+  const escalate = text.match(/Escalate transaction ([0-9a-f-]{36}), reason unusual_amount/);
+  const hold = text.match(/Simulated hold of 2500\.00 USD on transaction ([0-9a-f-]{36})/);
+  expect(escalate ?? hold).not.toBeNull();
+  const proposed = inspectCase({ externalId: seeded.request_body.external_id });
+  expect(proposed.proposals.at(-1)?.transaction_id).toBe((escalate ?? hold)?.[1]);
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  const executeName = escalate ? "Execute escalate" : "Execute simulated hold";
+  await page.getByRole("button", { name: executeName, exact: true }).click();
+  await expect(file.getByRole("heading", { name: "Closed" })).toBeVisible();
+  await expect(file).toContainText("Action succeeded");
+  const closed = inspectCase({ externalId: seeded.request_body.external_id });
+  expect(closed.case_state).toBe("closed");
+  expect(closed.action_count).toBe(1);
+  expect(closed.consumed_approval_count).toBe(1);
+  expect(closed.audit_counts.action_succeeded).toBe(1);
+  expect(inspectScoring({ externalId: seeded.request_body.external_id }).score).toBe(MODEL_SCORE);
+});
+
+test("keeps stored model and rule identities across real API and database restarts", async ({ page }) => {
+  test.setTimeout(240_000);
+  const recorded = modelRecord("model_alert");
+  const open = scenario("open_case");
+  expect(recorded.expected_scoring.score).toBe(RECORDED_MODEL_SCORE);
+  await connect(page, "analyst");
+  let file = await openQueued(page, recorded.request_body.external_id);
+  await expect(file).toContainText("2500.00 GBP");
+  await expect(file).toContainText(`Uncalibrated ranking ${formatScore(RECORDED_MODEL_SCORE)}, threshold ${formatScore(MODEL_THRESHOLD)}`);
+  await expect(file).toContainText("Transaction currency GBP.");
+  await expect(file).toContainText("Profile home currency USD.");
+  await expect(file).toContainText("Disclosures used 1.");
+  await expect(file.getByRole("row", { name: /prior_known_fraud/ })).toContainText("1");
+  await expect(file.getByRole("row", { name: /is_foreign_currency/ })).toContainText("1");
+  let stored = inspectScoring({ externalId: recorded.request_body.external_id });
+  expect(stored).toMatchObject({
+    score: RECORDED_MODEL_SCORE,
+    threshold: MODEL_THRESHOLD,
+    scoring_kind: "model",
+    score_semantics: "uncalibrated_score",
+    scorer_name: "hgb_balanced",
+    scorer_version: "p1",
+    scorer_sha256: ARTIFACT_SHA,
+    model_artifact_sha256: ARTIFACT_SHA,
+    input_currency: "GBP",
+    profile_home_currency: "USD",
+    disclosures_used: 1,
+    history_rows: 0,
+  } satisfies Partial<StoredScoring>);
+
+  const modelPid = readManifest().api.pid;
+  const ruled = restartApi("rule");
+  expect(ruled.scorer).toBe("rule");
+  expect(ruled.pid).not.toBe(modelPid);
+  expect(stackStatus()).toEqual({ api: "up", database: "up" });
+  await page.goto("/");
+  await connect(page, "analyst");
+  const ruleResponse = await readApi(page, "/v1/scoring");
+  const ruleScorer = ruleResponse.body as ScorerPayload;
+  expect(ruleScorer).toMatchObject({ mode: "rule", scoring_kind: "rule", score_semantics: "heuristic", results_id: null });
+  expect(ruleScorer.scorer).toMatchObject({ name: "velocity-amount-rules", version: "r1" });
+  await expect(page.locator("#scoring")).toContainText("velocity-amount-rules r1 (rule, heuristic)");
+  await expect(page.getByText("This server has no offline model report for the configured scorer.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "offline synthetic benchmark" })).toHaveCount(0);
+
+  file = await openQueued(page, recorded.request_body.external_id);
+  await expect(file).toContainText(`Uncalibrated ranking ${formatScore(RECORDED_MODEL_SCORE)}`);
+  await expect(file).toContainText("The configured scorer is velocity-amount-rules r1 (rule, heuristic).");
+  await expect(file).toContainText("This record keeps hgb_balanced p1.");
+  await expect(file).toContainText("Not a fraud probability.");
+  const ruleCase = await openQueued(page, "c02-open_case");
+  await expect(ruleCase).toContainText("Rule score 0.6, threshold 0.5");
+  await expect(ruleCase).toContainText("Not a probability.");
+  await expect(ruleCase).toContainText("This record keeps velocity-amount-rules r1.");
+  await expect(ruleCase).not.toContainText("Stored feature inputs");
+  const ruleStored = inspectScoring({ caseId: open.case_id });
+  expect(ruleStored).toMatchObject({
+    scoring_kind: "rule",
+    score_semantics: "heuristic",
+    score: 0.6,
+    threshold: 0.5,
+    scorer_name: "velocity-amount-rules",
+    model_candidate: null,
+    feature_values: null,
+  });
+
+  await recordBody(page, recorded.request_body, "This repeated an earlier ingest.");
+  await expect(page.locator("form.ingest .status")).toContainText(`Uncalibrated ranking ${formatScore(RECORDED_MODEL_SCORE)}`);
+  await expect(page.locator("form.ingest .status")).not.toContainText("Rule score");
+  expect(inspectScoring({ externalId: recorded.request_body.external_id }).score).toBe(RECORDED_MODEL_SCORE);
+
+  const freshRule = `i02-rule-mode-${crypto.randomUUID()}`;
+  await record(page, { externalId: freshRule, accountId: crypto.randomUUID(), minor: "1500", occurredAt: minutesAgo(3) }, "No case was opened.");
+  await expect(page.locator("form.ingest .status")).toContainText("Rule score");
+  const freshStored = inspectScoring({ externalId: freshRule });
+  expect(freshStored.scoring_kind).toBe("rule");
+  expect(freshStored.model_candidate).toBeNull();
+  expect(freshStored.feature_values).toBeNull();
+
+  const restored = restartApi("model");
+  expect(restored.scorer).toBe("model:hgb_balanced@p1");
+  expect(restored.pid).not.toBe(ruled.pid);
+  const apiPid = restored.pid;
+  restart("db");
+  expect(readManifest().api.pid).toBe(apiPid);
+  expect(stackStatus()).toEqual({ api: "up", database: "up" });
+  await page.goto("/");
+  await connect(page, "analyst");
+  file = await openQueued(page, recorded.request_body.external_id);
+  await expect(file).toContainText(`Uncalibrated ranking ${formatScore(RECORDED_MODEL_SCORE)}`);
+  await expect(file).toContainText("This record keeps hgb_balanced p1.");
+  stored = inspectScoring({ externalId: recorded.request_body.external_id });
+  expect(stored.score).toBe(RECORDED_MODEL_SCORE);
+  expect(stored.scorer_sha256).toBe(ARTIFACT_SHA);
+  await recordBody(page, recorded.request_body, "This repeated an earlier ingest.");
+  expect(inspectScoring({ externalId: recorded.request_body.external_id }).score).toBe(RECORDED_MODEL_SCORE);
+  const ruleAgain = await openQueued(page, "c02-open_case");
+  await expect(ruleAgain).toContainText("Rule score 0.6, threshold 0.5");
+  await expect(ruleAgain).toContainText("The configured scorer is hgb_balanced p1 (model, uncalibrated_score).");
+  await expect(ruleAgain).toContainText("This record keeps velocity-amount-rules r1.");
+});
+
+test("denies ingest-only and foreign model access and ignores a late report after sign-out", async ({ page }) => {
+  test.setTimeout(180_000);
+  const recorded = modelRecord("model_alert");
+  if (!recorded.case_id) throw new Error("recorded model case missing");
+  await connect(page, "ingest_only");
+  await expect(page.getByText("This session cannot read the configured scorer.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "offline synthetic benchmark" })).toHaveCount(0);
+  await expect(page.getByText("4.0295386895426815e-6")).toHaveCount(0);
+  const deniedScoring = await readApi(page, "/v1/scoring");
+  const deniedReport = await readApi(page, "/v1/model-results/p1");
+  expect(deniedScoring.status).toBe(403);
+  expect(deniedScoring.text).toContain("permission_denied");
+  expect(deniedReport.status).toBe(403);
+  expect(deniedReport.text).toContain("permission_denied");
+  expect(deniedReport.text).not.toContain("offline synthetic benchmark");
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await connect(page, "other_session");
+  await expect(page.getByRole("button", { name: queueName("c02-foreign_session_case") })).toBeVisible();
+  await expect(page.getByRole("button", { name: queueName(recorded.request_body.external_id) })).toHaveCount(0);
+  const hidden = await api(page, "GET", `/v1/cases/${recorded.case_id}`);
+  expect(hidden).toMatchObject({ status: 404, code: "not_found" });
+  const hiddenAudit = await api(page, "GET", `/v1/cases/${recorded.case_id}/audit`);
+  expect(hiddenAudit).toMatchObject({ status: 404, code: "not_found" });
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.route("**/v1/model-results/p1", async (route) => {
+    const url = new URL(route.request().url());
+    url.pathname = "/v1/model-results/not-a-report";
+    const response = await route.fetch({ url: url.toString() });
+    await route.fulfill({ response });
+  });
+  await connect(page, "analyst");
+  await expect(page.getByText("That model report is not on this server.")).toBeVisible();
+  await expect(page.locator("#scoring")).toContainText("hgb_balanced p1 (model, uncalibrated_score)");
+  await expect(page.getByRole("heading", { name: "offline synthetic benchmark" })).toHaveCount(0);
+  await expect(page.getByText("No claim of real-bank effectiveness, savings or production efficacy.")).toHaveCount(0);
+  await page.unroute("**/v1/model-results/p1");
+
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = () => resolve();
+  });
+  await page.route("**/v1/model-results/p1", async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await connect(page, "analyst");
+  await expect(page.getByText("Loading the offline benchmark.")).toBeVisible();
+  await page.getByRole("button", { name: "Sign out" }).click();
+  release();
+  await expect(page.getByLabel("Session token")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "offline synthetic benchmark" })).toHaveCount(0);
+  expect(await credentialRecoverable(page)).toBe(false);
 });

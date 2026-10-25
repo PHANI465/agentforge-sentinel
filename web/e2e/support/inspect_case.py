@@ -60,14 +60,118 @@ def proposals(conn, case_id: uuid.UUID) -> list[dict]:
     return found
 
 
+def text_field(value: object, key: str) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    item = value.get(key)
+    return item if isinstance(item, str) else None
+
+
+def presence(conn, external_id: str) -> dict:
+    counts = {}
+    counts["transactions"] = conn.execute(
+        "SELECT count(*) AS n FROM transactions WHERE external_id = %s",
+        (external_id,),
+    ).fetchone()["n"]
+    counts["scoring_outcomes"] = conn.execute(
+        "SELECT count(*) AS n FROM scoring_outcomes s"
+        " JOIN transactions t ON t.id = s.transaction_id WHERE t.external_id = %s",
+        (external_id,),
+    ).fetchone()["n"]
+    counts["alerts"] = conn.execute(
+        "SELECT count(*) AS n FROM alerts a"
+        " JOIN transactions t ON t.id = a.transaction_id WHERE t.external_id = %s",
+        (external_id,),
+    ).fetchone()["n"]
+    counts["cases"] = conn.execute(
+        "SELECT count(*) AS n FROM cases c"
+        " JOIN alerts a ON a.id = c.alert_id"
+        " JOIN transactions t ON t.id = a.transaction_id WHERE t.external_id = %s",
+        (external_id,),
+    ).fetchone()["n"]
+    return {"external_id": external_id, **counts}
+
+
+def stored_scoring(conn, case_id: uuid.UUID | None, external_id: str | None) -> dict:
+    if external_id:
+        rows = conn.execute(
+            "SELECT t.external_id, t.body AS transaction, s.body AS scoring, c.id::text AS case_id"
+            " FROM transactions t"
+            " LEFT JOIN scoring_outcomes s ON s.transaction_id = t.id"
+            " LEFT JOIN alerts a ON a.transaction_id = t.id"
+            " LEFT JOIN cases c ON c.alert_id = a.id"
+            " WHERE t.external_id = %s",
+            (external_id,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT t.external_id, t.body AS transaction, s.body AS scoring, c.id::text AS case_id"
+            " FROM cases c"
+            " JOIN alerts a ON a.id = c.alert_id"
+            " JOIN transactions t ON t.id = a.transaction_id"
+            " LEFT JOIN scoring_outcomes s ON s.transaction_id = t.id"
+            " WHERE c.id = %s",
+            (case_id,),
+        ).fetchall()
+    if len(rows) != 1 or not isinstance(rows[0]["scoring"], dict):
+        fail("not_found")
+    row = rows[0]
+    scoring = row["scoring"]
+    inputs = scoring.get("inputs") if isinstance(scoring.get("inputs"), dict) else None
+    model = scoring.get("model") if isinstance(scoring.get("model"), dict) else None
+    values = inputs.get("values") if inputs and isinstance(inputs.get("values"), dict) else None
+    return {
+        "external_id": row["external_id"],
+        "case_id": row["case_id"],
+        "scoring_kind": scoring.get("scoring_kind"),
+        "score_semantics": scoring.get("score_semantics"),
+        "score": scoring.get("score"),
+        "threshold": scoring.get("threshold"),
+        "alerted": scoring.get("alerted"),
+        "scorer_name": text_field(scoring.get("scorer"), "name"),
+        "scorer_version": text_field(scoring.get("scorer"), "version"),
+        "scorer_sha256": text_field(scoring.get("scorer"), "sha256"),
+        "features_sha256": text_field(scoring.get("features"), "sha256"),
+        "threshold_policy_sha256": text_field(scoring.get("threshold_policy"), "sha256"),
+        "model_candidate": text_field(model, "candidate"),
+        "model_artifact_sha256": text_field(model, "artifact_sha256"),
+        "model_results_id": text_field(model, "results_id"),
+        "input_currency": inputs.get("currency") if inputs else None,
+        "profile_home_currency": inputs.get("profile_home_currency") if inputs else None,
+        "profile_opened_at": inputs.get("profile_opened_at") if inputs else None,
+        "history_rows": inputs.get("history_rows") if inputs else None,
+        "disclosures_used": inputs.get("disclosures_used") if inputs else None,
+        "feature_values": values,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     selector = parser.add_mutually_exclusive_group(required=True)
     selector.add_argument("--case-id")
     selector.add_argument("--external-id")
+    reading = parser.add_mutually_exclusive_group()
+    reading.add_argument("--presence", action="store_true")
+    reading.add_argument("--scoring", action="store_true")
     args = parser.parse_args()
+    if args.presence and not args.external_id:
+        fail("refused")
     url = load_url(args.manifest)
+    if args.presence or args.scoring:
+        try:
+            with connect(url) as conn:
+                if args.presence:
+                    found = presence(conn, args.external_id)
+                else:
+                    case_id = uuid.UUID(args.case_id) if args.case_id else None
+                    found = stored_scoring(conn, case_id, args.external_id)
+        except SystemExit:
+            raise
+        except Exception:
+            fail("query_failed")
+        print(json.dumps(found, sort_keys=True))
+        return
     try:
         with connect(url) as conn:
             if args.external_id:

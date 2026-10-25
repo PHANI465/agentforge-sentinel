@@ -41,18 +41,54 @@ export type InspectedCase = {
 };
 
 type Manifest = {
-  api: { base_url: string; port: number; pid: number };
+  api: { base_url: string; port: number; pid: number; scorer?: string; start_time?: string | number; database_user?: string };
   database: { port: number };
   database_url?: string;
+  model_fixtures?: boolean;
   tokens: Record<string, string>;
   scenarios: Record<string, ScenarioRecord>;
 };
 
-export type SessionRole = "analyst" | "other_session" | "read_only" | "second_actor";
+export type SessionRole = "analyst" | "other_session" | "read_only" | "second_actor" | "ingest_only";
+
+export type StoredPresence = {
+  external_id: string;
+  transactions: number;
+  scoring_outcomes: number;
+  alerts: number;
+  cases: number;
+};
+
+export type StoredScoring = {
+  external_id: string;
+  case_id: string | null;
+  scoring_kind: string | null;
+  score_semantics: string | null;
+  score: number | null;
+  threshold: number | null;
+  alerted: boolean | null;
+  scorer_name: string | null;
+  scorer_version: string | null;
+  scorer_sha256: string | null;
+  features_sha256: string | null;
+  threshold_policy_sha256: string | null;
+  model_candidate: string | null;
+  model_artifact_sha256: string | null;
+  model_results_id: string | null;
+  input_currency: string | null;
+  profile_home_currency: string | null;
+  profile_opened_at: string | null;
+  history_rows: number | null;
+  disclosures_used: number | null;
+  feature_values: Record<string, number> | null;
+};
+
+const uvPython = ["run", "--locked", "--extra", "dev", "--extra", "ml", "python"];
 
 function childEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...process.env, SENTINEL_LIVE_CLAUDE: "0" };
   delete env.VIRTUAL_ENV;
+  delete env.SENTINEL_TEST_DATABASE_URL;
   return env;
 }
 
@@ -61,7 +97,7 @@ function redact(text: string): string {
 }
 
 function run(args: string[]): { status: number; stdout: string } {
-  const result = spawnSync("uv", ["run", "--locked", "python", "tests/support/browser_stack.py", ...args], {
+  const result = spawnSync("uv", [...uvPython, "tests/support/browser_stack.py", ...args], {
     cwd: repoRoot,
     encoding: "utf8",
     windowsHide: true,
@@ -100,16 +136,20 @@ export function restart(kind: "api" | "db"): void {
   run([kind === "api" ? "restart-api" : "restart-db", "--manifest", readRuntime().manifestPath]);
 }
 
+export function restartApi(scorer: "rule" | "model"): { pid: number; scorer: string; startTime: string } {
+  run(["restart-api", "--manifest", readRuntime().manifestPath, "--scorer", scorer]);
+  const api = readManifest().api;
+  if (!Number.isInteger(api.pid) || !api.scorer || !api.start_time) throw new Error("restart did not record api identity");
+  return { pid: api.pid, scorer: api.scorer, startTime: String(api.start_time) };
+}
+
 export function stackStatus(): { api: string; database: string } {
   const result = run(["status", "--manifest", readRuntime().manifestPath]);
   return JSON.parse(result.stdout) as { api: string; database: string };
 }
 
-export function inspectCase(query: { caseId?: string; externalId?: string }): InspectedCase {
-  const args = ["web/e2e/support/inspect_case.py", "--manifest", readRuntime().manifestPath];
-  if (query.caseId) args.push("--case-id", query.caseId);
-  if (query.externalId) args.push("--external-id", query.externalId);
-  const result = spawnSync("uv", ["run", "--locked", "python", ...args], {
+function inspect(args: string[]): unknown {
+  const result = spawnSync("uv", [...uvPython, ...args], {
     cwd: repoRoot,
     encoding: "utf8",
     windowsHide: true,
@@ -120,7 +160,32 @@ export function inspectCase(query: { caseId?: string; externalId?: string }): In
     writeFileSync(path.join(runtimeDir, "last-command.txt"), redact(result.stderr || ""));
     throw new Error("case inspection failed");
   }
-  return JSON.parse(result.stdout) as InspectedCase;
+  return JSON.parse(result.stdout) as unknown;
+}
+
+export function inspectCase(query: { caseId?: string; externalId?: string }): InspectedCase {
+  const args = ["web/e2e/support/inspect_case.py", "--manifest", readRuntime().manifestPath];
+  if (query.caseId) args.push("--case-id", query.caseId);
+  if (query.externalId) args.push("--external-id", query.externalId);
+  return inspect(args) as InspectedCase;
+}
+
+export function inspectPresence(externalId: string): StoredPresence {
+  return inspect([
+    "web/e2e/support/inspect_case.py",
+    "--manifest",
+    readRuntime().manifestPath,
+    "--external-id",
+    externalId,
+    "--presence",
+  ]) as StoredPresence;
+}
+
+export function inspectScoring(query: { caseId?: string; externalId?: string }): StoredScoring {
+  const args = ["web/e2e/support/inspect_case.py", "--manifest", readRuntime().manifestPath, "--scoring"];
+  if (query.caseId) args.push("--case-id", query.caseId);
+  if (query.externalId) args.push("--external-id", query.externalId);
+  return inspect(args) as StoredScoring;
 }
 
 export type DirectAction = {

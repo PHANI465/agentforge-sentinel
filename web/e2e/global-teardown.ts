@@ -43,7 +43,7 @@ function sanitize(text: string): string {
 function stopStack(manifestPath: string): StopReport | null {
   const result = spawnSync(
     "uv",
-    ["run", "--locked", "python", "tests/support/browser_stack.py", "stop", "--manifest", manifestPath],
+    ["run", "--locked", "--extra", "dev", "--extra", "ml", "python", "tests/support/browser_stack.py", "stop", "--manifest", manifestPath],
     {
       cwd: path.resolve(webRoot, ".."),
       encoding: "utf8",
@@ -51,6 +51,7 @@ function stopStack(manifestPath: string): StopReport | null {
       env: (() => {
         const env: NodeJS.ProcessEnv = { ...process.env, SENTINEL_LIVE_CLAUDE: "0" };
         delete env.VIRTUAL_ENV;
+        delete env.SENTINEL_TEST_DATABASE_URL;
         return env;
       })(),
       timeout: 180_000,

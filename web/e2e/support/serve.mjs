@@ -30,6 +30,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535 || !/^[0-9a-f]{32}$/.tes
 
 const childEnv = { ...process.env, SENTINEL_LIVE_CLAUDE: "0" };
 delete childEnv.VIRTUAL_ENV;
+delete childEnv.SENTINEL_TEST_DATABASE_URL;
 
 let manifestPath = "";
 let stackDir = "";
@@ -45,12 +46,16 @@ function runCommand(command, args, extra = {}) {
   return spawnSync(command, args, { encoding: "utf8", windowsHide: true, ...extra });
 }
 
-function runStack(args) {
-  return runCommand("uv", ["run", "--locked", "python", "tests/support/browser_stack.py", ...args], {
-    cwd: repoRoot,
-    env: childEnv,
-    timeout: 180_000,
-  });
+function runStack(args, timeout = 180_000) {
+  return runCommand(
+    "uv",
+    ["run", "--locked", "--extra", "dev", "--extra", "ml", "python", "tests/support/browser_stack.py", ...args],
+    {
+      cwd: repoRoot,
+      env: childEnv,
+      timeout,
+    },
+  );
 }
 
 function preservePrevious(current, previous) {
@@ -154,7 +159,10 @@ function shutdown(code) {
 
 function startStack() {
   mkdirSync(path.join(runtimeDir, "stacks"), { recursive: true });
-  const started = runStack(["start", "--parent-dir", path.join(runtimeDir, "stacks"), "--timeout", "90"]);
+  const started = runStack(
+    ["start", "--parent-dir", path.join(runtimeDir, "stacks"), "--timeout", "120", "--scorer", "rule", "--model-fixtures"],
+    300_000,
+  );
   if (started.error || started.status !== 0) {
     writeFileSync(path.join(runtimeDir, "last-command.txt"), redact(`${started.stderr || ""}\n${started.stdout || ""}`));
     throw new Error("browser stack failed to start");
