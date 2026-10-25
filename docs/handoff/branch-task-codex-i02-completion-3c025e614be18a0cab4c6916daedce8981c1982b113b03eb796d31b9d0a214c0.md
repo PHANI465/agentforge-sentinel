@@ -5,7 +5,7 @@
 - Base: e0e1b05fb85fcd83abe139267b8393dbb4fb0e84, containing accepted I01 7dd9428 and Part A 50856be.
 - Preserved original: E:/PHANI/sentinel-wt/cursor-model-integration, same base plus seven saved edits. Exact bytes/hashes saved at E:/PHANI/Interview/tmp/i02-cursor-quota-handoff-2026-10-25/manifest.json. No resets or edits were made there.
 - Attribution: Cursor authored the carried-forward model browser cases, read-only scoring/presence assertions, dev/ml runner changes and UI notes. Codex preserved them, split request-only versus scored fixture validation, and corrected numeric/API versus UI threshold assertions. No production backend, public contract, p1 artifact or lockfile revision.
-- Owned paths: web/e2e/global-teardown.ts, web/e2e/support/inspect_case.py, web/e2e/support/serve.mjs, web/e2e/support/stack.ts, web/e2e/workbench.pw.ts, docs/ui/U03-analysis.md, docs/ui/workflow.md, this note and the local task-ownership note in AGENTS.md.
+- Owned paths: web/e2e/global-teardown.ts, web/e2e/support/inspect_case.py, web/e2e/support/serve.mjs, web/e2e/support/stack.ts, web/e2e/support/session.ts, web/e2e/workbench.pw.ts, docs/ui/U03-analysis.md, docs/ui/workflow.md, this note and the local task-ownership note in AGENTS.md.
 
 ## Evidence before the final candidate commit
 
@@ -20,3 +20,8 @@ The next real browser run progressed through 15 cases and failed in the missing-
 At this commit's preparation, the corrected full 19-browser suite and final strict check are pending. Their actual exit codes, tested commit and counts must be reported in the final chat/local ignored reports; this note does not claim its own containing SHA or a future pass. No live provider calls, external database, new spending, main merge or deployment. Formal external review of Codex's finishing changes remains separate from its implementation checks.
 
 Next action: run corrected typecheck/unit/build/browser checks on the final candidate; fix concrete failures without weakening assertions. Then run the complete strict backend/helper/schema/Node checks with this worktree's dev/ml environment, inspect owned cleanup, publish exact candidate SHA/results and update central coordination. Preserve recovery state on any cleanup failure.
+
+
+## Additional real browser finding
+
+The corrected candidate reached 18 passed and one failure in the multi-session model test. Its page still displayed the first ingest-only session after connect requested other_session. The test-only exposed token callback survived page.goto and closed over the first token. A per-page Node-side role record now follows each explicitly requested session; subsequent calls resolve that role's fixture token. No browser persistent storage, log, URL, production identity or server authorization was changed. The existing test exercises actual same-page ingest-only -> other_session -> analyst transitions and will verify this correction with real permissions. Final tests follow the new candidate commit; do not count the 18-pass run as completion.

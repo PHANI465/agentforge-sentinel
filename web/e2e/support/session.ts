@@ -15,11 +15,20 @@ export type ApiObservation = {
   revision: number | null;
 };
 
+// Exposed bindings survive page.goto(). Keep the explicitly requested role in the
+// test process so a same-page session switch cannot keep using the first token.
+// No token is put in browser storage, logs or a URL.
+const pageSessions = new WeakMap<Page, { role: SessionRole }>();
+
 async function installToken(page: Page, role: SessionRole): Promise<void> {
-  const present = await page.evaluate(() => typeof window.sentinelTakeToken === "function").catch(() => false);
-  if (present) return;
-  const token = tokenFor(role);
-  await page.exposeBinding("sentinelTakeToken", () => token);
+  const current = pageSessions.get(page);
+  if (current) {
+    current.role = role;
+    return;
+  }
+  const currentSession = { role };
+  await page.exposeBinding("sentinelTakeToken", () => tokenFor(currentSession.role));
+  pageSessions.set(page, currentSession);
 }
 
 export async function connect(page: Page, role: SessionRole): Promise<void> {
