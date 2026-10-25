@@ -1,9 +1,9 @@
 # Handoff: task/coordination
 
-- Current task: re-review C07 R23, recover the saved Cursor checkpoint and publish a summary-first project document. Earlier sections below preserve prior reviews.
+- Current task: review saved U03 and assign the next concrete model-workbench integration increments. Earlier sections below preserve prior reviews.
 - Tool and worktree: Codex, E:\PHANI\agentforge-sentinel.
 - Updated: October 25, 2026, America/Phoenix.
-- Current state: C07 275509a accepted; R23 resolved. Cursor U03 a5716e2 recovered as clean/delivered, awaiting review. Owner checkpoint in docs/PROJECT_CHECKPOINT.md; combined-stack, C06/C08 and main gates remain. Latest evidence is in the final section below.
+- Current state: C07 275509a accepted; U03 a5716e2 current-p1 frontend increment accepted. Claude I01 and Cursor I02 assigned for combined model-browser work. C06/C08 and main gates remain. Latest evidence is in the final section below.
 - Code reference tested before this note: c6d369f6043a8c9ec86d8f56cf05670e81fba81d, clean task/thin-path.
 - Final check evidence: run strict helper after the final documentation commit; see final chat / ignored .agent/last-check.json for that commit. No self-referential SHA is claimed here.
 - Owned/changed paths: AGENTS.md, README.md, docs/STATUS.md, docs/VERIFICATION.md, docs/TASK_QUEUE.md, docs/prompts/CLAUDE_BATCH.md, docs/prompts/CURSOR_UI.md, docs/reviews/c6d369f.md and this note. No application source changed.
@@ -161,3 +161,9 @@ Accepted C07 275509af655a81a62bba28e74e9d8ab6c8d9cf5f after independent 50 focus
 Found saved Cursor U03 a5716e252af2077a507767a3f819ddf44ea41c12, clean, with matching passed local strict report and handoff. The 37 frontend and 14 old-backend browser results are Cursor evidence; U03 review and real-model stack integration remain pending. No private chat content was inspected. Installed CLI and official documentation confirm resume/list support; an observed launcher warning is recorded in the owner checkpoint without changing the installation.
 
 Created docs/PROJECT_CHECKPOINT.md plus standalone HTML and Markdown copies in E:/PHANI/Interview/output. Summary precedes the completed process, package register, skills, milestones, paths and recovery/next steps. Visual/layout/navigation checks passed. Updated current coordination and dispatchers to preserve completed tasks rather than restart them. No implementation worktree/main edits, provider calls, installs, remote or deployment. Previously checked coordination reference: 6f1e652df0e175b7cc54c680cc1f904c6506a07d; final after-commit evidence belongs in the ignored report/final chat.
+
+## U03 current p1 increment accepted and integration assigned
+
+Reviewed exact clean a5716e252af2077a507767a3f819ddf44ea41c12. Independent37 frontend tests (37.85s), typecheck/build and nine exact fixture-copy comparisons passed. React review covered analysis lifecycle, stored/current scorer identity, threshold formatting, inert content and session ownership. Owner14 old-stack browser and strict215+1 results remain attributed. Direct actual-parser/backend-DTO probe confirms N1 nullable/optional compatibility gap; current frozen p1 is unaffected. See reviews/a5716e2.md.
+
+Accepted current-p1 frontend increment only; full U03 real-model browser acceptance pending. Claude I01 explicitly owns accepted-dependency task-branch integration and real backend fixture/lifecycle support. Cursor I02 starts N1 independently, then real model/browser tests after accepted I01. Central queue/dispatchers updated; no implementation worktree, package install, live provider, main merge, remote or deployment. C06/C08 review remains. Previously checked coordination reference:78877c44d3c83873b08efbfaaf45089b1271d76a; final checks after this documentation commit belong in the ignored report/final chat.

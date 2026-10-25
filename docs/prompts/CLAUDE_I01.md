@@ -1,0 +1,20 @@
+# Claude I01 model workbench integration fixtures
+
+Start I01 now. C07 backend is accepted at 275509af655a81a62bba28e74e9d8ab6c8d9cf5f. U03 is accepted as a current-p1 frontend increment at a5716e252af2077a507767a3f819ddf44ea41c12; full real-model browser acceptance is still pending. Read latest task/coordination:AGENTS.md, docs/STATUS.md, docs/TASK_QUEUE.md, docs/reviews/275509a.md, docs/reviews/a5716e2.md and this prompt.
+
+Create/reuse task/claude-model-browser-fixtures in E:/PHANI/sentinel-wt/claude-model-browser-fixtures from exact C07 275509a. Preserve the accepted C07 and Cursor U03 checkouts. You are assigned the accepted-dependency merge on this I01 task branch, not a main merge: include exact U03 a5716e2, record parents and the integration SHA, and inspect any conflicts. Do not reset worktrees. Do not invent resolutions to frontend source or central coordination conflicts; hand off exact paths to Codex if they occur. Do not merge the old coordination application source or pending C06/C08 to obtain instructions.
+
+Own backend test support (tests/support/ and focused tests), docs/api/ model-fixture notes and your branch handoff. Do not modify web/, its lock/browser runner, p1 reports/artifact, public HTTP contracts or central STATUS/TASK_QUEUE. If a production API correction is genuinely required, report the smallest reproducer separately. Cursor owns all frontend/browser changes and has a disjoint I02 branch.
+
+Goal: give I02 a reproducible real API/Postgres setup for the already accepted model and report. Extend/reuse C02's owned lifecycle rather than copying a weaker runner. Preserve R11/R12 resource markers, exact process identity, bounded startup/restart/stop, recovery manifests, private token hygiene and fail-closed cleanup. Existing rule-mode fixtures must keep working.
+
+- Start real production API code with the deterministic investigator and the accepted registered scorer. No LLM/subscription calls, external DB, new HTTP seed/clock/capability route or arbitrary artifact path.
+- Provide fixed, scoped synthetic sessions/account profiles/disclosures loaded through accepted operator/service methods. The API should use the restricted runtime role; operator privileges stay in setup. Use the required locked dev/ml environment.
+- Supply both a recorded rule case and a recorded model case, so the browser can distinguish historical identity from current mode. Include a fresh model ingestion without a profile (422/no stored transaction), and a provisioned account that creates a real model-scored alert. Describe exact returned scoring inputs, case IDs and expected metadata; derive values from the actual artifact, not invented risk numbers.
+- Expose the normal authenticated scoring/results GET routes. Document expected frozen p1 values, permissions and synthetic labels; p1/legacy contracts remain byte-identical.
+- Support real API/Postgres restarts with persisted scores/audit. Provide a test-only lifecycle operation or documented startup configuration for restarting in rule mode, preserving model-case identity. No public mode-selection endpoint.
+- Test cross-session/read permission denial, missing-profile rollback, exact saved model inputs/provenance, scorer switch/replay and startup/cleanup failures with real connections/processes. Keep manifests secret and private; logs/handoffs may show paths/IDs, never bearer values or credential-bearing URLs.
+
+Publish a small fixture/lifecycle contract and exact integration dependency SHA early; continue implementation while Codex reviews it. I02's N1 frontend fix can proceed independently, but its real-model browser tests consume the accepted I01 SHA. Keep ownership clear and don't edit Cursor's runner for it.
+
+Run affected C02/C05/C07/model/role tests, domain and HTTP exports, frontend compatibility commands on the combined dependency when practical, and strict checks after the final explicit-path commit. Attribute old versus new checks and disclose untested platforms. Hand off exact SHA, mode/session/scenario commands, private-manifest format, real results and resource cleanup. No main merge, remote setup, WSL changes or hosting.

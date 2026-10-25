@@ -21,3 +21,7 @@ Test real component/client behavior with exact attributed v1.1 fixtures: rule/mo
 This first increment may be handed off as contract/UI work with new-feature tests using fixtures. Do not call U03 or real model browser integration complete yet. After Codex accepts a corrected full C07 SHA, a second explicit integration step will include that backend, use real deterministic-investigator API/Postgres/browser tests, verify rendered model/results values against persisted records and rerun the full accepted browser path. Do not introduce model selection or profile-seeding API routes to simulate completion.
 
 Stage only owned paths, update docs/ui/ and your handoff, commit, then run final checks on that exact clean commit. Return SHA, dependency hashes, actual checks and outstanding real-stack acceptance. No main merge, provider calls, WSL/GitHub changes or hosting.
+
+## Current handoff
+
+The a5716e2 current-p1 frontend increment is now accepted; see latest task/coordination:docs/reviews/a5716e2.md. Continue on a new I02 worktree using docs/prompts/CURSOR_I02.md, preserving this accepted checkout. Earlier waiting/review statements in this original assignment are historical. Full model-browser acceptance remains pending.

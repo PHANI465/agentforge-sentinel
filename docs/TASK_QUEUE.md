@@ -23,7 +23,7 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | ACCEPTED: synthetic-data/historical-feature scope; C04 separately accepted |
 | C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 separately reviewed |
 | C07 model serving | 275509af655a81a62bba28e74e9d8ab6c8d9cf5f | ACCEPTED: local backend; R23 resolved; v1.1 unchanged; combined-stack acceptance pending |
-| U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | DELIVERED, REVIEW PENDING; clean saved checkpoint; no C07 integration |
+| U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | ACCEPTED current-p1 frontend increment; full model-browser acceptance pending; I01/I02 assigned |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -31,15 +31,15 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base. C03 a8e716c, C04 09b5378 and C05 a8294f6 remain separately accepted. C07 is now accepted at 275509af655a81a62bba28e74e9d8ab6c8d9cf5f with R23 resolved; see [the re-review](reviews/275509a.md). The v1.1 snapshot at 62def10 is unchanged. Cursor completed the U03 contract/UI increment at a5716e252af2077a507767a3f819ddf44ea41c12; its clean branch and passed local strict metadata were found after shutdown. U03 remains awaiting review and is not integrated with C07. Preserve every accepted task checkout. C06/C08, combined-stack acceptance, WSL/GitHub provisioning, hosting and main integration remain pending.
+U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base. C03 a8e716c, C04 09b5378 and C05 a8294f6 remain separately accepted. C07 is now accepted at 275509af655a81a62bba28e74e9d8ab6c8d9cf5f with R23 resolved; see [the re-review](reviews/275509a.md). The v1.1 snapshot at 62def10 is unchanged. Cursor completed the U03 contract/UI increment at a5716e252af2077a507767a3f819ddf44ea41c12; its clean branch and passed local strict metadata were found after shutdown. The current-p1 frontend increment is now accepted; new real-model browser acceptance is still pending. Claude I01 and Cursor I02 are assigned disjoint integration work. Preserve every accepted task checkout. C06/C08, combined-stack acceptance, WSL/GitHub provisioning, hosting and main integration remain pending.
 
 ## Current execution order
 
-1. C07 275509a is accepted after independent R23 re-review. Claude preserves the tested model-serving checkout; no further R23 rewrite is assigned.
-2. Cursor U03 a5716e2 is saved on task/cursor-model-analysis with a clean tree and matching passed strict metadata. Resume its chat if useful, report the checkpoint, and preserve the branch pending review. Do not start U03 over or merge the backend automatically.
-3. Codex reviews delivered U03, C06 and C08. After the required component acceptances, assign a dedicated combined-stack task with exact frontend/backend dependencies and real model-results browser/API/Postgres checks.
-4. Main still holds baseline 507538e. Main-integrator designation and remote provisioning remain separate; no merge or push is implied by this checkpoint.
-5. Keep the laptop/subscriptions/free-resource budget. Linux/CI, hosting/public-BYOK, operational measurements and broader multi-agent work retain their acceptance gates.
+1. Claude starts I01 using prompts/CLAUDE_I01.md: a dedicated task branch from accepted C07 275509a, include accepted U03 a5716e2, and deliver real deterministic model-browser fixture/lifecycle support. Preserve accepted checkouts.
+2. Cursor starts I02 Part A now using prompts/CURSOR_I02.md: nullable/optional report-field compatibility on a dedicated branch from accepted U03. Part B waits for the explicitly accepted I01 SHA, then verifies actual browser/API/Postgres model flows and old regressions.
+3. Codex reviews I01/I02 handoffs and pending C06/C08. No new model/features are needed before the integrated path is proved. Current-p1 U03 review: reviews/a5716e2.md.
+4. Main still holds baseline 507538e. Main-integrator designation and remote provisioning remain separate; no merge or push is implied.
+5. Preserve the laptop/subscriptions/free-resource budget. Live LLMs stay off in integration tests; Linux/CI, hosting/public-BYOK and measured performance remain later gates.
 
 ## Packages and acceptance
 
@@ -142,9 +142,9 @@ R23 is resolved and the local backend is accepted at 275509a; see reviews/275509
 
 Acceptance: actual trained inference in the API, parity with offline feature/scoring fixtures, rule baseline retained explicitly, replay/upgrade tests and no label leakage or fabricated probability claims.
 
-### U03 - Model and analysis views - CURSOR REQUIRED - DELIVERED AT a5716e2; REVIEW PENDING
+### U03 - Model and analysis views - CURSOR REQUIRED - CURRENT P1 FRONTEND ACCEPTED AT a5716e2
 
-The initial contract/UI increment is delivered at a5716e2 from accepted U02 5f28555 and frozen v1.1 artifacts at 62def10. It is clean and ready for review; preserve it. C07 is now separately accepted at 275509a, but is not in this branch. New-feature real-stack acceptance requires a later explicit integration assignment. See prompts/CURSOR_UI.md for current instructions; prompts/CURSOR_U03.md records the implementation scope. Own web/ extensions. Show actual scorer/version/score semantics, reproducible experiment results/error slices and clearly labeled synthetic limitations. Charts must match backend/report fixtures; keep currencies separate.
+The initial contract/UI increment is delivered at a5716e2 from accepted U02 5f28555 and frozen v1.1 artifacts at 62def10. It is accepted for the current-p1 frontend scope; preserve it. I01/I02 now cover combined-stack work. C07 is now separately accepted at 275509a, but is not in this branch. New-feature real-stack acceptance requires a later explicit integration assignment. See prompts/CURSOR_UI.md for current instructions; prompts/CURSOR_U03.md records the implementation scope. Own web/ extensions. Show actual scorer/version/score semantics, reproducible experiment results/error slices and clearly labeled synthetic limitations. Charts must match backend/report fixtures; keep currencies separate.
 Acceptance: typed build/tests, browser assertions for actual values and correct labeling for rule versus trained-model mode.
 
 ### C08 - Deployment and operator preparation - Claude - LOCAL PACKAGE DELIVERED, REVIEW PENDING
@@ -165,3 +165,7 @@ Do not add a second personal subscription runtime merely to consume a plan. Curs
 Every package records: task ID, owner, accepted dependency commit, task branch/worktree, owned paths, acceptance commands/results, tested revision, gaps and one next action. Use docs/handoff/_TEMPLATE.md and the collision-safe note path. Review/stage explicit files; commit when authorized; run final checks AFTER the final commit. A local report from another worktree is not transferable evidence.
 
 When using separate worktrees, each tool reads the current coordination queue explicitly with git show task/coordination:docs/TASK_QUEUE.md until the integrator publishes a later canonical reference. Do not reset working trees or merge another agent's unreviewed branch to obtain context.
+
+## Integration assignments after U03 review
+
+U03 a5716e2 passed independent37 frontend tests/typecheck/build and nine exact fixture-copy comparisons. Current-p1 increment accepted; legal nullable calibration fields and an omitted optional split field need N1 compatibility correction during I02. No full model-browser or new backend acceptance is claimed by those UI checks. Claude follows prompts/CLAUDE_I01.md; Cursor follows prompts/CURSOR_I02.md. These are task-branch integration assignments, not a main merge. C06/C08 remain review-pending.
