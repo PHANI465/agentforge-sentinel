@@ -11,7 +11,7 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 - Codex independently re-reviewed R1-R8 and found no new blocking defect in those corrections. Focused regressions: 13 passed. Strict clean-commit check: passed; full pytest 106 passed / 1 intentional live-Claude skip, 21 handoff tests, 15 schema exports, Ruff and Node checks.
 - Review scope and limitations: [c6d369f review](reviews/c6d369f.md). Claude's live-call, real-server restart and isolation-canary evidence was not independently repeated by Codex.
 - C01 is separately accepted at 2e6c2329aafe28b2e7c31ef5078d554cb66ca529. See reviews/2e6c232.md. U01/C02/C05 include that application dependency. task/coordination carries current instructions on the older c6 source; do not use its tip or old main as their application base.
-- G0 and G1 remain partial. U01 deb1037 is accepted with R14-R17 resolved. Bounded real-browser hold and escalation paths work; C04's offline trained model is accepted; U02 browser acceptance is complete on Windows for U01+C02; trained API/combined-stack inference, hosted staging and public BYOK remain incomplete.
+- G0 and G1 remain partial. U01 deb1037 is accepted with R14-R17 resolved. Bounded real-browser hold and escalation paths work; C04's offline trained model is accepted; U02 browser acceptance is complete on Windows for U01+C02; the trained API is separately accepted; combined-stack browser/model acceptance, hosted staging and public BYOK remain incomplete.
 
 ## Delivery and review snapshot
 
@@ -24,8 +24,8 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 | C05 backend reliability | a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd | ACCEPTED: R18-R20 and operator notes resolved within local backend scope; combined stack pending |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | ACCEPTED: synthetic-data/historical-feature scope; C04 separately accepted |
 | C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 separately reviewed |
-| C07 model serving | 62def106af74821040ac54535b8efe87341ca10b | BACKEND CHANGES REQUESTED: R23 operator/decision availability; v1.1 schema/examples accepted for UI development only |
-| U03 model/analysis UI | not delivered | READY for contract/UI increment; real-stack acceptance waits for corrected accepted C07 |
+| C07 model serving | 275509af655a81a62bba28e74e9d8ab6c8d9cf5f | ACCEPTED: local backend; R23 resolved; v1.1 unchanged; combined-stack acceptance pending |
+| U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | DELIVERED, REVIEW PENDING; clean saved checkpoint; no C07 integration |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -33,15 +33,15 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor completed [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 5f28555 is accepted with R21/R22 resolved; see [the acceptance](reviews/5f28555.md). Preserve its tested U01+C02 branch for later combined C05/C07 integration. The v1.1 schema/examples at 62def10 are accepted as a UI development dependency only; Cursor starts the U03 contract/UI increment from accepted U02. The full C07 backend remains changes-requested for R23; new-feature real-stack acceptance waits for its corrected accepted SHA. C05 a8294f6 is separately accepted; see [the acceptance](reviews/a8294f6.md). R18-R20 and operator notes are resolved. Preserve its tested C01-based branch for later combined-stack verification; keep the accepted U02 dependency snapshot stable until combined-stack verification. C04 09b5378 is accepted; see [the acceptance](reviews/09b5378.md). Claude fixes C07 R23 using [the correction prompt](prompts/CLAUDE_C07_REVIEW_FIXES.md). Cursor follows [the U03 prompt](prompts/CURSOR_U03.md); do not merge the unaccepted backend for this frontend increment. WSL changes, GitHub provisioning and main integration remain pending.
+U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base. C03 a8e716c, C04 09b5378 and C05 a8294f6 remain separately accepted. C07 is now accepted at 275509af655a81a62bba28e74e9d8ab6c8d9cf5f with R23 resolved; see [the re-review](reviews/275509a.md). The v1.1 snapshot at 62def10 is unchanged. Cursor completed the U03 contract/UI increment at a5716e252af2077a507767a3f819ddf44ea41c12; its clean branch and passed local strict metadata were found after shutdown. U03 remains awaiting review and is not integrated with C07. Preserve every accepted task checkout. C06/C08, combined-stack acceptance, WSL/GitHub provisioning, hosting and main integration remain pending.
 
 ## Immediate executable queue
 
-1. U02 5f28555 is accepted. Cursor preserves the tested branch; no further R21/R22 correction is assigned.
-2. Claude corrects C07 R23 on its existing task branch using prompts/CLAUDE_C07_REVIEW_FIXES.md. Preserve p1 and the accepted HTTP shapes.
-3. Cursor starts the U03 contract/UI increment from accepted U02 using prompts/CURSOR_U03.md and the limited accepted v1.1 artifact snapshot at 62def10. New-feature real-stack acceptance waits for corrected accepted C07; do not merge the unaccepted backend.
-4. Codex re-reviews the C07 correction and reviews pending C06/C08. The later integrator combines accepted U02/C05/C07 and reruns backend/frontend/browser and export checks; main remains unchanged.
-5. Existing laptop/subscriptions/free resources only. Linux/CI, hosted/public-BYOK, WSL/GitHub provisioning and main-integrator designation remain separate gates.
+1. C07 275509a is accepted after independent R23 re-review. Claude preserves the tested model-serving checkout; no further R23 rewrite is assigned.
+2. Cursor U03 a5716e2 is saved on task/cursor-model-analysis with a clean tree and matching passed strict metadata. Resume its chat if useful, report the checkpoint, and preserve the branch pending review. Do not start U03 over or merge the backend automatically.
+3. Codex reviews delivered U03, C06 and C08. After the required component acceptances, assign a dedicated combined-stack task with exact frontend/backend dependencies and real model-results browser/API/Postgres checks.
+4. Main still holds baseline 507538e. Main-integrator designation and remote provisioning remain separate; no merge or push is implied by this checkpoint.
+5. Keep the laptop/subscriptions/free-resource budget. Linux/CI, hosting/public-BYOK, operational measurements and broader multi-agent work retain their acceptance gates.
 
 ## Evidence history
 
@@ -78,3 +78,9 @@ The existing owner-designation gate for the integrator remains: the owner has no
 ## C07 review on October 24
 
 See [62def10 review](reviews/62def10.md): 37 focused model/contract/installed-wheel tests and ordinary compatibility checks passed independently; two real-Postgres interleavings confirmed post-cutoff operator data enters a captured model decision. R23 blocks backend acceptance. HTTP v1.1 artifact acceptance is explicitly limited to Cursor development. Claude full 372+1 strict evidence is attributed separately; no independent full repeat, main integration, live provider call or hosting occurred.
+
+## Owner checkpoint on October 25
+
+Start with [the project checkpoint](PROJECT_CHECKPOINT.md): summary first, step-by-step completed process, exact saved Cursor state, package register, ML evidence, skills, remaining milestones and restart commands. A standalone readable HTML copy is saved in E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html. It is a dated snapshot, not a live dashboard.
+
+C07 275509a passed independent 50 focused tests (142.83 s), Ruff, 21 helpers, 15 schemas, HTTP exports and Node. R23 is resolved. Claude's full386+1 count is attributed. U03 a5716e2 is observed delivered/clean with matching local strict metadata; new UI review remains pending. No new provider call, deployment, install, remote or main merge occurred.

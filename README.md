@@ -1,11 +1,11 @@
 # AgentForge Sentinel
 
-A fraud investigation workbench being built incrementally: transactions, risk scoring, bounded agent investigations, analyst review, approved simulated actions and an audit history.
+A fraud investigation workbench: synthetic financial transactions, rule or trained-model scoring, bounded investigations, analyst review, human-approved simulated actions and an audit history.
 
-Current state: draft versioned domain contracts plus a thin integrated API path on Postgres. A synthetic transaction is rule-scored and raises an alert and case. One bounded investigation (deterministic, or opt-in local Claude via the owner's CLI login) proposes an enumerated action. The server builds the exact action intent; a human approves it; a simulated action is recorded once, idempotently. Every step is audited, and the path survives server and database restarts. All data is synthetic.
+Start with [the project checkpoint](docs/PROJECT_CHECKPOINT.md) for the summary, step-by-step progress, saved Cursor state and next actions. [Current status](docs/STATUS.md), [the task queue](docs/TASK_QUEUE.md) and [the milestone roadmap](docs/PROJECT_PLAN.md) record acceptance and future work.
 
-Start with [setup](SETUP.md), [current status](docs/STATUS.md), [contract semantics](docs/CONTRACTS.md) and [the full milestone roadmap](docs/PROJECT_PLAN.md).
+Accepted task branches include the local analyst/browser workflow, synthetic data, offline classical ML, backend reliability and C07 trained-model serving at 275509a. Cursor's model-analysis frontend is delivered at a5716e2 and awaiting review. The components have not yet been accepted together as one browser/model stack or merged into main.
 
-Implementation coordination: [shared task queue](docs/TASK_QUEUE.md), [Claude batch](docs/prompts/CLAUDE_BATCH.md), [required Cursor UI/browser assignment](docs/prompts/CURSOR_UI.md), and [Codex re-review of c6d369f](docs/reviews/c6d369f.md).
+This checkout is task/coordination: current instructions and reviews on the older c6 application source. Main still holds the baseline. Use the named task dependencies for implementation; do not assume this checkout contains the latest complete product. [Setup](SETUP.md) describes its local thin path.
 
-Not yet built: the analyst UI, hosted staging, a trained fraud model and public BYOK. These remain later acceptance gates.
+Broader multi-agent investigations, hosted staging, public visitor-key access and advanced risk/AI tracks remain milestone work. All current data and actions are synthetic or simulated. No real-bank efficacy or production-scale claim is made.

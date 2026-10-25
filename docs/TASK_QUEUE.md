@@ -22,8 +22,8 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | C05 backend reliability | a8294f6a98a3a5f2c093dc6b97d1da8a594c9fdd | ACCEPTED: R18-R20 and operator notes resolved within local backend scope; combined stack pending |
 | C03 synthetic data | a8e716cdec38fad1c316c6ffa2b722601b50b41d | ACCEPTED: synthetic-data/historical-feature scope; C04 separately accepted |
 | C04 trained baselines | 09b5378150faed06caa73b0384b9ff095c095eb8 | ACCEPTED: offline synthetic evaluation/artifact; 29 ML tests and frozen result independently reproduced; C07 separately reviewed |
-| C07 model serving | 62def106af74821040ac54535b8efe87341ca10b | BACKEND CHANGES REQUESTED: R23; v1.1 schema/examples accepted for UI development only |
-| U03 model/analysis UI | not delivered | CONTRACT/UI INCREMENT READY; real-stack acceptance waits for corrected accepted C07 |
+| C07 model serving | 275509af655a81a62bba28e74e9d8ab6c8d9cf5f | ACCEPTED: local backend; R23 resolved; v1.1 unchanged; combined-stack acceptance pending |
+| U03 model/analysis UI | a5716e252af2077a507767a3f819ddf44ea41c12 | DELIVERED, REVIEW PENDING; clean saved checkpoint; no C07 integration |
 | C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | DELIVERED, CODEX REVIEW PENDING; no GitHub/Linux run |
 | C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | DELIVERED, CODEX REVIEW PENDING |
 
@@ -31,15 +31,15 @@ C01 acceptance and independent verification are recorded in [the re-review](revi
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01 deb1037 is accepted; see [the acceptance](reviews/deb1037.md). Cursor completed [U02](prompts/CURSOR_U02.md) using accepted U01 plus C02. Codex left its implementation checkout unchanged. C02 0e72b0b is accepted; see [the acceptance](reviews/0e72b0b.md). U02 5f28555 is accepted with R21/R22 resolved; see [the acceptance](reviews/5f28555.md). Preserve its tested U01+C02 branch for later combined C05/C07 integration. The v1.1 schema/examples at 62def10 are accepted as a UI development dependency only; Cursor starts the U03 contract/UI increment from accepted U02. Full C07 backend acceptance waits for R23. C05 a8294f6 is separately accepted; see [the acceptance](reviews/a8294f6.md). R18-R20 and operator notes are resolved. Preserve its tested C01-based branch for later combined-stack verification; keep the accepted U02 dependency snapshot stable until combined-stack verification. C04 09b5378 is accepted; see [the acceptance](reviews/09b5378.md). Claude fixes R23 using [the correction prompt](prompts/CLAUDE_C07_REVIEW_FIXES.md). Cursor follows [the U03 prompt](prompts/CURSOR_U03.md), without merging unaccepted backend code. WSL changes, GitHub provisioning and main integration remain pending.
+U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base. C03 a8e716c, C04 09b5378 and C05 a8294f6 remain separately accepted. C07 is now accepted at 275509af655a81a62bba28e74e9d8ab6c8d9cf5f with R23 resolved; see [the re-review](reviews/275509a.md). The v1.1 snapshot at 62def10 is unchanged. Cursor completed the U03 contract/UI increment at a5716e252af2077a507767a3f819ddf44ea41c12; its clean branch and passed local strict metadata were found after shutdown. U03 remains awaiting review and is not integrated with C07. Preserve every accepted task checkout. C06/C08, combined-stack acceptance, WSL/GitHub provisioning, hosting and main integration remain pending.
 
 ## Current execution order
 
-1. U02 5f28555 is accepted. Cursor preserves the tested branch; no further R21/R22 correction is assigned.
-2. Claude fixes C07 R23 on the current model-serving branch using prompts/CLAUDE_C07_REVIEW_FIXES.md; backend 62def10 is not accepted.
-3. Cursor starts the U03 contract/UI increment from accepted U02 using prompts/CURSOR_U03.md. v1.1 schema/examples at 62def10 are accepted only as a UI dependency; real-stack acceptance waits for corrected full C07 acceptance.
-4. Codex re-reviews the C07 correction and reviews pending C06/C08. The later integrator combines accepted U02/C05/C07 and reruns backend/frontend/browser and export checks; main remains unchanged.
-5. Existing laptop/subscriptions/free resources only. Linux/CI, hosted/public-BYOK, WSL/GitHub provisioning and main-integrator designation remain separate gates.
+1. C07 275509a is accepted after independent R23 re-review. Claude preserves the tested model-serving checkout; no further R23 rewrite is assigned.
+2. Cursor U03 a5716e2 is saved on task/cursor-model-analysis with a clean tree and matching passed strict metadata. Resume its chat if useful, report the checkpoint, and preserve the branch pending review. Do not start U03 over or merge the backend automatically.
+3. Codex reviews delivered U03, C06 and C08. After the required component acceptances, assign a dedicated combined-stack task with exact frontend/backend dependencies and real model-results browser/API/Postgres checks.
+4. Main still holds baseline 507538e. Main-integrator designation and remote provisioning remain separate; no merge or push is implied by this checkpoint.
+5. Keep the laptop/subscriptions/free-resource budget. Linux/CI, hosting/public-BYOK, operational measurements and broader multi-agent work retain their acceptance gates.
 
 ## Packages and acceptance
 
@@ -133,18 +133,18 @@ Add the small seeded generation/training/evaluation job only once C03/C04 are ac
 
 Acceptance: each command reproduced locally; workflow syntax reviewed; real CI results distinguished from unexecuted configuration. An absent remote/runner is recorded as unverified, not green. Do not configure an external repository, purchase compute or expose secrets merely to obtain a badge.
 
-### C07 - Controlled trained-scorer integration - Claude - CHANGES REQUESTED AT 62def10: R23
+### C07 - Controlled trained-scorer integration - Claude - ACCEPTED AT 275509a
 
 Branch: task/claude-model-serving. Own the scorer interface, explicit rule/model configuration, model artifact verification, service integration and backend compatibility tests.
 
 Only load trusted locally produced artifacts from the accepted training pipeline; no arbitrary uploaded pickle/joblib. Pin model/feature/threshold versions on every outcome/case. Preserve recorded replay scores and old case provenance. Missing or incompatible artifacts fail clearly.
-The v1.1 schema/examples at 62def10 are accepted for Cursor development only. Full backend acceptance waits for R23; see reviews/62def10.md and prompts/CLAUDE_C07_REVIEW_FIXES.md.
+R23 is resolved and the local backend is accepted at 275509a; see reviews/275509a.md. The v1.1 schema/examples at 62def10 are unchanged. Preserve the tested branch for later assigned combined-stack integration.
 
 Acceptance: actual trained inference in the API, parity with offline feature/scoring fixtures, rule baseline retained explicitly, replay/upgrade tests and no label leakage or fabricated probability claims.
 
-### U03 - Model and analysis views - CURSOR REQUIRED - CONTRACT/UI INCREMENT READY; REAL-STACK GATE PENDING
+### U03 - Model and analysis views - CURSOR REQUIRED - DELIVERED AT a5716e2; REVIEW PENDING
 
-Use prompts/CURSOR_U03.md. Base the dedicated frontend task on accepted U02 5f28555 and consume frozen v1.1 artifacts at 62def10 without merging its unaccepted backend. Hand off contract/UI work first; real new-feature browser/API/Postgres acceptance waits for an explicitly accepted corrected C07. Own web/ extensions. Show actual scorer/version/score semantics, reproducible experiment results/error slices and clearly labeled synthetic limitations. Charts must match backend/report fixtures; keep currencies separate.
+The initial contract/UI increment is delivered at a5716e2 from accepted U02 5f28555 and frozen v1.1 artifacts at 62def10. It is clean and ready for review; preserve it. C07 is now separately accepted at 275509a, but is not in this branch. New-feature real-stack acceptance requires a later explicit integration assignment. See prompts/CURSOR_UI.md for current instructions; prompts/CURSOR_U03.md records the implementation scope. Own web/ extensions. Show actual scorer/version/score semantics, reproducible experiment results/error slices and clearly labeled synthetic limitations. Charts must match backend/report fixtures; keep currencies separate.
 Acceptance: typed build/tests, browser assertions for actual values and correct labeling for rule versus trained-model mode.
 
 ### C08 - Deployment and operator preparation - Claude - LOCAL PACKAGE DELIVERED, REVIEW PENDING

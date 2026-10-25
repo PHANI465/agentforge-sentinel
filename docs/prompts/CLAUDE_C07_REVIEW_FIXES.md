@@ -1,3 +1,5 @@
+Resolved on October 25: C07 275509af655a81a62bba28e74e9d8ab6c8d9cf5f is accepted and R23 is closed. See docs/reviews/275509a.md. Preserve that tested branch; no further R23 correction is assigned. The original correction prompt below is history.
+
 # Claude C07: R23 decision-time correction
 
 C07 62def106af74821040ac54535b8efe87341ca10b is CHANGES REQUESTED for R23. Its HTTP v1.1 schema/examples alone are accepted for Cursor development; the complete backend and proposed decision 0006 are not accepted. Preserve the completed work on task/claude-model-serving in E:/PHANI/sentinel-wt/claude-model-serving.

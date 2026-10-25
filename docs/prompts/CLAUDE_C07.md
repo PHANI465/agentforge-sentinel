@@ -40,6 +40,6 @@ Tests must demonstrate actual trained API inference and offline parity from inde
 
 Use the worktree's locked environment with required dev/ml extras. Publish actual commands, hashes, counts, inference outputs/labels, legacy/new export checks and unverified items. Update technical docs/handoff, stage explicit owned files, commit, then run final strict checks after the final commit. Return the contract-candidate SHA early and the complete tested C07 SHA when ready. Main stays unchanged; C06/C08 and public/hosting acceptance remain separate.
 
-## Current review overrides
+## Current acceptance overrides
 
-C07 62def10 has backend changes requested for R23. Read latest task/coordination:docs/reviews/62def10.md and docs/prompts/CLAUDE_C07_REVIEW_FIXES.md. The v1.1 schema/examples alone are accepted for Cursor development; preserve their shapes while correcting actual operator-data availability. This does not accept the backend or decision 0006. The original assignment above remains scope/history.
+C07 is accepted at 275509af655a81a62bba28e74e9d8ab6c8d9cf5f with R23 resolved; see latest task/coordination:docs/reviews/275509a.md and docs/STATUS.md. Preserve the tested backend checkout and p1. Cursor U03 a5716e2 is delivered for review; C07 is not in that branch yet. No new implementation, combined-stack merge or main merge is assigned by the original prompt above. C06/C08 and the integration task retain separate gates.

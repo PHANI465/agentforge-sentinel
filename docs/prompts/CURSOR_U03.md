@@ -1,3 +1,5 @@
+Current checkpoint on October 25: this contract/UI increment is delivered at a5716e252af2077a507767a3f819ddf44ea41c12 and awaiting review. C07 is now accepted at 275509a; it is not yet integrated with U03. Read the current docs/prompts/CURSOR_UI.md dispatcher before acting. The original assignment below is scope/history; do not restart completed work.
+
 # Cursor U03: model and analyst views, contract increment
 
 U02 is accepted at 5f2855553ac0a445d96914730a89fc3722682830. Preserve that branch/worktree unchanged. Codex has accepted the HTTP v1.1 schema and nine frozen examples at 62def106af74821040ac54535b8efe87341ca10b as a UI development dependency only. The complete C07 backend has R23 changes requested and is not accepted for integration. Read docs/reviews/62def10.md and current STATUS/TASK_QUEUE from latest task/coordination.
