@@ -1,5 +1,65 @@
 # Handoff: task/claude-operator-prep
 
+- **Task:** C08 startup follow-up **R28 only** (docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md and docs/reviews/784e101.md on task/coordination 7fe99fb).
+- **Base:** this commit builds on exact 784e1014044920706a41bd91c61b965a03379999. There was no merge or rebase. Accepted C06 4f06e32, I02 f38e920 and main are untouched.
+- **State:** ready for Codex re-review of R28.
+- **Changed paths:**
+  - `scripts/local_stack.py`, in `start_api`, `api_state` and the stop confirmation only;
+  - `tests/test_local_stack_startup.py` (new);
+  - `docs/runbooks/local-operations.md`, startup paragraph only;
+  - this note.
+
+  Not changed: production `src/`, contracts, model files, the lockfile, the UI and central coordination files.
+
+## R28 fix (this commit)
+
+- **R28A, launch record first.**
+  - Before `Popen`, a pending launch record (port, scorer, investigator, database) is saved; the raw PID is saved immediately after `Popen` returns, and only then is identity inspected.
+  - If identity cannot be established (the inspection raises, or the launcher is already gone), `up` exits nonzero with an unresolved launch record and kills nothing.
+  - An unresolved record resolves only when that PID is gone, no descendant survives (Windows keeps an orphan's parent PID) and the port is free. Until then, `down` and `restore` refuse, and `down` never stops the database.
+  - A failing `Popen`, where nothing was launched, clears the pending record.
+  - Similarly, a verified record whose launcher exited while a descendant still lives is `gone-but-child-alive` and refused. A stop is confirmed only once no descendant is alive.
+- **R28B, real readiness.**
+  - Success requires a healthy `/healthz` response from a live process whose own tree serves the port, re-checked after the readiness wait. The result of `wait_until` is no longer ignored, and an owned bound port alone is insufficient.
+  - On timeout or early exit, only the verified API is stopped, and cleanup is confirmed or the recovery record is kept; either way the exit is nonzero.
+
+## R28 evidence
+
+Windows 11, locked dev+ml, `SENTINEL_LIVE_CLAUDE=0`, external test DB unset, deterministic investigator.
+
+- **Committed regressions, written before the fix:** `tests/test_local_stack_startup.py`.
+  - The stand-ins are real test-owned processes. They bind their pre-chosen port only when "launched" through a Popen interception, which is scoped to the uvicorn launch; other subprocess calls use the real Popen.
+  - `down` runs through the real `main(argv)`, with kill and database-stop requests intercepted in the negative cases.
+- **Baseline on unchanged 784e101 `local_stack.py`** (file verified identical by `git diff --quiet 784e101`): **4 failed, 1 passed**, each for the claimed reason:
+  - identity raising: no launch record saved (`None is not None`);
+  - gone launcher with a live listening child: no record (`TypeError` on `api["pid"]`);
+  - owned port without health: startup reported success (`DID NOT RAISE`);
+  - timeout with failed cleanup: startup reported success (`DID NOT RAISE`);
+  - positive healthy startup: passed, as expected.
+
+  A first draft of these tests failed for a test-side reason: the stand-ins were listening before the pre-launch port check, and the global Popen patch hijacked `taskkill` and the PostgreSQL lookup. That draft was corrected before this baseline was recorded.
+- **Reviewer probe** (a copy, path-redirected, run in my scratchpad):
+  - on the extracted 784e101 file it printed both defects (`api_recovery_record: null`, `down` stops the database, `startup_reported_success: true` with no healthy response);
+  - on the fixed file its defect-confirming assertion fails, because a recovery record is now saved.
+- **After the fix:** the 5 R28 tests passed. Together with all retained operator tests, **15 passed in 83 s**:
+  - `test_local_stack.py`: 8 (reuse/foreign/missing refusals, failed-stop retry, failed-factory cleanup);
+  - the real two-version rollback drill: 1;
+  - the backup round trip: 1.
+- **Per-case results:**
+  - inspection-raise and gone-launcher cases: exit 1, record kept, no kill, no database stop, and the surviving process is untouched;
+  - owned-port-without-health: nonzero, then a verified real stop of our own stand-in, record cleared and the port free;
+  - failed-cleanup timeout: nonzero, identity kept, and `down` refuses with no database stop;
+  - positive startup: records the listener identity, and `down` gives a real verified stop.
+- **Cleanup:** every test-owned stand-in, including the orphaned child, is stopped by handle or by the PID its parent reported, never by name. A process-list check after the runs found no leftovers.
+
+## Remaining limits (R28)
+
+- **POSIX:** orphan detection relies on Windows keeping parent PIDs. On POSIX, orphans are reparented, so a gone launcher whose child does not listen would not be detected. The POSIX path remains untested.
+- **Timing window:** the check-to-kill window for PID reuse is unchanged (non-atomic, disclosed).
+- **Not run:** model mode and `--investigator claude-cli` operator modes.
+
+## Previous handoff (784e101, R24/R26)
+
 - **Task:** C08 review corrections R24 and R26 (docs/prompts/CLAUDE_RELEASE_REVIEW_FIXES.md and docs/reviews/9ab183e.md on task/coordination 6c31516).
 - **Tool and worktree:** Claude Code, E:\PHANI\sentinel-wt\claude-operator-prep (branch task/claude-operator-prep).
 - **Updated:** 2026-10-25.
@@ -17,7 +77,7 @@
 
   Not changed: production `src/`, contracts, migrations, p1 files, the UI, the lockfile and the checker. `docs/runbooks/staging-design.md` was rechecked: it makes no `local_stack`, table-count or log claim, so it is unchanged.
 
-## R24 and R26 corrections (this commit)
+## R24 and R26 corrections (784e101)
 
 - **Owned directory.** All state is in one directory with an ownership marker and a random owner value that must match `state.json`. Directories without it, such as the old 9ab183e layout, are never adopted. A private `--state-dir` is available for drills and tests.
 - **Identity before any action.**

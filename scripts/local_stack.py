@@ -384,15 +384,40 @@ def stop_database(stack: Stack, data: dict) -> None:
 
 # ---- API -----------------------------------------------------------------------------------
 
+def tree_alive(pid: int) -> bool:
+    """A live descendant of pid (Windows keeps an orphan's parent pid). Unknown -> alive."""
+    try:
+        return bool(descendants(pid))
+    except StackError:
+        return True
+
+
+def launch_unresolved(record: dict) -> bool:
+    """A launch whose identity was never established is resolved only when its pid is gone,
+    no descendant survives and its port is free; anything else (or not knowing) is
+    unresolved. Such a launch is never killed."""
+    if not isinstance(record.get("pid"), int):
+        return True  # the launch may have happened before its pid was recorded
+    try:
+        alive = identity(record["pid"]) is not None
+    except StackError:
+        return True
+    return alive or tree_alive(record["pid"]) or port_state(record["port"], None) != "free"
+
+
 def api_state(data: dict) -> str:
-    """down | owned | gone-but-port-busy | reused | unknown."""
+    """down | owned | unresolved-launch | gone-but-port-busy | reused | unknown."""
     record = data.get("api")
     if not record:
         return "down"
+    if record.get("pending"):
+        return "unresolved-launch" if launch_unresolved(record) else "down"
     kind = classify(record)
     port_now = port_state(record["port"], record.get("pid") if kind == "owned" else None)
     if kind == "owned":
         return "owned" if port_now in ("owned", "free") else "unknown"
+    if kind == "gone" and port_now == "free" and tree_alive(record["pid"]):
+        return "gone-but-child-alive"  # the launcher exited, its interpreter did not
     if kind in ("gone", "reused") and port_now == "free":
         return "down"
     return kind if kind != "gone" else "gone-but-port-busy"
@@ -413,6 +438,7 @@ def stop_api(stack: Stack, data: dict) -> str:
     accepted = terminate_tree(record["pid"])
     stopped = wait_until(lambda: classify(record) == "gone"
                          and classify(record.get("listener")) != "owned"
+                         and not tree_alive(record["pid"])
                          and port_state(record["port"], None) == "free", STOP_SECONDS)
     if not stopped:
         raise StackError(f"API stop not confirmed (request {'accepted' if accepted else 'failed'})"
@@ -441,26 +467,46 @@ def start_api(stack: Stack, data: dict, port: int, scorer: str, investigator: st
     env.pop("SENTINEL_TEST_DATABASE_URL", None)
     flags = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" \
         else {"start_new_session": True}
-    with open(stack.dir / "api.log", "ab") as log:
-        process = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", API_FACTORY, "--factory", "--host", "127.0.0.1",
-             "--port", str(port), "--log-level", "warning", "--no-access-log"],
-            cwd=ROOT, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=log, **flags)
-    record = identity(process.pid)
+    # Recovery authority exists before the launch and before any inspection that can fail
+    # (R28A): an unresolved launch blocks `down` from stopping the database.
+    data["api"] = {"pending": True, "pid": None, "port": port, "scorer": scorer,
+                   "investigator": investigator, "database": database}
+    stack.save(data)
+    try:
+        with open(stack.dir / "api.log", "ab") as log:
+            process = subprocess.Popen(
+                [sys.executable, "-m", "uvicorn", API_FACTORY, "--factory", "--host",
+                 "127.0.0.1", "--port", str(port), "--log-level", "warning",
+                 "--no-access-log"],
+                cwd=ROOT, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=log, **flags)
+    except OSError as error:  # nothing was launched
+        data["api"] = None
+        stack.save(data)
+        raise StackError(f"API could not be launched ({type(error).__name__})") from None
+    data["api"]["pid"] = process.pid
+    stack.save(data)
+    try:
+        record = identity(process.pid)
+    except StackError:
+        record = None
     if record is None:
-        raise StackError("API exited immediately; see api.log")
-    data["api"] = {**record, "port": port, "scorer": scorer, "investigator": investigator,
-                   "database": database}
-    stack.save(data)  # recorded before readiness, so a crash here is recoverable
+        raise StackError(f"API launch (pid {process.pid}) could not be verified; unresolved "
+                         "launch recorded and nothing killed. Once it has exited and port "
+                         f"{port} is free, run down")
+    data["api"] = {**data["api"], **record}
+    del data["api"]["pending"]
+    stack.save(data)
 
-    def ready() -> bool:
-        return process.poll() is not None or (
-            healthy(port) is not None and port_state(port, process.pid) == "owned")
-    wait_until(ready, READY_SECONDS)
-    if process.poll() is None and port_state(port, process.pid) == "owned":
-        pids = listeners(port)
-        child = next(iter(pids - {process.pid}), process.pid)
-        data["api"]["listener"] = identity(child)
+    def serving() -> bool:  # a healthy response from our own process tree (R28B)
+        return process.poll() is None and healthy(port) is not None \
+            and port_state(port, process.pid) == "owned"
+    wait_until(lambda: process.poll() is not None or serving(), READY_SECONDS)
+    if serving():
+        child = next(iter(listeners(port) - {process.pid}), process.pid)
+        try:
+            data["api"]["listener"] = identity(child)
+        except StackError:
+            data["api"]["listener"] = None
         stack.save(data)
         return f"API up on port {port} (scorer {scorer}, database {database})"
     try:

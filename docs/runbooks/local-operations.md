@@ -42,7 +42,11 @@ Global options go before the subcommand: `--port` (default 8000), `--db-port` (d
 
   A reused PID whose port is free means our process already exited; `down` then clears the record without touching the new owner of that PID.
 - **Confirmed stop.** `down` reports success only after the API process tree is gone and its port is closed, then after `pg_ctl status` reports the database stopped and its port free. If a stop cannot be confirmed, it exits 1 and keeps the identity for a retry; it never erases identity just to claim it stopped. The database is not stopped under an API it could not account for.
-- **Startup failure.** If the API does not become ready, `up` stops only the verified API it started, confirms that, clears the record and exits 1. If that cleanup cannot be confirmed, it keeps the recovery record and asks for `down`.
+- **Startup (R28).**
+  - *Launch record first.* A pending launch record (port, scorer, database) is saved **before** the API is launched, and its raw PID right after. Only then is its identity inspected.
+  - *Unverifiable launch.* If the identity cannot be established (the inspection fails, or the launcher is already gone), `up` exits 1 and keeps an **unresolved launch** record, killing nothing. While it is unresolved, `down` and `restore` refuse and the database is not stopped. It resolves only when that PID is gone, no descendant survives (Windows keeps an orphan's parent PID) and its port is free. Stop a surviving process yourself, then rerun `down`.
+  - *Readiness.* Success requires an actual healthy `/healthz` response, within 60 s, from our own process tree serving the port. A bound port alone is not readiness. On timeout or early exit, `up` stops only the verified API it started, confirms that, clears the record and exits 1. If that cleanup cannot be confirmed, it keeps the recovery record and asks for `down`.
+  - *Launcher exited.* A verified launcher that exited while a descendant survives is reported as `gone-but-child-alive`, and `down` refuses.
 - **Platforms.** Windows is implemented and tested. The POSIX path (`/proc`, `killpg`) is implemented to fail closed but **untested**.
 
 ## Smoke test (synthetic data, rule mode)
