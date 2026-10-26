@@ -1,0 +1,95 @@
+# Backend checks in a clean Linux environment (C06, refreshed for the accepted f38e920
+# release). Frontend/browser checks are a separate workflow. No secrets are used; live model
+# calls are disabled, and the structured test gate allows exactly that one skip.
+name: backend
+
+on:
+  push:
+    branches: [main, "task/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    # Measured locally (Windows 11 laptop): full backend pytest ~14-16 min, ML reproduce
+    # ~1.5 min, package build/install ~1-2 min. Each long step has its own bound below.
+    timeout-minutes: 60
+    env:
+      SENTINEL_LIVE_CLAUDE: "0"
+      SENTINEL_INVESTIGATOR: deterministic
+      UV_PYTHON: "3.11"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Actions are pinned to full commit SHAs (resolved from the named tags on 2026-10-23).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6.8.0
+        with:
+          version: "0.9.26"
+          enable-cache: true
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: PostgreSQL binaries for disposable test clusters
+        run: |
+          if ! ls -d /usr/lib/postgresql/*/bin >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends postgresql
+          fi
+          bin=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1)
+          "$bin/postgres" --version
+          echo "SENTINEL_PG_BIN=$bin" >> "$GITHUB_ENV"
+
+      - name: Install locked dependencies (dev + ml)
+        run: uv sync --locked --extra dev --extra ml
+
+      - name: Lint
+        run: uv run --locked python -m ruff check .
+
+      - name: Tests (disposable Postgres, deterministic investigator, structured gate)
+        timeout-minutes: 30
+        run: |
+          # pytest's own nonzero exit is returned unchanged; the JUnit report must then show
+          # every required test executed and passed and exactly the opt-in live skip.
+          uv run --locked python scripts/ci_test_gate.py --junit pytest-results.xml
+
+      - name: Handoff helper regressions (isolated Git config and identity)
+        run: uv run --locked python -m unittest discover -s tests_handoff -v
+
+      - name: JSON Schema exports are current
+        run: uv run --locked python scripts/export_contracts.py --check
+
+      - name: HTTP contract (frozen v1, active v1.1, examples) is current
+        run: uv run --locked python scripts/export_http_contract.py --check
+
+      - name: Node transport check
+        run: node scripts/check_contract_examples.mjs
+
+      - name: Package contents (migrations, model/data identity assets, installed imports)
+        timeout-minutes: 10
+        run: uv run --locked python scripts/check_package.py
+
+      - name: Accepted ML result reproduces (read-only; p1 files unchanged)
+        timeout-minutes: 10
+        run: |
+          # The accepted read-only path: recompute and compare with the frozen p1 report;
+          # it writes nothing under ml/ or evals/. No selection, tuning or new test access.
+          out=$(uv run --locked python -m ml test --reproduce)
+          echo "$out"
+          [ "$out" = '{"reproduced": true}' ]
+          git diff --exit-code -- ml evals data_pipeline
+          test -z "$(git status --porcelain -- ml evals data_pipeline)"
