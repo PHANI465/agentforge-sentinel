@@ -1,61 +1,66 @@
-# AgentForge Sentinel development setup
+# AgentForge Sentinel setup
 
-Open E:\PHANI\agentforge-sentinel as the project root. It is a Git repository (default branch `main`); work happens on `task/<slug>` branches (see docs/decisions/0004).
+The canonical project is E:/PHANI/agentforge-sentinel on main after the October 26 integration. Use new task branches/worktrees for later work; preserve reviewed component checkouts. Main contains the accepted I03 Windows-local application plus current coordination documentation.
 
-## Install and verify
+## Requirements and install
 
-Requires Python 3.11+, uv, Git, Node 22+ (small transport check) and local PostgreSQL binaries (`initdb`/`pg_ctl`, tested with 14.17). The tests start their own disposable cluster on 127.0.0.1 with no stored credentials. If initdb is not on PATH or in a standard install location, set SENTINEL_PG_BIN to its bin folder, or set SENTINEL_TEST_DATABASE_URL to an admin URL of a server you control. Without either, the database tests are skipped with a visible reason.
-
-```powershell
-uv sync --locked --extra dev
-uv run --locked python -m ruff check .
-uv run --locked python -m pytest -q
-uv run --locked python -m unittest discover -s tests_handoff -v
-uv run --locked python scripts/export_contracts.py --check
-node scripts/check_contract_examples.mjs
-uv run --locked python scripts/check_package.py   # wheel/sdist ship the migrations (docs/ci/README.md)
-```
-
-All of these run locally without model keys or paid services. One opt-in live test uses your logged-in Claude subscription (a single small call):
+Use Python 3.11+, uv, Git, Node 22+ and native PostgreSQL binaries (initdb, pg_ctl, pg_dump and pg_restore; tested with PostgreSQL 14.17). Set SENTINEL_PG_BIN if necessary. Docker is not required. Linux/macOS/real GitHub CI remain unverified; N2's Windows-only orphan-test launch needs adaptation before Ubuntu CI.
 
 ```powershell
-$env:SENTINEL_LIVE_CLAUDE = "1"; uv run --locked python -m pytest -q tests/test_investigators.py -k live
+uv sync --locked --extra dev --extra ml
+$env:SENTINEL_LIVE_CLAUDE = '0'
+$env:SENTINEL_INVESTIGATOR = 'deterministic'
 ```
 
-Regenerate draft schema exports after intentional contract/dependency changes with `uv run --locked python scripts/export_contracts.py`, then review the diff. The HTTP v1 contract (OpenAPI + examples, docs/api/README.md) is regenerated with `uv run --locked python scripts/export_http_contract.py` (needs local Postgres binaries); pytest fails if it drifts.
+The ml extra is required for the complete test suite and packaged model even when the default scorer is rule. Tests use disposable local Postgres. Leave SENTINEL_TEST_DATABASE_URL unset for ordinary development; if required database coverage is skipped, the structured CI gate rejects that run.
 
-## Run the thin path locally
+## Run the app
 
 ```powershell
-uv run --locked python -m sentinel.cli devdb start          # prints SENTINEL_DATABASE_URL; data under .agent/devdb
-$env:SENTINEL_DATABASE_URL = "postgresql://sentinel@127.0.0.1:55432/postgres"
-uv run --locked python -m sentinel.cli migrate
-uv run --locked python -m sentinel.cli create-session        # prints token=... once; keep it out of files you commit
-$env:SENTINEL_INVESTIGATOR = "claude-cli"                    # optional; default is the deterministic investigator
-uv run --locked uvicorn sentinel.api:create_app --factory --host 127.0.0.1 --port 8000
+uv run --locked python scripts/local_stack.py up
+uv run --locked python scripts/local_stack.py status
 ```
 
-In a second terminal, with `$env:SENTINEL_TOKEN` set to the printed token:
+The default is the rule scorer and deterministic investigator. Private local session details are in `.agent/stack/session.json`; read its token locally and enter it into the analyst UI. Do not put it in a URL, commit, screenshot or public log. The API uses a restricted runtime role; migrations/session provisioning use operator authority.
+
+In a second terminal:
 
 ```powershell
-uv run --locked python scripts/smoke_thin_path.py investigate        # prints CASE_ID=...
-# optionally restart the server (and devdb) here
-uv run --locked python scripts/smoke_thin_path.py execute <CASE_ID>
-uv run --locked python -m sentinel.cli devdb stop
+Set-Location web
+npm ci
+$env:SENTINEL_API_ORIGIN = 'http://127.0.0.1:8000'
+npm run dev
 ```
 
-Endpoints: `POST /v1/transactions`, `GET /v1/cases/{id}`, `GET /v1/cases/{id}/audit`, `POST /v1/cases/{id}/investigations`, `POST /v1/approvals`, `POST /v1/actions`, `GET /healthz`.
+Use the URL Vite prints. In the project root, `uv run --locked python scripts/local_stack.py smoke` verifies one synthetic rule case through investigation, approval and simulated execution. The UI starts empty on a new database until transactions/cases are created. `uv run --locked python scripts/local_stack.py down` verifies shutdown and keeps database data. See the [operator runbook](docs/runbooks/local-operations.md) for model mode, profiles/disclosures, ownership/recovery, backup and rollback.
 
-Investigator modes (decision 0003): `deterministic` (default, no AI) or `claude-cli` (local only; refused unless `SENTINEL_MODE=local`, which is the default). The Claude mode removes every `ANTHROPIC_*`/`CLAUDE_CODE_USE_*` variable, then requires `claude auth status` to report first-party claude.ai login before any model call. Otherwise it fails closed (decision 0005). Switching modes makes cases created under the other mode fail investigation with `stale_agent_config`.
+## Required checks
 
-## Coordination
+On a clean committed tree, the strict gate runs six commands including the complete backend suite and clean package/install check:
 
-AGENTS.md is the shared instruction source; CLAUDE.md imports it. Codex and Claude Code stay in sync through Git: one branch and handoff note per task, separate worktrees for parallel work, and one integrator who merges to `main` and reruns checks. See docs/decisions/0004.
+```powershell
+uv run --locked python scripts/agent_check.py
+uv run --locked python scripts/export_http_contract.py --check
+uv run --locked python -m ml test --reproduce
+```
 
-Briefing: `uv run --locked python scripts/agent_status.py`. Startup hooks remain disabled.
+The strict helper has an 1800-second bound per command and records ignored evidence in `.agent/last-check.json`. An old report or one from another checkout does not certify current HEAD. HTTP checks cover frozen v1 and active v1.1/examples. ML reproduction is the accepted read-only comparison; do not rerun model selection or tune against frozen p1 test data.
 
-The strict helper, `uv run --locked python scripts/agent_check.py`, records full-commit evidence only on a clean, committed tree. No remote, push or deployment is configured.
+For CI-equivalent structured test validation, `uv run --locked python scripts/ci_test_gate.py --junit .agent/pytest-results.xml` runs the full suite and permits exactly the opt-in live-Claude skip. During final integration, use a JUnit report from the strict gate's same pytest run and `--validate-only` to avoid a duplicate full run. Current CI setup and package details are in [docs/ci](docs/ci/README.md).
 
-## Scope
+From web/ run:
 
-See docs/CONTRACTS.md for contract and storage semantics, docs/BASELINE.md for measured facts/unknowns, and docs/STATUS.md for the next milestone. Scores are rule heuristics, not trained-model probabilities. Actions are simulated records only. All data is synthetic.
+```powershell
+npm run typecheck
+npm test
+npm run build
+npm run test:e2e
+```
+
+The browser suite uses real disposable API/Postgres stacks and the deterministic investigator, including registered-model cases, restart/replay, authorization, secret scanning and identity-verified cleanup. It does not use a model subscription or external database. Keep recovery files if teardown cannot be confirmed; never kill by process name.
+
+## Local live AI and project workflow
+
+The deterministic investigator is the default. The opt-in claude-cli adapter uses a local first-party subscription login and is forbidden in public mode. It is not required for ordinary checks; leave SENTINEL_LIVE_CLAUDE=0 unless explicitly testing that mode. See decisions/0003 and decisions/0005 plus [API/security documentation](docs/security/README.md).
+
+AGENTS.md is shared by Codex/Claude/Cursor, and CLAUDE.md imports it. New commits must be solely authored and committed by PHANI465 <pgavara1@asu.edu>, without AI co-author/session trailers. Existing history is preserved. Codex is the owner-designated integrator for this main consolidation. No remote, push, deployment, new spend or public provider-key bridge is part of this release.

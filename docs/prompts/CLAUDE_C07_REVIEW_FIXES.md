@@ -1,0 +1,19 @@
+Resolved on October 25: C07 275509af655a81a62bba28e74e9d8ab6c8d9cf5f is accepted and R23 is closed. See docs/reviews/275509a.md. Preserve that tested branch; no further R23 correction is assigned. The original correction prompt below is history.
+
+# Claude C07: R23 decision-time correction
+
+C07 62def106af74821040ac54535b8efe87341ca10b is CHANGES REQUESTED for R23. Its HTTP v1.1 schema/examples alone are accepted for Cursor development; the complete backend and proposed decision 0006 are not accepted. Preserve the completed work on task/claude-model-serving in E:/PHANI/sentinel-wt/claude-model-serving.
+
+Read from latest task/coordination: AGENTS.md, docs/STATUS.md, docs/TASK_QUEUE.md, docs/reviews/62def10.md and this prompt. Inspect your HEAD/worktree and preserve unfamiliar changes. Keep the accepted C04+C05+C02 base; no main merge or Cursor checkout edits.
+
+Write failing regressions first against 62def10. After ingest captures time T and before its model feature queries, an operator connection can commit at T+1 either (a) a fraud disclosure with disclosed_at < T or (b) a USD-to-GBP profile update. The existing scorer incorrectly uses both for features_as_of=T. This was reproduced with the actual model and real Postgres; see the review for exact source locations and values.
+
+Fix the shared decision boundary for profile provisioning and disclosure ingestion, not only the sample queries. Writers and model ingestion must agree on what was committed/available before a decision. Shared scoped account advisory locks with times read after the locks, or a genuinely versioned snapshot, are possible approaches. Prevent stale pre-lock timestamps, handle writer transactions that commit later, order multi-account locks deterministically, and preserve an existing valid profile across an update waiting behind a decision. A recorded_at filter alone does not settle every interleaving.
+
+Demonstrate both writer-first and scoring-first orderings, updates/new profiles and backdated disclosures, later eligible decisions, stored replay invariance, session isolation and batch lock ordering. Use real connections with bounded barriers/events and failures that propagate; avoid sleep-based success and privileged HTTP test routes. Tests should distinguish unavailable data from genuinely eligible disclosures already recorded before T. Retain future-disclosed-at exclusion and independent offline/online parity.
+
+Keep the accepted p1 protocol/selection/artifact/report and C03 feature meaning unchanged. Keep the v1.1 OpenAPI/fixtures compatible; ask through a concrete handoff if you believe fields/errors must change. Cursor owns web/ and docs/ui/ and may implement against the frozen schema while you fix the backend; coordinate through commits, not shared edits. Do not absorb Cursor's assignment. Keep STATUS/TASK_QUEUE with Codex.
+
+Update decision 0006 and API/security notes to describe actual synchronization and availability semantics. Do not broaden its claims into staleness/retraction guarantees. As a small nonblocking contract-hardening follow-up, the ScoringOutcome model/inputs validator currently permits a rule outcome with exactly one of those optional fields; reject either partial rule payload with a focused test if doing so preserves the exported shapes and legacy bytes.
+
+Run focused new regressions, C07 parity/contract/wheel checks and affected C02/C05 compatibility tests. Use your own locked dev/ml environment, no external test DB and no live provider calls. Inspect for leftover owned resources. Stage explicit owned paths, update your handoff, commit, then run the strict check on the final clean commit. Return SHA, failing-before/passing-after evidence, actual counts and limits. No WSL/GitHub/hosting or main integration is assigned.

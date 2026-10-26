@@ -1,25 +1,9 @@
-# Cursor analyst UI assignment
+Current ownership update: Cursor allowance is exhausted. Codex completed I02 at f38e920, now accepted after Claude independent review; see docs/reviews/f38e920.md. Preserve both the accepted continuation and original Cursor checkout. No Cursor work or repeated I02 review is currently assigned. Next release work: C06/C08 review. The original Cursor assignment below is reference/history.
 
-The owner explicitly requires Cursor to contribute. You own the analyst interface and browser tests; Claude owns backend/data/ML and Codex owns review/coordination.
+# Cursor I02 Part B is ready
 
-Open a dedicated Cursor worktree. Read AGENTS.md, docs/STATUS.md, docs/TASK_QUEUE.md, relevant decisions and the accepted C01 HTTP contract/fixtures. Read the current coordination queue from its named Git reference; files in another worktree are not your working copy.
+I01 is ACCEPTED at 7dd9428c70a7741af1c4781d22fd6b184f957444; see docs/reviews/7dd9428.md from latest task/coordination. Your Part A 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 is accepted with N1 resolved.
 
-C01 update: submitted commit 0a6fb0e is NOT accepted; R9/R10 corrections are pending. Read the latest queue with git show task/coordination:docs/TASK_QUEUE.md. Do not treat a passing strict check as acceptance.
+Read and follow docs/prompts/CURSOR_I02_PART_B.md now. Reuse task/cursor-model-integration, include that exact I01 dependency while preserving Part A, use this worktree's locked dev/ml environment and implement real browser/API/Postgres model checks alongside the old rule suite. The final I01 status shape remains {api,database}; use GET /v1/scoring or manifest.api.scorer for mode.
 
-Before coding, record your base/dependency commit. U01 waits for Codex's acceptance of the C01 contract commit. If it is not available yet, produce a short UI task/design note and identify the exact missing contract; do not invent endpoints or implement a mock-only app as completed functionality.
-
-Implement U01 in web/ and docs/ui/:
-- React/TypeScript/Vite, a typed client from the accepted response contracts, and a same-origin development proxy.
-- Session-token entry in memory only; connection/mode state, sign-out, scoped case queue/overview, case detail/evidence and audit.
-- Recorded score and artifact/semantics labels; distinguish rule baseline, deterministic investigator and local Claude mode.
-- Exact server-built action details, human approve/reject and separate execute, clear permissions, expired/reopened cases, provider failures and idempotent replay. Keep one execution idempotency key across an ambiguous network retry; test a lost response with one persisted action.
-- Safe loading/error/empty states; refresh server truth on 409; keyboard/accessibility support. Handle non-JSON 5xx, empty/invalid response bodies and network failures with a safe generic message; do not assume every failure parses as ErrorResponse. An ambiguous execution response retains its original idempotency key.
-- Model rationale is inert text. Do not enable raw HTML or store tokens in URLs/localStorage/sessionStorage.
-
-Then implement U02 after C02's accepted backend fixture: real browser -> API -> disposable Postgres tests for successful execution, rejection, expiration/reopening, stale revision, duplicate retry, cross-session denial and persistence/restart. Ordinary browser tests use the deterministic investigator, not a subscription/model call.
-
-Only start U03 after C07's accepted model-results contract. All charts/counts must match actual data/report fixtures and synthetic limitations.
-
-Do not edit src/sentinel/, Python dependencies, contracts/ or database migrations. Request backend changes through a specific example/status-code handoff. Own web/package lock and frontend workflow; coordinate integration commands with Codex. Reuse source UI code only with recorded repository/file/commit and required notices.
-
-One task branch/worktree; no concurrent edits in Claude's checkout. Keep central STATUS/TASK_QUEUE edits with Codex. Commit explicit owned paths, run build/type/test/browser checks and hand off exact commit, actual results and gaps. Do not merge into main yourself. This is a substantive Cursor assignment, not an extra approval hop between Claude and Codex.
+No further Part A rewrite or I01 backend work is assigned. Do not modify accepted checkouts, public contracts, backend lifecycle or main. Current queue and exact acceptance SHA govern; earlier waiting statements in old assignment history are superseded.

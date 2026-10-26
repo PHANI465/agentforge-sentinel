@@ -175,3 +175,105 @@ The strict `scripts/agent_check.py` result after the commit is reported in the f
 Verified October 23, 2026 with Python 3.11.3, Pydantic 2.14.1, pytest 8.4.2, Ruff 0.17.2, Node 22.13.1. Ruff passed; 51 contract/schema tests passed; 21 helper regressions passed; 11 schema exports verified; the Node transport check passed. That was working-tree evidence before Git existed. The source hashes listed then for `v1.py`, `pyproject.toml` and `uv.lock` describe that earlier state; this increment changed those three files. Historical handoff-kit verification is in HANDOFF_VERIFICATION_HISTORY.md.
 
 The Node check verifies basic JSON transport and money bounds, not generated frontend types or full schema validation. Pure hash/precondition checks do not establish data authenticity or HTTP authorization; the integration tests above cover those boundaries only for this local path.
+
+## Independent C07 review: 62def10
+
+On October 24, 2026, 37 focused model/HTTP v1.1/isolated installed-wheel tests passed in 139.87 s. Ruff, 21 helper tests, 15 schema exports, legacy/new HTTP snapshot/examples and Node passed. Accepted dependency ancestry and unchanged C04/C01 frozen files were verified. Claude's exact clean strict metadata was inspected; its full 372 passed / 1 live-Claude skip remains owner-attributed.
+
+Two deterministic interleavings on a fresh real Postgres cluster confirmed post-cutoff disclosure/profile writes enter the captured model decision. The actual model scored both paths. Cluster stopped and state removed. C07 backend has R23 changes requested; v1.1 schema/examples are separately accepted as a UI development dependency. No new-feature browser integration, Linux/macOS, CI, hosting, throughput/memory measurement or provider call is claimed. See reviews/62def10.md. Final checks on the subsequent coordination commit are recorded in the ignored report/final chat, not inside its own tracked note.
+
+## C07 R23 acceptance and owner checkpoint on October 25
+
+Exact 275509af655a81a62bba28e74e9d8ab6c8d9cf5f passed 50 independent focused tests in 142.83 s: 14 R23 boundary cases, 7 model-serving tests and 29 HTTP v1.1 tests. Ruff, 21 helpers, 15 schemas, HTTP v1/v1.1 exports and Node passed. R23 is resolved; local backend accepted. The complete386+1 strict result remains Claude-attributed, with matching exact clean report metadata independently verified. ML/package/dependency/contract bytes are unchanged by the correction. See reviews/275509a.md.
+
+Cursor U03 a5716e2 is an observed clean saved checkpoint with matching passed local strict metadata. Its 37 frontend/build and 14 old-backend browser results are implementer evidence; no new U03 acceptance or model-stack browser run is claimed. Official resume commands and installed CLI help were checked; private chat contents were not inspected.
+
+docs/PROJECT_CHECKPOINT.md and the standalone owner-facing HTML artifact summarize current state. The HTML passed desktop/mobile layout, fragment navigation, zero external resources and zero page-error checks, with visual inspection of summary, progress, Cursor, ML, roadmap and next-action sections. Final checks for the subsequent coordination commit belong in its ignored report/final chat. No application source, accepted task checkout, provider call, deployment or main merge occurred.
+
+## U03 a5716e2 current p1 frontend review
+
+Independent37 frontend tests passed in37.85s; typecheck and production build passed. All nine v1.1 copies match62def10 Git blobs. A direct parser probe confirmed legal nullable-empty-bin and omitted-optional-field variants validate in the accepted backend DTO but are rejected by the current frontend; these do not occur in frozen p1 and are assigned as N1 in I02. U03 accepted only for the current-p1 contract/UI increment. No new browser/backend run is claimed. Owner14 old-backend browser and strict 215+1 results remain attributed. See reviews/a5716e2.md. I01/I02 now cover real-model integration; main and implementation sources were unchanged.
+
+## I02 Part A 50856be review
+
+Independent16 focused tests passed in 6.01s, followed by typecheck/build. The exact actual-parser probe now accepts all three current/nullable/omitted variants; nine golden fixture copies remain byte-identical. N1 resolved; Part A accepted. Cursor's full 44/frontend and strict 215+1 remain attributed. An I01 pytest process was observed, but no final I01 commit or Part B acceptance is claimed. See reviews/50856be.md. No implementation worktree edits or provider calls by Codex.
+
+## I01 7dd9428 acceptance
+
+Independent10 real-process tests passed in 160.73s. Ruff, 21 helper tests, 15 schemas, HTTP v1/v1.1 exports/examples and Node passed. Exact merge parents and no production/contract/model/frontend/dependency delta from 5488a61 were verified. Owner strict metadata matches clean 7dd9428; full 396+1 (838s test report), 40 C02 tests and 14 old rule-browser tests remain attributed. Status shape is preserved and 1800s still bounds full checks. Cursor Part B now consumes 7dd9428 plus accepted Part A 50856be. No new model-browser/CI/platform/hosting acceptance, source edits, provider calls or main merge by Codex. See reviews/7dd9428.md.
+
+## I02 Part B completion after Cursor quota exhaustion
+
+Candidate f38e92023481a55db1ecf8bcdbe917140bd5d7cd, task/codex-i02-completion, based on e0e1b05 with accepted I01 7dd9428 and Part A 50856be. Cursor's original seven uncommitted files and snapshot hashes still match; the original checkout was not edited. Codex carried those edits into an isolated branch and fixed three test/helper problems: JSON exponent spelling, request-only missing-profile fixture parsing, and a page binding that kept the first session token.
+
+Final browser run metadata reports passed with no unexpected failures for the 19 serial tests, including one expected post-login failure whose real artifact is scanned. Scanner self-test and 20 shutdown / 12 entrypoint checks preceded the suite. Afterward no private current-run/runtime/recovery/secrets/port records remained and the owned stacks directory was empty. The command session ended before its final terminal output was retained; the observed Playwright last-run metadata and cleanup state are the final browser evidence, not an invented captured shell exit code.
+
+44 frontend unit tests and production build passed on 4df18f2; frontend product source/package bytes are unchanged at f38e920. Final f38e920 e2e-inclusive typecheck passed. Final clean f38e920 strict report records all five checks passed: Ruff; pytest 396 passed and one live-Claude skip; 21 helper tests; 15 schema exports; Node transport. The exact ignored report belongs to that worktree. Root coordination has older c6 application code; its separate checks must not be reported as this integrated application's checks.
+
+The base-to-candidate diff changes no production src/, contracts/, ml/, data_pipeline/, Python dependencies or checker policy. No live provider, owner API key, external database, main merge, remote or deployment. Windows only; synthetic data and simulated actions. Independent review of Codex finishing changes is pending via prompts/CLAUDE_I02_REVIEW.md.
+
+## I02 accepted after independent Claude review
+
+On October 25 the owner forwarded Claude's independent separate-worktree review of exact f38e92023481a55db1ecf8bcdbe917140bd5d7cd: no blocking findings. Claude reported 44 frontend tests/typecheck/build, 19 real browser cases (3.3m, exit 0), scanner and 20/12 lifecycle harnesses, a negative old-session-binding probe (18 pass/one targeted fail) and seven canary error probes with no leak. Cleanup and unchanged protected bytes were verified by Claude. This is attributed independent review evidence, not a new Codex rerun; the reviewer removed its temporary worktree. Codex's existing clean 396+1 strict report remains valid on unchanged f38e920.
+
+I02 is accepted for Windows-local rule/model UI/API/Postgres integration. Two low suggestions (read-only helper session and explicit pre-approval zero counts) are retained as non-blocking H01. No source edits, new model call, accepted-checkout reset, main merge, push or deployment. Next: review delivered C06/C08 and define release integration. No Linux/CI/hosting, real financial efficacy or additional accessibility/visual acceptance is claimed. See reviews/f38e920.md. Final checks for this coordination documentation commit belong in the ignored report/final chat, not inside its own note.
+
+## C06/C08 independent review and artifact refresh
+
+Reviewed exact clean e7fc868 and 9ab183e. C06 package checker passed offline; C08 backup/restore test passed independently (1 in 21.56s). R24 lifecycle ownership/failed-stop/foreign-health probes intercepted destructive calls and reproduced all four cases. R26 stopped-database restore probe confirmed no database restart. R25 actual pytest run with two skips and the workflow grep both exited 0. R27 isolated exact f38e920 archive with locked dev-only install exited 2 at collection (seven missing numpy/joblib errors). Probe files live under E:/PHANI/Interview/tmp; accepted checkouts were not edited. Upstream action SHAs/actionlint, Linux/macOS and real CI were not reverified. No broad process kill, owner runtime/provider call, WSL install, remote or deployment.
+
+Both packages have changes requested; exact findings and the refreshed task-dependency assignment are in reviews/e7fc868.md, reviews/9ab183e.md and prompts/CLAUDE_RELEASE_REVIEW_FIXES.md. I02 acceptance is unaffected. Refresh the portable AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html and .md with this state; it remains a dated snapshot, not a live dashboard. Final artifact QA and after-commit coordination checks belong in the ignored evidence/final chat; no future pass is claimed here.
+
+Portable artifact QA passed after regeneration: 13 sections, 18 step rows, accepted f38e920 and R25/R27 plus R24/R26 states present, summary first, zero broken fragment links, zero page errors/external resources, no desktop/mobile document overflow. Desktop summary and mobile top were visually inspected. HTML sha256: 0b07995ed9e058544ad29f895d062f1b785e025def14b078b3b7d4aaf32ec849. Source and outputs are in E:/PHANI/Interview/tmp/refresh_sentinel_checkpoint_20261025.py and output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md}.
+
+## C06 accepted and C08 narrowed to startup R28
+
+Reviewed clean C06 4f06e32385424613fa0006b5bdbaab81ffea028f and C08 784e1014044920706a41bd91c61b965a03379999 with exact accepted f38e920 parents. Independent C06 focused regressions: 22 passed (14.98s); refreshed package checker passed offline (four migrations/eight assets, isolated installed scorer); read-only ML reproduction returned {"reproduced": true}, with frozen files unchanged. C06 accepted for local configuration/package scope; no real CI/Linux claim.
+
+Independent C08 regressions: 10 passed (68.50s), including actual rollback, current backup and identity refusal/retry. Additional real-function probes intercepted all launches/kills and reproduced the two startup R28 paths (lost identity/recovery followed by false down success; ignored readiness timeout with no healthy response). C08 is changes-requested only for that narrow follow-up; R26's drill works. Exact clean owner strict metadata verified; full counts and actionlint/sleep disclosures remain owner-attributed, not new full reruns. Ruff passed on changed Python paths. Accepted I02/C06, original Cursor and main remain untouched. No provider call, external database, deployment or remote.
+
+See reviews/4f06e32.md, reviews/784e101.md and prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md. Final coordination after-commit checks and refreshed artifact QA belong in the ignored evidence/final chat.
+
+Portable checkpoint refreshed for this re-review: 13 sections, 20 progress steps, C06 4f06e32 accepted and C08 784e101/R28 current; desktop/mobile checks passed (no overflow, broken fragments, external resources or page errors). Desktop summary and next steps were visually inspected. HTML sha256: 1f25be25dcb95cdfc5756c8d385a52f96995ed1b6a5f3ea228645ff49911991b.
+
+## Owner requested overnight checkpoint
+
+C08 353ecec is observed clean with parent 784e101 and matching passed owner strict metadata (five checks; pytest command duration 888.187s). Claude reports 411+1 and 15 focused passes; no independent R28 source/runtime review or acceptance tonight. C06/I02/main are preserved. Owner asked to continue next session; documentation and matching HTML/Markdown/DOCX are prepared with 21 progress steps, an explicit 85/200 planning rubric and improvement priorities. Primary design references checked: official LangGraph persistence, OWASP Agentic Top 10 and scikit-learn calibration. No code implementation or backend runtime tests are started for this documentation task. Final artifact checks are recorded separately; older strict metadata does not certify a new documentation commit.
+
+
+## Final overnight document verification
+
+The matching HTML, Markdown and Word checkpoints share 15 sections and 21 progress steps, with no missing source-content items in the Word parity check. All 15 final native Word page renders were visually inspected. Windows has no LibreOffice here, and direct Word PDF export stalled; actual Word Page.EnhMetaFileBits pages were rendered, assembled into an internal PDF and passed through the packaged render_docx.py rasterizer. This verifies the real Word layout rather than a substitute HTML layout. No QA intermediates are user deliverables.
+
+The final HTML passed a managed Playwright local-file check with cached Chromium: 15 sections/21 steps, summary first, correct 353ecec pending/C06/I02 states, 85/200 rubric, no broken fragments, no page errors or external assets, and no document overflow at desktop or 390px mobile width. Desktop summary/progress and mobile summary were visually inspected. The exact task-owned stalled document-rendering helpers and Word instance were closed after identity checks. No application runtime suite or independent R28 review was run for this documentation checkpoint.
+
+Output folder: E:/PHANI/Interview/output. Base name: AgentForge_Sentinel_Project_Checkpoint_2026-10-25.
+
+- DOCX sha256: 7978e67399fdd24bbb059fb7d544dc915b9c08ecdb2672fc4120089acfd999b2
+- HTML sha256: bd00df5267629facee4920b2bb65a0ccdce8c072d32869ef8d7c4fa774125bb4
+- MD sha256: c071e0cd59e85e433927064468e2331558c2e84d35a747d64a16b2847dc38955
+
+## Project artifact relocation
+
+At the owner's request, the final October 25 HTML, Markdown and Word checkpoint files were moved from E:/PHANI/Interview/output into docs/artifacts/ inside this repository. All three SHA256 hashes are unchanged, so existing content and Word rendering verification still apply. Live coordination links and the next-session prompt point to the project folder; docs/artifacts/README.md explains the original paths retained inside the dated snapshots. AGENTS.md sets this folder as the location for future owner-facing project documents. This is documentation/file organization only; R28 remains pending review and no application tests or code changes are involved.
+
+
+## October 26 R28 independent acceptance and I03 dispatch
+
+Exact clean C08 353ecec accepted for Windows-local operator scope. Independent 15 tests passed in 108.37s (one existing deprecation warning); six intercepted probes passed with no real launch/kill/database operation. Ruff passed with direct worktree interpreter/no cache after a sandbox uv-cache access failure. Review pytest root has no postmaster.pid and no matching Python/Postgres process command line. The initial broad cleanup query matched its own shell, then the restricted inspection confirmed cleanup; no process was terminated by the inspection.
+
+See reviews/353ecec.md and E:/PHANI/Interview/tmp/c08-r28-review-20261026.xml. Owner full 411+1 and five-check strict metadata remain attributed; no redundant full suite, production source edit, provider call or platform claim. Main and accepted I02/C06/C08 are unchanged. I03 is assigned via prompts/CLAUDE_RELEASE_INTEGRATION.md, not yet started or accepted. Yesterday's rendered artifacts remain dated snapshots; today's Markdown session note points to live coordination. Final after-commit coordination checks belong in ignored evidence/final chat.
+
+
+## I03 4fff776 independent acceptance
+
+Exact clean candidate accepted for the Windows-local consolidated release scope. Merge parents 353ecec/4f06e32, shared base f38e920, exact accepted blobs for all 17 package paths, only two final added documents, unchanged protected paths and six-command strict digest verified. Independent 37 combined tests passed in 97.64s; offline package/installed inference and current HTTP exports passed. The final owner JUnit's exact 434 node IDs match independent collection and pass the structured validator (433+1). Full/backend/frontend/browser/reproduction owner runs remain attributed; no redundant full suite or new ML evaluation by Codex.
+
+N2 records the unguarded Windows creationflags in the orphan test as a concrete Linux CI prerequisite, non-blocking for Windows acceptance. Candidate and parents remain unchanged; runtime contains only browser.txt/empty stacks with no recovery. Main remains 507538e; owner integrator designation is pending under AGENTS.md. No push, remote, platform install, provider call or deployment. See reviews/4fff776.md and the updated October 26 Markdown session checkpoint. Final coordination-commit checks belong in ignored evidence/final chat.
+
+
+## Owner-designated main consolidation, October 26
+
+The owner designated Codex as main integrator and explicitly requested future commits solely authored by the owner. Prepared an automatic merge of accepted I03 4fff776 and coordination cad89cb in task/codex-main-integration, with no conflicts or changes to protected application/checker/CI/test/model/UI/dependency bytes. Updated canonical README/SETUP and current coordination, AGENTS/CLAUDE authorship policy and Claude's documented project attribution settings. Existing historical authorship and accepted checkouts are preserved.
+
+The new containing commit uses PHANI465 <pgavara1@asu.edu> as sole author/committer without co-author/session trailers. Main and the coordination reference are fast-forwarded before final verification in the canonical root. Full strict/JUnit gate/HTTP/read-only ML/frontend/browser results are recorded after the commit in ignored evidence/final chat; this entry does not assert a future pass. N2, H01 and platform/public-operation gaps remain open. No remote, push, paid/provider call or deployment.

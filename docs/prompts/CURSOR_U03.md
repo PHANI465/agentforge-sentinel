@@ -1,0 +1,27 @@
+Current checkpoint on October 25: this contract/UI increment is delivered at a5716e252af2077a507767a3f819ddf44ea41c12 and awaiting review. C07 is now accepted at 275509a; it is not yet integrated with U03. Read the current docs/prompts/CURSOR_UI.md dispatcher before acting. The original assignment below is scope/history; do not restart completed work.
+
+# Cursor U03: model and analyst views, contract increment
+
+U02 is accepted at 5f2855553ac0a445d96914730a89fc3722682830. Preserve that branch/worktree unchanged. Codex has accepted the HTTP v1.1 schema and nine frozen examples at 62def106af74821040ac54535b8efe87341ca10b as a UI development dependency only. The complete C07 backend has R23 changes requested and is not accepted for integration. Read docs/reviews/62def10.md and current STATUS/TASK_QUEUE from latest task/coordination.
+
+Create/reuse a dedicated task/cursor-model-analysis worktree from exact accepted U02 5f28555. Record the base and contract source SHA. Do not merge unaccepted C07 (62def10) or task/coordination for application code. Read the accepted snapshot with git show <SHA>:<path>; if tests need copies, keep exact attributed copies in web-owned fixture paths with hashes/source provenance. Do not edit contracts/, src/sentinel/, migrations, Python dependencies or another tool's checkout. This increment deliberately has no accepted C07 backend dependency yet.
+
+Owned paths: web/ (types/client, UI, frontend tests/lock, small browser adapters) and docs/ui/, plus your task handoff. Codex owns central coordination; Claude owns the R23 backend fix. Read the contract/docs directly at 62def10, especially contracts/http/openapi.v1.1.json, contracts/http/examples-v1.1/ and docs/api/README.md. OpenAPI Git-blob SHA-256: 1f220a5628e3e261776c286c56b502b8d989184bd928bf219f30ebb6e451fd90.
+
+Implement a useful initial U03 increment:
+
+- Typed clients for GET /v1/scoring and GET /v1/model-results/{results_id}, using accepted fields/errors and existing session-token hygiene. Do not rely on optional X-Request-ID. Handle 401/403/404, malformed/non-JSON/network failures, loading and empty states honestly. On an older backend with no new routes, say the analysis view is unavailable; do not silently substitute fixtures for a failed live request.
+- Show current configured scorer separately from each record's stored scorer, exact score, semantics, model/feature/threshold identity and stored feature inputs where available. A historical rule score remains a rule score on a model-configured server, and vice versa. Keep deterministic/local-Claude investigator labels independent from scorer labels.
+- Add an accessible model-results view with a baseline comparison, actual PR curve, validation/test AP, uncertainty interval, policy counts, calibration/reliability and error slices as supported by the response. Use readable tables when clearer than a chart. Every value must trace to the accepted results response; do not invent ROC points, live metrics, confidence bounds or tenant statistics.
+- Label the whole report offline synthetic benchmark; display limitations and delayed-label/split context. Scores are uncalibrated rankings, not fraud probabilities. Separate the frozen online threshold from the offline daily top-15 review policy. Preserve the exact small threshold (4.0295386895426815e-06); formatting must not turn it into a zero cutoff. Keep currency slices separate and label scenario slices as offline hidden synthetic truth, never a live feature.
+- Preserve U01/U02 permissions, stale-response fencing, expiry behavior, escalation rendering and execution idempotency. Tokens remain in memory, model text inert, and sign-out clears protected analysis state. Late analysis requests from an earlier session must not repopulate the signed-out/new session view. Preserve R21/R22 process ownership and fail-closed artifact scanning.
+
+Test real component/client behavior with exact attributed v1.1 fixtures: rule/model coexistence, all relevant error states, decimal threshold display, chart/table counts matching frozen values, stale session responses, loading and keyboard/accessibility. Run frontend tests/typecheck/build and existing U02 browser regressions against its accepted backend where practical. Those old-stack browser results do not verify new model endpoints.
+
+This first increment may be handed off as contract/UI work with new-feature tests using fixtures. Do not call U03 or real model browser integration complete yet. After Codex accepts a corrected full C07 SHA, a second explicit integration step will include that backend, use real deterministic-investigator API/Postgres/browser tests, verify rendered model/results values against persisted records and rerun the full accepted browser path. Do not introduce model selection or profile-seeding API routes to simulate completion.
+
+Stage only owned paths, update docs/ui/ and your handoff, commit, then run final checks on that exact clean commit. Return SHA, dependency hashes, actual checks and outstanding real-stack acceptance. No main merge, provider calls, WSL/GitHub changes or hosting.
+
+## Current handoff
+
+The a5716e2 current-p1 frontend increment is now accepted; see latest task/coordination:docs/reviews/a5716e2.md. Continue on a new I02 worktree using docs/prompts/CURSOR_I02.md, preserving this accepted checkout. Earlier waiting/review statements in this original assignment are historical. Full model-browser acceptance remains pending.
