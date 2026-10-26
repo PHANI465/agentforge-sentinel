@@ -1,6 +1,6 @@
 # Proposed WSL environment for real Linux verification
 
-**Prepared for owner decision; not executed.** Existing Ubuntu WSL2 is registered. Claude's read-only inventory found Ubuntu 24.04.3, a root-only account, system Python 3.12, and missing uv, native Node and PostgreSQL. The Windows PostgreSQL system service is unrelated to these tests.
+**Owner approved and setup completed October 26.** Read [actual setup/results](WSL_SETUP_RESULTS.md) and [N4](../reviews/N4-linux-postgres-startup.md). The original proposal below is retained as history. Existing Ubuntu WSL2 is registered. Claude's read-only inventory found Ubuntu 24.04.3, a root-only account, system Python 3.12, and missing uv, native Node and PostgreSQL. The Windows PostgreSQL system service is unrelated to these tests.
 
 ## Proposed changes inside existing Ubuntu
 

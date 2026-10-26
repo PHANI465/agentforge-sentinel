@@ -33,3 +33,7 @@ Main validation is complete on a456f51: see [the exact verification record](../r
 ## N2 review and N3 follow-up
 
 N2 3c860d4 is accepted for Windows-native and simulated-launch evidence: independent 14 tests passed, the negative control caught the old unsupported flags, Ruff passed and the owner full report matches 435 independently collected cases (434+1). There is no Linux pass. Main stays a456f51 while [N3](../prompts/CLAUDE_N3_PORTABLE_CLEANUP.md) removes the two Windows-only cleanup skips with equivalent executed recovery coverage. Codex plans one combined integration after N3 review. [WSL setup](../ci/WSL_SETUP_REVIEW.md) is a prepared owner decision; N3 Windows/code work can proceed. All new commits remain solely authored/committed by the owner.
+
+## Approved Ubuntu setup and first native tests
+
+The owner approved setup. Ubuntu now has sentinel UID 1000, uv 0.9.26, Python 3.11.14, Node 22.23.4 and PostgreSQL 16.15, with a clean Linux-owned N2 clone. [Actual setup/results](../ci/WSL_SETUP_RESULTS.md): all six N2 startup cases passed natively, but the broader focused run was 13 pass/one failure. [N4](../reviews/N4-linux-postgres-startup.md) isolates an unwritable default Unix-socket directory; a controlled TCP-only launch succeeded and stopped cleanly. [Claude's combined N3/N4 task](../prompts/CLAUDE_N3_PORTABLE_CLEANUP.md) now owns that narrow helper fix and portable cleanup tests. Linux CI is not green yet. Windows main/source remain unchanged at a456f51.

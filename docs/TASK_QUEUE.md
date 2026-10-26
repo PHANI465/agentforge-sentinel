@@ -1,6 +1,14 @@
 # Shared implementation queue
 
-## Current work: N2 accepted; N3 assigned
+## Current Linux readiness: setup complete; N3/N4 assigned
+
+The owner approved Ubuntu setup. Native Linux tools and a non-root sentinel user/clone are ready: [actual results](ci/WSL_SETUP_RESULTS.md). At accepted N2 3c860d4, all six N2 startup cases passed natively; the combined focused run was **13 passed, one failed**. The failure is an actual PostgreSQL startup portability defect [N4](reviews/N4-linux-postgres-startup.md), not missing tooling. A controlled TCP-only cluster succeeded and was verified stopped. No Linux CI pass is claimed.
+
+Claude's [N3/N4 assignment](prompts/CLAUDE_N3_PORTABLE_CLEANUP.md) now explicitly owns the narrow devdb startup correction plus the two Windows-only cleanup cases. Use base 3c860d4 in the separate task worktree. Run native Windows and Linux checks after the fixes, sequentially; preserve all skip/ownership/frozen-asset guarantees. Main remains checked a456f51, and accepted branches/source are unchanged.
+
+Windows PostgreSQL was observed Running; no Windows service management was performed. The new Ubuntu packaged cluster and owned diagnostic cluster are stopped. Setup/test evidence is under canonical .agent/wsl-setup/. No provider call, paid service, GitHub remote, push or deployment. All new commits keep PHANI465 <pgavara1@asu.edu> as sole author/committer. H01 and the bounded multi-agent milestone remain later work.
+
+## Earlier N2 review and pending setup record
 
 **N2 3c860d4f1efa55c6d6e0bc28200b701afdfec837 is accepted** for its Windows-native and controlled POSIX-launch compatibility scope. Independent 14 tests passed in 39.23s, Ruff passed and the old launch negative control failed for the original ValueError. Final owner six-check metadata and all 435 JUnit node IDs match; 434+1 remains Claude execution evidence. No native Linux/CI pass is claimed. See [the review](reviews/3c860d4.md).
 
