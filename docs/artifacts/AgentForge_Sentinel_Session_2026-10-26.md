@@ -8,7 +8,7 @@
 | Backend CI configuration/package gate | 4f06e32 | Included; real Linux/GitHub execution is not verified |
 | Local operator tooling | 353ecec | R28 independently accepted today; included in I03 |
 | I03 consolidated local candidate | 4fff776 | Accepted after independent integration review |
-| Main | Containing main-consolidation commit | Codex designated by owner; final results are recorded after the commit |
+| Main | a456f510d8053ce67b4334564d75225a756d923d | Verified: 433 backend + one intentional skip, 44 frontend, 19 browser; all required gates passed |
 
 ## What happened today
 
@@ -18,7 +18,7 @@
 4. Independent combined CI/operator suite: 37 passed in 97.64s. Clean package/install/scorer verification and HTTP contract exports passed. Claude's full backend/frontend/browser/evaluation executions remain attributed rather than being relabeled as new Codex runs.
 5. I03 was accepted for Windows-local use. No main merge, push, remote, real CI, provider call or hosted release occurred.
 
-## Main consolidation and remaining work
+## Verified main and next assignment
 
 The owner designated Codex. The main consolidation combines I03 plus current coordination documents without application changes and updates startup instructions. The exact final main commit/branch must pass its own checks, recorded after the commit in ignored evidence and the handoff chat. Main becomes the canonical application base; accepted task worktrees remain unchanged. Future commits use PHANI465 <pgavara1@asu.edu> as sole author/committer, with no AI co-author/session trailers.
 
@@ -27,3 +27,5 @@ N2 is a concrete Linux-readiness item: the orphan-process test passes Windows-on
 Synthetic data, simulated actions, uncalibrated model rankings, PID timing and profile/disclosure limitations remain. There is no production fraud/capacity claim. The earlier 85/200 planning rubric is subjective scope judgment, not a percentage derived from test counts.
 
 Read [the main release record](../releases/MAIN-local-release.md), [STATUS](../STATUS.md), [TASK_QUEUE](../TASK_QUEUE.md), [I03 review](../reviews/4fff776.md) and [R28 review](../reviews/353ecec.md). The October 25 HTML/Word/Markdown checkpoint files are retained as unchanged dated snapshots.
+
+Main validation is complete on a456f51: see [the exact verification record](../releases/MAIN-verification-2026-10-26.md). Claude's next task is [N2 Linux readiness](../prompts/CLAUDE_N2_LINUX_READINESS.md), on a new branch from that main commit. The next stages are an actual Linux/CI run and the bounded three-role fraud workflow. This coordination update does not change or invalidate main's tested source/commit.

@@ -1,6 +1,14 @@
 # AgentForge Sentinel project checkpoint
 
-## Current main integration: October 26
+## Next assignment: N2 Linux readiness
+
+Verified main remains **a456f510d8053ce67b4334564d75225a756d923d**: all six strict checks, 433 backend passes/one intentional skip, 44 frontend tests, 19 real browser tests, HTTP/package/model checks and final clean-state audit passed. See [the exact main verification](releases/MAIN-verification-2026-10-26.md).
+
+**Claude N2 is assigned, not started:** follow [CLAUDE_N2_LINUX_READINESS](prompts/CLAUDE_N2_LINUX_READINESS.md) in a new worktree from exact main. Fix the Windows-only orphan-test launch while preserving real lifecycle coverage and the exact skip policy. Linux evidence requires an actually available environment; Ubuntu is registered in WSL2, but no Linux packages/users/configuration were changed by this dispatch. Missing setup is a separate concrete follow-up, not grounds to skip the code/Windows work.
+
+These are coordination-document updates on task/coordination; main's tested commit/source remain unchanged. Codex reviews/integrates; all new commits use the owner's sole identity. Next sequence: N2, actual Linux/CI when ready, then bounded three-role fraud investigations with a one-agent comparison. H01 stays a separate low hardening task; Cursor can remain closed.
+
+## Earlier main consolidation record: October 26
 
 The owner designated **Codex as main integrator** and requested PHANI465 <pgavara1@asu.edu> as sole author on all future commits. This mainline consolidates accepted I03 4fff776 with coordination cad89cb. The application, contracts, model/data/evaluation files, frontend, locked dependencies, CI/checker and runtime tests are unchanged from I03. Reviewed component worktrees stay preserved.
 

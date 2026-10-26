@@ -1,6 +1,14 @@
 # Shared implementation queue
 
-## Current main integration: October 26
+## Next assignment: N2 Linux readiness
+
+Verified main remains **a456f510d8053ce67b4334564d75225a756d923d**: all six strict checks, 433 backend passes/one intentional skip, 44 frontend tests, 19 real browser tests, HTTP/package/model checks and final clean-state audit passed. See [the exact main verification](releases/MAIN-verification-2026-10-26.md).
+
+**Claude N2 is assigned, not started:** follow [CLAUDE_N2_LINUX_READINESS](prompts/CLAUDE_N2_LINUX_READINESS.md) in a new worktree from exact main. Fix the Windows-only orphan-test launch while preserving real lifecycle coverage and the exact skip policy. Linux evidence requires an actually available environment; Ubuntu is registered in WSL2, but no Linux packages/users/configuration were changed by this dispatch. Missing setup is a separate concrete follow-up, not grounds to skip the code/Windows work.
+
+These are coordination-document updates on task/coordination; main's tested commit/source remain unchanged. Codex reviews/integrates; all new commits use the owner's sole identity. Next sequence: N2, actual Linux/CI when ready, then bounded three-role fraud investigations with a one-agent comparison. H01 stays a separate low hardening task; Cursor can remain closed.
+
+## Earlier main consolidation record: October 26
 
 The owner designated **Codex as main integrator** and requested PHANI465 <pgavara1@asu.edu> as sole author on all future commits. This mainline consolidates accepted I03 4fff776 with coordination cad89cb. The application, contracts, model/data/evaluation files, frontend, locked dependencies, CI/checker and runtime tests are unchanged from I03. Reviewed component worktrees stay preserved.
 
@@ -82,10 +90,10 @@ U01/U02/U03 and the C01-C05/C07 components are preserved accepted contributions.
 
 ## Current execution order
 
-1. Codex is the owner-designated main integrator. Consolidate I03 plus current coordination and the sole-author preference, then verify the exact clean main commit. Preserve accepted worktrees and all six strict commands/1800-second bound.
-2. Verify the full backend/package/gate/HTTP/ML and frontend/browser path; publish only actual after-commit results in ignored evidence/final handoff.
-3. Next address N2 platform-specific test launch/cleanup in a separate task, then obtain real Linux/CI evidence when the platform/remote setup is authorized. Do not hide it with an unexpected skip.
-4. H01, remote/hosting/public mode and broader analyst/multi-agent/security work remain separate. Cursor can remain closed; all future commits use the owner's sole identity without AI trailers.
+1. Claude follows prompts/CLAUDE_N2_LINUX_READINESS.md from exact main a456f51 in its own worktree. Preserve tested main and accepted components.
+2. Codex reviews the concrete N2 commit and actual Windows/Linux/simulated evidence; source setup and skip-gate boundaries remain enforced.
+3. Obtain actual Linux/CI evidence after needed environment/remote setup. No unexpected skip or unsupported POSIX claim.
+4. Then select the bounded three-role fraud-investigation increment. H01 and hosting/public mode are separate; Cursor can remain closed and every new commit uses the owner alone.
 
 ## Packages and acceptance
 
