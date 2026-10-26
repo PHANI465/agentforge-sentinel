@@ -1,3 +1,5 @@
+Completed update October 26: C08 353ecec is now accepted; see task/coordination:docs/reviews/353ecec.md. Next assignment is docs/prompts/CLAUDE_RELEASE_INTEGRATION.md. The instructions below are historical; do not repeat the finished R28 work.
+
 Delivery update: R28 implementation is delivered at 353ecec and awaits Codex re-review next session. No further Claude rewrite is assigned. Follow docs/prompts/NEXT_SESSION_2026-10-26.md; preserve the original assignment below as history.
 
 # C08 focused startup follow-up: R28

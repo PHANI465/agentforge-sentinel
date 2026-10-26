@@ -2,6 +2,10 @@
 
 Owner-facing project documents live here and are versioned with the project. Save future checkpoint documents in this folder.
 
+## Current session
+
+- [October 26 acceptance and next task](AgentForge_Sentinel_Session_2026-10-26.md)
+
 ## October 25 checkpoint
 
 - [Readable HTML artifact](AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html)

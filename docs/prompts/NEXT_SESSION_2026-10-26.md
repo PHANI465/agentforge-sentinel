@@ -1,3 +1,5 @@
+Completed update October 26: C08 353ecec is now accepted; see task/coordination:docs/reviews/353ecec.md. Next assignment is docs/prompts/CLAUDE_RELEASE_INTEGRATION.md. The instructions below are historical; do not repeat the finished R28 work.
+
 # Next session checkpoint for October 26
 
 The owner asked to stop development on October 25 and continue next session. Start by reading task/coordination:AGENTS.md, docs/STATUS.md, docs/TASK_QUEUE.md and docs/PROJECT_CHECKPOINT.md. Inspect Git state; preserve unfamiliar or saved changes. This prompt is a resume record, not a scheduled job.

@@ -1,6 +1,14 @@
 # AgentForge Sentinel project checkpoint
 
-## Overnight checkpoint October 25
+## Current session: October 26
+
+The owner resumed work. **C08 R28 is accepted at 353ecec2fadbba43f939a27f5ad2b9227ff6fe87** for Windows-local operator use: independent 15 focused tests (108.37s), six intercepted probes and Ruff passed; accepted source and candidate remain clean. See [the review](reviews/353ecec.md). The full 411+1 strict result remains Claude's evidence. No Linux/CI/hosting claim is added.
+
+**Next task: Claude I03 release integration**, following [the exact assignment](prompts/CLAUDE_RELEASE_INTEGRATION.md). In a new branch/worktree, combine accepted C08 353ecec and C06 4f06e32 above their shared accepted application f38e920, then run final combined backend/package/model and real browser/API/Postgres checks. I03 is assigned, not started or accepted by this coordination update. Cursor can remain closed; H01 stays non-blocking/unassigned. Main remains 507538e and its owner-designation gate remains separate.
+
+Yesterday's HTML/Word/Markdown artifacts in docs/artifacts are retained as dated snapshots. Current state is this session record and the live coordination files.
+
+## Historical overnight checkpoint October 25
 
 The owner asked to stop project development for today and continue next session, planned for October 26. **Do not start another implementation, merge or full runtime test tonight.** Documentation and artifact preparation are the only current work.
 
@@ -225,7 +233,7 @@ The current product is a working local fraud foundation with an evaluated classi
 
 Existing subscriptions support development and supported local/private integrations. They are not a pooled inference budget for public visitors. Ollama remains a proposed local runtime to benchmark; it is not yet an accepted implemented agent backend.
 
-## Next steps in order
+## Earlier next steps (superseded by the October 26 session)
 
 - Codex reviews Cursor U03 a5716e2 against the frozen v1.1 contract and the saved handoff. Preserve the clean branch while that happens.
 - Codex reviews delivered C06 and C08 before treating CI configuration or operator tooling as accepted. Update CI for the accepted ML extra and active HTTP export checks during integration.

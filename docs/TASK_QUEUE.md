@@ -1,6 +1,14 @@
 # Shared implementation queue
 
-## Overnight checkpoint October 25
+## Current session: October 26
+
+The owner resumed work. **C08 R28 is accepted at 353ecec2fadbba43f939a27f5ad2b9227ff6fe87** for Windows-local operator use: independent 15 focused tests (108.37s), six intercepted probes and Ruff passed; accepted source and candidate remain clean. See [the review](reviews/353ecec.md). The full 411+1 strict result remains Claude's evidence. No Linux/CI/hosting claim is added.
+
+**Next task: Claude I03 release integration**, following [the exact assignment](prompts/CLAUDE_RELEASE_INTEGRATION.md). In a new branch/worktree, combine accepted C08 353ecec and C06 4f06e32 above their shared accepted application f38e920, then run final combined backend/package/model and real browser/API/Postgres checks. I03 is assigned, not started or accepted by this coordination update. Cursor can remain closed; H01 stays non-blocking/unassigned. Main remains 507538e and its owner-designation gate remains separate.
+
+Yesterday's HTML/Word/Markdown artifacts in docs/artifacts are retained as dated snapshots. Current state is this session record and the live coordination files.
+
+## Historical overnight checkpoint October 25
 
 The owner asked to stop project development for today and continue next session, planned for October 26. **Do not start another implementation, merge or full runtime test tonight.** Documentation and artifact preparation are the only current work.
 
@@ -55,19 +63,19 @@ Planning date: October 23, 2026. The owner asked to use Claude heavily today and
 | I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; included in accepted Part B f38e920 |
 | I02 Part B continuation | f38e92023481a55db1ecf8bcdbe917140bd5d7cd | ACCEPTED: independent Claude review; Windows local model/browser integration; two non-blocking H01 suggestions |
 | C06 backend CI | 4f06e32385424613fa0006b5bdbaab81ffea028f | ACCEPTED: R25/R27 resolved, current local package/CI configuration scope; no GitHub/Linux run |
-| C08 local operations | 353ecec2fadbba43f939a27f5ad2b9227ff6fe87 | DELIVERED: owner 411+1 strict / 15 focused; R28 Codex re-review pending next session |
+| C08 local operations | 353ecec2fadbba43f939a27f5ad2b9227ff6fe87 | ACCEPTED: R28 resolved; independent 15 focused tests / six probes; Windows-local scope |
 
-C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03 is separately accepted; see [the review](reviews/a8e716c.md). C06 is accepted; C08 353ecec awaits re-review. None of these branches has been integrated into main.
+C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03 is separately accepted; see [the review](reviews/a8e716c.md). C06 and C08 353ecec are accepted. I03 release integration is assigned; none of these branches has been integrated into main.
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base. C03 a8e716c, C04 09b5378 and C05 a8294f6 remain separately accepted. C07 is now accepted at 275509af655a81a62bba28e74e9d8ab6c8d9cf5f with R23 resolved; see [the re-review](reviews/275509a.md). The v1.1 snapshot at 62def10 is unchanged. Cursor completed the U03 contract/UI increment at a5716e252af2077a507767a3f819ddf44ea41c12; its clean branch and passed local strict metadata were found after shutdown. The current-p1 frontend increment is now accepted; new real-model browser acceptance is still pending. Claude I01 and Cursor I02 are assigned disjoint integration work. Preserve every accepted task checkout. C06/C08, combined-stack acceptance, WSL/GitHub provisioning, hosting and main integration remain pending.
+U01/U02/U03 and the C01-C05/C07 components are preserved accepted contributions. Accepted I02 f38e920 establishes the combined Windows-local rule/model browser workflow; C06 4f06e32 and C08 353ecec are separately accepted. I03 now combines these into one tested release candidate. Linux/real CI, main integration and hosted testing remain open. Older component assignments below are retained as history, not new dispatches.
 
 ## Current execution order
 
-1. Project development is paused at the owner's request for tonight. Resume through prompts/NEXT_SESSION_2026-10-26.md in the next session.
-2. Codex re-reviews exact C08 353ecec against 784e101, including the new startup cases and retained rollback/lifecycle checks as needed. C08 is not accepted yet.
-3. If accepted, assign one release integration using accepted I02/C06/C08 and run complete integrated checks on its exact final commit. Preserve tested component worktrees.
+1. Claude follows prompts/CLAUDE_RELEASE_INTEGRATION.md for I03 on a new task branch/worktree; preserve accepted I02/C06/C08 checkouts.
+2. Combine exact 353ecec and 4f06e32 above f38e920, retain all six strict commands/1800-second bound and run actual final combined checks.
+3. Codex reviews the returned clean I03 commit. Passing component checks do not certify the combined release.
 4. H01, Linux/real CI, main integration, remote and hosting remain separate work; no Cursor action is required now.
 
 ## Packages and acceptance
