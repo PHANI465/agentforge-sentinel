@@ -1,3 +1,5 @@
+Completed update October 26: I03 4fff776 is accepted for Windows-local release-candidate scope; see task/coordination:docs/reviews/4fff776.md. Preserve the tested branch. The owner has not named the main integrator; no main merge or I03 rewrite is assigned. The original task below is history.
+
 # Claude I03: consolidate the accepted local release
 
 Read the latest task/coordination:AGENTS.md, docs/STATUS.md, docs/TASK_QUEUE.md and docs/reviews/353ecec.md plus reviews/4f06e32.md and reviews/f38e920.md. The owner resumed work on October 26. C08 R28 is accepted; do not repeat the old implementation assignment. You are the integrator for this task branch only. Codex reviews the resulting candidate; main integration still requires the owner's designation.

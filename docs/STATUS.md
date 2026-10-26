@@ -1,12 +1,12 @@
 # Project status
 
-## Current session: October 26
+## Current session: October 26 - I03 accepted
 
-The owner resumed work. **C08 R28 is accepted at 353ecec2fadbba43f939a27f5ad2b9227ff6fe87** for Windows-local operator use: independent 15 focused tests (108.37s), six intercepted probes and Ruff passed; accepted source and candidate remain clean. See [the review](reviews/353ecec.md). The full 411+1 strict result remains Claude's evidence. No Linux/CI/hosting claim is added.
+**I03 is accepted at 4fff776fc4b6d2d400db74dc3ff7d6cfce43217d** for the combined Windows-local release-candidate scope. It includes accepted I02 f38e920, C06 4f06e32 and C08 353ecec without application/model/UI changes. Independent 37 combined tests (97.64s), clean package/installed-scorer verification and HTTP export checks passed. The final full-suite JUnit's 434 cases match independent collection; 433+1 remains Claude's execution evidence. See [the release review](reviews/4fff776.md).
 
-**Next task: Claude I03 release integration**, following [the exact assignment](prompts/CLAUDE_RELEASE_INTEGRATION.md). In a new branch/worktree, combine accepted C08 353ecec and C06 4f06e32 above their shared accepted application f38e920, then run final combined backend/package/model and real browser/API/Postgres checks. I03 is assigned, not started or accepted by this coordination update. Cursor can remain closed; H01 stays non-blocking/unassigned. Main remains 507538e and its owner-designation gate remains separate.
+**Next: the owner names the main integrator.** Main is still 507538e and no push or remote exists. Preserve exact 4fff776 and all tested component checkouts. The main-integration task must include current coordination documentation without overwriting the accepted application, then verify its final combined commit. Cursor can remain closed; no new implementation task is assigned by this review.
 
-Yesterday's HTML/Word/Markdown artifacts in docs/artifacts are retained as dated snapshots. Current state is this session record and the live coordination files.
+Linux/CI is not green: N2 identifies unguarded Windows creationflags in the orphan test, which needs adaptation before an Ubuntu CI run. POSIX operator behavior remains unverified. H01 remains non-blocking/unassigned. Yesterday's rendered HTML/Word checkpoint stays a dated snapshot; today's Markdown checkpoint and these live coordination files carry this update.
 
 ## Historical overnight checkpoint October 25
 
@@ -68,19 +68,20 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 | I02 Part B continuation | f38e92023481a55db1ecf8bcdbe917140bd5d7cd | ACCEPTED: independent Claude review; Windows local model/browser integration; two non-blocking H01 suggestions |
 | C06 backend CI | 4f06e32385424613fa0006b5bdbaab81ffea028f | ACCEPTED: R25/R27 resolved, current local package/CI configuration scope; no GitHub/Linux run |
 | C08 local operations | 353ecec2fadbba43f939a27f5ad2b9227ff6fe87 | ACCEPTED: R28 resolved; independent 15 focused tests / six probes; Windows-local scope |
+| I03 release integration | 4fff776fc4b6d2d400db74dc3ff7d6cfce43217d | ACCEPTED: combined Windows-local candidate; main integrator decision pending; N2 Linux-test portability open |
 
-C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03 is separately accepted; see [the review](reviews/a8e716c.md). C06 and C08 353ecec are accepted. I03 release integration is assigned; none of these branches has been integrated into main.
+C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03 is separately accepted; see [the review](reviews/a8e716c.md). C06, C08 and I03 4fff776 are accepted for their tested local scopes. Main remains unchanged pending the owner's integrator designation.
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
-U01/U02/U03 and the C01-C05/C07 components are preserved accepted contributions. Accepted I02 f38e920 establishes the combined Windows-local rule/model browser workflow; C06 4f06e32 and C08 353ecec are separately accepted. I03 now combines these into one tested release candidate. Linux/real CI, main integration and hosted testing remain open. Older component assignments below are retained as history, not new dispatches.
+U01/U02/U03 and the C01-C05/C07 components are preserved accepted contributions. Accepted I02 f38e920 establishes the combined Windows-local rule/model browser workflow; C06 4f06e32 and C08 353ecec are separately accepted. I03 4fff776 now combines these into an accepted Windows-local release candidate. Linux/real CI, main integration and hosted testing remain open. Older component assignments below are retained as history, not new dispatches.
 
 ## Immediate executable queue
 
-1. Claude follows prompts/CLAUDE_RELEASE_INTEGRATION.md for I03 on a new task branch/worktree; preserve accepted I02/C06/C08 checkouts.
-2. Combine exact 353ecec and 4f06e32 above f38e920, retain all six strict commands/1800-second bound and run actual final combined checks.
-3. Codex reviews the returned clean I03 commit. Passing component checks do not certify the combined release.
-4. H01, Linux/real CI, main integration, remote and hosting remain separate work; no Cursor action is required now.
+1. Preserve accepted I03 4fff776 and its tested component checkouts; no I03 rewrite is assigned.
+2. The owner names the main integrator under AGENTS.md. Prepare an isolated main-integration task that includes current coordination documents and preserves the accepted application.
+3. Verify the final main-integration commit with the required checks; keep all six strict commands, 1800-second bound, structured skip validation and protected assets.
+4. Adapt N2's Windows-only orphan-test launch before a real Ubuntu CI run. H01, remote, hosting and broader feature work remain separate; Cursor can stay closed.
 
 ## Evidence history
 

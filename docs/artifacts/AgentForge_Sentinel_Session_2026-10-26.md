@@ -1,17 +1,29 @@
 # AgentForge Sentinel: October 26 session checkpoint
 
-The project resumed with independent review of the final operator startup correction. **C08 R28 is accepted at 353ecec** for the tested Windows-local scope. All 15 focused tests passed, including real two-version rollback and backup/restore; six additional intercepted recovery/refusal probes and Ruff passed. Full 411+1 remains the implementer's earlier evidence, not today's full-suite rerun.
+**I03 is accepted at 4fff776fc4b6d2d400db74dc3ff7d6cfce43217d** for the consolidated Windows-local release-candidate scope. The accepted app, CI/package configuration and local operator tooling are now combined in one tested branch. Main is still the original baseline; nothing has been pushed or deployed.
 
 | Component | Accepted reference | Position |
 | --- | --- | --- |
-| Local rule/model app, analyst UI and real model browser workflow | f38e920 | Preserve tested checkout |
-| Backend CI configuration/package gate | 4f06e32 | Accepted locally; real Linux/GitHub execution remains open |
-| Local operator tooling | 353ecec | R28 resolved; Windows-local acceptance |
-| I03 combined release | Not built yet | Claude assignment prepared; Codex reviews the returned exact candidate |
-| Main | 507538e | Original baseline; no merge or push |
+| Local rule/model app, analyst UI and model browser workflow | f38e920 | Preserved application content, included in I03 |
+| Backend CI configuration/package gate | 4f06e32 | Included; real Linux/GitHub execution is not verified |
+| Local operator tooling | 353ecec | R28 independently accepted today; included in I03 |
+| I03 consolidated local candidate | 4fff776 | Accepted after independent integration review |
+| Main | 507538e | Owner must name main integrator before merging |
 
-Next: give Claude [the I03 assignment](../prompts/CLAUDE_RELEASE_INTEGRATION.md). It creates a separate worktree, combines the accepted C06/C08 branches above the shared application and verifies the complete release. Cursor can stay closed. H01 remains a later non-blocking hardening task. Linux/CI, hosting/public keys and bounded multi-agent/analyst/security expansion remain ahead.
+## What happened today
 
-Today's acceptance does not establish production fraud efficacy, POSIX lifecycle safety or hosted operation. No spending or live model calls were made. The 85/200 rubric in yesterday's checkpoint remains a subjective estimate of the expanded vision; it is not recalculated from passing test counts.
+1. Codex independently reviewed C08 R28: 15 focused tests passed in 108.37s, six intercepted recovery/refusal probes passed and Ruff passed.
+2. Claude combined exact C08 and C06 in merge 60d796d, then committed only a release note and handoff at 4fff776. Its final strict gate passed all six checks, with 433 backend passes and one live-Claude skip. Claude also reported 44 frontend tests, 19 real browser tests, read-only ML reproduction and a model-mode operator smoke.
+3. Codex verified the exact merge parents, all 17 accepted package blobs, unchanged protected source/model/UI/contract/dependency content and the final strict configuration digest. Independent collection of all 434 test node IDs matches the retained full JUnit report; structured skip validation passes.
+4. Independent combined CI/operator suite: 37 passed in 97.64s. Clean package/install/scorer verification and HTTP contract exports passed. Claude's full backend/frontend/browser/evaluation executions remain attributed rather than being relabeled as new Codex runs.
+5. I03 was accepted for Windows-local use. No main merge, push, remote, real CI, provider call or hosted release occurred.
 
-Read [STATUS](../STATUS.md), [TASK_QUEUE](../TASK_QUEUE.md) and [the R28 acceptance](../reviews/353ecec.md) for the current handoff. Yesterday's HTML, Word and Markdown checkpoint files remain unchanged dated snapshots.
+## Next decision and work
+
+The owner names the main integrator (Codex or Claude). That task consolidates accepted I03 plus current coordination documents, preserves protected application bytes, resolves any documentation conflicts and verifies the final commit before treating main as released. The coordination checkout still carries older application code, so it must not replace the accepted release source.
+
+N2 is a concrete Linux-readiness item: the orphan-process test passes Windows-only creationflags without a guard. Adapt its platform-specific launch/cleanup before an Ubuntu CI run; do not hide it with an unexpected skip. POSIX operator behavior remains unverified. H01 remains a later non-blocking browser-hardening task. Cursor can remain closed.
+
+Synthetic data, simulated actions, uncalibrated model rankings, PID timing and profile/disclosure limitations remain. There is no production fraud/capacity claim. The earlier 85/200 planning rubric is subjective scope judgment, not a percentage derived from test counts.
+
+Read [STATUS](../STATUS.md), [TASK_QUEUE](../TASK_QUEUE.md), [I03 review](../reviews/4fff776.md) and [R28 review](../reviews/353ecec.md). The October 25 HTML/Word/Markdown checkpoint files are retained as unchanged dated snapshots.
