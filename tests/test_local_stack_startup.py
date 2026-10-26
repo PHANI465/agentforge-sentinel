@@ -43,12 +43,16 @@ HEALTHY = GO + textwrap.dedent("""
 # On launch, starts a detached listener and exits, so its pid is gone while the child
 # listens (a launcher that died without its interpreter child). It runs on the base
 # interpreter, so no venv launcher job object ties the child's lifetime to its parent.
+# Detach: a new process group without a console on Windows, a new session on POSIX
+# (CPython rejects creationflags there). The POSIX child is reparented when its launcher exits.
 ORPHANING = GO + textwrap.dedent("""
-    import subprocess
+    import os, subprocess
     listen = "import socket,sys,time;s=socket.socket();s.bind(('127.0.0.1',int(sys.argv[1])));" \
              "s.listen();print('bound',flush=True);time.sleep(600)"
+    detach = {"creationflags": 0x00000200 | 0x00000008} \
+        if globals().get("LAUNCH", os.name) == "nt" else {"start_new_session": True}
     child = subprocess.Popen([sys.executable, "-c", listen, str(port)], stdout=subprocess.PIPE,
-                             text=True, creationflags=0x00000200 | 0x00000008)
+                             text=True, **detach)
     child.stdout.readline()
     print(child.pid, flush=True)
 """)

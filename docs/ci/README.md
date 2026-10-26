@@ -83,6 +83,6 @@ Workflow syntax: `uvx --from actionlint-py actionlint .github/workflows/backend.
 | Full suite through the gate, real run | 418 passed, 1 allowed skip, gate exit 0. Wall time was 52.5 min because Windows **entered sleep and Modern Standby during the run** (System log events 42/107/506/507); one normally seconds-long test straddled it at 1698 s. That duration is not representative. Earlier awake runs took about 14–16 min |
 | actionlint on the workflow | Executed offline: no findings |
 | The workflow on GitHub Actions | **Not executed.** No Git remote or runner is configured, so it is unverified, not green |
-| Linux (ubuntu-24.04) | **Not executed** |
+| Linux (ubuntu-24.04) | **Not executed.** N2 fixed the orphan test's Windows-only launch; one Windows-only skip remains a Linux gate blocker. See [LINUX.md](LINUX.md) |
 
 Running the workflow needs a remote (for example a private GitHub repository) and the free Actions allowance. Configuring a remote is an owner action.
