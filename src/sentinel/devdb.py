@@ -65,9 +65,13 @@ class Cluster:
                   "-E", "UTF8", "--no-locale")
 
     def start(self) -> None:
+        # TCP on loopback only. An empty unix_socket_directories disables Unix sockets, so a
+        # packaged default (Ubuntu: /var/run/postgresql, not writable by a test user) is
+        # never used; every client connects through url().
         log = self.data_dir.parent / "postgres.log"
         self._run("pg_ctl", "-D", str(self.data_dir), "-l", str(log), "-w",
-                  "-o", f"-p {self.port} -c listen_addresses=127.0.0.1", "start")
+                  "-o", f"-p {self.port} -c listen_addresses=127.0.0.1 "
+                  "-c unix_socket_directories=", "start")
 
     def stop(self) -> None:
         self._run("pg_ctl", "-D", str(self.data_dir), "-m", "fast", "-w", "stop")

@@ -1,84 +1,84 @@
-# Linux readiness (N2)
+# Linux readiness (N2, N3, N4)
 
-Audience: whoever runs the backend checks on Linux (the `ubuntu-24.04` workflow or a local WSL2 Ubuntu). The suite has been executed on **Windows 11 only**. Nothing here is a Linux pass.
+Audience: whoever runs the backend checks on Linux (the `ubuntu-24.04` workflow or the local WSL2 Ubuntu). Local WSL runs are native Linux, but they are **not** a GitHub Actions run. The final candidate's Linux and Windows results are reported with its SHA in the handoff chat. This file records the fixes and the evidence gathered before that final commit.
 
 ## Evidence classes
 
-| Class | Meaning | What it covers |
-| --- | --- | --- |
-| Windows native | Real processes on Windows 11 | The full suite through the strict checker; all R28 startup and lifecycle tests |
-| Simulated non-Windows launch | Real processes on Windows, with CPython's POSIX `Popen` argument checks applied inside one stand-in process | The orphan test's launch arguments are accepted by a POSIX `Popen`, and its real PID, port, refusal and cleanup still hold |
-| Native Linux | A real Linux interpreter, `/proc` and PostgreSQL | **Not executed.** The environment is missing (see below) |
-
-## Fixed: the orphan test's Windows-only launch
-
-`tests/test_local_stack_startup.py` has an `ORPHANING` stand-in, which starts a detached listener and exits. It used to pass Windows `creationflags` unconditionally. On Linux, CPython raises `ValueError: creationflags is only supported on Windows platforms` before the orphan PID is printed, so the test failed there.
-
-**The fix.** The stand-in now detaches with the same Windows flags on Windows and with `start_new_session=True` on POSIX. The test now runs twice:
-- **`native`:** the host platform's real launch.
-- **`posix-launch`:** the `POSIX_LAUNCH` boundary is prepended to the stand-in. Within that process only, `Popen` rejects `creationflags` and `startupinfo` exactly as CPython's POSIX branch does (`Lib/subprocess.py`).
-  - On Windows it then turns `start_new_session` into the equivalent real detached launch.
-  - On Linux it simply passes `start_new_session` through.
-  - `os.name` is never patched.
-
-**What both variants assert.** The R28A behavior is unchanged:
-- startup exits nonzero and keeps an unresolved launch record;
-- the orphan really listens on the port;
-- `down` exits 1 without killing anything or stopping the database;
-- the orphan is untouched until the test stops it by the PID its parent reported.
-
-**Evidence on Windows 11, CPython 3.11.3:**
-- **Before the fix,** committed as the failing-first regression: `posix-launch` failed with exactly `ValueError: creationflags is only supported on Windows platforms`, raised from the stand-in's `Popen` before any orphan PID was produced. The other 5 tests passed.
-- **After the fix:** all 6 startup tests and the 8 lifecycle tests passed, 14 in total, with no stand-in left running.
-
-**What this does not establish on POSIX.** On Linux an orphan is reparented, so this test is unresolved only because the orphan still holds the port, not because of its process tree. An orphan that does not listen would go undetected. That is the disclosed POSIX operator limitation, and this task does not change it.
-
-## Open: a second Linux CI blocker (not in N2's file ownership)
-
-`tests/test_browser_fixtures_followup.py:170`, `test_r12_locked_file_keeps_state_loadable_and_retry_completes`, is marked `skipif(os.name != "nt")`.
-
-**Why it blocks CI.** On Linux its two parametrized cases skip. The structured gate permits only the live-Claude skip, so the Ubuntu workflow's Tests step would fail even when every test passes.
-
-**Proposed narrow fix** (needs assignment, because the file is outside N2 ownership):
-- give the test a POSIX way to cause a real partial-removal failure, for example a directory made read-only (`chmod 0o500`) under a non-root runner, and restore permissions in `finally`;
-- alternatively, replace the Windows lock with an injected `rmtree` failure, as the neighbouring R12 test does, on all platforms.
-
-Either way, no new skip is added and the gate's allowlist stays unchanged. Root ignores directory permissions, so the first option needs a non-root user, which the GitHub runner provides.
-
-A static scan of `tests/` found no other Windows-only skip. The remaining `os.name` branches have POSIX alternatives, but those are unexecuted.
-
-## Local WSL2 Ubuntu: what exists (read-only inspection, 2026-10-26)
-
-Ubuntu was stopped before the inspection. It was started only to run the read-only commands, then returned to Stopped with `wsl --terminate Ubuntu`. Nothing was installed or configured.
-
-| Item | Found |
+| Class | Meaning |
 | --- | --- |
-| Distribution | Ubuntu 24.04.3 LTS, WSL2, kernel 5.15.167.4-microsoft-standard-WSL2, systemd enabled |
-| Default user | **root** (uid 0). There is no non-root account (uid 1000 or above) |
-| Python | System 3.12.3. **Missing:** `python3.11`, the `venv`/`ensurepip` modules (no `python3-venv`) and **uv** |
-| PostgreSQL | **Missing:** no `/usr/lib/postgresql/*/bin`, `initdb`, `pg_ctl` or `psql` |
-| Node | **Missing natively.** `npm` resolves only to the Windows install through interop |
-| Other | `git` and `sudo` are present; `gcc` is missing. The Windows `E:` drive is visible at `/mnt/e` |
+| Windows native | Real processes and files on Windows 11 (CPython 3.11.3, PostgreSQL 14.17) |
+| Native Linux | Ubuntu 24.04.3 on WSL2, unprivileged `sentinel` (UID 1000), managed CPython 3.11.14, PostgreSQL 16.15 |
+| Simulated non-Windows launch (N2 only) | Real processes on Windows, with CPython's POSIX `Popen` argument checks applied inside one stand-in process |
+| Injected | A patched failure, used only by the neighbouring R12 tests listed below. N3 and N4 use **no** injection |
 
-**Why it cannot run the suite as is:**
-- PostgreSQL `initdb` refuses to run as root, and the tests start their own clusters, so a non-root user is required.
-- uv (or at least `venv`) is required to build the locked environment.
-- PostgreSQL binaries are required.
+## N2: the orphan test's Windows-only launch (accepted at 3c860d4)
 
-## Setup plan (owner action; no paid service)
+The `ORPHANING` stand-in in `tests/test_local_stack_startup.py` now detaches with Windows flags on Windows and with `start_new_session=True` on POSIX. The gone-launcher R28A test runs as two variants:
+- **`[native]`:** the host platform's real launch.
+- **`[posix-launch]`:** the simulated boundary above.
 
-1. **As root in Ubuntu, install the packages:**
-   - `apt-get update && apt-get install -y --no-install-recommends postgresql curl ca-certificates`;
-   - tests use only their own disposable clusters, so the packaged service can stay disabled: `systemctl disable --now postgresql`.
-2. **Create a non-root user,** for example `adduser sentinel`. Optionally make it the default user in `/etc/wsl.conf` (`[user] default=sentinel`); that changes WSL configuration and is the owner's choice.
-3. **As that user, install uv 0.9.26:** `curl -LsSf https://astral.sh/uv/0.9.26/install.sh | sh`. uv provides Python 3.11 itself.
-4. **Use a local clone on the Linux filesystem, not `/mnt/e`** (`/mnt/e` gives slow I/O and Windows permission semantics):
-   - `git clone /mnt/e/PHANI/agentforge-sentinel ~/sentinel`, then `git checkout <candidate SHA>`.
-   - The clone's `origin` points at the local Windows path; no network remote is created.
-5. **Run the checks:**
-   - `export SENTINEL_PG_BIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1) SENTINEL_LIVE_CLAUDE=0 SENTINEL_INVESTIGATOR=deterministic`, then `uv sync --locked --extra dev --extra ml`;
-   - first `uv run --locked python -m pytest -v tests/test_local_stack_startup.py tests/test_local_stack.py`, then the full `scripts/ci_test_gate.py --junit pytest-results.xml`.
-   - The full gate will fail on the R12 skip above until that test is fixed.
-6. **For the workflow's Node transport check,** install Node 22 inside Ubuntu (for example the NodeSource or nvm package). The Windows `npm` reached through interop is not a Linux run.
+**Results.** On Windows, the simulated variant failed before the fix with CPython's `creationflags is only supported on Windows platforms`. All six startup cases later passed natively on Linux (see `WSL_SETUP_RESULTS` on the coordination branch).
 
-The GitHub `ubuntu-24.04` runner already provides a non-root user with sudo, and the workflow installs PostgreSQL. Running it needs a Git remote, which is an owner decision.
+**Limitation.** On POSIX an orphan is reparented, so it is detected only while it holds the port. A non-listening orphan is undetected. This is disclosed and unchanged.
+
+## N3: R12 deletion-refusal recovery runs on every platform
+
+`test_r12_locked_file_keeps_state_loadable_and_retry_completes[api.log | pg/data/locked.bin]` used to be `skipif(os.name != "nt")`. On Linux both cases skipped, and the structured gate rejected them.
+
+**The stimulus is now a real refusal on each platform.** The `deletion_refused` helper provides it:
+
+| Platform | Stimulus |
+| --- | --- |
+| Windows (unchanged) | An open handle without `FILE_SHARE_DELETE`, which causes a sharing violation |
+| POSIX | The owner removes write permission from the file's parent directory (`0o500`), restored in `finally` |
+
+On POSIX an open file does not stop `unlink`. Directory permission is what controls it. Root ignores directory permissions, so the POSIX case asserts it is running unprivileged instead of passing vacuously.
+
+**Assertions in both cases:**
+- the first `stop` fails with `state_removed` false, naming the refused entry;
+- the marker, the refused file and the manifest's owner, state directory and credentials are unchanged, and the stack still loads;
+- the result contains no credential;
+- once the fault is released, a plain retry succeeds and the exact owned directory is gone;
+- an outside fake cluster's canary and an unrelated sibling directory survive;
+- no process command runs: the `procs` fixture still intercepts subprocess calls and health probes;
+- nothing credential-bearing is printed.
+
+**Other R12 tests, kept unchanged.** Injected partial removal and marker-only leftover cover different recovery phases, with injected `rmtree` or `unlink` errors. The unowned-directory refusal is unchanged too.
+
+**Evidence before the final commit:**
+- *Native Linux at 3c860d4:* the R12 file plus `test_investigators.py` gave 36 passed and 3 skipped. `ci_test_gate.py --validate-only` exited **3**, naming exactly the two R12 skips as unexpected.
+- *Native Linux with the new tests:* 38 passed and 1 skipped (the live-Claude test only). The gate exited 0, and both R12 cases ran and passed through real permission refusal.
+- *Windows native:* both cases passed before and after, as the existing Windows coverage already did.
+
+## N4: disposable PostgreSQL startup on Ubuntu
+
+**The defect.** `sentinel.devdb.Cluster.start` set a port and `listen_addresses=127.0.0.1`, but inherited the server's Unix-socket default. Ubuntu's build uses `/var/run/postgresql`, which an unprivileged test user cannot write. So the server bound its TCP port and then exited with a permission-denied socket-lock error.
+
+**The fix.** `Cluster.start` also passes `-c unix_socket_directories=`. An empty value disables Unix sockets ([PostgreSQL 16 connection settings](https://www.postgresql.org/docs/16/runtime-config-connection.html)), so the cluster is TCP-only on loopback. Every project client already connects through `Cluster.url()` or TCP URLs, including `pg_dump` and `pg_restore`.
+
+Everything else is unchanged: port selection, loopback binding, trust authentication, the `-w` wait and `stop`. The fix makes no permission, group or root changes.
+
+**The regression,** `tests/test_devdb_startup.py`, uses the real `Cluster.init`, `start` and `stop` and a loopback connection:
+1. The cluster's own `postgresql.conf` sets `unix_socket_directories` to a test-owned unusable location:
+   - on POSIX, a directory with mode `0o500`, restored in `finally`, with an asserted non-root user;
+   - on Windows, a missing directory, which is real but whose path also exceeds PostgreSQL's 107-byte socket limit.
+2. After `start`, a query must return `current_user = sentinel`, server address `127.0.0.1` and an empty `unix_socket_directories`.
+3. No socket file may be created.
+4. After `stop`, `pg_ctl status` must return 3 (no server running).
+
+**Baseline before the fix, native on both platforms:**
+- **Linux:** `FATAL: could not create lock file ".../socket-default/.s.PGSQL.<port>.lock": Permission denied`, the same failure class as `/var/run/postgresql`.
+- **Windows:** `FATAL: could not create any Unix-domain sockets`.
+- In both cases the server shut itself down; no process remained.
+
+**After the fix:** the Windows focused set passed, 57 tests: devdb startup, the follow-up file, N2 startup, lifecycle, backup, rollback drill and browser fixtures. The Linux results are reported with the final SHA.
+
+## Running in the local WSL clone
+
+The clone is `/home/sentinel/agentforge-sentinel`, a verification checkout only.
+- **Transfer a committed candidate.** Use a checksum-verified `git bundle`, then `git fetch <bundle> <branch>:refs/heads/<name>`. Check out detached only when the tree is clean and no pytest or postgres process is running. Do not change the global `safe.directory`.
+- **Environment:**
+  - `export PATH=$HOME/.local/bin:$PATH SENTINEL_PG_BIN=/usr/lib/postgresql/16/bin SENTINEL_LIVE_CLAUDE=0 SENTINEL_INVESTIGATOR=deterministic`;
+  - unset `VIRTUAL_ENV` and `SENTINEL_TEST_DATABASE_URL`;
+  - the existing Linux `.venv` is locked dev+ml. Never copy Windows `.venv` or `node_modules`.
+- **Run order:** the focused tests, then the CI-equivalent sequence in `docs/ci/README.md`. Never run two full backend suites at once, including one on Windows and one on Linux.
