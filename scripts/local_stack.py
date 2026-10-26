@@ -1,22 +1,34 @@
-"""Local API + Postgres stack for operators (C08). Everything lives under .agent/stack/
-(git-ignored): cluster data, API log, pid file and the dev session token. The token is
-never printed; `smoke` reads it from the file.
+"""Local API + Postgres stack for operators (C08; review R24/R26 corrections).
 
-    uv run --locked python scripts/local_stack.py up        # cluster, migrate, session, API
+All state lives in one owned directory (default .agent/stack/, git-ignored): an ownership
+marker, a private state.json with the recorded process identities, the cluster data, the
+API log and the private dev session token. Tokens and connection strings are never printed.
+
+    uv run --locked python scripts/local_stack.py up [--scorer rule|model] [--database NAME]
     uv run --locked python scripts/local_stack.py status
-    uv run --locked python scripts/local_stack.py smoke [--restart-api]
-    uv run --locked python scripts/local_stack.py backup    # pg_dump -Fc to .agent/backups/
-    uv run --locked python scripts/local_stack.py restore FILE --database NAME
+    uv run --locked python scripts/local_stack.py smoke [--restart-api]       # rule mode
+    uv run --locked python scripts/local_stack.py backup [--out FILE]
+    uv run --locked python scripts/local_stack.py restore FILE --database NAME  # API stopped
     uv run --locked python scripts/local_stack.py down
 
-The investigator is deterministic unless --investigator claude-cli is given (local only).
+Ownership (R24): a process is touched only when its recorded identity (PID, creation time,
+executable) still matches, and a port is "ours" only when every listener is the recorded API
+process or one of its descendants (the venv python.exe is a launcher on Windows). Anything
+else is refused without a kill, the record is kept, and the command exits nonzero. A stop is
+reported only after the process is gone and the port is closed.
+
+Authority: migrations, runtime grants, sessions, profiles and backups use the cluster
+owner; the API connects as the least-privilege runtime role `sentinel_local_runtime`. The
+scorer is explicit (`rule` by default). The deterministic investigator is the default.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import secrets
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -26,72 +38,456 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-STACK = ROOT / ".agent" / "stack"
-BACKUPS = ROOT / ".agent" / "backups"
-DATABASE = "sentinel"
+DEFAULT_STATE = ROOT / ".agent" / "stack"
+MARKER = ".sentinel-local-stack"
+DEFAULT_DATABASE = "sentinel"
+RUNTIME_ROLE = "sentinel_local_runtime"
+API_FACTORY = "sentinel.api:create_app"
+SCORERS = {"rule": "rule", "model": "model:hgb_balanced@p1"}
+# Deliberate local analyst capabilities: read_case also covers GET /v1/scoring and
+# /v1/model-results/{id}; there is no admin capability.
+CAPABILITIES = ("ingest_transaction", "read_case", "approve_action", "execute_simulated_action")
+READY_SECONDS = 60
+STOP_SECONDS = 20
 
 
-def cluster(db_port: int):
-    from sentinel import devdb
-
-    bin_dir = devdb.find_pg_bin()
-    if bin_dir is None:
-        sys.exit("Postgres initdb not found; set SENTINEL_PG_BIN.")
-    return devdb.Cluster(bin_dir, STACK / "pg" / "data", db_port)
+class StackError(RuntimeError):
+    """Refused or failed; state is kept for a retry. Messages never contain secrets."""
 
 
-def state() -> dict:
-    path = STACK / "state.json"
-    return json.loads(path.read_text()) if path.exists() else {}
+# ---- process and port identity ------------------------------------------------------------
+
+def identity(pid: int) -> dict | None:
+    """{"pid", "start", "exe"} for a live process, None if it does not exist. Raises
+    StackError("unknown") when a live process cannot be inspected."""
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+        k32 = ctypes.windll.kernel32
+        k32.OpenProcess.restype = wintypes.HANDLE
+        handle = k32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            if ctypes.GetLastError() == 87:  # ERROR_INVALID_PARAMETER: no such process
+                return None
+            raise StackError(f"process {pid} cannot be inspected")
+        try:
+            code = wintypes.DWORD()
+            k32.GetExitCodeProcess(handle, ctypes.byref(code))
+            if code.value != 259:  # not STILL_ACTIVE
+                return None
+            times = [wintypes.FILETIME() for _ in range(4)]
+            if not k32.GetProcessTimes(handle, *[ctypes.byref(t) for t in times]):
+                raise StackError(f"process {pid} cannot be inspected")
+            size = wintypes.DWORD(32768)
+            buf = ctypes.create_unicode_buffer(size.value)
+            if not k32.QueryFullProcessImageNameW(handle, 0, buf, ctypes.byref(size)):
+                raise StackError(f"process {pid} cannot be inspected")
+            return {"pid": pid, "start": (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime,
+                    "exe": os.path.normcase(buf.value)}
+        finally:
+            k32.CloseHandle(handle)
+    proc = Path(f"/proc/{pid}")  # POSIX path: untested on this project's machines
+    if not Path("/proc/self/stat").exists():
+        raise StackError("process identity is unavailable on this platform (no /proc)")
+    try:
+        start = int(proc.joinpath("stat").read_text().rsplit(")", 1)[1].split()[19])
+        exe = os.path.normcase(os.readlink(proc / "exe"))
+    except FileNotFoundError:
+        return None
+    except (OSError, IndexError, ValueError):
+        raise StackError(f"process {pid} cannot be inspected") from None
+    return {"pid": pid, "start": start, "exe": exe}
 
 
-def save_state(**values) -> None:
-    STACK.mkdir(parents=True, exist_ok=True)
-    (STACK / "state.json").write_text(json.dumps({**state(), **values}, indent=2) + "\n")
+def classify(record: dict | None) -> str:
+    """owned | gone | reused | unknown for a recorded process identity."""
+    if not record or not isinstance(record.get("pid"), int):
+        return "gone" if not record else "unknown"
+    if record.get("start") is None or not record.get("exe"):
+        try:
+            return "gone" if identity(record["pid"]) is None else "unknown"
+        except StackError:
+            return "unknown"
+    try:
+        current = identity(record["pid"])
+    except StackError:
+        return "unknown"
+    if current is None:
+        return "gone"
+    same = current["start"] == record["start"] and current["exe"] == record["exe"]
+    return "owned" if same else "reused"
+
+
+def _windows_processes() -> dict[int, int]:
+    """pid -> parent pid (toolhelp snapshot)."""
+    import ctypes
+    from ctypes import wintypes
+
+    class Entry(ctypes.Structure):
+        _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD),
+                    ("th32ProcessID", wintypes.DWORD), ("th32DefaultHeapID", ctypes.c_void_p),
+                    ("th32ModuleID", wintypes.DWORD), ("cntThreads", wintypes.DWORD),
+                    ("th32ParentProcessID", wintypes.DWORD), ("pcPriClassBase", ctypes.c_long),
+                    ("dwFlags", wintypes.DWORD), ("szExeFile", ctypes.c_wchar * 260)]
+    k32 = ctypes.windll.kernel32
+    k32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    snap = k32.CreateToolhelp32Snapshot(0x2, 0)  # TH32CS_SNAPPROCESS
+    if snap in (None, wintypes.HANDLE(-1).value):
+        raise StackError("process list unavailable")
+    try:
+        entry, parents = Entry(), {}
+        entry.dwSize = ctypes.sizeof(Entry)
+        ok = k32.Process32FirstW(snap, ctypes.byref(entry))
+        while ok:
+            parents[entry.th32ProcessID] = entry.th32ParentProcessID
+            ok = k32.Process32NextW(snap, ctypes.byref(entry))
+        return parents
+    finally:
+        k32.CloseHandle(snap)
+
+
+def _posix_processes() -> dict[int, int]:
+    parents = {}
+    for entry in Path("/proc").iterdir():
+        if entry.name.isdigit():
+            try:
+                parents[int(entry.name)] = int(
+                    (entry / "stat").read_text().rsplit(")", 1)[1].split()[1])
+            except (OSError, IndexError, ValueError):
+                continue
+    return parents
+
+
+def descendants(root: int) -> set[int]:
+    parents = _windows_processes() if os.name == "nt" else _posix_processes()
+    found, frontier = set(), {root}
+    while frontier:
+        children = {pid for pid, parent in parents.items() if parent in frontier} - found
+        found |= children
+        frontier = children
+    return found
+
+
+def listeners(port: int) -> set[int]:
+    """PIDs listening on TCP port (IPv4). Raises StackError when it cannot be determined."""
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+        iphlpapi = ctypes.windll.iphlpapi
+        size = wintypes.DWORD(0)
+        iphlpapi.GetExtendedTcpTable(None, ctypes.byref(size), False, 2, 3, 0)
+        buf = ctypes.create_string_buffer(size.value + 4096)
+        size = wintypes.DWORD(len(buf))
+        if iphlpapi.GetExtendedTcpTable(buf, ctypes.byref(size), False, 2, 3, 0) != 0:
+            raise StackError("listening sockets cannot be inspected")
+        count = int.from_bytes(buf.raw[:4], "little")
+        pids = set()
+        for i in range(count):  # MIB_TCPROW_OWNER_PID: six DWORDs
+            row = buf.raw[4 + 24 * i: 4 + 24 * (i + 1)]
+            local_port = socket.ntohs(int.from_bytes(row[8:12], "little") & 0xFFFF)
+            if local_port == port:
+                pids.add(int.from_bytes(row[20:24], "little"))
+        return pids
+    inodes = set()  # POSIX path: untested on this project's machines
+    try:
+        for table in ("/proc/net/tcp", "/proc/net/tcp6"):
+            for line in Path(table).read_text().splitlines()[1:]:
+                fields = line.split()
+                if fields[3] == "0A" and int(fields[1].rsplit(":", 1)[1], 16) == port:
+                    inodes.add(fields[9])
+    except OSError:
+        raise StackError("listening sockets cannot be inspected") from None
+    pids = set()
+    for entry in Path("/proc").iterdir():
+        if entry.name.isdigit() and inodes:
+            try:
+                for fd in (entry / "fd").iterdir():
+                    target = os.readlink(fd)
+                    if target.startswith("socket:[") and target[8:-1] in inodes:
+                        pids.add(int(entry.name))
+            except OSError:
+                continue
+    if inodes and not pids:
+        raise StackError("listening socket owner cannot be determined")
+    return pids
+
+
+def port_state(port: int, root: int | None) -> str:
+    """free | owned (every listener is root or its descendant) | foreign | unknown."""
+    try:
+        found = listeners(port)
+        if not found:
+            return "free"
+        if root is None:
+            return "foreign"
+        family = {root} | descendants(root)
+    except StackError:
+        return "unknown"
+    return "owned" if found <= family else "foreign"
+
+
+def terminate_tree(pid: int) -> bool:
+    """Request termination of one verified process tree. True if the request was accepted."""
+    if os.name == "nt":
+        return subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"],
+                              capture_output=True).returncode == 0
+    try:
+        os.killpg(pid, signal.SIGTERM)
+        return True
+    except (ProcessLookupError, PermissionError):
+        return False
+
+
+def wait_until(predicate, seconds: float) -> bool:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        time.sleep(0.2)
+    return predicate()
 
 
 def healthy(port: int) -> dict | None:
     try:
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=2) as response:
             return json.loads(response.read())
-    except OSError:
+    except (OSError, ValueError):
         return None
 
 
-def database_up(c) -> bool:
-    import psycopg
+# ---- the owned state directory -------------------------------------------------------------
 
+class Stack:
+    def __init__(self, directory: Path):
+        self.dir = Path(directory)
+        self.path = self.dir / "state.json"
+
+    def canonical(self) -> str:
+        return os.path.normcase(os.path.realpath(self.dir))
+
+    def load(self, create: bool = False) -> dict:
+        """The verified state. A directory without our marker is never adopted."""
+        marker = self.dir / MARKER
+        if not self.dir.exists() or (create and not any(self.dir.iterdir())):
+            if not create:
+                raise StackError(f"no local stack at {self.dir} (run up first)")
+            self.dir.mkdir(parents=True, exist_ok=True)
+            owner = secrets.token_hex(16)
+            marker.write_text(json.dumps({"owner": owner, "dir": self.canonical()}))
+            self.save({"version": 2, "owner": owner, "dir": self.canonical(),
+                       "database": {}, "api": None})
+        if os.path.islink(self.dir) or not marker.is_file() or not self.path.is_file():
+            raise StackError(f"{self.dir} is not an owned local stack directory (refused)")
+        try:
+            owned = json.loads(marker.read_text())
+            data = json.loads(self.path.read_text())
+        except (OSError, ValueError):
+            raise StackError("stack state is unreadable (refused)") from None
+        if not (isinstance(data, dict) and data.get("version") == 2
+                and secrets.compare_digest(str(owned.get("owner")), str(data.get("owner")))
+                and owned.get("dir") == data.get("dir") == self.canonical()):
+            raise StackError("ownership marker does not match the stack state (refused)")
+        return data
+
+    def save(self, data: dict) -> None:
+        self.path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+        try:
+            self.path.chmod(0o600)
+        except OSError:
+            pass
+
+
+# ---- database ------------------------------------------------------------------------------
+
+def cluster(stack: Stack, port: int):
+    from sentinel import devdb
+    bin_dir = devdb.find_pg_bin()
+    if bin_dir is None:
+        raise StackError("PostgreSQL initdb not found; set SENTINEL_PG_BIN")
+    return devdb.Cluster(bin_dir, stack.dir / "pg" / "data", port)
+
+
+def pg_status(c) -> str:
     try:
-        with psycopg.connect(c.url(), connect_timeout=2):
-            return True
-    except psycopg.OperationalError:
-        return False
+        code = subprocess.run([str(c.bin_dir / "pg_ctl"), "-D", str(c.data_dir), "status"],
+                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL, timeout=30).returncode
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return {0: "running", 3: "stopped"}.get(code, "unknown")
 
 
-def ensure_database(c) -> str:
-    import psycopg
+def database_state(stack: Stack, data: dict) -> str:
+    """absent | stopped | owned | foreign | unknown for the recorded cluster."""
+    port = data["database"].get("port")
+    if port is None:
+        return "absent"
+    c = cluster(stack, port)
+    if not (c.data_dir / "PG_VERSION").exists():
+        return "absent" if port_state(port, None) == "free" else "foreign"
+    status = pg_status(c)
+    if status == "stopped":
+        return "stopped" if port_state(port, None) == "free" else "foreign"
+    if status != "running":
+        return "unknown"
+    try:  # postmaster.pid: pid, data directory, start time, port
+        lines = (c.data_dir / "postmaster.pid").read_text().splitlines()
+        pid, data_dir, pg_port = int(lines[0]), lines[1], int(lines[3])
+        proc = identity(pid)
+    except (OSError, IndexError, ValueError, StackError):
+        return "unknown"
+    expected_exe = os.path.normcase(str(c.bin_dir / ("postgres.exe" if os.name == "nt"
+                                                       else "postgres")))
+    same_dir = os.path.normcase(os.path.realpath(data_dir)) == \
+        os.path.normcase(os.path.realpath(c.data_dir))
+    if not (proc and proc["exe"] == expected_exe and same_dir and pg_port == port):
+        return "foreign"
+    return "owned" if port_state(port, pid) == "owned" else "foreign"
 
-    with psycopg.connect(c.url(), autocommit=True) as conn:
-        exists = conn.execute("SELECT 1 FROM pg_database WHERE datname = %s",
-                              (DATABASE,)).fetchone()
-        if not exists:
-            conn.execute(f'CREATE DATABASE "{DATABASE}"')
-    return c.url(DATABASE)
+
+def owner_url(stack: Stack, data: dict, database: str | None = None) -> str:
+    c = cluster(stack, data["database"]["port"])
+    return c.url(database) if database else c.url()  # default: the maintenance database
 
 
-def ensure_session(url: str) -> None:
-    """Reuse a stored dev token while valid; otherwise issue one. Never printed."""
+def start_database(stack: Stack, data: dict, port: int) -> None:
+    data["database"].setdefault("port", port)
+    state = database_state(stack, data)
+    if state == "owned":
+        return
+    if state in ("foreign", "unknown"):
+        raise StackError(f"database port {data['database']['port']} or cluster is not ours "
+                         f"({state}); refused")
+    c = cluster(stack, data["database"]["port"])
+    if state == "absent":
+        c.init()
+    stack.save(data)
+    c.start()
+    if database_state(stack, data) != "owned":
+        raise StackError("database started but could not be verified as ours")
+
+
+def stop_database(stack: Stack, data: dict) -> None:
+    state = database_state(stack, data)
+    if state in ("absent", "stopped"):
+        return
+    if state != "owned":
+        raise StackError(f"database is {state}; not stopped (refused)")
+    c = cluster(stack, data["database"]["port"])
+    try:
+        c.stop()
+    except (subprocess.SubprocessError, OSError):
+        pass
+    if not wait_until(lambda: database_state(stack, data) == "stopped", STOP_SECONDS):
+        raise StackError("database stop could not be verified; state kept, retry down")
+
+
+# ---- API -----------------------------------------------------------------------------------
+
+def api_state(data: dict) -> str:
+    """down | owned | gone-but-port-busy | reused | unknown."""
+    record = data.get("api")
+    if not record:
+        return "down"
+    kind = classify(record)
+    port_now = port_state(record["port"], record.get("pid") if kind == "owned" else None)
+    if kind == "owned":
+        return "owned" if port_now in ("owned", "free") else "unknown"
+    if kind in ("gone", "reused") and port_now == "free":
+        return "down"
+    return kind if kind != "gone" else "gone-but-port-busy"
+
+
+def stop_api(stack: Stack, data: dict) -> str:
+    """Stop only a verified owned API; return what happened. Raises on refusal/failure."""
+    record = data.get("api")
+    state = api_state(data)
+    if state == "down":
+        if record:
+            data["api"] = None
+            stack.save(data)
+            return "api already exited (record cleared; no process touched)"
+        return "api not running"
+    if state != "owned":
+        raise StackError(f"recorded API is {state}; no process was touched (refused)")
+    accepted = terminate_tree(record["pid"])
+    stopped = wait_until(lambda: classify(record) == "gone"
+                         and classify(record.get("listener")) != "owned"
+                         and port_state(record["port"], None) == "free", STOP_SECONDS)
+    if not stopped:
+        raise StackError(f"API stop not confirmed (request {'accepted' if accepted else 'failed'})"
+                         "; identity kept, retry down")
+    data["api"] = None
+    stack.save(data)
+    return "api stopped"
+
+
+def start_api(stack: Stack, data: dict, port: int, scorer: str, investigator: str,
+              database: str) -> str:
+    current = api_state(data)
+    if current == "owned":
+        return f"API already running (owned) on port {data['api']['port']}"
+    if current != "down":
+        raise StackError(f"recorded API is {current}; refused to start another")
+    if port_state(port, None) != "free":
+        raise StackError(f"port {port} is in use by another process; refused")
+    from psycopg.conninfo import make_conninfo
+    env = {**os.environ, "SENTINEL_DATABASE_URL": make_conninfo(
+               owner_url(stack, data, database), user=RUNTIME_ROLE),
+           "SENTINEL_SCORER": SCORERS[scorer], "SENTINEL_INVESTIGATOR": investigator,
+           "SENTINEL_MODE": "local",
+           # Serve this checkout's code, never another installed copy.
+           "PYTHONPATH": os.pathsep.join([str(ROOT / "src"), str(ROOT)])}
+    env.pop("SENTINEL_TEST_DATABASE_URL", None)
+    flags = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" \
+        else {"start_new_session": True}
+    with open(stack.dir / "api.log", "ab") as log:
+        process = subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", API_FACTORY, "--factory", "--host", "127.0.0.1",
+             "--port", str(port), "--log-level", "warning", "--no-access-log"],
+            cwd=ROOT, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=log, **flags)
+    record = identity(process.pid)
+    if record is None:
+        raise StackError("API exited immediately; see api.log")
+    data["api"] = {**record, "port": port, "scorer": scorer, "investigator": investigator,
+                   "database": database}
+    stack.save(data)  # recorded before readiness, so a crash here is recoverable
+
+    def ready() -> bool:
+        return process.poll() is not None or (
+            healthy(port) is not None and port_state(port, process.pid) == "owned")
+    wait_until(ready, READY_SECONDS)
+    if process.poll() is None and port_state(port, process.pid) == "owned":
+        pids = listeners(port)
+        child = next(iter(pids - {process.pid}), process.pid)
+        data["api"]["listener"] = identity(child)
+        stack.save(data)
+        return f"API up on port {port} (scorer {scorer}, database {database})"
+    try:
+        outcome = stop_api(stack, data)
+    except StackError as error:
+        raise StackError(f"API failed to start and cleanup was not confirmed ({error}); "
+                         "recovery state kept, run down") from None
+    raise StackError(f"API failed to start ({outcome}); see api.log")
+
+
+# ---- commands ------------------------------------------------------------------------------
+
+def ensure_session(stack: Stack, url: str) -> None:
+    """Reuse the stored dev token if it still authenticates against this database (a
+    restored database keeps its sessions); otherwise issue one. Never printed."""
     from sentinel.investigators import DeterministicInvestigator
-    from sentinel.service import Sentinel
-
-    path = STACK / "session.json"
+    from sentinel.service import Sentinel, ServiceError
+    path = stack.dir / "session.json"
     if path.exists():
         stored = json.loads(path.read_text())
-        if datetime.fromisoformat(stored["expires_at"]) > datetime.now(timezone.utc):
+        try:
+            Sentinel(url, DeterministicInvestigator()).authenticate(stored["token"])
             return
+        except (ServiceError, KeyError):
+            pass  # expired or unknown in this database
     token, ctx = Sentinel(url, DeterministicInvestigator()).create_session(
-        frozenset({"ingest_transaction", "read_case", "approve_action",
-                   "execute_simulated_action"}), ttl=timedelta(hours=8))
+        frozenset(CAPABILITIES), ttl=timedelta(hours=8))
     path.write_text(json.dumps({"token": token, "tenant_id": str(ctx.scope.tenant_id),
                                 "session_id": str(ctx.scope.session_id),
                                 "expires_at": (datetime.now(timezone.utc)
@@ -102,147 +498,172 @@ def ensure_session(url: str) -> None:
         pass
 
 
-def start_api(url: str, port: int, investigator: str) -> None:
-    env = {**os.environ, "SENTINEL_DATABASE_URL": url, "SENTINEL_INVESTIGATOR": investigator,
-           "SENTINEL_MODE": "local"}
-    log = open(STACK / "api.log", "ab")
-    flags = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" \
-        else {"start_new_session": True}
-    process = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "sentinel.api:create_app", "--factory",
-         "--host", "127.0.0.1", "--port", str(port), "--log-level", "warning"],
-        cwd=ROOT, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=log, **flags)
-    save_state(api_pid=process.pid, api_port=port, investigator=investigator)
-    deadline = time.monotonic() + 30
-    while time.monotonic() < deadline:
-        if healthy(port):
-            return
-        if process.poll() is not None:
-            sys.exit(f"API exited with {process.returncode}; see {STACK / 'api.log'}")
-        time.sleep(0.3)
-    sys.exit("API did not become healthy within 30 s")
+def up(stack: Stack, args) -> str:
+    import psycopg
 
-
-def stop_api() -> None:
-    pid = state().get("api_pid")
-    if not pid:
-        return
-    try:
-        if os.name == "nt":
-            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
-        else:
-            os.killpg(pid, signal.SIGTERM)
-    except (ProcessLookupError, PermissionError):
-        pass
-    port = state().get("api_port")
-    deadline = time.monotonic() + 10
-    while port and healthy(port) and time.monotonic() < deadline:
-        time.sleep(0.2)
-    save_state(api_pid=None)
-
-
-def up(args) -> None:
     from sentinel import db
-
-    c = cluster(args.db_port)
-    if not c.data_dir.exists():
-        c.init()
-    if not database_up(c):
-        c.start()
-    url = ensure_database(c)
+    from sentinel.db import roles
+    data = stack.load(create=True)
+    current = api_state(data)
+    if current not in ("down", "owned"):
+        raise StackError(f"recorded API is {current}; refused")
+    if current == "down" and port_state(args.port, None) != "free":
+        raise StackError(f"port {args.port} is in use by another process; refused")
+    start_database(stack, data, args.db_port)
+    database = args.database
+    with psycopg.connect(owner_url(stack, data), autocommit=True) as conn:
+        exists = conn.execute("SELECT 1 FROM pg_database WHERE datname = %s",
+                              (database,)).fetchone()
+        if not exists:
+            if database != DEFAULT_DATABASE:  # never create an empty rollback target
+                raise StackError(f"database {database} does not exist; refused")
+            conn.execute(f'CREATE DATABASE "{DEFAULT_DATABASE}"')
+    url = owner_url(stack, data, database)
     applied = db.migrate(url)
-    print("migrations applied: " + (", ".join(applied) or "none pending"))
-    ensure_session(url)
-    save_state(db_port=args.db_port, database_url=url)
-    if healthy(args.port):
-        print(f"API already healthy on port {args.port}")
-    else:
-        start_api(url, args.port, args.investigator)
-    print(f"API http://127.0.0.1:{args.port} ({healthy(args.port)['investigator']}); "
-          f"token in {STACK / 'session.json'}")
+    try:
+        roles.grant_runtime(url, RUNTIME_ROLE)
+    except RuntimeError as error:  # includes UnsafeRoleError; messages carry no secrets
+        raise StackError(f"runtime role not granted: {error}") from None
+    ensure_session(stack, url)
+    lines = [f"migrations applied: {', '.join(applied) or 'none pending'}"]
+    lines.append(start_api(stack, data, args.port, args.scorer, args.investigator, database))
+    lines.append(f"token in {stack.dir / 'session.json'} (not printed)")
+    return "\n".join(lines)
 
 
-def down(args) -> None:
-    stop_api()
-    s = state()
-    c = cluster(s.get("db_port", args.db_port))
-    if database_up(c):
-        c.stop()
-    print("stack stopped (data kept under .agent/stack)")
+def down(stack: Stack, args) -> str:
+    data = stack.load()
+    problems, lines = [], []
+    try:
+        lines.append(stop_api(stack, data))
+    except StackError as error:
+        problems.append(str(error))
+    if not problems:  # never stop the database under an API we could not account for
+        try:
+            stop_database(stack, data)
+            lines.append("database stopped (data kept)")
+        except StackError as error:
+            problems.append(str(error))
+    if problems:
+        raise StackError("; ".join(problems))
+    return "\n".join(lines)
 
 
-def status(args) -> int:
-    s = state()
-    api = healthy(s.get("api_port", args.port))
-    c = cluster(s.get("db_port", args.db_port))
-    print(f"database: {'up' if database_up(c) else 'down'}; "
-          f"api: {api['investigator'] if api else 'down'}")
-    return 0 if api and database_up(c) else 1
+def status(stack: Stack, args) -> str:
+    data = stack.load()
+    api, database = api_state(data), database_state(stack, data)
+    record = data.get("api") or {}
+    text = (f"database: {database}; api: {api}"
+            + (f" (port {record['port']}, scorer {record['scorer']}, database "
+               f"{record['database']})" if api == "owned" else ""))
+    if api != "owned" or database != "owned":
+        raise StackError(text)
+    return text
 
 
-def smoke(args) -> None:
-    s = state()
-    token = json.loads((STACK / "session.json").read_text())["token"]
-    base = f"http://127.0.0.1:{s['api_port']}"
+def smoke(stack: Stack, args) -> str:
+    data = stack.load()
+    record = data.get("api") or {}
+    if api_state(data) != "owned" or record.get("scorer") != "rule":
+        raise StackError("smoke needs an owned API in rule mode (up --scorer rule)")
+    token = json.loads((stack.dir / "session.json").read_text())["token"]
+    base = f"http://127.0.0.1:{record['port']}"
     env = {**os.environ, "SENTINEL_TOKEN": token}
     script = [sys.executable, str(ROOT / "scripts" / "smoke_thin_path.py"), "--base-url", base]
     first = subprocess.run([*script, "investigate"], env=env, capture_output=True, text=True,
                            check=True).stdout
-    print(first.strip())
     case_id = first.rsplit("CASE_ID=", 1)[1].strip()
+    lines = [first.strip()]
     if args.restart_api:
-        stop_api()
-        print(f"api stopped; healthy={bool(healthy(s['api_port']))}")
-        start_api(s["database_url"], s["api_port"], s.get("investigator", "deterministic"))
-        print("api restarted (new process)")
-    print(subprocess.run([*script, "execute", case_id], env=env, capture_output=True,
-                         text=True, check=True).stdout.strip())
+        lines.append(stop_api(stack, data))
+        lines.append(start_api(stack, data, record["port"], record["scorer"],
+                               record["investigator"], record["database"]))
+    lines.append(subprocess.run([*script, "execute", case_id], env=env, capture_output=True,
+                                text=True, check=True).stdout.strip())
+    return "\n".join(lines)
 
 
-def backup(args) -> None:
-    s = state()
-    c = cluster(s["db_port"])
-    BACKUPS.mkdir(parents=True, exist_ok=True)
-    out = args.out or BACKUPS / f"sentinel-{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}.dump"
-    subprocess.run([str(c.bin_dir / "pg_dump"), "--format=custom", "--no-owner",
-                    f"--file={out}", s["database_url"]], check=True)
-    print(f"backup written: {out}")
+def backup(stack: Stack, args) -> str:
+    data = stack.load()
+    if database_state(stack, data) != "owned":
+        raise StackError("backup needs the owned database running (up)")
+    database = (data.get("api") or {}).get("database") or args.database
+    out = args.out or stack.dir.parent / "backups" / \
+        f"{database}-{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}.dump"
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
+    c = cluster(stack, data["database"]["port"])
+    done = subprocess.run([str(c.bin_dir / "pg_dump"), "--format=custom", "--no-owner",
+                           f"--file={out}", owner_url(stack, data, database)],
+                          capture_output=True, text=True)
+    if done.returncode != 0:
+        raise StackError(f"pg_dump failed ({done.returncode})")
+    return f"backup of {database} written: {out}"
 
 
-def restore(args) -> None:
+def restore(stack: Stack, args) -> str:
+    """Into a NEW database with the API stopped. Starts (and verifies) only the owned
+    cluster, restores, reports the schema version, and neither migrates nor starts an API."""
     import psycopg
-
-    s = state()
-    c = cluster(s["db_port"])
-    if not args.database.isidentifier():
-        sys.exit("database must be a plain identifier")
-    with psycopg.connect(c.url(), autocommit=True) as conn:
+    data = stack.load()
+    if not args.database.isidentifier() or args.database == DEFAULT_DATABASE:
+        raise StackError("restore target must be a new plain identifier, not the live "
+                         "database")
+    if api_state(data) != "down":
+        raise StackError("stop the API first (down); restore never runs under a live API")
+    start_database(stack, data, data["database"].get("port") or args.db_port)
+    with psycopg.connect(owner_url(stack, data), autocommit=True) as conn:
+        if conn.execute("SELECT 1 FROM pg_database WHERE datname = %s",
+                        (args.database,)).fetchone():
+            raise StackError(f"database {args.database} already exists; refused")
         conn.execute(f'CREATE DATABASE "{args.database}"')
-    subprocess.run([str(c.bin_dir / "pg_restore"), "--no-owner", "--exit-on-error",
-                    f"--dbname={c.url(args.database)}", str(args.file)], check=True)
-    print(f"restored {args.file} into {args.database}")
+    c = cluster(stack, data["database"]["port"])
+    done = subprocess.run([str(c.bin_dir / "pg_restore"), "--no-owner", "--exit-on-error",
+                           f"--dbname={owner_url(stack, data, args.database)}", str(args.file)],
+                          capture_output=True, text=True)
+    if done.returncode != 0:
+        raise StackError(f"pg_restore failed ({done.returncode}); {args.database} is "
+                         "incomplete, drop it before retrying")
+    with psycopg.connect(owner_url(stack, data, args.database)) as conn:
+        names = [r[0] for r in conn.execute("SELECT name FROM schema_migrations ORDER BY name")]
+        tables = conn.execute("SELECT count(*) FROM information_schema.tables WHERE "
+                              "table_schema = 'public' AND table_type = 'BASE TABLE'"
+                              ).fetchone()[0]
+    return (f"restored {args.file} into {args.database}: {tables} tables, migrations "
+            f"{', '.join(names)}; not migrated, no API started (database left running)")
 
 
-def main() -> int:
+COMMANDS = {"up": up, "down": down, "status": status, "smoke": smoke, "backup": backup,
+            "restore": restore}
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--db-port", type=int, default=55433)
+    parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
     sub = parser.add_subparsers(dest="command", required=True)
     up_cmd = sub.add_parser("up")
     up_cmd.add_argument("--investigator", choices=("deterministic", "claude-cli"),
                         default="deterministic")
+    up_cmd.add_argument("--scorer", choices=sorted(SCORERS), default="rule")
+    up_cmd.add_argument("--database", default=DEFAULT_DATABASE)
     sub.add_parser("down")
     sub.add_parser("status")
     sub.add_parser("smoke").add_argument("--restart-api", action="store_true")
-    sub.add_parser("backup").add_argument("--out", type=Path)
+    backup_cmd = sub.add_parser("backup")
+    backup_cmd.add_argument("--out", type=Path)
+    backup_cmd.add_argument("--database", default=DEFAULT_DATABASE)
     restore_cmd = sub.add_parser("restore")
     restore_cmd.add_argument("file", type=Path)
     restore_cmd.add_argument("--database", required=True)
-    args = parser.parse_args()
-    result = {"up": up, "down": down, "status": status, "smoke": smoke, "backup": backup,
-              "restore": restore}[args.command](args)
-    return result or 0
+    args = parser.parse_args(argv)
+    try:
+        print(COMMANDS[args.command](Stack(args.state_dir), args))
+        return 0
+    except StackError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
