@@ -23,7 +23,7 @@ These shared instructions apply to the adopted Sentinel project. The current use
 4. The local thin path exists. For parallel work, use separate worktrees, explicit file ownership and one integrator. Two agents must not edit the same checkout concurrently. Start from the named accepted dependency commit; main may still be the old baseline.
 5. Codex coordinates review and owns central STATUS/TASK_QUEUE edits. Claude owns backend/contracts, data/ML and backend reliability/CI. Cursor MUST implement web/, docs/ui/ and browser tests in its own worktree; Claude does not absorb that assignment. Shared API contracts, migrations, types and Python dependencies have one designated writer at a time. Freeze the accepted HTTP contract before Cursor consumes it. The existing owner-designation gate for merging into main remains.
 6. Document decisions and source provenance, including reused repository/path/commit and applicable licenses. Preserve required notices and genuine contributor credit.
-7. Use docs/prompts/CLAUDE_BATCH.md and docs/prompts/CURSOR_UI.md for tool-specific assignments. Each implementer updates its own branch handoff and task documentation. There is no automatic cross-tool shared memory or messaging; commits, contracts and handoffs carry context.
+7. For the current C01 corrections use docs/prompts/CLAUDE_REVIEW_FOLLOWUP.md from the latest task/coordination reference; docs/prompts/CLAUDE_BATCH.md remains the full backlog. Use docs/prompts/CURSOR_UI.md for tool-specific assignments. Each implementer updates its own branch handoff and task documentation. There is no automatic cross-tool shared memory or messaging; commits, contracts and handoffs carry context.
 
 ## Handoff
 
@@ -43,3 +43,8 @@ Uncommitted files are visible to another tool in the same checkout. Other worktr
 - Models cannot grant permissions, select tenant identity, authorize tools, approve cases or perform real financial actions. Server code enforces these boundaries. All initial transactions and actions are synthetic/simulated.
 - Do not rewrite attribution, bypass checks, force-push shared history, discard changes or alter user Git settings as routine setup. Follow the current user's authorization and request clarification only for a material unresolved conflict or destructive action.
 - When merging, the integrator reruns checks on the integrated commit and records evidence in the PR/release log. Accepted decisions are superseded with a new decision record rather than silently rewritten.
+
+
+## Current worktree I02 quota handoff
+
+On October 25 the owner reported that Cursor cannot continue because its allowance is exhausted. Cursor has already supplied the required substantive frontend/browser implementation. Codex is the sole active editor of this isolated continuation worktree, carrying forward the seven saved Cursor Part B files from e0e1b05. Cursor's original worktree stays untouched. This is a temporary ownership handoff for completing I02, not a main-integrator designation. Read the latest task/coordination instructions and this branch handoff; the historical package-status paragraphs above predate the accepted ML/UI integration.

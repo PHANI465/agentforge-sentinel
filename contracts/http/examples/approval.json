@@ -1,0 +1,52 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "action_intent_id": "5e000000-0000-4000-8000-00000000001a",
+      "decision": "approved"
+    },
+    "method": "POST",
+    "path": "/v1/approvals"
+  },
+  "response": {
+    "actor_id": "5e000000-0000-4000-8000-000000000003",
+    "actor_kind": "human",
+    "consumed_at": null,
+    "decided_at": "2026-10-23T17:00:06Z",
+    "decision": "approved",
+    "expires_at": "2026-10-23T17:05:06Z",
+    "id": "5e000000-0000-4000-8000-00000000001d",
+    "intent": {
+      "case_id": "5e000000-0000-4000-8000-000000000009",
+      "case_revision": 3,
+      "evidence_snapshot_sha256": "9319c96d9fee1955c257b8913885c1dbe8828320a9c80587cd959b7bc98e401f",
+      "id": "5e000000-0000-4000-8000-00000000001a",
+      "parameters": {
+        "amount": {
+          "currency": "USD",
+          "currency_exponent": 2,
+          "minor_units": 250000,
+          "schema_version": "1.0"
+        },
+        "operation": "simulated_hold",
+        "schema_version": "1.0",
+        "transaction_id": "5e000000-0000-4000-8000-000000000007"
+      },
+      "policy": {
+        "name": "simulated-action-policy",
+        "schema_version": "1.0",
+        "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+        "version": "p1"
+      },
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      }
+    },
+    "intent_sha256": "378f4f78ef0f9cb9d3bc7c58666e293deb5fca9e4bf50d6c85f70fea5707a9ff",
+    "schema_version": "1.0"
+  },
+  "status": 201
+}

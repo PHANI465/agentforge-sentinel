@@ -1,0 +1,14 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "expected_revision": 7
+    },
+    "method": "POST",
+    "path": "/v1/cases/5e000000-0000-4000-8000-000000000009/investigations"
+  },
+  "response": {
+    "error": "stale_case_revision"
+  },
+  "status": 409
+}

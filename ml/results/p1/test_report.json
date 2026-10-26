@@ -1,0 +1,519 @@
+{
+  "artifact_sha256": "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b",
+  "calibration": {
+    "brier": 0.002558,
+    "note": "no calibration step; scores are reported as uncalibrated model scores (Brier and reliability shown for information); rule scores are heuristics, never probabilities",
+    "reliability": [
+      {
+        "fraud_rate": 0.001622,
+        "hi": 0.1,
+        "lo": 0.0,
+        "mean_score": 5.6e-05,
+        "n": 18496
+      },
+      {
+        "fraud_rate": 0.666667,
+        "hi": 0.2,
+        "lo": 0.1,
+        "mean_score": 0.165465,
+        "n": 6
+      },
+      {
+        "fraud_rate": 0.5,
+        "hi": 0.3,
+        "lo": 0.2,
+        "mean_score": 0.227094,
+        "n": 2
+      },
+      {
+        "fraud_rate": 0.5,
+        "hi": 0.4,
+        "lo": 0.3,
+        "mean_score": 0.384161,
+        "n": 4
+      },
+      {
+        "fraud_rate": 1.0,
+        "hi": 0.5,
+        "lo": 0.4,
+        "mean_score": 0.457511,
+        "n": 2
+      },
+      {
+        "fraud_rate": 0.0,
+        "hi": 0.6,
+        "lo": 0.5,
+        "mean_score": 0.589552,
+        "n": 3
+      },
+      {
+        "fraud_rate": 1.0,
+        "hi": 0.7,
+        "lo": 0.6,
+        "mean_score": 0.65384,
+        "n": 2
+      },
+      {
+        "fraud_rate": 0.4,
+        "hi": 0.8,
+        "lo": 0.7,
+        "mean_score": 0.762197,
+        "n": 5
+      },
+      {
+        "fraud_rate": 0.4,
+        "hi": 0.9,
+        "lo": 0.8,
+        "mean_score": 0.867593,
+        "n": 5
+      },
+      {
+        "fraud_rate": 0.888889,
+        "hi": 1.0,
+        "lo": 0.9,
+        "mean_score": 0.989407,
+        "n": 72
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "kind": "rule",
+      "name": "rule_r1",
+      "test": {
+        "average_precision": 0.455044,
+        "daily_top_k": {
+          "false_positive_rate": 0.023042,
+          "flagged": 510,
+          "fn": 25,
+          "fp": 426,
+          "precision": 0.164706,
+          "recall": 0.770642,
+          "tn": 18062,
+          "tp": 84
+        },
+        "pr_auc_trapezoid": 0.578945
+      }
+    },
+    {
+      "kind": "logistic_regression",
+      "name": "logreg_balanced",
+      "test": {
+        "average_precision": 0.399565,
+        "brier": 0.033721,
+        "daily_top_k": {
+          "false_positive_rate": 0.022717,
+          "flagged": 510,
+          "fn": 19,
+          "fp": 420,
+          "precision": 0.176471,
+          "recall": 0.825688,
+          "tn": 18068,
+          "tp": 90
+        },
+        "pr_auc_trapezoid": 0.395465
+      }
+    },
+    {
+      "kind": "logistic_regression",
+      "name": "logreg_unweighted",
+      "test": {
+        "average_precision": 0.621507,
+        "brier": 0.003389,
+        "daily_top_k": {
+          "false_positive_rate": 0.02288,
+          "flagged": 510,
+          "fn": 22,
+          "fp": 423,
+          "precision": 0.170588,
+          "recall": 0.798165,
+          "tn": 18065,
+          "tp": 87
+        },
+        "pr_auc_trapezoid": 0.620437
+      }
+    },
+    {
+      "kind": "hist_gradient_boosting",
+      "name": "hgb_unweighted",
+      "test": {
+        "average_precision": 0.208093,
+        "brier": 0.007387,
+        "daily_top_k": {
+          "false_positive_rate": 0.024773,
+          "flagged": 510,
+          "fn": 57,
+          "fp": 458,
+          "precision": 0.101961,
+          "recall": 0.477064,
+          "tn": 18030,
+          "tp": 52
+        },
+        "pr_auc_trapezoid": 0.329024
+      }
+    },
+    {
+      "kind": "hist_gradient_boosting",
+      "name": "hgb_balanced",
+      "test": {
+        "average_precision": 0.81738,
+        "brier": 0.002558,
+        "daily_top_k": {
+          "false_positive_rate": 0.022122,
+          "flagged": 510,
+          "fn": 8,
+          "fp": 409,
+          "precision": 0.198039,
+          "recall": 0.926606,
+          "tn": 18079,
+          "tp": 101
+        },
+        "frozen_threshold": {
+          "false_positive_rate": 0.01839,
+          "flagged": 442,
+          "fn": 7,
+          "fp": 340,
+          "precision": 0.230769,
+          "recall": 0.93578,
+          "tn": 18148,
+          "tp": 102
+        },
+        "pr_auc_trapezoid": 0.816827
+      }
+    }
+  ],
+  "frozen_threshold": 4.0295386895426815e-06,
+  "label_view": {
+    "rule": "is_fraud for every test row (offline benchmark; includes never-disclosed fraud); labels observable by the horizon end are reported separately",
+    "view": "synthetic_truth"
+  },
+  "protocol_sha256": "bed52b8108bd855f4fa467c2e992e5e33c9a37871dec7664129d58b0dba561e9",
+  "protocol_version": "p1",
+  "selected": "hgb_balanced",
+  "selected_policy": {
+    "confusion_matrix_frozen_threshold": {
+      "false_positive_rate": 0.01839,
+      "flagged": 442,
+      "fn": 7,
+      "fp": 340,
+      "precision": 0.230769,
+      "recall": 0.93578,
+      "tn": 18148,
+      "tp": 102
+    },
+    "daily_top_k": {
+      "false_positive_rate": 0.022122,
+      "flagged": 510,
+      "fn": 8,
+      "fp": 409,
+      "precision": 0.198039,
+      "recall": 0.926606,
+      "tn": 18079,
+      "tp": 101
+    },
+    "frozen_threshold": {
+      "false_positive_rate": 0.01839,
+      "flagged": 442,
+      "fn": 7,
+      "fp": 340,
+      "precision": 0.230769,
+      "recall": 0.93578,
+      "tn": 18148,
+      "tp": 102
+    }
+  },
+  "selection_sha256": "940e85502435426861537aff20074249b8ea6c30193f57309b15b3610e09293b",
+  "slices_daily_top_k": [
+    {
+      "dimension": "currency",
+      "false_positive_rate": 0.015172,
+      "flagged": 66,
+      "fn": 4,
+      "fp": 46,
+      "fraud": 24,
+      "precision": 0.30303,
+      "recall": 0.833333,
+      "rows": 3056,
+      "tn": 2986,
+      "tp": 20,
+      "value": "GBP"
+    },
+    {
+      "dimension": "currency",
+      "false_positive_rate": 0.044614,
+      "flagged": 201,
+      "fn": 3,
+      "fp": 181,
+      "fraud": 23,
+      "precision": 0.099502,
+      "recall": 0.869565,
+      "rows": 4080,
+      "tn": 3876,
+      "tp": 20,
+      "value": "INR"
+    },
+    {
+      "dimension": "currency",
+      "false_positive_rate": 0.030303,
+      "flagged": 44,
+      "fn": 1,
+      "fp": 33,
+      "fraud": 12,
+      "precision": 0.25,
+      "recall": 0.916667,
+      "rows": 1101,
+      "tn": 1056,
+      "tp": 11,
+      "value": "JPY"
+    },
+    {
+      "dimension": "currency",
+      "false_positive_rate": 0.014452,
+      "flagged": 199,
+      "fn": 0,
+      "fp": 149,
+      "fraud": 50,
+      "precision": 0.251256,
+      "recall": 1.0,
+      "rows": 10360,
+      "tn": 10161,
+      "tp": 50,
+      "value": "USD"
+    },
+    {
+      "dimension": "scenario",
+      "false_positive_rate": null,
+      "flagged": 31,
+      "fn": 2,
+      "fp": 0,
+      "fraud": 33,
+      "precision": 1.0,
+      "recall": 0.939394,
+      "rows": 33,
+      "tn": 0,
+      "tp": 31,
+      "value": "account_takeover"
+    },
+    {
+      "dimension": "scenario",
+      "false_positive_rate": null,
+      "flagged": 37,
+      "fn": 5,
+      "fp": 0,
+      "fraud": 42,
+      "precision": 1.0,
+      "recall": 0.880952,
+      "rows": 42,
+      "tn": 0,
+      "tp": 37,
+      "value": "card_testing"
+    },
+    {
+      "dimension": "scenario",
+      "false_positive_rate": 0.8,
+      "flagged": 4,
+      "fn": 0,
+      "fp": 4,
+      "fraud": 0,
+      "precision": 0.0,
+      "recall": null,
+      "rows": 5,
+      "tn": 1,
+      "tp": 0,
+      "value": "large_legit_purchase"
+    },
+    {
+      "dimension": "scenario",
+      "false_positive_rate": 0.618421,
+      "flagged": 47,
+      "fn": 0,
+      "fp": 47,
+      "fraud": 0,
+      "precision": 0.0,
+      "recall": null,
+      "rows": 76,
+      "tn": 29,
+      "tp": 0,
+      "value": "micro_payments"
+    },
+    {
+      "dimension": "scenario",
+      "false_positive_rate": null,
+      "flagged": 33,
+      "fn": 1,
+      "fp": 0,
+      "fraud": 34,
+      "precision": 1.0,
+      "recall": 0.970588,
+      "rows": 34,
+      "tn": 0,
+      "tp": 33,
+      "value": "mule_cashout"
+    },
+    {
+      "dimension": "scenario",
+      "false_positive_rate": 0.01871,
+      "flagged": 344,
+      "fn": 0,
+      "fp": 344,
+      "fraud": 0,
+      "precision": 0.0,
+      "recall": null,
+      "rows": 18386,
+      "tn": 18042,
+      "tp": 0,
+      "value": "normal"
+    },
+    {
+      "dimension": "scenario",
+      "false_positive_rate": 0.666667,
+      "flagged": 14,
+      "fn": 0,
+      "fp": 14,
+      "fraud": 0,
+      "precision": 0.0,
+      "recall": null,
+      "rows": 21,
+      "tn": 7,
+      "tp": 0,
+      "value": "payday_burst"
+    },
+    {
+      "dimension": "activity_count_24h",
+      "false_positive_rate": 0.020918,
+      "flagged": 149,
+      "fn": 2,
+      "fp": 144,
+      "fraud": 7,
+      "precision": 0.033557,
+      "recall": 0.714286,
+      "rows": 6891,
+      "tn": 6740,
+      "tp": 5,
+      "value": "0"
+    },
+    {
+      "dimension": "activity_count_24h",
+      "false_positive_rate": 0.018724,
+      "flagged": 210,
+      "fn": 2,
+      "fp": 182,
+      "fraud": 30,
+      "precision": 0.133333,
+      "recall": 0.933333,
+      "rows": 9750,
+      "tn": 9538,
+      "tp": 28,
+      "value": "1-2"
+    },
+    {
+      "dimension": "activity_count_24h",
+      "false_positive_rate": 0.044055,
+      "flagged": 151,
+      "fn": 4,
+      "fp": 83,
+      "fraud": 72,
+      "precision": 0.450331,
+      "recall": 0.944444,
+      "rows": 1956,
+      "tn": 1801,
+      "tp": 68,
+      "value": "3+"
+    },
+    {
+      "dimension": "test_week",
+      "false_positive_rate": 0.022905,
+      "flagged": 105,
+      "fn": 4,
+      "fp": 88,
+      "fraud": 21,
+      "precision": 0.161905,
+      "recall": 0.809524,
+      "rows": 3863,
+      "tn": 3754,
+      "tp": 17,
+      "value": "0"
+    },
+    {
+      "dimension": "test_week",
+      "false_positive_rate": 0.024423,
+      "flagged": 105,
+      "fn": 0,
+      "fp": 92,
+      "fraud": 13,
+      "precision": 0.12381,
+      "recall": 1.0,
+      "rows": 3780,
+      "tn": 3675,
+      "tp": 13,
+      "value": "1"
+    },
+    {
+      "dimension": "test_week",
+      "false_positive_rate": 0.025758,
+      "flagged": 105,
+      "fn": 0,
+      "fp": 96,
+      "fraud": 9,
+      "precision": 0.085714,
+      "recall": 1.0,
+      "rows": 3736,
+      "tn": 3631,
+      "tp": 9,
+      "value": "2"
+    },
+    {
+      "dimension": "test_week",
+      "false_positive_rate": 0.01664,
+      "flagged": 105,
+      "fn": 4,
+      "fp": 63,
+      "fraud": 46,
+      "precision": 0.4,
+      "recall": 0.913043,
+      "rows": 3832,
+      "tn": 3723,
+      "tp": 42,
+      "value": "3"
+    },
+    {
+      "dimension": "test_week",
+      "false_positive_rate": 0.020796,
+      "flagged": 90,
+      "fn": 0,
+      "fp": 70,
+      "fraud": 20,
+      "precision": 0.222222,
+      "recall": 1.0,
+      "rows": 3386,
+      "tn": 3296,
+      "tp": 20,
+      "value": "4"
+    }
+  ],
+  "split": {
+    "decision_days": 34,
+    "fraud": 109,
+    "labels_observable_by_horizon": 2219,
+    "legitimate": 18488,
+    "rows": 18597,
+    "unknown_excluded": 0
+  },
+  "uncertainty": {
+    "accounts": 600,
+    "average_precision": [
+      0.696785,
+      0.913767
+    ],
+    "precision_at_capacity": [
+      0.128279,
+      0.286932
+    ],
+    "recall_at_capacity": [
+      0.870098,
+      0.985942
+    ],
+    "replicates": 200,
+    "skipped_one_class": 0
+  }
+}

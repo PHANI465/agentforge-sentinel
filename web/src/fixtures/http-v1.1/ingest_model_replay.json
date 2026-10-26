@@ -1,0 +1,211 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "account_id": "00000000-0000-4000-8000-0000000000a2",
+      "amount": {
+        "currency": "GBP",
+        "currency_exponent": 2,
+        "minor_units": 250000
+      },
+      "direction": "debit",
+      "external_id": "model-demo-1",
+      "occurred_at": "2026-10-23T17:00:00Z"
+    },
+    "method": "POST",
+    "path": "/v1/transactions"
+  },
+  "response": {
+    "alert": {
+      "created_at": "2026-10-23T17:00:01Z",
+      "features": {
+        "name": "sentinel-features",
+        "schema_version": "1.0",
+        "sha256": "ee990c82579426b02fef4536ec2c6328d16ddfa5de05aa9059d35fd1af080593",
+        "version": "f1"
+      },
+      "features_as_of": "2026-10-23T17:00:01Z",
+      "id": "5e000000-0000-4000-8000-00000000000a",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "score": 0.228303811968,
+      "score_semantics": "uncalibrated_score",
+      "scorer": {
+        "name": "hgb_balanced",
+        "schema_version": "1.0",
+        "sha256": "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b",
+        "version": "p1"
+      },
+      "scoring_kind": "model",
+      "threshold": 4.0295386895426815e-06,
+      "threshold_policy": {
+        "name": "c04-frozen-threshold",
+        "schema_version": "1.0",
+        "sha256": "3a9573a2d92d1757d9b3a080e35b85b3c6c8b7e14932e3a32de0cd92abc40625",
+        "version": "p1"
+      },
+      "transaction_id": "5e000000-0000-4000-8000-000000000009"
+    },
+    "case": {
+      "alert_id": "5e000000-0000-4000-8000-00000000000a",
+      "created_at": "2026-10-23T17:00:01Z",
+      "evidence_ids": [
+        "5e000000-0000-4000-8000-00000000000c",
+        "5e000000-0000-4000-8000-00000000000d"
+      ],
+      "id": "5e000000-0000-4000-8000-00000000000b",
+      "pins": {
+        "agent_config": {
+          "name": "deterministic-investigator",
+          "schema_version": "1.0",
+          "sha256": "f786d618952834fd1a108b27d3cff98c8eb1b8f52177e013eec2ec5aa1d40908",
+          "version": "i1"
+        },
+        "dataset": {
+          "name": "api-synthetic-ingest",
+          "schema_version": "1.0",
+          "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+          "version": "d1"
+        },
+        "evidence_snapshot_sha256": "6e2d34db5f036cd833108281511cbd4fac62a686a51e32cd246229cccf9250bf",
+        "policy": {
+          "name": "simulated-action-policy",
+          "schema_version": "1.0",
+          "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+          "version": "p1"
+        },
+        "schema_version": "1.0",
+        "scorer": {
+          "name": "hgb_balanced",
+          "schema_version": "1.0",
+          "sha256": "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b",
+          "version": "p1"
+        },
+        "threshold_policy": {
+          "name": "c04-frozen-threshold",
+          "schema_version": "1.0",
+          "sha256": "3a9573a2d92d1757d9b3a080e35b85b3c6c8b7e14932e3a32de0cd92abc40625",
+          "version": "p1"
+        },
+        "tool_config": {
+          "name": "no-tools",
+          "schema_version": "1.0",
+          "sha256": "9260913bc49e607b7d106f163933feaf215e7c84ae9e30152bd4e56d8dbb3762",
+          "version": "n1"
+        }
+      },
+      "revision": 1,
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "state": "open",
+      "updated_at": "2026-10-23T17:00:01Z"
+    },
+    "replayed": true,
+    "rule_score": 0.228303811968,
+    "scoring": {
+      "alerted": true,
+      "features": {
+        "name": "sentinel-features",
+        "schema_version": "1.0",
+        "sha256": "ee990c82579426b02fef4536ec2c6328d16ddfa5de05aa9059d35fd1af080593",
+        "version": "f1"
+      },
+      "features_as_of": "2026-10-23T17:00:01Z",
+      "inputs": {
+        "currency": "GBP",
+        "disclosures_used": 0,
+        "feature_version": "f1",
+        "history_rows": 0,
+        "profile_home_currency": "USD",
+        "profile_opened_at": "2026-09-01T00:00:00Z",
+        "schema_version": "1.0",
+        "values": {
+          "account_age_days": 52,
+          "amount_minor": 250000,
+          "amount_to_median_bps": -1,
+          "count_1h": 0,
+          "count_24h": 0,
+          "credit_sum_24h": 0,
+          "is_credit": 0,
+          "is_foreign_currency": 1,
+          "prior_known_fraud": 0,
+          "same_currency_sum_24h": 0,
+          "seconds_since_prev": -1,
+          "small_count_1h": 0
+        }
+      },
+      "model": {
+        "artifact_sha256": "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b",
+        "candidate": "hgb_balanced",
+        "feature_version": "f1",
+        "protocol_sha256": "bed52b8108bd855f4fa467c2e992e5e33c9a37871dec7664129d58b0dba561e9",
+        "protocol_version": "p1",
+        "results_id": "p1",
+        "schema_version": "1.0",
+        "selection_sha256": "940e85502435426861537aff20074249b8ea6c30193f57309b15b3610e09293b",
+        "threshold_source": "validation_frozen_threshold"
+      },
+      "prior_count_1h": 0,
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "score": 0.228303811968,
+      "score_semantics": "uncalibrated_score",
+      "scored_at": "2026-10-23T17:00:01Z",
+      "scorer": {
+        "name": "hgb_balanced",
+        "schema_version": "1.0",
+        "sha256": "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b",
+        "version": "p1"
+      },
+      "scoring_kind": "model",
+      "threshold": 4.0295386895426815e-06,
+      "threshold_policy": {
+        "name": "c04-frozen-threshold",
+        "schema_version": "1.0",
+        "sha256": "3a9573a2d92d1757d9b3a080e35b85b3c6c8b7e14932e3a32de0cd92abc40625",
+        "version": "p1"
+      },
+      "transaction_id": "5e000000-0000-4000-8000-000000000009"
+    },
+    "transaction": {
+      "account_id": "00000000-0000-4000-8000-0000000000a2",
+      "amount": {
+        "currency": "GBP",
+        "currency_exponent": 2,
+        "minor_units": 250000,
+        "schema_version": "1.0"
+      },
+      "dataset": {
+        "name": "api-synthetic-ingest",
+        "schema_version": "1.0",
+        "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+        "version": "d1"
+      },
+      "direction": "debit",
+      "external_id": "model-demo-1",
+      "id": "5e000000-0000-4000-8000-000000000009",
+      "ingested_at": "2026-10-23T17:00:01Z",
+      "occurred_at": "2026-10-23T17:00:00Z",
+      "schema_version": "1.0",
+      "scope": {
+        "schema_version": "1.0",
+        "session_id": "5e000000-0000-4000-8000-000000000002",
+        "tenant_id": "5e000000-0000-4000-8000-000000000001"
+      },
+      "synthetic": true
+    }
+  },
+  "status": 201
+}
