@@ -1,5 +1,7 @@
 # Claude implementation batch
 
+Current next step after delivery of C01/C03/C06/C08: read CLAUDE_REVIEW_FOLLOWUP.md from the latest task/coordination reference. It supersedes the initial execution order below. Delivered packages are not implicitly accepted.
+
 Open a dedicated Claude worktree. Read this entire prompt and the shared queue first. This prompt is the owner's requested substantial work queue; execute ready packages in order and use independent packages while waiting for reviews.
 
 You are Claude Code continuing AgentForge Sentinel. The owner also has Codex AND Cursor, and explicitly requires that Cursor implement the analyst UI and browser tests.

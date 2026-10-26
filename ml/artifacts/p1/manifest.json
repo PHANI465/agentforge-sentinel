@@ -1,0 +1,121 @@
+{
+  "artifact_file": "model.joblib",
+  "artifact_sha256": "6c2982d1df12184f704bc45dbc5882d8f85dba16c50bd9829dda9e674602575b",
+  "candidate": {
+    "kind": "hist_gradient_boosting",
+    "name": "hgb_balanced",
+    "params": {
+      "class_weight": "balanced",
+      "learning_rate": 0.1,
+      "max_iter": 200,
+      "max_leaf_nodes": 31
+    }
+  },
+  "categorical_features": {
+    "currency": {
+      "source": "transaction.amount.currency (decision-time projection field)",
+      "values": [
+        "GBP",
+        "INR",
+        "JPY",
+        "USD"
+      ]
+    }
+  },
+  "data": {
+    "dataset_sha256": {
+      "accounts.jsonl": "18857eb6bc936d36e1260d749d9db10b5abd1538a0b7222ffa95f749f93aa792",
+      "labels.jsonl": "4e28fe9bb01bfa2ff17b769a7c9e232ddc8cef7018a2968a800121c658acf592",
+      "transactions.jsonl": "db22a58ba88e288a42b8e354309cff7e174ffd8bf08ceb00fb42750eea0a1471"
+    },
+    "feature_version": "f1",
+    "features_sha256": "61c3fa372c511e535f9c05d199bacef23db2359b5c3b0928d465a174cc9d6a33",
+    "generator_version": "g1",
+    "manifest_sha256": "8548a68b173953baa3d66dcd62c697ac9bbba3d0f478469ed0e10ee591101125",
+    "summary": {
+      "accounts": 600,
+      "by_scenario": {
+        "account_takeover": 156,
+        "card_testing": 263,
+        "large_legit_purchase": 31,
+        "micro_payments": 387,
+        "mule_cashout": 162,
+        "normal": 81550,
+        "payday_burst": 270
+      },
+      "currencies": {
+        "GBP": {
+          "count": 13633,
+          "credit_minor": 39921030,
+          "debit_minor": 54471394
+        },
+        "INR": {
+          "count": 17999,
+          "credit_minor": 4717064932,
+          "debit_minor": 7396645130
+        },
+        "JPY": {
+          "count": 5034,
+          "credit_minor": 25681652,
+          "debit_minor": 35689152
+        },
+        "USD": {
+          "count": 46153,
+          "credit_minor": 145951174,
+          "debit_minor": 215608289
+        }
+      },
+      "distinct_accounts_in_transactions": 600,
+      "fraud_never_disclosed": 62,
+      "fraud_rows": 581,
+      "labels": 82819,
+      "transactions": 82819
+    }
+  },
+  "environment": {
+    "joblib": "1.6.0",
+    "numpy": "2.4.6",
+    "python": "3.11.3",
+    "scikit_learn": "1.9.1"
+  },
+  "feature_version": "f1",
+  "features": [
+    "amount_minor",
+    "is_credit",
+    "is_foreign_currency",
+    "account_age_days",
+    "count_1h",
+    "count_24h",
+    "small_count_1h",
+    "same_currency_sum_24h",
+    "credit_sum_24h",
+    "seconds_since_prev",
+    "amount_to_median_bps",
+    "prior_known_fraud"
+  ],
+  "format": "sentinel.c04.model.v1",
+  "frozen_threshold": 4.0295386895426815e-06,
+  "models_code_sha256": "3a3f27bfa845367c0b5e323347be8ce7ed4584a24781fa0b9de8f80212e9aba6",
+  "protocol_sha256": "bed52b8108bd855f4fa467c2e992e5e33c9a37871dec7664129d58b0dba561e9",
+  "protocol_version": "p1",
+  "random_seed": 7,
+  "review_policy": {
+    "capacity_unit": "transactions per UTC calendar day of decision time",
+    "k_per_day": 15,
+    "primary": "daily_top_k",
+    "ranking": "score descending; ties by external_id ascending",
+    "streaming_threshold": "the score at rank k_per_day x (number of validation decision days), frozen from validation and applied unchanged to test (rows with score >= threshold are flagged)"
+  },
+  "score_semantics": "uncalibrated model score",
+  "train_split": {
+    "decision_days": 45,
+    "fraud": 141,
+    "legitimate": 24631,
+    "rows": 24772,
+    "unknown_excluded": 34
+  },
+  "training_label_view": {
+    "labels_known_by_day": 85,
+    "rule": "label_available_at <= cutoff; unknown labels are excluded, never relabeled legitimate"
+  }
+}

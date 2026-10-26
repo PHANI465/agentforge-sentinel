@@ -1,0 +1,22 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "account_id": "00000000-0000-4000-8000-0000000000a1",
+      "amount": {
+        "currency": "USD",
+        "currency_exponent": 2,
+        "minor_units": 1500
+      },
+      "direction": "credit",
+      "external_id": "demo-small-1",
+      "occurred_at": "2026-10-23T16:30:00Z"
+    },
+    "method": "POST",
+    "path": "/v1/transactions"
+  },
+  "response": {
+    "error": "idempotency_conflict"
+  },
+  "status": 409
+}

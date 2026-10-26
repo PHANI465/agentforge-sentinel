@@ -24,6 +24,17 @@ def main(argv: list[str] | None = None) -> int:
     session.add_argument("--capability", action="append", choices=ALL_CAPABILITIES,
                          help="repeatable; defaults to all analyst capabilities")
     session.add_argument("--hours", type=int, default=8)
+    grant = commands.add_parser("grant-runtime", help="create/refresh the least-privilege "
+                                "API role (run as the schema owner)")
+    grant.add_argument("--role", default="sentinel_runtime")
+    for name, help_text in (("provision-accounts", "load account profiles (JSONL: account_id, "
+                                                   "home_currency, opened_at) for one scope"),
+                            ("record-disclosures", "load fraud disclosures (JSONL: external_id, "
+                                                   "account_id, is_fraud, disclosed_at)")):
+        loader = commands.add_parser(name, help=help_text)
+        loader.add_argument("--tenant", required=True)
+        loader.add_argument("--session", required=True)
+        loader.add_argument("--file", required=True, type=Path)
     dev = commands.add_parser("devdb", help="disposable local Postgres under .agent/devdb")
     dev.add_argument("action", choices=("start", "stop"))
     dev.add_argument("--port", type=int, default=55432)
@@ -35,6 +46,28 @@ def main(argv: list[str] | None = None) -> int:
     if not url:
         print("Set SENTINEL_DATABASE_URL first.", file=sys.stderr)
         return 2
+    if args.command == "grant-runtime":
+        from sentinel.db import roles
+        # A password, if wanted, comes from the environment, never the command line.
+        roles.grant_runtime(url, args.role, os.environ.get("SENTINEL_RUNTIME_PASSWORD"))
+        print(f"runtime role {args.role} granted")
+        return 0
+    if args.command in ("provision-accounts", "record-disclosures"):
+        # Operator-only (runtime role has SELECT only); there is no HTTP route for this.
+        import json
+        rows = [json.loads(line) for line in args.file.read_text(encoding="utf-8").splitlines()
+                if line.strip()]
+        from sentinel.service import MAX_LOCKED_ACCOUNTS
+        service = Sentinel(url, from_environment())
+        load = (service.provision_accounts if args.command == "provision-accounts"
+                else service.record_disclosures)
+        # Each chunk is one transaction under its accounts' decision locks; a failure leaves
+        # earlier chunks committed (reported), so loads are rerunnable per chunk.
+        loaded = 0
+        for start in range(0, len(rows), MAX_LOCKED_ACCOUNTS):
+            loaded += load(args.tenant, args.session, rows[start:start + MAX_LOCKED_ACCOUNTS])
+            print(f"{args.command}: {loaded}/{len(rows)} rows committed")
+        return 0
     if args.command == "migrate":
         applied = db.migrate(url)
         print("Applied: " + (", ".join(applied) if applied else "nothing pending"))

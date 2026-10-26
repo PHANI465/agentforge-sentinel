@@ -1,0 +1,22 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "account_id": "00000000-0000-4000-8000-0000000000a2",
+      "amount": {
+        "currency": "GBP",
+        "currency_exponent": 2,
+        "minor_units": 250000
+      },
+      "direction": "debit",
+      "external_id": "model-demo-1",
+      "occurred_at": "2026-10-23T17:00:00Z"
+    },
+    "method": "POST",
+    "path": "/v1/transactions"
+  },
+  "response": {
+    "error": "account_profile_missing"
+  },
+  "status": 422
+}

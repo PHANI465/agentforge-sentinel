@@ -1,0 +1,6 @@
+name,kind,validation_ap,test_ap,test_pr_auc_trapezoid,test_topk_precision,test_topk_recall,test_topk_fp
+rule_r1,rule,0.487795,0.455044,0.578945,0.164706,0.770642,426
+logreg_balanced,logistic_regression,0.532282,0.399565,0.395465,0.176471,0.825688,420
+logreg_unweighted,logistic_regression,0.63633,0.621507,0.620437,0.170588,0.798165,423
+hgb_unweighted,hist_gradient_boosting,0.272991,0.208093,0.329024,0.101961,0.477064,458
+hgb_balanced,hist_gradient_boosting,0.829965,0.81738,0.816827,0.198039,0.926606,409

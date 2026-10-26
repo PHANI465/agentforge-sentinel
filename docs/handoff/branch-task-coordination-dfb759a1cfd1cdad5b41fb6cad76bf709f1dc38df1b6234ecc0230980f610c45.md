@@ -37,3 +37,11 @@ Claude starts C01 from committed task/coordination, hands off the exact HTTP con
 
 - Shared coordination only; no contracts, migrations, provider adapters or source attribution changed.
 - Central queue/STATUS are Codex-owned; implementers update task-specific notes and artifacts.
+
+## Four-package delivery follow-up
+
+Owner supplied C01/C03/C06/C08 delivery hashes; Git branch tips verified. C01 0a6fb0e received an independent read-only review, 40 focused tests, strict checks (146 passed / 1 live skip), and real HTTP probes. R9/R10 remain open, so U01/C02 are not unblocked. C03/C06/C08 measurements/checks remain Claude-reported pending review.
+
+This coordination update publishes the review, the immediate Claude correction prompt, the Cursor non-JSON error requirement, and accurate queue/status gates. No application source, task branch or main was changed. Previously tested coordination commit: fcc04c5eebdb353ce290b99c288990c51a0d4dcf. Final after-commit evidence belongs in the local ignored report/final chat, not a self-referential note hash.
+
+Next action: Claude fixes R9/R10 on its existing C01 branch and returns the corrected commit for Codex re-review. Environment provisioning is outside this prompt update.

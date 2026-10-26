@@ -1,0 +1,15 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "approval_id": "5e000000-0000-4000-8000-000000000029",
+      "idempotency_key": "00000000-0000-4000-8000-0000e0000002"
+    },
+    "method": "POST",
+    "path": "/v1/actions"
+  },
+  "response": {
+    "error": "approval_outside_validity"
+  },
+  "status": 409
+}

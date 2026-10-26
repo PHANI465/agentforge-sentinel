@@ -1,0 +1,12 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/cases/00000000-0000-0000-0000-000000000000"
+  },
+  "response": {
+    "error": "not_found"
+  },
+  "status": 404
+}

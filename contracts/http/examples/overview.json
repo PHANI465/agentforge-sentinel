@@ -1,0 +1,25 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/overview"
+  },
+  "response": {
+    "alerts": 2,
+    "cases_by_state": {
+      "awaiting_approval": 0,
+      "closed": 1,
+      "inconclusive": 0,
+      "investigating": 0,
+      "open": 1
+    },
+    "investigator": {
+      "name": "deterministic-investigator",
+      "version": "i1"
+    },
+    "simulated_actions": 1,
+    "transactions": 5
+  },
+  "status": 200
+}

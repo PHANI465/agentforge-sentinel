@@ -1,0 +1,64 @@
+{
+  "protocol_version": "p1",
+  "purpose": "C04 classical baselines on synthetic data; offline evaluation only",
+  "generator": {
+    "seed": 7,
+    "accounts": 600,
+    "days": 150,
+    "max_rows": 1000000,
+    "fraud_account_rate": 0.15,
+    "lookalike_account_rate": 0.2,
+    "daily_rate_range": [0.3, 1.5],
+    "late_ingestion_rate": 0.01,
+    "unlabeled_fraud_rate": 0.1
+  },
+  "generator_version": "g1",
+  "feature_version": "f1",
+  "features": ["amount_minor", "is_credit", "is_foreign_currency", "account_age_days", "count_1h", "count_24h", "small_count_1h", "same_currency_sum_24h", "credit_sum_24h", "seconds_since_prev", "amount_to_median_bps", "prior_known_fraud"],
+  "categorical_features": {
+    "currency": {"source": "transaction.amount.currency (decision-time projection field)", "values": ["GBP", "INR", "JPY", "USD"]}
+  },
+  "excluded_from_inputs": ["external_id", "account_id", "occurred_at", "ingested_at", "is_fraud", "scenario", "label_available_at"],
+  "decision_time": "transaction ingested_at (availability key: ingested_at, external_id)",
+  "windows": {
+    "_unit": "days from generator epoch 2026-09-01T00:00:00Z, by decision time, [start, end)",
+    "burn_in": [0, 10],
+    "train": [10, 55],
+    "validation": [56, 85],
+    "test": [116, 150]
+  },
+  "label_views": {
+    "train": {"labels_known_by_day": 85, "rule": "label_available_at <= cutoff; unknown labels are excluded, never relabeled legitimate"},
+    "validation": {"labels_known_by_day": 115, "rule": "label_available_at <= cutoff; unknown excluded"},
+    "test": {"view": "synthetic_truth", "rule": "is_fraud for every test row (offline benchmark; includes never-disclosed fraud); labels observable by the horizon end are reported separately"}
+  },
+  "timeline": {
+    "fit_day": 85,
+    "selection_day": 115,
+    "first_test_decision_day": 116,
+    "note": "Train labels mature 30 days after the train window (legitimate maturity is 30 days). The model is fitted at day 85 and scores validation rows retrospectively with decision-time features; selection happens at day 115 on validation labels known by then; test decisions start after selection. Embargo gaps (day 55-56, 85-116) are chronological gaps only: 30-day feature windows still share earlier history (declared stream context, not independence)."
+  },
+  "candidates": [
+    {"name": "rule_r1", "kind": "rule", "params": {"source": "sentinel.scoring.RULE_CONFIG (velocity-amount-rules r1)"}},
+    {"name": "logreg_balanced", "kind": "logistic_regression", "params": {"C": 1.0, "class_weight": "balanced", "max_iter": 2000}},
+    {"name": "logreg_unweighted", "kind": "logistic_regression", "params": {"C": 1.0, "class_weight": null, "max_iter": 2000}},
+    {"name": "hgb_unweighted", "kind": "hist_gradient_boosting", "params": {"learning_rate": 0.1, "max_iter": 200, "max_leaf_nodes": 31, "class_weight": null}},
+    {"name": "hgb_balanced", "kind": "hist_gradient_boosting", "params": {"learning_rate": 0.1, "max_iter": 200, "max_leaf_nodes": 31, "class_weight": "balanced"}}
+  ],
+  "random_seed": 7,
+  "selection": {
+    "metric": "average_precision on eligible validation rows (sklearn average_precision_score)",
+    "tie_break": "earlier entry in the candidate list wins exact ties"
+  },
+  "review_policy": {
+    "primary": "daily_top_k",
+    "capacity_unit": "transactions per UTC calendar day of decision time",
+    "k_per_day": 15,
+    "ranking": "score descending; ties by external_id ascending",
+    "streaming_threshold": "the score at rank k_per_day x (number of validation decision days), frozen from validation and applied unchanged to test (rows with score >= threshold are flagged)"
+  },
+  "calibration": "no calibration step; scores are reported as uncalibrated model scores (Brier and reliability shown for information); rule scores are heuristics, never probabilities",
+  "uncertainty": {"method": "account-level bootstrap (resample accounts with replacement)", "replicates": 200, "seed": 11, "interval": [0.025, 0.975]},
+  "slices": ["currency", "scenario", "activity_count_24h", "test_week"],
+  "test_access": "test labels are read only by `python -m ml test`, once, after the selection record is frozen; a rerun must use --reproduce, which recomputes and compares without rewriting"
+}
