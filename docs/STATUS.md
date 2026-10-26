@@ -1,5 +1,14 @@
 # Project status
 
+## Current Linux readiness: N3/N4 accepted; N5/N6/N7 assigned
+
+N3/N4 **476abccc52b5228f71e129f8e3d0a8d9f11bef41** is accepted for its bounded changes: independent Windows and native Linux focused runs each passed 24 tests; Windows Ruff passed. Read [the review](reviews/476abcc.md). The owner full Windows six-check record is verified; the native full report matches all 436 collected cases but has **430 passes, five failures and one allowed skip**. The full Linux gate is not green; no merge/push occurred.
+
+Next: [Claude N5/N6/N7](prompts/CLAUDE_N5_LINUX_LIFECYCLE.md) from exact 476abcc in a new dedicated worktree. This explicitly authorizes narrow browser_stack lifecycle edits, zombie detection and install-cache diagnosis. Both process defects reproduced independently with owned/reaped children. The install failure's missing package is still unknown; require cold-cache CI-order proof, not only a warm-cache rerun. Preserve accepted candidates, production code, contracts/frozen assets and the exact skip policy. Codex batches integration after review and final platform checks. Main remains verified a456f51; Cursor's seven saved edits are untouched.
+
+Ubuntu setup is complete and native Linux is available as sentinel UID 1000. No additional environment approval is pending for this scoped task. GitHub Actions/macOS/hosting remain unverified; the existing orphan/PID-race limitations remain. New commits use PHANI465 <pgavara1@asu.edu> alone.
+
+## Earlier setup and N3/N4 assignment record
 ## Current Linux readiness: setup complete; N3/N4 assigned
 
 The owner approved Ubuntu setup. Native Linux tools and a non-root sentinel user/clone are ready: [actual results](ci/WSL_SETUP_RESULTS.md). At accepted N2 3c860d4, all six N2 startup cases passed natively; the combined focused run was **13 passed, one failed**. The failure is an actual PostgreSQL startup portability defect [N4](reviews/N4-linux-postgres-startup.md), not missing tooling. A controlled TCP-only cluster succeeded and was verified stopped. No Linux CI pass is claimed.

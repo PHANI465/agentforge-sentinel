@@ -1,0 +1,41 @@
+# Claude N5/N6/N7: native Linux lifecycle and reproducible install tests
+
+Read main:AGENTS.md and latest task/coordination:docs/STATUS.md, docs/TASK_QUEUE.md, docs/reviews/476abcc.md, docs/ci/WSL_SETUP_RESULTS.md and this assignment using git show. N2 and N3/N4 are accepted for their bounded changes. The full native Linux gate is still failing. This task explicitly supersedes N3/N4's prohibition on editing tests/support/browser_stack.py; preserve that tested branch/candidate.
+
+## Dependency and owned paths
+
+Create task/claude-linux-lifecycle in E:/PHANI/sentinel-wt/claude-linux-lifecycle from exact **476abccc52b5228f71e129f8e3d0a8d9f11bef41**. Inspect refs and directories first; preserve unexpected work. If this task already exists, resume its owned edits without reset/rebase. No edits in another agent's checkout.
+
+Own tests/support/browser_stack.py for the narrowly scoped process fixes, focused new/updated lifecycle regressions, tests/test_installed_wheel.py for diagnosis/correct preparation if needed, docs/ci/LINUX.md, docs/ci/README.md, necessary documentation in docs/api/browser-fixtures.md and your branch handoff. A minimal .github/workflows/backend.yml dependency-preparation change is allowed only if the cold-cache evidence proves it necessary; retain pinned actions and check coverage. Do not change the gate allowlist, checker timeouts, production src (including accepted devdb fix), scripts/local_stack.py, migrations, public/domain contracts, UI/runner, model/data/evaluation files or dependency pins/lockfiles. Central coordination belongs to Codex.
+
+## N5: bounded termination of an owned API group
+
+The existing helper only sends SIGTERM. A uvicorn factory that blocks after its TERM handler is installed cannot cooperate; startup cleanup times out. Add bounded graceful termination followed by SIGKILL only when the same owned process/group is still proven to be the intended target. Revalidate identity at the escalation boundary, ensure the group is the separately launched API group, and never signal the caller's group or a reused/foreign PID. A missing/changed identity must preserve recovery and refuse unsafe signaling. If the group leader exits but ownership of surviving members cannot be proved, report that unresolved state instead of assuming ownership. Preserve Windows behavior.
+
+Keep waits bounded and use monotonic time. Preserve the existing stop result shape, lifecycle/CLI behavior, ownership markers, retry records and token hygiene. Signal/permission/inspection failures must retain actionable recovery rather than delete manifests or report success. No kill-by-name, broad pkill, killing every uvicorn/python process, root execution or system-service management.
+
+Write real-process regressions first: cooperative TERM exit, TERM-resistant/blocked startup requiring escalation, identity change before escalation with destructive calls intercepted, and missing/group-mismatched identity refusal. Use gates/ready acknowledgements for causal synchronization. Timeouts are bounds, not the only proof of which path ran. Prove cleanup both by exact identity/liveness and port state; stop test-owned children even when the baseline fails. Keep any Windows-specific assertions meaningfully executable on Windows without introducing platform skips/xfails.
+
+## N6: exited zombies do not count as a running API
+
+Parse Linux /proc state as well as the start stamp. A real child in state Z has exited and cannot serve traffic even though its PID persists until its parent waits; it must be treated as stopped. Preserve robust comm parsing and running-process identity semantics. Do not treat permission failures, malformed process data or unknown identity as permission to kill. Keep the non-Linux path honest; this assignment does not establish macOS support.
+
+Write a regression that creates a real exited child, observes Z before reaping (do not poll/wait it away first), calls the actual identity helper, and then always reaps it. Retain running, disappeared and reused-PID coverage. Exercise the real restart-api path, including model/rule identity and replay, rather than only helper mocks.
+
+## N7: explain and remove hidden cache-order dependence
+
+The original full Linux report has an offline install failure in tests/test_installed_wheel.py; the test passed only after scripts/check_package.py's online install. The truncated report does not identify the missing package. Do not claim cache warming fixes the root cause, merely rerun the full gate until green, remove --offline, relax the isolation assertions or change lock pins.
+
+Start with a new task-owned UV_CACHE_DIR and task-owned environment (never erase the owner's/shared cache or active .venv). Apply the documented locked dev+ml install/bootstrap in CI order, then run the installed-wheel test before the package check. Retain exact dependency export and full failing subprocess stderr in ignored evidence, redacting credentials/index auth if present. Identify the missing artifact/metadata/package and why the preceding sync did not provide it. Keep cold/warm evidence separate. If reproduction does not fail, report that result and uncertainty honestly, then strengthen the documented cold-cache acceptance proof; do not invent a cause.
+
+If explicit dependency preparation is required, make it a documented, bounded online setup step using the existing lock/export pins, followed by the existing offline install into a fresh isolated venv and neutral python -I inference. Keep the install/inference phase offline and prove the check no longer relies on a previous unrelated package run. Align the actual CI order if necessary. Network package preparation is ordinary free setup; no provider/model call, paid service or new package versions. Keep the cache experiment reasonably small; host C: space is limited. Remove only exact verified task-owned temporary cache/environment targets after no process uses them, or retain a documented recovery path.
+
+## Final checks and handoff
+
+- Work from this exact base with locked dev+ml, deterministic investigator and SENTINEL_LIVE_CLAUDE=0; unset external test DB and inherited VIRTUAL_ENV. Preserve Windows main a456f51, accepted N2/N3/N4 and Cursor's saved changes.
+- Use existing Ubuntu sentinel UID 1000 and /home/sentinel/agentforge-sentinel as verification clone. Transfer the committed candidate through a checksum-verified local bundle, with a clean clone and no active run. No global safe.directory, new users/default-user changes, installs of unrelated tools, system socket chmod or service changes. Do not copy Windows environments into Linux.
+- Run focused regressions and all previously failing lifecycle tests, plus the retained ownership/PID/refusal tests. Prove old behavior fails for the intended reason and final behavior passes. Report any resource cleanup explicitly; no secret-bearing manifests/logs in tracked files.
+- On the final clean candidate run native Linux's full CI-equivalent structured gate with JUnit, plus Ruff, handoff helpers, domain/HTTP exports, Node transport, package check and read-only ML reproduction. All required cases must execute; the only permitted skip remains live Claude. Preserve the original failing report and separate focused/cold-cache evidence.
+- Run Windows six-command strict validation and validate JUnit captured from that same pytest run. Linux and Windows full suites must run sequentially, never concurrently. Unchanged frontend/browser/model-result bytes do not require another frontend or training run.
+- Document the original five Linux failures and their disposition in your owned docs/handoff before the final commit. A note cannot name its own containing SHA; report final SHA/checks in chat and ignored evidence without editing tracked files after checks.
+- All new commits must use PHANI465 <pgavara1@asu.edu> as sole author and committer, with no Co-Authored-By or AI session trailers. Verify actual metadata. Commit explicit owned files. Do not merge main, rebase accepted candidates, push or deploy. Return exact SHA, full results, cold-cache cause/evidence, cleanup and remaining limits. Codex reviews and performs the batched integration. Cursor can remain closed.
