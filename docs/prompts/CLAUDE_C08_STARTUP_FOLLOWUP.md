@@ -1,3 +1,5 @@
+Delivery update: R28 implementation is delivered at 353ecec and awaits Codex re-review next session. No further Claude rewrite is assigned. Follow docs/prompts/NEXT_SESSION_2026-10-26.md; preserve the original assignment below as history.
+
 # C08 focused startup follow-up: R28
 
 Read latest task/coordination:docs/reviews/784e101.md and current AGENTS/STATUS/TASK_QUEUE. C06 is now accepted at 4f06e32385424613fa0006b5bdbaab81ffea028f; preserve it. C08's 10 original focused checks passed, including the real rollback drill; only the concrete R28 startup paths below block this package. I02 f38e920 remains accepted and Cursor is not needed.

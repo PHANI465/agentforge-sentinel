@@ -1,12 +1,23 @@
 # Project status
 
-## Current work: C06 accepted; C08 startup follow-up only
+## Overnight checkpoint October 25
+
+The owner asked to stop project development for today and continue next session, planned for October 26. **Do not start another implementation, merge or full runtime test tonight.** Documentation and artifact preparation are the only current work.
+
+C08 R28 correction **353ecec2fadbba43f939a27f5ad2b9227ff6fe87** is delivered on task/claude-operator-prep, directly above 784e101 with no merge/rebase. Codex observed clean HEAD, matching passed five-check strict metadata and the handoff. Claude reports 411 backend tests passed, one opt-in live skip and 15 focused operator passes. **R28 independent re-review and C08 acceptance are pending**, not implied by that report. Accepted C06 4f06e32, I02 f38e920 and main 507538e are unchanged.
+
+Next session starts with docs/prompts/NEXT_SESSION_2026-10-26.md. Preserve all tested worktrees. Cursor remains inactive, H01 remains non-blocking/unassigned, and no new paid runtime usage is assumed. The expanded vision is approximately **85 out of 200 planning points** under the explicit artifact rubric; this is a subjective scope estimate, not measured completion or a time forecast.
+
+Matching HTML, Markdown and Word checkpoint files are in E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md,docx}. Their shared content covers the summary, 21 progress steps, the rubric, tomorrow's handoff and proposed improvements. Final document render/QA results are recorded separately; no future pass is claimed here.
+
+
+## Earlier checkpoint: C06 accepted; C08 startup follow-up assigned
 
 C06 is **accepted at 4f06e32385424613fa0006b5bdbaab81ffea028f** for the refreshed local CI configuration/gate/package scope. R25/R27 are resolved: independent 22 focused tests, four-migration/eight-asset installed-package check and read-only ML reproduction passed; the frozen files are unchanged. No Linux/GitHub runner result is claimed. See reviews/4f06e32.md.
 
 C08 **784e1014044920706a41bd91c61b965a03379999 remains changes-requested for R28 only**. Its original 10 ownership/rollback/backup tests passed independently, and the documented rollback works. Additional intercepted startup probes confirmed a lost recovery record when identity inspection fails after launch, and false startup success after a readiness timeout. See reviews/784e101.md. Accepted I02 f38e920 is unchanged.
 
-**Next: Claude follows docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md** on the existing C08 branch. Preserve accepted C06 and I02; no C06 rework or broad operator rewrite is assigned. H01 is non-blocking and unassigned. Cursor remains inactive. After the focused correction/re-review, define release integration; main is still 507538e. Portable checkpoint files are in E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md} and remain dated snapshots.
+**Historical assignment, now delivered at 353ecec: Claude followed docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md** on the existing C08 branch. Preserve accepted C06 and I02; no C06 rework or broad operator rewrite is assigned. H01 is non-blocking and unassigned. Cursor remains inactive. After the focused correction/re-review, define release integration; main is still 507538e. Portable checkpoint files are in E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md} and remain dated snapshots.
 
 Portable HTML/Markdown checkpoint refreshed with 20 progress steps and this C06 acceptance/C08 R28 state. See E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html.
 
@@ -48,9 +59,9 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 | I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; included in accepted Part B f38e920 |
 | I02 Part B continuation | f38e92023481a55db1ecf8bcdbe917140bd5d7cd | ACCEPTED: independent Claude review; Windows local model/browser integration; two non-blocking H01 suggestions |
 | C06 backend CI | 4f06e32385424613fa0006b5bdbaab81ffea028f | ACCEPTED: R25/R27 resolved, current local package/CI configuration scope; no GitHub/Linux run |
-| C08 local operations | 784e1014044920706a41bd91c61b965a03379999 | CHANGES REQUESTED: R28 startup/recovery; original 10 focused checks and rollback pass |
+| C08 local operations | 353ecec2fadbba43f939a27f5ad2b9227ff6fe87 | DELIVERED: owner 411+1 strict / 15 focused; R28 Codex re-review pending next session |
 
-C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03 is separately accepted; see [the review](reviews/a8e716c.md). C06/C08 remain pending review; none of these branches has been integrated into main.
+C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03 is separately accepted; see [the review](reviews/a8e716c.md). C06 is accepted; C08 353ecec awaits re-review. None of these branches has been integrated into main.
 
 Use [the Cursor assignment](prompts/CURSOR_UI.md) for U01 and [the Claude C02 prompt](prompts/CLAUDE_C02.md) for backend browser fixtures. Start from/include accepted C01 2e6c232. The coordination branch is the current instructions reference, not the application base for these tasks.
 
@@ -58,11 +69,10 @@ U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base
 
 ## Immediate executable queue
 
-1. Claude fixes only C08 R28 from exact 784e101 through prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md: pending launch recovery and actual readiness required for success.
-2. Preserve accepted C06 4f06e32 and I02 f38e920. C06 R25/R27 are closed; do not repeat the superseded two-package assignment.
-3. Codex re-reviews the exact C08 correction, then assigns release integration with accepted C06. Retain its sixth package check, 1800-second checker bound, dev/ml requirements and CI gate.
-4. H01 remains a non-blocking later browser increment; Cursor is not needed for current work.
-5. Main, Linux/real CI, remote and hosted provisioning remain separate gates; no new spending or live model calls.
+1. Project development is paused at the owner's request for tonight. Resume through prompts/NEXT_SESSION_2026-10-26.md in the next session.
+2. Codex re-reviews exact C08 353ecec against 784e101, including the new startup cases and retained rollback/lifecycle checks as needed. C08 is not accepted yet.
+3. If accepted, assign one release integration using accepted I02/C06/C08 and run complete integrated checks on its exact final commit. Preserve tested component worktrees.
+4. H01, Linux/real CI, main integration, remote and hosting remain separate work; no Cursor action is required now.
 
 ## Evidence history
 

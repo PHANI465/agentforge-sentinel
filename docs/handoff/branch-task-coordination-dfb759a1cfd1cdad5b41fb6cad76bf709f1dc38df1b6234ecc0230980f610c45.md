@@ -209,3 +209,20 @@ Reviewed clean C06 4f06e32385424613fa0006b5bdbaab81ffea028f and C08 784e10140449
 Independent C08 regressions: 10 passed (68.50s), including actual rollback, current backup and identity refusal/retry. Additional real-function probes intercepted all launches/kills and reproduced the two startup R28 paths (lost identity/recovery followed by false down success; ignored readiness timeout with no healthy response). C08 is changes-requested only for that narrow follow-up; R26's drill works. Exact clean owner strict metadata verified; full counts and actionlint/sleep disclosures remain owner-attributed, not new full reruns. Ruff passed on changed Python paths. Accepted I02/C06, original Cursor and main remain untouched. No provider call, external database, deployment or remote.
 
 See reviews/4f06e32.md, reviews/784e101.md and prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md. Final coordination after-commit checks and refreshed artifact QA belong in the ignored evidence/final chat.
+
+## Owner requested overnight checkpoint
+
+C08 353ecec is observed clean with parent 784e101 and matching passed owner strict metadata (five checks; pytest command duration 888.187s). Claude reports 411+1 and 15 focused passes; no independent R28 source/runtime review or acceptance tonight. C06/I02/main are preserved. Owner asked to continue next session; documentation and matching HTML/Markdown/DOCX are prepared with 21 progress steps, an explicit 85/200 planning rubric and improvement priorities. Primary design references checked: official LangGraph persistence, OWASP Agentic Top 10 and scikit-learn calibration. No code implementation or backend runtime tests are started for this documentation task. Final artifact checks are recorded separately; older strict metadata does not certify a new documentation commit.
+
+
+## Final overnight document verification
+
+The matching HTML, Markdown and Word checkpoints share 15 sections and 21 progress steps, with no missing source-content items in the Word parity check. All 15 final native Word page renders were visually inspected. Windows has no LibreOffice here, and direct Word PDF export stalled; actual Word Page.EnhMetaFileBits pages were rendered, assembled into an internal PDF and passed through the packaged render_docx.py rasterizer. This verifies the real Word layout rather than a substitute HTML layout. No QA intermediates are user deliverables.
+
+The final HTML passed a managed Playwright local-file check with cached Chromium: 15 sections/21 steps, summary first, correct 353ecec pending/C06/I02 states, 85/200 rubric, no broken fragments, no page errors or external assets, and no document overflow at desktop or 390px mobile width. Desktop summary/progress and mobile summary were visually inspected. The exact task-owned stalled document-rendering helpers and Word instance were closed after identity checks. No application runtime suite or independent R28 review was run for this documentation checkpoint.
+
+Output folder: E:/PHANI/Interview/output. Base name: AgentForge_Sentinel_Project_Checkpoint_2026-10-25.
+
+- DOCX sha256: 7978e67399fdd24bbb059fb7d544dc915b9c08ecdb2672fc4120089acfd999b2
+- HTML sha256: bd00df5267629facee4920b2bb65a0ccdce8c072d32869ef8d7c4fa774125bb4
+- MD sha256: c071e0cd59e85e433927064468e2331558c2e84d35a747d64a16b2847dc38955
