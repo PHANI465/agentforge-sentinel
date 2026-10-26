@@ -1,3 +1,5 @@
+Current update: C06 4f06e32 is accepted. C08 784e101 needs only the focused R28 correction in docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md from latest task/coordination. Preserve the two-package assignment below as history; do not redo C06.
+
 Current assignment (October 25): C06/C08 changes requested. Read docs/prompts/CLAUDE_RELEASE_REVIEW_FIXES.md from latest task/coordination. I02 f38e920 is accepted; do not repeat its review or resume superseded C01 fixes below.
 
 # Claude follow-up after four delivered packages

@@ -1,15 +1,14 @@
 # Project status
 
-## Current work: C06/C08 reviews completed; corrections assigned
+## Current work: C06 accepted; C08 startup follow-up only
 
-I02 f38e920 remains accepted and unchanged. C06 e7fc868 and C08 9ab183e now have **changes requested**, not acceptance. Read reviews/e7fc868.md (R25 unexpected-skip gate; R27 current ML dependency/CI refresh) and reviews/9ab183e.md (R24 process/cluster ownership and shutdown; R26 executable rollback).
+C06 is **accepted at 4f06e32385424613fa0006b5bdbaab81ffea028f** for the refreshed local CI configuration/gate/package scope. R25/R27 are resolved: independent 22 focused tests, four-migration/eight-asset installed-package check and read-only ML reproduction passed; the frozen files are unchanged. No Linux/GitHub runner result is claimed. See reviews/4f06e32.md.
 
-Independent evidence: C06 offline package checker passed for its historical two-migration package; C08 real backup/restore test passed (21.56s). Intercepted lifecycle/rollback probes reproduced C08 failures without real process kills or foreign connections. A real two-skip pytest run passed C06's current grep gate; an isolated accepted f38e920 dev-only environment failed collection with seven missing numpy/joblib errors. No Linux/GitHub run or hosted release is claimed.
+C08 **784e1014044920706a41bd91c61b965a03379999 remains changes-requested for R28 only**. Its original 10 ownership/rollback/backup tests passed independently, and the documented rollback works. Additional intercepted startup probes confirmed a lost recovery record when identity inspection fails after launch, and false startup success after a readiness timeout. See reviews/784e101.md. Accepted I02 f38e920 is unchanged.
 
-**Next: Claude follows docs/prompts/CLAUDE_RELEASE_REVIEW_FIXES.md** on the two existing task branches, includes accepted f38e920 as their explicit task dependency, and returns corrected exact commits. Preserve I01's 1800-second checker bound when joining C06's sixth package command. Cursor stays inactive. H01 remains non-blocking and unassigned. Main integration follows package re-review; main remains 507538e.
+**Next: Claude follows docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md** on the existing C08 branch. Preserve accepted C06 and I02; no C06 rework or broad operator rewrite is assigned. H01 is non-blocking and unassigned. Cursor remains inactive. After the focused correction/re-review, define release integration; main is still 507538e. Portable checkpoint files are in E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md} and remain dated snapshots.
 
-
-Portable checkpoint refreshed: E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html and matching .md. It contains the accepted I02 state, 18 completed-process steps and current corrections. Desktop/mobile layout, 13 section anchors, zero external resources/page errors and current-state assertions passed; summary and mobile layout were visually inspected.
+Portable HTML/Markdown checkpoint refreshed with 20 progress steps and this C06 acceptance/C08 R28 state. See E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html.
 
 ## Latest checkpoint: combined local model/browser integration accepted
 
@@ -17,7 +16,7 @@ Codex completed the saved I02 Part B implementation at **f38e92023481a55db1ecf8b
 
 The combined local browser/model/API/Postgres path passes the 19-scenario browser suite (including the intentional failure used for credential-artifact checks). The last-run metadata reports passed with no unexpected failures; private lifecycle records were removed and the owned stack folder is empty. The scanner and 20 shutdown / 12 entrypoint harness checks preceded it. Frontend product code passed 44 unit tests and build on 4df18f2; that code is unchanged at final f38e920, whose e2e-inclusive typecheck passed. The final clean f38e920 strict check passed: Ruff, 396 pytest tests plus one opt-in live-Claude skip, 21 helper tests, 15 schemas and Node transport.
 
-**I02 Part B is accepted at f38e920 after Claude's independent review**, forwarded by the owner: no blocking findings, independent 44 frontend tests/build/typecheck and 19 real browser tests (exit 0), plus a negative session-binding probe and seven error-hygiene probes. See [the acceptance record](reviews/f38e920.md). Two low test-hardening suggestions are tracked as non-blocking H01; the accepted commit stays unchanged. Next: Codex reviews already-delivered C06/C08 for release preparation. Cursor can remain closed. Main remains baseline 507538e; Linux/CI, hosting/public BYOK and production claims remain unverified. Earlier pending statements below are dated history.
+**I02 Part B is accepted at f38e920 after Claude's independent review**, forwarded by the owner: no blocking findings, independent 44 frontend tests/build/typecheck and 19 real browser tests (exit 0), plus a negative session-binding probe and seven error-hygiene probes. See [the acceptance record](reviews/f38e920.md). Two low test-hardening suggestions are tracked as non-blocking H01; the accepted commit stays unchanged. C06 is now accepted; C08 has the focused R28 follow-up before release integration. Cursor can remain closed. Main remains baseline 507538e; Linux/CI, hosting/public BYOK and production claims remain unverified. Earlier pending statements below are dated history.
 
 ## Goal and delivery
 
@@ -48,8 +47,8 @@ Build AgentForge Sentinel, a fraud-risk investigation workbench demonstrating da
 | I01 model-browser fixtures | 7dd9428c70a7741af1c4781d22fd6b184f957444 | ACCEPTED: Windows local fixture/lifecycle dependency; ten independent real-process tests passed |
 | I02 Part A | 50856be3da54ffdadd6cda7a0fcd5e59a9b21733 | ACCEPTED: N1 resolved; included in accepted Part B f38e920 |
 | I02 Part B continuation | f38e92023481a55db1ecf8bcdbe917140bd5d7cd | ACCEPTED: independent Claude review; Windows local model/browser integration; two non-blocking H01 suggestions |
-| C06 backend CI | e7fc868b52a1d3cc8876d8d993907398663c2d57 | CHANGES REQUESTED: R25/R27; refresh for accepted model backend; no GitHub/Linux run |
-| C08 local operations | 9ab183e836751a75e7a1a350afc51af7663f9a63 | CHANGES REQUESTED: R24/R26; ownership-safe lifecycle and executable rollback |
+| C06 backend CI | 4f06e32385424613fa0006b5bdbaab81ffea028f | ACCEPTED: R25/R27 resolved, current local package/CI configuration scope; no GitHub/Linux run |
+| C08 local operations | 784e1014044920706a41bd91c61b965a03379999 | CHANGES REQUESTED: R28 startup/recovery; original 10 focused checks and rollback pass |
 
 C01 acceptance and independent verification are recorded in [the re-review](reviews/2e6c232.md). The original [0a6fb0e review](reviews/0a6fb0e.md) remains history. C03 is separately accepted; see [the review](reviews/a8e716c.md). C06/C08 remain pending review; none of these branches has been integrated into main.
 
@@ -59,11 +58,11 @@ U01 deb1037 and U02 5f28555 are accepted on their preserved U01+C02 browser base
 
 ## Immediate executable queue
 
-1. Claude implements the concrete C06 R25/R27 and C08 R24/R26 assignments in prompts/CLAUDE_RELEASE_REVIEW_FIXES.md, each on its existing task branch with accepted f38e920 included. Do not edit accepted component checkouts.
-2. Codex re-reviews the exact corrected commits and checks their integration with accepted I02. Neither old package is accepted by the new assignment.
-3. Preserve 1800-second backend checker timeout, the sixth package check and current dev/ml requirements. CI/Linux remains unverified until executed.
-4. H01 is a non-blocking later browser-maintenance increment, not part of these backend fixes. Cursor is not needed for the current work.
-5. After acceptance define the canonical release integration; main, remote/runner provisioning and hosting remain separate gates. No new spending or live provider calls.
+1. Claude fixes only C08 R28 from exact 784e101 through prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md: pending launch recovery and actual readiness required for success.
+2. Preserve accepted C06 4f06e32 and I02 f38e920. C06 R25/R27 are closed; do not repeat the superseded two-package assignment.
+3. Codex re-reviews the exact C08 correction, then assigns release integration with accepted C06. Retain its sixth package check, 1800-second checker bound, dev/ml requirements and CI gate.
+4. H01 remains a non-blocking later browser increment; Cursor is not needed for current work.
+5. Main, Linux/real CI, remote and hosted provisioning remain separate gates; no new spending or live model calls.
 
 ## Evidence history
 
