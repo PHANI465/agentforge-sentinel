@@ -8,7 +8,7 @@ C08 R28 correction **353ecec2fadbba43f939a27f5ad2b9227ff6fe87** is delivered on 
 
 Next session starts with docs/prompts/NEXT_SESSION_2026-10-26.md. Preserve all tested worktrees. Cursor remains inactive, H01 remains non-blocking/unassigned, and no new paid runtime usage is assumed. The expanded vision is approximately **85 out of 200 planning points** under the explicit artifact rubric; this is a subjective scope estimate, not measured completion or a time forecast.
 
-Matching HTML, Markdown and Word checkpoint files are in E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md,docx}. Their shared content covers the summary, 21 progress steps, the rubric, tomorrow's handoff and proposed improvements. Final document render/QA results are recorded separately; no future pass is claimed here.
+Matching HTML, Markdown and Word checkpoint files are in E:/PHANI/agentforge-sentinel/docs/artifacts/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md,docx}. Their shared content covers the summary, 21 progress steps, the rubric, tomorrow's handoff and proposed improvements. Final document render/QA results are recorded separately; no future pass is claimed here.
 
 
 ## Earlier checkpoint: C06 accepted; C08 startup follow-up assigned
@@ -17,9 +17,9 @@ C06 is **accepted at 4f06e32385424613fa0006b5bdbaab81ffea028f** for the refreshe
 
 C08 **784e1014044920706a41bd91c61b965a03379999 remains changes-requested for R28 only**. Its original 10 ownership/rollback/backup tests passed independently, and the documented rollback works. Additional intercepted startup probes confirmed a lost recovery record when identity inspection fails after launch, and false startup success after a readiness timeout. See reviews/784e101.md. Accepted I02 f38e920 is unchanged.
 
-**Historical assignment, now delivered at 353ecec: Claude followed docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md** on the existing C08 branch. Preserve accepted C06 and I02; no C06 rework or broad operator rewrite is assigned. H01 is non-blocking and unassigned. Cursor remains inactive. After the focused correction/re-review, define release integration; main is still 507538e. Portable checkpoint files are in E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md} and remain dated snapshots.
+**Historical assignment, now delivered at 353ecec: Claude followed docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md** on the existing C08 branch. Preserve accepted C06 and I02; no C06 rework or broad operator rewrite is assigned. H01 is non-blocking and unassigned. Cursor remains inactive. After the focused correction/re-review, define release integration; main is still 507538e. Portable checkpoint files are in E:/PHANI/agentforge-sentinel/docs/artifacts/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md} and remain dated snapshots.
 
-Portable HTML/Markdown checkpoint refreshed with 20 progress steps and this C06 acceptance/C08 R28 state. See E:/PHANI/Interview/output/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html.
+Portable HTML/Markdown checkpoint refreshed with 20 progress steps and this C06 acceptance/C08 R28 state. See E:/PHANI/agentforge-sentinel/docs/artifacts/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.html.
 
 ## Latest checkpoint: combined local model/browser integration accepted
 
@@ -172,7 +172,7 @@ These results establish reproducibility in one synthetic world. Scores are uncal
 | E:\PHANI\sentinel-wt\claude-model-serving | Latest accepted model backend at 275509a; no analyst UI is integrated here. |
 | E:\PHANI\sentinel-wt\cursor-model-analysis | Newest delivered U03 frontend at a5716e2, based on accepted U02; it does not include C07. |
 | E:\PHANI\sentinel-wt\cursor-browser-e2e | Preserved accepted U02 browser workflow at 5f28555, using the older accepted rule-mode backend. |
-| E:\PHANI\Interview\output | Portable owner-facing checkpoint document. |
+| docs/artifacts/ | Portable owner-facing HTML, Markdown and Word checkpoint documents. |
 | docs/STATUS.md and docs/TASK_QUEUE.md | Current decisions, package review states and next assignments, read from task/coordination. |
 | docs/handoff/ in each task branch | Implementer checkpoint, ownership, tested dependencies, results and next action. |
 | .agent/last-check.json in each worktree | Ignored local evidence for that checkout and exact commit; not a shared or portable success claim. |

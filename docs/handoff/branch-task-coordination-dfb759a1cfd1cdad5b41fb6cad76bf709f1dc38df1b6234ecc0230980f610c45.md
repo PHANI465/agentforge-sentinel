@@ -226,3 +226,7 @@ Output folder: E:/PHANI/Interview/output. Base name: AgentForge_Sentinel_Project
 - DOCX sha256: 7978e67399fdd24bbb059fb7d544dc915b9c08ecdb2672fc4120089acfd999b2
 - HTML sha256: bd00df5267629facee4920b2bb65a0ccdce8c072d32869ef8d7c4fa774125bb4
 - MD sha256: c071e0cd59e85e433927064468e2331558c2e84d35a747d64a16b2847dc38955
+
+## Project artifact relocation
+
+At the owner's request, the final October 25 HTML, Markdown and Word checkpoint files were moved from E:/PHANI/Interview/output into docs/artifacts/ inside this repository. All three SHA256 hashes are unchanged, so existing content and Word rendering verification still apply. Live coordination links and the next-session prompt point to the project folder; docs/artifacts/README.md explains the original paths retained inside the dated snapshots. AGENTS.md sets this folder as the location for future owner-facing project documents. This is documentation/file organization only; R28 remains pending review and no application tests or code changes are involved.

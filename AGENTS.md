@@ -5,6 +5,7 @@ These shared instructions apply to the adopted Sentinel project. The current use
 ## Project and commands
 
 - Product: a fraud investigation workbench with trained risk scoring, bounded agents, analyst tools, human approval and an auditable simulated outcome.
+- Owner-facing project documents and portable HTML/Markdown/Word checkpoints belong in `docs/artifacts/` inside this repository. Keep temporary render/QA files outside tracked artifacts; update current coordination links when relocating a deliverable.
 - Delivery: no fixed deadline. Complete the milestone gates in docs/PROJECT_PLAN.md; keep one end-to-end path working as each part improves.
 - Accepted components: Python/FastAPI/Pydantic/PostgreSQL backend, React/TypeScript/Vite UI and NumPy/scikit-learn/joblib offline baselines. Trained API and model-results UI are integrated and accepted at f38e920 for the Windows-local scope; record provenance for any reused source UI. Hardware and hosting choices still require measurement.
 - Budget: existing laptop/subscriptions and free allowances only; no additional paid usage or paid fallback is assumed. Stop the affected mode when quota is exhausted.
