@@ -5,9 +5,11 @@ Process-free by construction: every subprocess call (pg_ctl, taskkill, uvicorn) 
 API health probe are intercepted and recorded, so no real database or API is started,
 stopped or queried. Owned trees are built by hand in fresh tmp_path subtrees; junctions are
 removed in finally blocks; outside canaries must survive."""
+import contextlib
 import json
 import os
 import secrets
+import stat
 import subprocess
 import sys
 import tempfile
@@ -167,23 +169,54 @@ def test_r11_redirected_api_log_is_refused_before_launch(tmp_path, procs):
 
 # ---- R12: partial removal stays recoverable ----------------------------------------------
 
-@pytest.mark.skipif(os.name != "nt", reason="Windows sharing-violation lock")
+@contextlib.contextmanager
+def deletion_refused(target: Path):
+    """A real refusal to delete `target`, released on exit. Windows: an open handle without
+    FILE_SHARE_DELETE (sharing violation). POSIX: unlinking needs write permission on the
+    parent directory, so the owner removes it (an open file alone does not stop unlink);
+    root ignores that, so these cases need an unprivileged user."""
+    if os.name == "nt":
+        handle = open(target, "rb")
+        try:
+            yield
+        finally:
+            handle.close()
+        return
+    assert os.geteuid() != 0, "run as an unprivileged user: root ignores permissions"
+    parent = target.parent
+    mode = parent.stat().st_mode
+    parent.chmod(stat.S_IRUSR | stat.S_IXUSR)
+    try:
+        yield
+    finally:
+        parent.chmod(mode)
+
+
 @pytest.mark.parametrize("locked", ["api.log", "pg/data/locked.bin"])
 def test_r12_locked_file_keeps_state_loadable_and_retry_completes(tmp_path, procs, locked,
                                                                   capsys):
+    foreign, keep = outside(tmp_path)
+    sibling = tmp_path / "unrelated"
+    sibling.mkdir()
+    (sibling / "notes.txt").write_text("keep")
     directory = owned_tree(tmp_path, initialized=False, started=False)
     target = directory / locked
     target.write_bytes(b"x")
-    handle = open(target, "rb")  # without FILE_SHARE_DELETE: deletion is refused
-    try:
+    owned = {k: json.loads((directory / "stack.json").read_text())[k]
+             for k in ("owner", "state_dir", "tokens")}
+    with deletion_refused(target):
         result = Stack.load(directory / "stack.json").stop()
         assert result["ok"] is False and result["state_removed"] is False
+        assert any(Path(locked).parts[0] in e for e in result["errors"])
         again = Stack.load(directory / "stack.json")  # still owned and loadable
-        assert (directory / browser_stack.MARKER).exists()
-    finally:
-        handle.close()
-    assert again.stop()["ok"] is True
+        assert (directory / browser_stack.MARKER).exists() and target.exists()
+        assert {k: again.manifest[k] for k in owned} == owned  # same owner and credentials
+        assert DUMMY_TOKEN not in json.dumps(result)
+    assert again.stop()["ok"] is True  # the fault is released: the plain retry finishes
     assert not directory.exists()
+    assert keep.read_text() == "must survive" and (foreign / "data" / "PG_VERSION").exists()
+    assert (sibling / "notes.txt").read_text() == "keep"
+    assert procs.calls == []  # uninitialized data: no PostgreSQL command at all
     assert DUMMY_TOKEN not in capsys.readouterr().out
 
 
