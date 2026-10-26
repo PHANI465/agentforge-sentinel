@@ -1,3 +1,5 @@
+Completed update: N2 3c860d4 is accepted for the Windows-native/controlled-launch scope. Native Linux remains unrun. Preserve that branch; the next assignment is task/coordination:docs/prompts/CLAUDE_N3_PORTABLE_CLEANUP.md. The original task below is history.
+
 # Claude N2: remove the known Linux test blocker
 
 Read current main:AGENTS.md, then the latest task/coordination:docs/STATUS.md, docs/TASK_QUEUE.md, docs/reviews/4fff776.md (N2) and this assignment using git show. Main is consolidated and verified; this is the next small compatibility task, not another I03 rewrite.

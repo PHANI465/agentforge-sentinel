@@ -249,3 +249,10 @@ N2 records the unguarded Windows creationflags in the orphan test as a concrete 
 ## N2 dispatch after verified main
 
 Main a456f51 completed all nine validation stages: strict six, 433+1 backend/JUnit, 44 frontend, 19 real browser, HTTP and read-only ML; exact final audit is at canonical main .agent/main-validation/final-audit.json. Recorded a portable exact-main verification note and Claude's scoped N2 task. Ubuntu WSL2 was listed read-only; no setup/user/package changes. Main remains clean and unchanged. Coordination publishes documentation only in its own worktree; N2 code starts from exact main, not an unreviewed branch. Sole-owner policy applies to this and future commits. No new source/runtime tests, app edit, provider call, remote or deployment for this dispatch. Final doc checks are in ignored coordination evidence/final chat.
+
+
+## N2 acceptance and N3 dispatch
+
+Independent N2 14 tests passed in 39.23s; Ruff and exact final metadata/JUnit collection verification passed. A temporary external plugin reinstated the old launch stimulus in the actual posix-launch test and reproduced the precise unsupported-creationflags ValueError without editing candidate files. Owner 434+1/six checks remain attributed. A copied full JUnit report with the two platform skips is rejected exactly twice by the unchanged gate; no real Linux claim.
+
+Accepted 3c860d4 remains clean, as do main a456f51 and the prior accepted checkouts. Published reviews/3c860d4.md and N3's focused cleanup-test task. Prepared a concrete WSL setup proposal with primary Microsoft/PostgreSQL/uv references; no package/user/service changes or provider call. Main integration is intentionally batched after N3 review, preserving current checked main and avoiding repeated promotions/full suites. All new commits use the owner alone. Final coordination documentation checks are in ignored evidence/final chat.

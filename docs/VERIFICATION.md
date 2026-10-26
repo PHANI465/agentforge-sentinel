@@ -277,3 +277,10 @@ N2 records the unguarded Windows creationflags in the orphan test as a concrete 
 The owner designated Codex as main integrator and explicitly requested future commits solely authored by the owner. Prepared an automatic merge of accepted I03 4fff776 and coordination cad89cb in task/codex-main-integration, with no conflicts or changes to protected application/checker/CI/test/model/UI/dependency bytes. Updated canonical README/SETUP and current coordination, AGENTS/CLAUDE authorship policy and Claude's documented project attribution settings. Existing historical authorship and accepted checkouts are preserved.
 
 The new containing commit uses PHANI465 <pgavara1@asu.edu> as sole author/committer without co-author/session trailers. Main and the coordination reference are fast-forwarded before final verification in the canonical root. Full strict/JUnit gate/HTTP/read-only ML/frontend/browser results are recorded after the commit in ignored evidence/final chat; this entry does not assert a future pass. N2, H01 and platform/public-operation gaps remain open. No remote, push, paid/provider call or deployment.
+
+
+## N2 acceptance and N3 dispatch
+
+Independent N2 14 tests passed in 39.23s; Ruff and exact final metadata/JUnit collection verification passed. A temporary external plugin reinstated the old launch stimulus in the actual posix-launch test and reproduced the precise unsupported-creationflags ValueError without editing candidate files. Owner 434+1/six checks remain attributed. A copied full JUnit report with the two platform skips is rejected exactly twice by the unchanged gate; no real Linux claim.
+
+Accepted 3c860d4 remains clean, as do main a456f51 and the prior accepted checkouts. Published reviews/3c860d4.md and N3's focused cleanup-test task. Prepared a concrete WSL setup proposal with primary Microsoft/PostgreSQL/uv references; no package/user/service changes or provider call. Main integration is intentionally batched after N3 review, preserving current checked main and avoiding repeated promotions/full suites. All new commits use the owner alone. Final coordination documentation checks are in ignored evidence/final chat.

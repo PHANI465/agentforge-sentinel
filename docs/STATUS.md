@@ -1,6 +1,14 @@
 # Project status
 
-## Next assignment: N2 Linux readiness
+## Current work: N2 accepted; N3 assigned
+
+**N2 3c860d4f1efa55c6d6e0bc28200b701afdfec837 is accepted** for its Windows-native and controlled POSIX-launch compatibility scope. Independent 14 tests passed in 39.23s, Ruff passed and the old launch negative control failed for the original ValueError. Final owner six-check metadata and all 435 JUnit node IDs match; 434+1 remains Claude execution evidence. No native Linux/CI pass is claimed. See [the review](reviews/3c860d4.md).
+
+**Claude N3 is assigned, not started:** [portable cleanup-failure coverage](prompts/CLAUDE_N3_PORTABLE_CLEANUP.md), from accepted 3c860d4 in a new worktree. The two Windows-only cleanup skips would fail the Linux gate; an independent report-level probe confirms that rejection. Preserve actual Windows coverage, execute equivalent portable failure/retry cases, and keep the allowlist unchanged. Codex will batch N2/N3 integration after N3 review; verified main remains a456f51.
+
+Native Linux needs a suitable environment. [The scoped WSL setup proposal](ci/WSL_SETUP_REVIEW.md) is prepared for the owner's decision; no setup has been performed. N3 code/Windows work can proceed independently. Main's passing source/report is unchanged. All new commits keep the owner's sole identity. H01 and the broader multi-agent/analyst/security feature milestone remain separate; Cursor can stay closed.
+
+## Previous N2 assignment (now delivered)
 
 Verified main remains **a456f510d8053ce67b4334564d75225a756d923d**: all six strict checks, 433 backend passes/one intentional skip, 44 frontend tests, 19 real browser tests, HTTP/package/model checks and final clean-state audit passed. See [the exact main verification](releases/MAIN-verification-2026-10-26.md).
 

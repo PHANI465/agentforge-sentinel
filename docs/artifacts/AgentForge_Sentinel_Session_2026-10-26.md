@@ -29,3 +29,7 @@ Synthetic data, simulated actions, uncalibrated model rankings, PID timing and p
 Read [the main release record](../releases/MAIN-local-release.md), [STATUS](../STATUS.md), [TASK_QUEUE](../TASK_QUEUE.md), [I03 review](../reviews/4fff776.md) and [R28 review](../reviews/353ecec.md). The October 25 HTML/Word/Markdown checkpoint files are retained as unchanged dated snapshots.
 
 Main validation is complete on a456f51: see [the exact verification record](../releases/MAIN-verification-2026-10-26.md). Claude's next task is [N2 Linux readiness](../prompts/CLAUDE_N2_LINUX_READINESS.md), on a new branch from that main commit. The next stages are an actual Linux/CI run and the bounded three-role fraud workflow. This coordination update does not change or invalidate main's tested source/commit.
+
+## N2 review and N3 follow-up
+
+N2 3c860d4 is accepted for Windows-native and simulated-launch evidence: independent 14 tests passed, the negative control caught the old unsupported flags, Ruff passed and the owner full report matches 435 independently collected cases (434+1). There is no Linux pass. Main stays a456f51 while [N3](../prompts/CLAUDE_N3_PORTABLE_CLEANUP.md) removes the two Windows-only cleanup skips with equivalent executed recovery coverage. Codex plans one combined integration after N3 review. [WSL setup](../ci/WSL_SETUP_REVIEW.md) is a prepared owner decision; N3 Windows/code work can proceed. All new commits remain solely authored/committed by the owner.
