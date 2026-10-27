@@ -57,6 +57,9 @@ CRITICAL_PATHS = ("stack.json", MARKER, "api.log", "pg", "pg/data")
 RUNTIME_ROLE = "sentinel_browser_runtime"
 # CLI scorer names -> SENTINEL_SCORER values; only registered scorers exist.
 SCORERS = {"rule": "rule", "model": "model:hgb_balanced@p1"}
+# POSIX API stop: graceful request, then (same verified group only) SIGKILL; both bounded.
+TERM_GRACE_SECONDS = 10
+KILL_WAIT_SECONDS = 10
 
 
 class StackError(RuntimeError):
@@ -86,13 +89,35 @@ def process_start_time(pid: int) -> int | None:
         finally:
             kernel32.CloseHandle(handle)
     try:
-        return int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[19])
+        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
+        if fields[0] in ("Z", "X"):  # exited (zombie until its parent waits): not running
+            return None
+        return int(fields[19])
     except (OSError, IndexError, ValueError):
         try:
             os.kill(pid, 0)
-            return 0  # alive, start time unknown on this platform
+            return 0  # alive, start time unknown: never a verified identity
         except OSError:
             return None
+
+
+def _group_members(pgid: int) -> set[int] | None:
+    """Live (non-zombie) members of a POSIX process group; None if it cannot be inspected."""
+    try:
+        entries = [entry for entry in Path("/proc").iterdir() if entry.name.isdigit()]
+    except OSError:
+        return None
+    members = set()
+    for entry in entries:
+        try:
+            fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+        except OSError:
+            continue  # exited while listing
+        except IndexError:
+            return None
+        if fields[0] not in ("Z", "X") and fields[2] == str(pgid):
+            members.add(int(entry.name))
+    return members
 
 
 def healthy(port: int) -> dict | None:
@@ -112,15 +137,64 @@ def wait_until(predicate, timeout: float, interval: float = 0.2) -> bool:
     return predicate()
 
 
-def terminate_tree(pid: int) -> None:
+def terminate_tree(pid: int, stamp: int | None) -> None:
+    """Stop one API process tree whose recorded identity (pid + start stamp) still matches.
+
+    Windows: a forced tree kill. POSIX: the API was launched as the leader of its own process
+    group; that group gets SIGTERM, then, if the leader has not exited within
+    TERM_GRACE_SECONDS (an app blocked after installing its TERM handler), SIGKILL. Identity
+    and group are re-verified immediately before each signal; anything unverifiable, changed
+    or not the API's own group raises StackError with nothing (further) signalled, so the
+    caller keeps its recovery record. Members surviving an exited leader are reported, never
+    assumed to be ours."""
+    import signal
+
+    def verify(boundary: str) -> None:
+        if not stamp or process_start_time(pid) != stamp:
+            raise StackError(f"API process {pid} identity changed or unverifiable {boundary}; "
+                             "not signalled, recovery kept")
+        if os.name == "nt":
+            return
+        try:
+            group = os.getpgid(pid)
+        except OSError:
+            raise StackError(f"API process {pid} group cannot be inspected {boundary}; "
+                             "not signalled, recovery kept") from None
+        if group != pid or group == os.getpgrp():
+            raise StackError(f"API process {pid} is not the leader of its own process group; "
+                             "not signalled, recovery kept")
+
+    def signal_group(sig) -> None:
+        try:
+            os.killpg(pid, sig)
+        except ProcessLookupError:
+            pass  # the group is already gone
+        except OSError as error:
+            raise StackError(f"API process group {pid} could not be signalled "
+                             f"({type(error).__name__}); recovery kept") from None
+
+    def exited() -> bool:
+        return process_start_time(pid) != stamp
+
+    def survivors_resolved() -> None:
+        members = _group_members(pid)
+        if members is None or members:
+            raise StackError(f"API process {pid} exited but its group cannot be shown empty "
+                             f"(members {sorted(members or [])}); not signalled, recovery kept")
+
+    verify("before termination")
     if os.name == "nt":
         subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
-    else:
-        import signal
-        try:
-            os.killpg(pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
+        return
+    signal_group(signal.SIGTERM)
+    if wait_until(exited, TERM_GRACE_SECONDS):
+        survivors_resolved()
+        return
+    verify("before escalation")
+    signal_group(signal.SIGKILL)
+    if not wait_until(exited, KILL_WAIT_SECONDS):
+        raise StackError(f"API process {pid} did not stop after SIGKILL; recovery kept")
+    survivors_resolved()
 
 
 # ---- ownership (review R11) ----------------------------------------------------------------
@@ -392,11 +466,14 @@ class Stack:
         pid, stamp, port = api.get("pid"), api.get("start_time"), api.get("port")
         if pid is None:
             return
-        if self._process is not None and self._process.poll() is None:
-            terminate_tree(pid)
-            self._process.wait(timeout=15)
-        elif stamp is not None and process_start_time(pid) == stamp:
-            terminate_tree(pid)
+        launched = self._process is not None and self._process.poll() is None
+        if launched or (stamp is not None and process_start_time(pid) == stamp):
+            terminate_tree(pid, stamp)  # re-verifies identity; refusal keeps this record
+            if self._process is not None:
+                try:
+                    self._process.wait(timeout=KILL_WAIT_SECONDS)  # reap our own child
+                except subprocess.TimeoutExpired:
+                    raise StackError(f"API process {pid} did not stop") from None
         # else: the recorded process is already gone (or the PID was reused): touch nothing.
         if not wait_until(lambda: process_start_time(pid) != stamp, 15):
             raise StackError(f"API process {pid} did not stop")

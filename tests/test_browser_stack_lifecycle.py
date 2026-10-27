@@ -114,24 +114,80 @@ def test_identity_change_before_escalation_is_refused(tmp_path, fast, monkeypatc
                             lambda *a, **k: sent.append(a) or pytest.fail("no taskkill"))
     with stand_in(RESISTANT) as process:
         stack = recorded(tmp_path, process)
-        real_stamp = browser_stack.process_start_time
-        checks = []
+        real_stamp, real_wait = browser_stack.process_start_time, browser_stack.wait_until
+        checks, waited = [], []
+
+        def wait(*args, **kwargs):  # marks the end of the bounded graceful wait
+            result = real_wait(*args, **kwargs)
+            waited.append(result)
+            return result
 
         def stamp(pid):
-            # The PID shows another identity at the next signalling boundary: POSIX once the
-            # graceful request was sent; Windows (one forced step) right after the caller's
-            # check, at the helper's own re-check before taskkill.
+            # The PID shows another identity at the next signalling boundary: POSIX after the
+            # graceful request went unanswered (the escalation check); Windows (one forced
+            # step) at the helper's own re-check right before taskkill.
             if pid == process.pid:
                 checks.append(pid)
-                if sent if POSIX else len(checks) > 1:
+                if (sent and waited) if POSIX else len(checks) > 1:
                     return stack.manifest["api"]["start_time"] + 1
             return real_stamp(pid)
+        monkeypatch.setattr(browser_stack, "wait_until", wait)
         monkeypatch.setattr(browser_stack, "process_start_time", stamp)
-        with pytest.raises(StackError, match="identity"):
+        boundary = "before escalation" if POSIX else "before termination"
+        with pytest.raises(StackError, match=f"identity changed or unverifiable {boundary}"):
             stack.stop_api()
         assert stack.manifest["api"]["pid"] == process.pid  # recovery record kept
         assert sent == ([signal.SIGTERM] if POSIX else [])
+        if POSIX:  # the graceful request really arrived and was resisted
+            assert waited == [False] and process.stdout.readline().strip() == "term"
         assert process.poll() is None  # nothing destructive reached it
+
+
+# The leader exits on the graceful request; a member of its group ignores it.
+SURVIVOR = textwrap.dedent("""
+    import subprocess, sys, time
+    member = subprocess.Popen([sys.executable, "-c",
+        "import signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);"
+        "print('ready',flush=True);time.sleep(600)"], stdout=subprocess.PIPE, text=True)
+    member.stdout.readline()
+    print(member.pid, flush=True)
+    print("ready", flush=True)
+    time.sleep(600)
+""")
+
+
+def test_surviving_group_member_after_the_leader_exits_is_unresolved(tmp_path, fast,
+                                                                      monkeypatch):
+    process = subprocess.Popen([sys.executable, "-c", SURVIVOR], stdin=subprocess.DEVNULL,
+                               stdout=subprocess.PIPE, text=True, **OWN_GROUP)
+    member = int(process.stdout.readline())
+    try:
+        assert process.stdout.readline().strip() == "ready"
+        stack = recorded(tmp_path, process)
+        if POSIX:
+            sent = []
+            real_killpg = os.killpg
+            monkeypatch.setattr(browser_stack.os, "killpg",
+                                lambda pgid, sig: sent.append(sig) or real_killpg(pgid, sig))
+            with pytest.raises(StackError, match="group cannot be shown empty"):
+                stack.stop_api()
+            assert sent == [signal.SIGTERM]  # never escalated onto an unproven member
+            assert process.wait(10) == -signal.SIGTERM
+            assert process_start_time(member) is not None  # untouched
+            assert stack.manifest["api"]["pid"] == process.pid  # recovery record kept
+        else:  # the forced tree kill takes the member too
+            stack.stop_api()
+            assert process.wait(10) == 1
+            assert browser_stack.wait_until(lambda: process_start_time(member) is None, 10)
+    finally:  # our own processes: the leader by handle, the member by the pid it reported
+        if process.poll() is None:
+            process.kill()
+        process.wait(30)
+        if process_start_time(member) is not None:
+            if POSIX:
+                os.kill(member, signal.SIGKILL)
+            else:
+                subprocess.run(["taskkill", "/PID", str(member), "/F"], capture_output=True)
 
 
 @pytest.mark.parametrize("case", ["missing-identity", "foreign-group"])
