@@ -1,0 +1,121 @@
+{
+  "$defs": {
+    "AccountHistoryArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool": {
+          "const": "account_history",
+          "title": "Tool",
+          "type": "string"
+        },
+        "window": {
+          "enum": [
+            "24h",
+            "7d",
+            "30d"
+          ],
+          "title": "Window",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "window"
+      ],
+      "title": "AccountHistoryArgs",
+      "type": "object"
+    },
+    "AccountProfileArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool": {
+          "const": "account_profile",
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "AccountProfileArgs",
+      "type": "object"
+    },
+    "CaseEvidenceArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool": {
+          "const": "case_evidence",
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "CaseEvidenceArgs",
+      "type": "object"
+    },
+    "ScoringOutcomeArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool": {
+          "const": "scoring_outcome",
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "ScoringOutcomeArgs",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "account_history": "#/$defs/AccountHistoryArgs",
+      "account_profile": "#/$defs/AccountProfileArgs",
+      "case_evidence": "#/$defs/CaseEvidenceArgs",
+      "scoring_outcome": "#/$defs/ScoringOutcomeArgs"
+    },
+    "propertyName": "tool"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/CaseEvidenceArgs"
+    },
+    {
+      "$ref": "#/$defs/ScoringOutcomeArgs"
+    },
+    {
+      "$ref": "#/$defs/AccountHistoryArgs"
+    },
+    {
+      "$ref": "#/$defs/AccountProfileArgs"
+    }
+  ]
+}

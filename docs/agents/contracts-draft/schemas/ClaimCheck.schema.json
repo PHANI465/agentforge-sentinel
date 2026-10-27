@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "index": {
+      "title": "Index",
+      "type": "integer"
+    },
+    "reason": {
+      "enum": [
+        "value_mismatch",
+        "citation_not_in_scope",
+        "fact_not_in_cited_record",
+        "fact_was_available",
+        "verified"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "g3a-draft-1",
+      "default": "g3a-draft-1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "supported",
+        "unsupported",
+        "uncheckable"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "index",
+    "status",
+    "reason"
+  ],
+  "title": "ClaimCheck",
+  "type": "object"
+}

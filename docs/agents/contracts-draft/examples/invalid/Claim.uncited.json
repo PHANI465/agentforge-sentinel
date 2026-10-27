@@ -1,0 +1,7 @@
+{
+  "schema_version": "g3a-draft-1",
+  "kind": "fact",
+  "fact": "transaction_count_1h",
+  "relation": "eq",
+  "value": 2
+}

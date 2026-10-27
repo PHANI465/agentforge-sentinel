@@ -1,0 +1,13 @@
+{
+  "schema_version": "g3a-draft-1",
+  "id": "5b2d9e31-0002-4f00-9a00-0000000000a3",
+  "tool": "account_history",
+  "window": "30d",
+  "status": "ok",
+  "values": {
+    "history_median_amount_minor_30d": 4200,
+    "history_max_amount_minor_30d": 9800
+  },
+  "as_of": "2026-10-27T15:00:00Z",
+  "content_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+}

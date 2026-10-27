@@ -1,0 +1,12 @@
+{
+  "schema_version": "g3a-draft-1",
+  "id": "5b2d9e31-0002-4f00-9a00-0000000000a2",
+  "tool": "account_history",
+  "window": "24h",
+  "status": "ok",
+  "values": {
+    "history_count_24h": 4
+  },
+  "as_of": "2026-10-27T15:00:00Z",
+  "content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}
