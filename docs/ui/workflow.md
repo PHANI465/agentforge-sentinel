@@ -89,3 +89,18 @@ The accepted U03 checkout remains `task/cursor-model-analysis` at `a5716e252af20
 `GET /v1/scoring` and `GET /v1/model-results/{results_id}` use the session bearer and do not send `X-Request-ID`. A 404 or 405 from scoring says the analysis view is unavailable. The page does not replace that failure with the frozen report. A configured rule scorer has no offline report. A stored case keeps its own scorer when the server's configured scorer is different. Model scores are uncalibrated rankings. The frozen threshold stays `4.0295386895426815e-6` on screen. The daily top-15 table is separate from the frozen-threshold table. Scenario slices are labeled as offline hidden synthetic truth. Null bin statistics and an omitted label horizon say "not reported".
 
 `npm test` covers the frozen fixtures. `npm run test:e2e` uses this worktree's locked dev and ml environment, with live Claude off and no external database URL. The stack starts as `--scorer rule --model-fixtures`, so the original rule-mode browser cases still run. Model cases then use `restart-api --scorer model` and restore rule mode. Status stays `{api, database}`; the current mode is `manifest.api.scorer` and `GET /v1/scoring`. See `docs/ui/U03-analysis.md` and `docs/api/model-browser-fixtures.md`.
+
+## H01 browser inspection hardening
+
+The private browser inspector keeps using the disposable cluster owner, but both connection
+paths set psycopg read_only before the first query. This is a database-enforced guard against
+accidental writes, not a new public SQL interface or a reduction of the owner's privileges.
+The five selector modes are tested through the real CLI entry point and a real disposable
+database: an injected first-query INSERT must receive PostgreSQL SQLSTATE 25006, print only
+query_failed, and preserve the write canary. The owner-write control proves the role has
+permission to write outside the guarded inspection connection.
+
+The fresh-model browser flow inspects the database immediately before Approve and requires
+both action_count and approval_count to be zero. Its final exactly-one action and consumed
+approval assertions remain. No production API, contract, scoring, session or fixture change.
+Final exact-commit command results are recorded in the task handoff chat and ignored evidence.

@@ -161,6 +161,7 @@ def main() -> None:
     if args.presence or args.scoring:
         try:
             with connect(url) as conn:
+                conn.read_only = True  # before the first query; rejects accidental writes
                 if args.presence:
                     found = presence(conn, args.external_id)
                 else:
@@ -174,6 +175,7 @@ def main() -> None:
         return
     try:
         with connect(url) as conn:
+            conn.read_only = True  # same protection for case-detail inspection
             if args.external_id:
                 rows = conn.execute(
                     "SELECT c.id FROM cases c"

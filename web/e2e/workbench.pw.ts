@@ -783,6 +783,8 @@ test("investigates, approves, and executes a fresh model score", async ({ page }
   expect(escalate ?? hold).not.toBeNull();
   const proposed = inspectCase({ externalId: seeded.request_body.external_id });
   expect(proposed.proposals.at(-1)?.transaction_id).toBe((escalate ?? hold)?.[1]);
+  expect(proposed.action_count).toBe(0);
+  expect(proposed.approval_count).toBe(0);
   await page.getByRole("button", { name: "Approve", exact: true }).click();
   const executeName = escalate ? "Execute escalate" : "Execute simulated hold";
   await page.getByRole("button", { name: executeName, exact: true }).click();
