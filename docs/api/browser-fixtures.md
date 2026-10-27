@@ -34,6 +34,15 @@ uv run --locked python tests/support/browser_stack.py stop --manifest PATH     #
 - **`seed`** prints one scenario record as JSON (no tokens). `ordinal` ≥ 1 is single-use per stack and gives stable IDs.
 - **`restart-api`** kills only the recorded uvicorn process tree (identity checked by PID **and** process start time) and starts a new process on the same port. **`restart-db`** stops and starts the PostgreSQL server with `pg_ctl`; the API reconnects on its next request.
 - **`stop`** stops the API and database and verifies both (process gone, port closed, `pg_ctl status`). Nothing is terminated by process name, and a PID whose start time no longer matches is never killed.
+  - **API termination.** On Windows it is a forced tree kill (`taskkill /T /F`). On POSIX the API was launched as the leader of its own process group:
+    - that group first receives SIGTERM;
+    - if the leader has not exited within 10 s (for example, an app factory blocked after uvicorn installed its TERM handler), the same group receives SIGKILL, and its exit is awaited for up to 10 s.
+  - **Identity re-checks.** Before each signal, the recorded identity (PID plus start stamp) is checked again. On POSIX, so is the requirement that the process leads its own group and that the group is not the helper's. Any of these conditions is refused with nothing signalled, and the recovery manifest is kept:
+    - a changed, missing or unknown identity;
+    - a different group;
+    - a signalling error;
+    - a leader that exited while other group members survive.
+  - **Exited processes.** On Linux, a process in `/proc` state `Z` (exited, not yet waited for by its parent) counts as stopped.
   - **Database state** is explicit: `running` (pg_ctl status 0), `stopped` (status 3, documented "not running"), `absent` (no data directory), `uninitialized` (no `PG_VERSION`/`postmaster.pid`, so no server can run there), or `unknown`. Unknown covers status 4 (inaccessible data directory), any other code, errors and timeouts, and it never counts as stopped. Only running/unknown trigger `pg_ctl stop`, followed by a fresh status check.
   - Only when **both** API and database are verified does it delete the private directory, after re-checking ownership. It refuses if the directory contains anything unexpected or any link/junction. Deletion order:
     1. removable contents (`pg/`, `api.log`), each re-checked just before deletion;
@@ -117,7 +126,7 @@ Sessions expire 8 hours after `start`.
 
 ## Limits
 
-- Verified on Windows 11 only. The POSIX process path (`killpg`, `/proc` start time) is untested.
+- Verified on Windows 11 and on native Ubuntu 24.04 (WSL2, unprivileged user). The POSIX path relies on Linux `/proc`; other POSIX systems (macOS) are not verified: without `/proc` no start stamp is available, so a stop is refused rather than guessed.
 - Startup takes about 5–10 s (initdb).
 - Recursive removal relies on the ownership and no-link checks above. Pass `--parent-dir` only for a directory you control; the helper still never deletes the parent.
 - One stack per Playwright run is recommended; parallel workers should each start their own stack (random ports).

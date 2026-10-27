@@ -50,7 +50,7 @@ Third-party actions are pinned to full commit SHAs, resolved from their tags on 
 
   The wheel must ship **no other** non-Python file under `ml/` or `data_pipeline/`, so an extra artifact fails.
 - **Forbidden content.** Caches, `.env`/key files, `.agent/` and generated data are forbidden everywhere. Tests and `evals/` are forbidden in the wheel.
-- **Installed check.** The wheel is installed into a fresh virtual environment with the lock's ml pins (`uv export --locked --extra ml`, `--no-deps`) and run with `python -I` from a neutral directory. There, `sentinel`, `ml` and `data_pipeline` must import from that environment, discover exactly the source migrations, bind the registered `hgb_balanced@p1` scorer, and load the frozen results with the accepted artifact hash.
+- **Installed check** (the online package check; `tests/test_installed_wheel.py` repeats it fully offline from the lock-exact `pylock.toml`, see LINUX.md N7). The wheel is installed into a fresh virtual environment with the lock's ml pins (`uv export --locked --extra ml`, `--no-deps`) and run with `python -I` from a neutral directory. There, `sentinel`, `ml` and `data_pipeline` must import from that environment, discover exactly the source migrations, bind the registered `hgb_balanced@p1` scorer, and load the frozen results with the accepted artifact hash.
 
 It is the sixth configured command in `scripts/agent_check.py`, which keeps I01's 1800-second per-command limit. A local strict PASS therefore covers it.
 
@@ -83,6 +83,6 @@ Workflow syntax: `uvx --from actionlint-py actionlint .github/workflows/backend.
 | Full suite through the gate, real run | 418 passed, 1 allowed skip, gate exit 0. Wall time was 52.5 min because Windows **entered sleep and Modern Standby during the run** (System log events 42/107/506/507); one normally seconds-long test straddled it at 1698 s. That duration is not representative. Earlier awake runs took about 14–16 min |
 | actionlint on the workflow | Executed offline: no findings |
 | The workflow on GitHub Actions | **Not executed.** No Git remote or runner is configured, so it is unverified, not green |
-| Linux (ubuntu-24.04) | **Not executed.** N2 fixed the orphan test's Windows-only launch; one Windows-only skip remains a Linux gate blocker. See [LINUX.md](LINUX.md) |
+| Linux (ubuntu-24.04) | **The GitHub runner is not executed.** Native Ubuntu 24.04 on WSL2 is used for local runs (N2 to N7); see [LINUX.md](LINUX.md) for its results and the dispositions of the earlier failures |
 
 Running the workflow needs a remote (for example a private GitHub repository) and the free Actions allowance. Configuring a remote is an owner action.
