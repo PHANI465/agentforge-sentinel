@@ -1,5 +1,13 @@
 # AgentForge Sentinel: October 26 session checkpoint
 
+## Latest checkpoint: N2-N7 integration
+
+R29/R30 are closed at accepted 48633a2; the original independent recovery probes now refuse safely without deleting state. Final candidate review passed 15 targeted tests independently on each platform. Owner full candidate checks passed 449+1 on native Ubuntu and Windows. Codex combined exact candidate with coordination in merge 9e6b613, with no conflicts and no source resolutions.
+
+[Current integrated release and final evidence locations](../releases/MAIN-linux-readiness-2026-10-26.md). Final main validation is keyed to its containing commit under .agent/linux-readiness-validation/; read that record for actual promotion/check results. Accepted worktrees/history and Cursor's seven changes remain preserved. Sole author/committer remains PHANI465 <pgavara1@asu.edu>. No remote, push, deployment or model call. Next: H01 hardening, then bounded three-role fraud investigations with a one-agent comparison. Local native Linux backend evidence does not establish GitHub/macOS/hosting support.
+
+## Earlier October 26 checkpoints
+
 **I03 is accepted at 4fff776fc4b6d2d400db74dc3ff7d6cfce43217d** for the consolidated Windows-local release-candidate scope. The accepted app, CI/package configuration and local operator tooling are now combined in one tested branch. The owner has now designated Codex to consolidate it with current coordination on main; nothing has been pushed or deployed.
 
 | Component | Accepted reference | Position |

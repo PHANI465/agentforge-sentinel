@@ -1,5 +1,15 @@
 # AgentForge Sentinel project checkpoint
 
+## Current release: accepted N2-N7 integration
+
+N5-N7 **48633a2fbe0ff477026830e60b36747eaa96154d** is accepted; [R29/R30 are closed](reviews/48633a2.md). The original independent probes now preserve recovery on repeated fresh-load retries and unreadable live membership. Independent final review: 15 focused tests passed on each platform. Owner candidate full reports: 449 passes and one allowed skip per platform, 450 exact native cases. N2/N3/N4 remain accepted.
+
+Merge 9e6b613 combines this exact candidate with current coordination, without conflicts. [The integrated release note](releases/MAIN-linux-readiness-2026-10-26.md) defines final native Linux validation, main promotion and main's own Windows/backend/browser checks. Exact final containing SHA/results live in ignored .agent/linux-readiness-validation/ and the Linux verification report; require matching clean-commit pass records, not an earlier candidate's report. Main is the canonical base after promotion; accepted branches and Cursor's seven saved edits remain preserved. All new commits use the owner alone; no push, remote, deployment or provider call.
+
+Next after final release gates: H01's two low browser-hardening notes, then the bounded three-role fraud-investigation milestone with a measured one-agent baseline. Real GitHub Actions requires an authorized remote. Public BYOK, hosting, deeper analytics and measured capacity remain future gates. Native Linux here is local Ubuntu WSL backend evidence; macOS, Linux browser and Windows cold-cache are unverified. See the roadmap and release limits.
+
+## Historical review/assignment records (superseded by the current release)
+
 ## Current Linux review: R29/R30 block N5-N7 integration
 
 Candidate **8a4b3d767772a5cc11fa0d405ae4b8190b974ba3** has passing owner full gates on Windows and native Linux (443 passes plus one allowed skip; 444 cases). Exact Linux collection/report and Windows clean-commit metadata were verified; independent focused lifecycle/wheel runs passed nine tests on each platform, with Windows Ruff passing. N6/N7 have no blocking scoped findings.

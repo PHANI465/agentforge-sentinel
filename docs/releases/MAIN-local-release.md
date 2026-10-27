@@ -1,4 +1,6 @@
-# Main: consolidated Windows-local release
+# Initial main snapshot: consolidated Windows-local release
+
+This is the historical a456f51 snapshot. The [current N2-N7 integration](MAIN-linux-readiness-2026-10-26.md) supersedes its Linux-readiness status; original Windows results and application provenance remain preserved.
 
 The owner designated Codex to integrate the accepted local release on October 26, 2026. This commit combines exact I03 4fff776fc4b6d2d400db74dc3ff7d6cfce43217d with coordination cad89cb0d8ccf8b6e21ded0dbacaa59af7cf612b. The merge was automatic, with no conflicts. Main is promoted by fast-forward to this containing commit; no accepted task checkout is rewritten.
 

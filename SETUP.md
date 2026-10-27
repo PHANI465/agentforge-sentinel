@@ -1,10 +1,10 @@
 # AgentForge Sentinel setup
 
-The canonical project is E:/PHANI/agentforge-sentinel on main after the October 26 integration. Use new task branches/worktrees for later work; preserve reviewed component checkouts. Main contains the accepted I03 Windows-local application plus current coordination documentation.
+The canonical project is E:/PHANI/agentforge-sentinel on main after the October 26 integration. Use new task branches/worktrees for later work; preserve reviewed component checkouts. Main combines the accepted I03 application, reviewed N2-N7 Linux-readiness changes and current coordination. See docs/releases/MAIN-linux-readiness-2026-10-26.md for exact verification records and limits.
 
 ## Requirements and install
 
-Use Python 3.11+, uv, Git, Node 22+ and native PostgreSQL binaries (initdb, pg_ctl, pg_dump and pg_restore; tested with PostgreSQL 14.17). Set SENTINEL_PG_BIN if necessary. Docker is not required. Linux/macOS/real GitHub CI remain unverified; N2's Windows-only orphan-test launch needs adaptation before Ubuntu CI.
+Use Python 3.11+, uv, Git, Node 22+ and native PostgreSQL binaries (initdb, pg_ctl, pg_dump and pg_restore; tested on Windows with PostgreSQL 14.17 and native Ubuntu WSL with PostgreSQL 16.15). Set SENTINEL_PG_BIN if necessary. Docker is not required. The native Linux backend uses an unprivileged user; run initdb/tests as that user. GitHub Actions/macOS and Linux browser execution remain unverified. See [Linux setup/results](docs/ci/WSL_SETUP_RESULTS.md) and [portability notes](docs/ci/LINUX.md); the separate operator orphan limitations remain.
 
 ```powershell
 uv sync --locked --extra dev --extra ml
