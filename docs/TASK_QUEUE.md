@@ -1,5 +1,15 @@
 # Shared implementation queue
 
+## Current Linux review: R29/R30 block N5-N7 integration
+
+Candidate **8a4b3d767772a5cc11fa0d405ae4b8190b974ba3** has passing owner full gates on Windows and native Linux (443 passes plus one allowed skip; 444 cases). Exact Linux collection/report and Windows clean-commit metadata were verified; independent focused lifecycle/wheel runs passed nine tests on each platform, with Windows Ruff passing. N6/N7 have no blocking scoped findings.
+
+However, [review R29/R30](reviews/8a4b3d7.md) independently reproduced real recovery-state deletion while an API group member remained alive: a fresh-load retry forgets the survivor, and a permission-denied stat read is mistaken for disappearance. **The whole candidate is changes-requested and must not be integrated yet.** Main remains clean and verified at a456f51; N2 3c860d4 and N3/N4 476abcc stay accepted/preserved.
+
+Next: [Claude's narrow R29/R30 follow-up](prompts/CLAUDE_N5_REVIEW_FIXES.md) on the existing task/claude-linux-lifecycle branch from exact 8a4b3d7. Preserve N6/N7, add real stop/reload/retry regressions, keep fail-closed inspection and run final platform gates sequentially. Codex remains integrator. Artifact/status records are updated here; no merge, remote, push, deployment or model call. Cursor's seven saved changes are preserved. GitHub Actions/macOS and Windows cold-cache remain unverified. New commits use the owner alone.
+
+## Earlier N3/N4 acceptance and N5/N6/N7 assignment
+
 ## Current Linux readiness: N3/N4 accepted; N5/N6/N7 assigned
 
 N3/N4 **476abccc52b5228f71e129f8e3d0a8d9f11bef41** is accepted for its bounded changes: independent Windows and native Linux focused runs each passed 24 tests; Windows Ruff passed. Read [the review](reviews/476abcc.md). The owner full Windows six-check record is verified; the native full report matches all 436 collected cases but has **430 passes, five failures and one allowed skip**. The full Linux gate is not green; no merge/push occurred.
