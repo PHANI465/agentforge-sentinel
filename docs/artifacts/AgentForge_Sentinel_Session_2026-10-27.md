@@ -1,47 +1,60 @@
 # AgentForge Sentinel October 27 session checkpoint
 
-## Summary
+## End-of-day summary — paused at the owner's request
 
-H01 is completed and accepted at f091a34c2ed3f6636625b3141be88d86cd5307dd. Both private
-browser-inspector connection paths are read-only before their first query. The fresh-model
-browser case proves zero approvals and actions immediately before Approve. Production code,
-frozen contracts, models, dependencies and the existing approval/execution behavior are
-unchanged. The next assignment is G3A, a reviewable three-role architecture and evaluation
-package, not a claim that runtime multi-agent orchestration is already built.
+The accepted application is unchanged at H01 f091a34. G3A's design package is delivered
+at **06a7c0c779eeb60ff4e57ddab70de07277e27501** on `task/claude-g3a-design`.
+Codex's [contract review](../reviews/G3A-06a7c0c.md) requests three focused corrections;
+**G3A is not frozen or merged, and the three-role runtime G3B has not started.**
 
-## Actual checks
+The project already has rule/model scoring, the analyst workbench, separate human approval
+and simulated actions, audit records, real-browser coverage and native Linux backend
+validation. Multi-agent runtime and measured agent quality are the next milestone, not
+completed capabilities. No change to the synthetic-only/simulated-action limitations.
 
-| Check | Result |
-| --- | --- |
-| New real PostgreSQL regressions on old helper | Five intended failures |
-| Final Windows database regressions | Five passed |
-| Final native Ubuntu database regressions | Five passed, UID 1000 |
-| Main Ruff and TypeScript | Passed |
-| Complete main browser API PostgreSQL suite | 19 passed, scanner and lifecycle harnesses passed |
-| Unchanged full application backend | Not rerun today; last full c8b9477 result is 449 passes and one allowed skip per platform |
+## Today's completed work, in order
 
-Exact local scoped records are in .agent/h01-verification/. No raw tokens, connection strings
-or private manifests belong in tracked artifacts. The later dispatch commit changes only
-documentation/instructions; it does not create another backend test result.
+1. H01 accepted at f091a34: database-enforced read-only browser inspectors and assertions
+   proving zero approvals/actions before Approve. Five real database tests passed on
+   Windows, five on native Ubuntu; Ruff, TypeScript and all 19 browser tests passed.
+2. G3A assigned from exact f091a34; Claude produced the isolated docs-only candidate
+   06a7c0c with role/tool/claim/trace schemas, coordinator design, evaluation protocol,
+   12 development cases and the G3B plan. No model was called or runtime implemented.
+3. Codex independently reran: 13 draft schemas / 24 valid / 25 invalid supplied examples;
+   all 12 dev cases; Ruff on the new Python docs; five-document link checks. All passed.
+   All 71 changed paths are owned docs, and the candidate's owner-only metadata is valid.
+4. Additional probes accepted empty role config, unknown usage carrying token counts,
+   completed workflow without outcome/finish, and a deadline before start. These support
+   R33. R31/R32 cover unresolved call capacity and completion without a running role.
+5. Codex recorded the review, resolved the four design choices and prepared a **paused**
+   documentation follow-up for tomorrow. G3A candidate and accepted app are preserved.
 
-## Next action
+## Decisions and exact stop point
 
-Give Claude [the G3A prompt](../prompts/CLAUDE_G3A_MULTI_AGENT_DESIGN.md), read through the
-current task/coordination Git ref. It starts from exact accepted H01 f091a34 in a new
-task/claude-g3a-design worktree. Deliver the typed role/tool/trace contracts, concrete
-coordinator transitions, evaluation protocol and the next vertical implementation slice.
-Preserve human approval and session scope. Compare one agent with three roles using
-separate development and final evaluation boundaries. Do not introduce another framework
-or new provider merely to add technology names.
+- Use 409 `agent_capacity_exhausted`, without a case change or other-case disclosure.
+- Keep 45s role / 150s workflow as provisional limits; they have not been benchmarked.
+  Outstanding late calls need a separate finite capacity rule (R31).
+- Inconclusive workflows reopen `open` with no intent; terminal bookkeeping must work
+  before the first role and between roles (R32).
+- Unknown CLI usage stays unknown. No money-cap or measured token claim is supported.
+- Freeze nothing until R31-R33 are reviewed. No G3B, migration or UI task starts tonight.
 
-Codex remains integrator. Cursor's prior seven edits and all accepted task worktrees remain
-preserved. All new commits use PHANI465 <pgavara1@asu.edu> as sole author and committer.
-No provider calls, paid fallback, remote, push or deployment today. GitHub Actions, macOS,
-Linux browser, Windows cold-cache and public hosting/BYOK are still outside verified scope.
+## Tomorrow, after the owner resumes
 
-## Model and effort preference
+Read [the follow-up](../prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md) from current coordination,
+then resume the existing Claude design worktree at 06a7c0c. Coding-assistant recommendation:
+**Claude Opus 5.5, High effort**, for the bounded lifecycle/contract correction. Return one
+reviewable design revision with its real checks. Codex re-reviews before dispatching G3B.
+Cursor can remain inactive; its original seven saved edits stay protected.
 
-The owner requests a task-specific Claude model and effort recommendation with every future
-handoff. G3A recommends Opus on the existing plan at High effort, for architecture, permission
-boundaries and evaluation design. The recommendation is recorded in its prompt and AGENTS.md.
-No global model settings or Sentinel runtime adapters were changed by this documentation.
+## Evidence and limits
+
+The last full backend result is c8b9477: 449 passes and one allowed live-Claude skip on
+each platform. H01 has separate scoped evidence in `.agent/h01-verification/`. Today's
+G3A checks do not constitute a new backend/browser validation. Local review evidence is
+under `.agent/g3a-review/`. The October 26 Word/Markdown guide remains a dated snapshot.
+
+All new commits use PHANI465 <pgavara1@asu.edu> alone, no attribution/session trailers.
+Codex remains the designated integrator. No provider calls, new installs, remote, push,
+deployment or paid fallback. GitHub Actions, macOS, Linux browser, Windows cold-cache and
+public hosting/BYOK remain outside verified scope. No automatic overnight work is scheduled.

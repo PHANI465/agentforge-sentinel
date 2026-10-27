@@ -11,7 +11,7 @@ Ten pages explaining the verified application, fictional fraud examples, archite
 
 ## Current session
 
-- [October 27 H01 completion and multi-agent design assignment](AgentForge_Sentinel_Session_2026-10-27.md)
+- [October 27 H01 completion, G3A review and paused resume checkpoint](AgentForge_Sentinel_Session_2026-10-27.md)
 - [October 26 acceptance and next task](AgentForge_Sentinel_Session_2026-10-26.md)
 
 ## October 25 checkpoint

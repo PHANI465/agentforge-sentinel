@@ -1,5 +1,16 @@
 # Verification
 
+## October 27 G3A documentation review
+
+Independent checks of exact 06a7c0c: draft schema/example check (13 / 24 valid / 25 invalid),
+12 development cases, Ruff on new Python documentation, five Markdown link checks, owned
+71-path diff, parent and sole-owner metadata all pass. Four additional semantic probes
+accept contradictory payloads; review R31-R33 is changes-requested, not a contract freeze.
+See [the review](reviews/G3A-06a7c0c.md) and local `.agent/g3a-review/` evidence. No provider,
+database, full backend or browser suite ran for this docs-only proposal. The previously
+validated application results retain their original scope and commit. Work is paused at
+the owner's request; tomorrow's follow-up does not authorize overnight execution.
+
 ## Independent Codex re-review: c6d369f
 
 On October 23, 2026, Codex independently reviewed clean commit c6d369f6043a8c9ec86d8f56cf05670e81fba81d on task/thin-path and accepted the R1-R8 corrections for the local thin-path scope. The focused regression file passed all 13 cases. The strict helper passed: Ruff, 106 pytest tests with 1 intentional live-Claude skip, 21 handoff regressions, 15 schema exports and the Node check. No model/provider call was made. Detailed evidence, attribution and remaining gaps: [review report](reviews/c6d369f.md).

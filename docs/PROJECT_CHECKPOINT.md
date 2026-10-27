@@ -1,6 +1,28 @@
 # AgentForge Sentinel project checkpoint
 
-## October 27 H01 completed and G3A assigned
+## October 27 end-of-day pause: G3A reviewed, corrections pending
+
+The owner requested a pause until tomorrow. G3A candidate **06a7c0c779eeb60ff4e57ddab70de07277e27501**
+is delivered and independently reviewed: **changes requested, not accepted/frozen/merged**.
+[Review R31-R33](reviews/G3A-06a7c0c.md) covers late-worker capacity, terminal recovery
+without a running role and inconsistent typed draft records. The supplied schemas/examples,
+12 development cases, Ruff and five-document links pass; four extra semantic probes reveal
+the missing contract invariants. This is a documentation proposal, not runtime delivery.
+
+Decisions for the revision: new 409 capacity code; provisional 45s role / 150s workflow
+limits; inconclusive workflow reopens `open` with no intent; usage unknown unless measured.
+[Tomorrow's follow-up](prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md) is prepared but **paused**:
+Claude Opus 5.5 / High, docs only, on the existing G3A branch. **G3B is unstarted and blocked
+on design acceptance. No tasks or provider jobs are assigned to run overnight.**
+
+Main's application remains H01 f091a34; the full backend baseline remains c8b9477 (449+1
+per platform), with H01's scoped checks separate. Candidate and Cursor's seven saved edits
+stay untouched. Codex remains integrator; all new commits use the owner alone. No provider,
+remote, push, deployment or new environment setup. See today's
+[session artifact](artifacts/AgentForge_Sentinel_Session_2026-10-27.md). Earlier entries below
+are chronological history and do not override this stop point.
+
+## Earlier October 27: H01 completed and G3A assigned
 
 H01 is accepted at **f091a34c2ed3f6636625b3141be88d86cd5307dd**. Both browser-hardening
 notes are closed: database-enforced read-only inspection and zero approvals/actions before

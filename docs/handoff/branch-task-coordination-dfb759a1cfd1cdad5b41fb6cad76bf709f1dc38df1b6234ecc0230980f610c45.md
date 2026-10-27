@@ -298,3 +298,22 @@ evaluation documents plus its handoff. It defines the next runtime multi-agent i
 slice; no production agent changes are started in that design task. Codex remains integrator.
 The later dispatch commit is documentation-only; final source/link/identity/preservation
 checks are recorded after commit. Owner-only commits, no provider/paid/network deployment.
+
+## October 27 end-of-day G3A review and owner-requested pause
+
+Candidate 06a7c0c remains clean and unchanged from exact f091a34. Independent document
+validators, Ruff, links and metadata/path preservation checks pass; four new contract
+probes show missing semantic invariants. Published reviews/G3A-06a7c0c.md requests R31-R33
+(capacity across late calls, role-independent terminal recovery, coherent typed records).
+The new capacity409, provisional45/150 budgets, reopen-open policy and unknown usage are
+resolved for revision. Protocol clarification prevents a role-specific causal claim from
+an end-to-end comparison with unequal evidence access.
+
+Prepared prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md for after the owner resumes, Opus5.5/High,
+docs only. Updated current status/queue/checkpoint/verification and session artifact.
+G3A is unaccepted/unmerged; G3B unstarted. Main application remains f091a34; last full
+backend evidence remains c8b9477. No provider/full-suite/browser calls for this review.
+No automatic overnight work; no remote/push/deployment. Candidate, accepted worktrees
+and Cursor's seven saved edits must match preservation checks after publication. New
+coordination commits use the owner alone; final containing SHA/checks belong in ignored
+evidence and chat, not a tracked note edited after verification.
