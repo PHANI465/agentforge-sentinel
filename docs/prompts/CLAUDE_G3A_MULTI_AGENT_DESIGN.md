@@ -1,5 +1,10 @@
 # Claude G3A multi-agent contracts and evaluation design
 
+Recommended development settings: Claude Opus (the available Opus option on the owner's
+existing plan), effort High. This task needs architectural reasoning about role permissions,
+persistence and evaluation. In Claude Code use /model opus and /effort high, or the model
+picker's effort control. This selects the coding assistant, not an application runtime model.
+
 Read current main:AGENTS.md and the latest task/coordination versions of docs/STATUS.md,
 docs/TASK_QUEUE.md, docs/PROJECT_PLAN.md, docs/reviews/H01.md and this prompt through git show.
 Read the actual current contracts, service investigation boundary, Investigator interface,

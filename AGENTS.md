@@ -34,6 +34,16 @@ Current I02 quota exception: the owner reports Cursor's allowance is exhausted. 
 - Verify author, committer and commit trailers after every new commit. Never silently substitute a tool identity. Keep the user's global Git settings unchanged; this repository's identity is pinned to the existing owner identity.
 - Apply this policy to future Codex, Claude and Cursor work. New worktrees start from current main and inherit these instructions. Claude's project settings disable commit attribution and session links. Preserve existing commit history and required source/license notices; the owner requested this policy for future commits, not historical rewriting. Tool/process provenance may still be recorded honestly in handoff documents.
 
+## Development model and effort recommendations
+
+Owner preference recorded October 27: include a recommended Claude Code model and effort
+level with every future Claude handoff prompt. Choose them for that task's complexity,
+verification needs and available quota, and give a short reason. Verify current model/effort
+names when needed; do not assume an unavailable model or paid overage is authorized. These
+settings are for the coding assistant authoring the work, not Sentinel's deployed fraud
+scorer or investigator configuration. Do not silently change the owner's global CLI settings.
+Avoid max effort as a blanket default; increase effort for a specific demonstrated need.
+
 ## Handoff
 
 1. Update the branch note using docs/handoff/_TEMPLATE.md. Get its path with `uv run --locked python scripts/agent_status.py --note-path`. Include the tested code reference, changed paths, commands/results, gaps and one next action.

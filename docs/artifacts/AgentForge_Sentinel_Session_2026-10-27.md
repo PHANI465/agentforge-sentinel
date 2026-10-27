@@ -38,3 +38,10 @@ Codex remains integrator. Cursor's prior seven edits and all accepted task workt
 preserved. All new commits use PHANI465 <pgavara1@asu.edu> as sole author and committer.
 No provider calls, paid fallback, remote, push or deployment today. GitHub Actions, macOS,
 Linux browser, Windows cold-cache and public hosting/BYOK are still outside verified scope.
+
+## Model and effort preference
+
+The owner requests a task-specific Claude model and effort recommendation with every future
+handoff. G3A recommends Opus on the existing plan at High effort, for architecture, permission
+boundaries and evaluation design. The recommendation is recorded in its prompt and AGENTS.md.
+No global model settings or Sentinel runtime adapters were changed by this documentation.
