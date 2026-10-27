@@ -43,14 +43,40 @@ HEALTHY = GO + textwrap.dedent("""
 # On launch, starts a detached listener and exits, so its pid is gone while the child
 # listens (a launcher that died without its interpreter child). It runs on the base
 # interpreter, so no venv launcher job object ties the child's lifetime to its parent.
+# Detach: a new process group without a console on Windows, a new session on POSIX
+# (CPython rejects creationflags there). The POSIX child is reparented when its launcher exits.
 ORPHANING = GO + textwrap.dedent("""
-    import subprocess
+    import os, subprocess
     listen = "import socket,sys,time;s=socket.socket();s.bind(('127.0.0.1',int(sys.argv[1])));" \
              "s.listen();print('bound',flush=True);time.sleep(600)"
+    detach = {"creationflags": 0x00000200 | 0x00000008} \
+        if globals().get("LAUNCH", os.name) == "nt" else {"start_new_session": True}
     child = subprocess.Popen([sys.executable, "-c", listen, str(port)], stdout=subprocess.PIPE,
-                             text=True, creationflags=0x00000200 | 0x00000008)
+                             text=True, **detach)
     child.stdout.readline()
     print(child.pid, flush=True)
+""")
+# Simulated non-Windows launch boundary, prepended to a stand-in: inside that process only,
+# Popen applies CPython's POSIX argument checks (Lib/subprocess.py) before anything starts,
+# and a POSIX detach (start_new_session) becomes the equivalent real Windows launch, so the
+# launched process, pid and port stay real. On a POSIX host it is a pass-through. Evidence
+# from it on Windows is simulated, not a Linux run.
+POSIX_LAUNCH = textwrap.dedent("""
+    import subprocess as _subprocess
+    _Popen = _subprocess.Popen
+    def _posix_popen(args, *a, creationflags=0, startupinfo=None, start_new_session=False,
+                     **kw):
+        if startupinfo is not None:
+            raise ValueError("startupinfo is only supported on Windows platforms")
+        if creationflags != 0:
+            raise ValueError("creationflags is only supported on Windows platforms")
+        if start_new_session and sys.platform == "win32":
+            kw["creationflags"] = 0x00000200 | 0x00000008
+        elif start_new_session:
+            kw["start_new_session"] = True
+        return _Popen(args, *a, **kw)
+    _subprocess.Popen = _posix_popen
+    LAUNCH = "posix"
 """)
 FLAGS = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" \
     else {"start_new_session": True}
@@ -79,10 +105,10 @@ def intercepted(monkeypatch):
 def spawned():
     owned = []
 
-    def spawn(code, executable=sys.executable):
+    def spawn(code, executable=sys.executable, stderr=None):
         port = local_stack_free_port()
         process = subprocess.Popen([executable, "-c", code, str(port)], stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE, text=True, **FLAGS)
+                                   stdout=subprocess.PIPE, stderr=stderr, text=True, **FLAGS)
         owned.append(process)
         return process, port
     yield spawn
@@ -143,13 +169,19 @@ def test_r28a_identity_inspection_failure_keeps_an_unresolved_launch(
     assert process.poll() is None and stack.load()["api"]["pid"] == process.pid
 
 
+@pytest.mark.parametrize("boundary", ["", POSIX_LAUNCH], ids=["native", "posix-launch"])
 def test_r28a_gone_launcher_with_a_live_listening_child_is_unresolved(
-        stack, spawned, intercepted, monkeypatch):
+        stack, spawned, intercepted, monkeypatch, tmp_path, boundary):
     base = getattr(sys, "_base_executable", sys.executable)
-    launcher, port = spawned(ORPHANING, executable=base)
+    errors = tmp_path / "launcher.err"  # a file: the orphan inherits it and outlives us
+    with open(errors, "w") as err:
+        launcher, port = spawned(boundary + ORPHANING, executable=base, stderr=err)
     child = {}
 
     def orphaned(line):
+        if not line.isdigit():  # the launch itself failed: no orphan pid was produced
+            launcher.wait(15)
+            pytest.fail(f"launcher produced no orphan pid: {errors.read_text().strip()}")
         child["pid"] = int(line)
         launcher.wait(15)  # the launcher is gone before its identity is taken
     launch_as(monkeypatch, launcher, after=orphaned)

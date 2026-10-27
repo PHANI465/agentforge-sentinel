@@ -44,7 +44,7 @@ def link_dir(link: Path, target: Path) -> None:
 
 def kill_if_ours(pid, stamp):
     if pid and stamp is not None and process_start_time(pid) == stamp:
-        terminate_tree(pid)
+        terminate_tree(pid, stamp)
 
 
 @pytest.fixture

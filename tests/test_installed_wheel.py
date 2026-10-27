@@ -1,6 +1,12 @@
 """C07: the built wheel alone serves the accepted model. It is installed into a fresh venv
 outside the checkout, with the lock's ml pins and no network, then run isolated (python -I,
-no PYTHONPATH, neutral cwd) so nothing can be imported from the source tree."""
+no PYTHONPATH, neutral cwd) so nothing can be imported from the source tree.
+
+N7: the pins are exported as pylock.toml, which names each lock artifact by URL and hash, so
+the offline install needs only the artifacts the preceding `uv sync --locked` cached. A
+`name==version` requirements file would also need registry index pages, which a locked sync
+never fetches; on a cold cache that failed (`annotated-doc was not found in the cache`) and
+passed only after an unrelated online install had written them."""
 import json
 import os
 import shutil
@@ -52,14 +58,15 @@ def test_wheel_installed_outside_the_checkout_binds_and_infers(tmp_path):
     env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "VIRTUAL_ENV")}
     run([uv, "build", "--wheel", "--out-dir", str(tmp_path / "dist"), str(ROOT)], env=env)
     wheel = next((tmp_path / "dist").glob("*.whl"))
-    reqs = tmp_path / "requirements.txt"
+    pins = tmp_path / "pylock.toml"
     run([uv, "export", "--locked", "--extra", "ml", "--no-dev", "--no-emit-project",
-         "--no-hashes", "--output-file", str(reqs)], cwd=ROOT, env=env)
+         "--format", "pylock.toml", "--output-file", str(pins)], cwd=ROOT, env=env)
     venv = tmp_path / "venv"
     run([uv, "venv", "--python", sys.executable, str(venv)], env=env)
     python = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-    run([uv, "pip", "install", "--offline", "--python", str(python), "--no-deps",
-         "-r", str(reqs), str(wheel)], env=env)
+    run([uv, "pip", "install", "--offline", "--python", str(python), "-r", str(pins)], env=env)
+    run([uv, "pip", "install", "--offline", "--python", str(python), "--no-deps", str(wheel)],
+        env=env)
     neutral = tmp_path / "neutral"
     neutral.mkdir()
     out = json.loads(run([str(python), "-I", "-c", PROBE, json.dumps(VECTOR)],
