@@ -98,7 +98,8 @@ It then sends SIGTERM to the group and waits up to `TERM_GRACE_SECONDS` (10, usi
 - a changed, missing or unknown identity at either boundary;
 - a different group;
 - a signal or permission error;
-- a leader that exited while live members of its group remain.
+- a leader that exited while live members of its group remain;
+- group membership that cannot be read (R30).
 
 **Windows.** Behaviour is unchanged (`taskkill /T /F`), but it now sits behind the same pre-signal identity check. The helper never kills by name.
 
@@ -118,6 +119,38 @@ It then sends SIGTERM to the group and waits up to `TERM_GRACE_SECONDS` (10, usi
 - *Native Linux baseline on the test-only commit:* the lifecycle file gave 6 failed, 1 passed, for the intended reasons ("did not stop", "DID NOT RAISE", `TimeoutExpired` after signalling without identity, and a zombie start stamp). The four original lifecycle failures reproduced.
 - *Windows baseline:* 3 failed (signalled despite a changed or missing identity), 4 passed.
 - *After the fix:* the 73-test focused set (lifecycle, browser fixtures, review, follow-up, model fixtures, devdb startup, N2 startup, operator lifecycle) passed on both platforms, with no skips and no leftover processes.
+
+## R29/R30 review corrections (on 8a4b3d7)
+
+**The defects** that Codex's review of 8a4b3d7 found, both reproduced natively:
+- **R29:** a later `stop` that saw the old leader gone skipped every group check and cleared the record. So a fresh-load retry, or a first stop after the leader had already died, reported `ok` and deleted the recovery state while a group member still ran.
+- **R30:** `_group_members` treated every `OSError` while reading a `/proc/<pid>/stat` as "exited". An unreadable live member therefore looked like an empty group.
+
+**R29 fix.** `stop_api` now runs the same group check, `group_unresolved(pid)` from the recorded pid, after the leader is gone and before clearing the record. It does this on every call, so it does not depend on in-memory state or on whether this object sent the signal. Nothing is signalled by that check.
+
+The limit: if the group did empty and an unrelated process later both receives that PID and leads its own group, the check stays refused. That fails safe, and it needs a manual look.
+
+**R30 fix.** Only `FileNotFoundError` or `ProcessLookupError` while reading a listed entry counts as disappearance. Anything else returns *unknown*, and so does the group check:
+- `PermissionError` or another `OSError`;
+- missing fields;
+- a non-numeric group.
+
+Zombie exclusion, `comm`-safe parsing, identity and group refusals, TERM/KILL and Windows behavior are unchanged.
+
+A system that hides other users' `/proc` entries (`hidepid`) would make every POSIX stop refuse. That fails safe, but it is not supported.
+
+**Regressions** (`tests/test_browser_stack_recovery.py`, through real helper-owned state, `Stack.stop` and a fresh `Stack.load` each time; real processes and signals):
+
+| Case | What it proves |
+| --- | --- |
+| R29 `stop-ends-leader` | The first stop sends SIGTERM to the verified group, and the leader exits. The first stop, and two further fresh-load retries, return `ok=false` and `state_removed=false`, with the marker, manifest and credentials intact and loadable. The member is untouched, and no further signal is sent. After the test stops its own member (verified pid plus stamp), an ordinary fresh-load retry removes exactly the owned directory. The outside canary survives |
+| R29 `leader-already-exited` | Same, with no live handle and no signal ever sent |
+| R30 `permission`, `io-error`, `malformed` | Injected: only reads of the live member's stat fail with EACCES or EIO, or return garbage. Every retry refuses with recovery kept and no escalation. With the fault released but the member alive, it still refuses. After the member is stopped, cleanup completes |
+| R30 disappeared entry | The `/proc` listing is injected with a really exited, reaped PID (native ENOENT). A cooperative API's cleanup still completes |
+
+**Evidence:**
+- *Baseline on 8a4b3d7's code,* native Linux: 5 failed, 1 passed. The disappeared-entry guard already passed. The failures were exactly the defects: a reloaded retry `ok`, a first stop `ok` with a member alive, and an unreadable member treated as gone.
+- *Windows:* all 6 pass before and after. These are POSIX paths, and the forced tree kill is unchanged.
 
 ## N6: exited zombies are not a running API
 

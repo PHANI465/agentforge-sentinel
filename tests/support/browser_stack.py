@@ -102,7 +102,9 @@ def process_start_time(pid: int) -> int | None:
 
 
 def _group_members(pgid: int) -> set[int] | None:
-    """Live (non-zombie) members of a POSIX process group; None if it cannot be inspected."""
+    """Live (non-zombie) members of a POSIX process group; None if it cannot be inspected.
+    Only an entry that affirmatively disappeared while listing is skipped; a permission or
+    other I/O failure, or malformed stat data, makes the membership unknown (R30)."""
     try:
         entries = [entry for entry in Path("/proc").iterdir() if entry.name.isdigit()]
     except OSError:
@@ -111,13 +113,26 @@ def _group_members(pgid: int) -> set[int] | None:
     for entry in entries:
         try:
             fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
-        except OSError:
+            state, group = fields[0], int(fields[2])
+        except (FileNotFoundError, ProcessLookupError):
             continue  # exited while listing
-        except IndexError:
+        except (OSError, IndexError, ValueError):
             return None
-        if fields[0] not in ("Z", "X") and fields[2] == str(pgid):
+        if state not in ("Z", "X") and group == pgid:
             members.add(int(entry.name))
     return members
+
+
+def group_unresolved(pgid: int) -> str | None:
+    """Why a recorded API group cannot be shown empty (POSIX), or None once it is."""
+    if os.name == "nt":
+        return None  # the forced tree kill is the Windows termination; no groups here
+    members = _group_members(pgid)
+    if members is None:
+        return f"API process group {pgid} membership cannot be inspected"
+    if members:
+        return f"API process group {pgid} still has live members {sorted(members)}"
+    return None
 
 
 def healthy(port: int) -> dict | None:
@@ -177,10 +192,10 @@ def terminate_tree(pid: int, stamp: int | None) -> None:
         return process_start_time(pid) != stamp
 
     def survivors_resolved() -> None:
-        members = _group_members(pid)
-        if members is None or members:
+        problem = group_unresolved(pid)
+        if problem:
             raise StackError(f"API process {pid} exited but its group cannot be shown empty "
-                             f"(members {sorted(members or [])}); not signalled, recovery kept")
+                             f"({problem}); not signalled, recovery kept")
 
     verify("before termination")
     if os.name == "nt":
@@ -477,6 +492,13 @@ class Stack:
         # else: the recorded process is already gone (or the PID was reused): touch nothing.
         if not wait_until(lambda: process_start_time(pid) != stamp, 15):
             raise StackError(f"API process {pid} did not stop")
+        # The API was launched as the leader of group `pid`. Its exit (or a reused PID, or a
+        # closed port) does not prove that group empty; every retry, including from a freshly
+        # loaded manifest, re-checks it from the recorded pid before the record is cleared
+        # (R29). Nothing is signalled here.
+        problem = group_unresolved(pid)
+        if problem:
+            raise StackError(f"{problem}; not signalled, recovery kept")
         if port is not None and not wait_until(lambda: healthy(port) is None, 15):
             raise StackError(f"port {port} still serves an API")
         api.update(pid=None, start_time=None)

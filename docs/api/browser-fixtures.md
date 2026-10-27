@@ -41,7 +41,9 @@ uv run --locked python tests/support/browser_stack.py stop --manifest PATH     #
     - a changed, missing or unknown identity;
     - a different group;
     - a signalling error;
-    - a leader that exited while other group members survive.
+    - a leader that exited while other group members survive;
+    - group membership that cannot be read (permission, I/O error or malformed `/proc` data). Only a listed process that really disappeared is skipped.
+  - **Retries (R29).** On POSIX, a recorded API is cleared only when its process group (the recorded `pid`, which the API led) is shown empty, on every `stop` or `restart-api`, including after a fresh manifest load. A vanished leader, a reused PID or a closed port is not enough. Nothing is signalled by this check. Once the surviving member is gone, an ordinary retry completes. No new manifest field is needed, and existing manifests and result shapes are unchanged.
   - **Exited processes.** On Linux, a process in `/proc` state `Z` (exited, not yet waited for by its parent) counts as stopped.
   - **Database state** is explicit: `running` (pg_ctl status 0), `stopped` (status 3, documented "not running"), `absent` (no data directory), `uninitialized` (no `PG_VERSION`/`postmaster.pid`, so no server can run there), or `unknown`. Unknown covers status 4 (inaccessible data directory), any other code, errors and timeouts, and it never counts as stopped. Only running/unknown trigger `pg_ctl stop`, followed by a fresh status check.
   - Only when **both** API and database are verified does it delete the private directory, after re-checking ownership. It refuses if the directory contains anything unexpected or any link/junction. Deletion order:
