@@ -1,5 +1,11 @@
 # AgentForge Sentinel: October 26 session checkpoint
 
+## End of day checkpoint
+
+The owner asked to stop for today and continue tomorrow. The fully validated application is c8b9477: 449 backend passes plus one intentional live-Claude skip on both native Ubuntu and Windows, 44 frontend tests, all 19 browser tests, strict/package/contracts/model reproduction and preservation audit passed. No test processes remain from that release; nothing was pushed or deployed.
+
+The new [Word project guide](AgentForge_Sentinel_Project_Guide_2026-10-26.docx) and [Markdown copy](AgentForge_Sentinel_Project_Guide_2026-10-26.md) explain the product and real life examples, with implemented versus planned scope and a resume checklist. These document-only additions leave all application/test/dependency assets byte-identical to c8b9477. Release test evidence remains tied to that exact application commit; document QA is recorded separately. Tomorrow starts with H01 and then the bounded multi-agent milestone. No further application work is started today.
+
 ## Latest checkpoint: N2-N7 integration
 
 R29/R30 are closed at accepted 48633a2; the original independent recovery probes now refuse safely without deleting state. Final candidate review passed 15 targeted tests independently on each platform. Owner full candidate checks passed 449+1 on native Ubuntu and Windows. Codex combined exact candidate with coordination in merge 9e6b613, with no conflicts and no source resolutions.

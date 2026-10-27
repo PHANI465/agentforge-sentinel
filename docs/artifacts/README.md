@@ -2,6 +2,13 @@
 
 Owner-facing project documents live here and are versioned with the project. Save future checkpoint documents in this folder.
 
+## Project explanation with real life examples
+
+- [Word project guide](AgentForge_Sentinel_Project_Guide_2026-10-26.docx)
+- [Readable Markdown copy](AgentForge_Sentinel_Project_Guide_2026-10-26.md)
+
+Ten pages explaining the verified application, fictional fraud examples, architecture, ML, security, the technology stack and planned extensions. Includes the end-of-day checkpoint and tomorrow's starting point. Application baseline: c8b9477; this guide is a documentation snapshot.
+
 ## Current session
 
 - [October 26 acceptance and next task](AgentForge_Sentinel_Session_2026-10-26.md)
