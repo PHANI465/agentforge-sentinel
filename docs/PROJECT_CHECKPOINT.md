@@ -1,5 +1,29 @@
 # AgentForge Sentinel project checkpoint
 
+## October 27 H01 completed and G3A assigned
+
+H01 is accepted at **f091a34c2ed3f6636625b3141be88d86cd5307dd**. Both browser-hardening
+notes are closed: database-enforced read-only inspection and zero approvals/actions before
+the fresh-model approval step. Final main checks: five real PostgreSQL cases on Windows,
+five on native Ubuntu, Ruff, TypeScript and all 19 real browser cases passed. Read
+[the scoped acceptance](reviews/H01.md). The last full backend baseline remains c8b9477
+(449+1 per platform); no full-backend rerun is claimed for this test-only increment.
+
+**Claude G3A is assigned, not started:** [multi-agent contracts and evaluation design](prompts/CLAUDE_G3A_MULTI_AGENT_DESIGN.md),
+from exact f091a34 in its own worktree. Define evidence analyst, investigator and reviewer
+roles, a bounded deterministic coordinator, scoped tools, persisted boundaries, claim support
+and the one-agent comparison protocol. G3A is a concrete design/schema package; runtime
+implementation is G3B after contract review. No framework migration, live model call, new
+provider, public BYOK or hosting is assigned. Codex reviews and integrates; Cursor can stay
+inactive and its seven original edits remain preserved. Main is the canonical base; later
+coordination updates are documentation-only. All commits use the owner alone.
+
+Today's [session checkpoint](artifacts/AgentForge_Sentinel_Session_2026-10-27.md) records the
+actual results and next action. The October 26 Word guide remains an unchanged dated guide.
+No remote/push/deployment occurred; GitHub Actions/macOS/Linux browser remain unverified.
+
+## Earlier October 26 records
+
 ## Current release: accepted N2-N7 integration
 
 N5-N7 **48633a2fbe0ff477026830e60b36747eaa96154d** is accepted; [R29/R30 are closed](reviews/48633a2.md). The original independent probes now preserve recovery on repeated fresh-load retries and unreadable live membership. Independent final review: 15 focused tests passed on each platform. Owner candidate full reports: 449 passes and one allowed skip per platform, 450 exact native cases. N2/N3/N4 remain accepted.

@@ -283,3 +283,18 @@ The native real Stack.stop probes reproduce R29 (first stop refuses a survivor, 
 Accepted exact 48633a2 after independent original probes closed R29/R30, 15 focused tests per platform (Windows 33.86s; Linux 14.20s), Windows Ruff, exact 450-case native collection/report verification and owner Windows clean six-check evidence. Candidate owner full runs passed 449+1 on each platform. Merge 9e6b613 combined ddc3103 coordination with exact 48633a2 automatically. All code/test/script/dependency assets match the accepted candidate; final edits are documentation/instructions only. New commits use the owner alone.
 
 Current release: releases/MAIN-linux-readiness-2026-10-26.md. The final containing commit must pass native Linux CI-equivalent checks before main fast-forward, then main's own Windows strict/JUnit/HTTP/ML/frontend/browser validation. Exact results, promotion state and preservation audit are recorded after commit under canonical .agent/linux-readiness-validation/ and /home/sentinel/linux-integration-reports/. Historical evidence remains preserved; no tracked note is edited after final checks just to add its own SHA. No remote/push/deployment/provider call. Main remains the owner-designated integrator's responsibility.
+
+## October 27 H01 and G3A dispatch
+
+Accepted H01 f091a34. Five new real-PostgreSQL paths failed on the old helper, then passed
+with database-enforced read_only. Final main checks: five cases on Windows, five natively
+on Ubuntu, Ruff, TypeScript and all 19 real browser cases passed. No production/contract/
+model/dependency changes; full backend evidence remains the c8b9477 snapshot rather than a
+new claimed total. Exact scoped results are in canonical .agent/h01-verification/.
+
+Published reviews/H01.md, today's session artifact and prompts/CLAUDE_G3A_MULTI_AGENT_DESIGN.md.
+G3A starts from accepted f091a34 in a separate Claude worktree and owns only design/schema/
+evaluation documents plus its handoff. It defines the next runtime multi-agent implementation
+slice; no production agent changes are started in that design task. Codex remains integrator.
+The later dispatch commit is documentation-only; final source/link/identity/preservation
+checks are recorded after commit. Owner-only commits, no provider/paid/network deployment.
