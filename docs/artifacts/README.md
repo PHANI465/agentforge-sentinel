@@ -11,6 +11,7 @@ Ten pages explaining the verified application, fictional fraud examples, archite
 
 ## Current session
 
+- [October 31 resumption and active G3A correction](AgentForge_Sentinel_Session_2026-10-31.md)
 - [October 27 H01 completion, G3A review and paused resume checkpoint](AgentForge_Sentinel_Session_2026-10-27.md)
 - [October 26 acceptance and next task](AgentForge_Sentinel_Session_2026-10-26.md)
 

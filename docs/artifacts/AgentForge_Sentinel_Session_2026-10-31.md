@@ -1,0 +1,69 @@
+# AgentForge Sentinel October 31 session checkpoint
+
+## Summary
+
+The owner resumed the project. The application and saved task branches are intact.
+**Next executable task: Claude corrects G3A design findings R31-R33.** The runtime
+three-role implementation G3B has not started, and no design interface is frozen yet.
+
+Main's accepted application is still H01 f091a34. Its full backend baseline is c8b9477
+(449 passes and one allowed live-Claude skip on each platform), with H01's separate
+five-per-platform database and 19-browser checks. These are earlier scoped results;
+October 31 did not rerun the full backend/browser suites.
+
+## Completed resumption work
+
+1. Checked clean main and coordination at c7ca694, clean G3A candidate at exact 06a7c0c,
+   the task refs/worktrees, current instructions, queue and original review.
+2. Confirmed Cursor's original checkout still has its same seven saved edits. No edits
+   were made there or in Claude's task checkout.
+3. Re-ran the G3A baseline: 13 schemas / 24 valid / 25 invalid supplied examples, 12 dev
+   cases, Ruff on new documentation Python and five-document links all pass.
+4. Re-ran the four semantic probes: empty roles, unknown usage with token counts,
+   completed without outcome/finish and deadline before start are still accepted.
+   These are the unresolved baseline, not completed fixes.
+5. Activated [the Claude correction prompt](../prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md),
+   prepared [Codex's acceptance checklist](../reviews/G3A-acceptance-checklist.md), and
+   updated current coordination records. No external agent was launched automatically.
+
+## Give Claude the active task
+
+- Worktree: `E:/PHANI/sentinel-wt/claude-g3a-design`.
+- Branch: `task/claude-g3a-design`.
+- Preserved candidate: `06a7c0c779eeb60ff4e57ddab70de07277e27501`.
+- Read the active prompt and review from the current `task/coordination` Git ref; another
+  worktree's current files are not automatically present in Claude's checkout.
+- Settings: **Claude Opus 5.5, High effort**, using the owner's available plan. This
+  bounded correction needs lifecycle, capacity and contract reasoning. No global settings
+  change or paid fallback is assumed.
+- Own design/evaluation docs and branch handoff only. No source/UI/migration/provider work.
+- Return one exact committed/tested SHA and honest remaining gaps; Codex re-reviews it.
+
+The four decisions remain: new 409 capacity code, provisional 45s/150s limits, inconclusive
+reopens open/no intent, and usage unknown unless measured. Correct their missing lifecycle
+and validation details before implementation.
+
+## What follows, in dependency order
+
+1. Correct G3A -> Codex review -> accepted schema/protocol freeze.
+2. Dispatch G3B with exact accepted base: bounded tools, three roles, persisted workflow,
+   deterministic coordinator and unchanged separate human approval.
+3. Review G3B and freeze the additive trace API before G3C UI work.
+4. Run measured single-live vs three-role evaluation under the frozen protocol. Distinguish
+   end-to-end system improvements from any causal claim about role count.
+
+These downstream tasks are not started by today's resume update. Cursor can remain inactive
+while unavailable; its required substantive contribution is already delivered. New work
+must have explicit ownership and separate worktrees.
+
+## Preserved limits and evidence
+
+No provider/model call, new dependency, paid service, remote, push or deployment. All new
+commits must list PHANI465 <pgavara1@asu.edu> as sole author and committer, no attribution
+trailers. Codex remains integrator. No unreviewed G3A design is merged into main.
+
+GitHub Actions, macOS, Linux browser execution, Windows cold-cache, capacity measurements,
+public hosting/BYOK and real fraud effectiveness remain unverified. Data is synthetic and
+financial actions simulated. Dated October 25-27 artifacts remain historical snapshots.
+Today's local preflight and final docs/preservation evidence is kept in
+`.agent/g3a-review/resume-20261031/` after the documentation commit.

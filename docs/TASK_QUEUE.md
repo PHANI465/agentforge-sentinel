@@ -1,5 +1,31 @@
 # Shared implementation queue
 
+## October 31 resumption: G3A corrections ready for Claude
+
+The owner resumed work. The October 27 pause is lifted for the
+[documentation-only G3A follow-up](prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md).
+Resume existing `task/claude-g3a-design` from exact **06a7c0c779eeb60ff4e57ddab70de07277e27501**
+at `E:/PHANI/sentinel-wt/claude-g3a-design`, using **Claude Opus 5.5 / High** on the existing
+plan. Codex has prepared the current prompt and [acceptance checklist](reviews/G3A-acceptance-checklist.md);
+no Claude process or provider call was started by this coordination update.
+
+**Current gate:** G3A is still changes-requested for [R31-R33](reviews/G3A-06a7c0c.md),
+not accepted/frozen/merged. The original candidate is clean; supplied document checks pass,
+and all four extra inconsistent-record probes still accept on the baseline. Claude corrects
+capacity/late-worker rules, workflow-level completion/recovery and typed record invariants,
+then returns the exact tested SHA. Codex reviews that SHA before G3B implementation starts.
+
+**Order after this correction:** accepted G3A -> G3B bounded backend workflow -> accepted
+trace API and G3C UI -> measured agent comparison. No later task is dispatched by this
+resumption. Keep the existing deterministic default, human approval and synthetic/simulated
+scope. Public hosting/BYOK, new providers, spend and remote/push are outside this task.
+
+Main's application remains H01 f091a34; last full backend evidence remains c8b9477 (449+1
+per platform). This update changes docs/instructions only, not application acceptance.
+Cursor's original seven edits and all delivered task worktrees remain preserved.
+See [today's session checkpoint](artifacts/AgentForge_Sentinel_Session_2026-10-31.md).
+The entries below are historical; they do not reinstate the October 27 pause.
+
 ## October 27 end-of-day pause: G3A reviewed, corrections pending
 
 The owner requested a pause until tomorrow. G3A candidate **06a7c0c779eeb60ff4e57ddab70de07277e27501**

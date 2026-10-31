@@ -1,5 +1,15 @@
 # Verification
 
+## October 31 G3A resumption baseline
+
+On unchanged 06a7c0c, the supplied draft checks still pass: 13 schemas, 24 valid / 25 invalid
+examples, 12 dev cases, Ruff and five-document links. The four additional semantic probes
+still accept the inconsistent records documented in R33. This verifies the starting state;
+it does not close R31-R33 or accept the design. No full backend/browser/model run occurred.
+The active correction and independent [acceptance checklist](reviews/G3A-acceptance-checklist.md)
+are published. Post-commit identity, links and preservation checks are recorded under
+`.agent/g3a-review/resume-20261031/`. Prior application evidence retains its original SHA.
+
 ## October 27 G3A documentation review
 
 Independent checks of exact 06a7c0c: draft schema/example check (13 / 24 valid / 25 invalid),

@@ -1,12 +1,12 @@
 # Handoff: task/coordination
 
-- Current task: review the final I01 fixture/lifecycle package and dispatch I02 Part B on the exact accepted dependency. Earlier sections below preserve prior reviews.
-- Tool and worktree: Codex, E:\PHANI\agentforge-sentinel.
-- Updated: October 25, 2026, America/Phoenix.
-- Current state: C07/U03 and I02 Part A 50856be accepted. I01 7dd9428 accepted; Cursor I02 Part B ready on its existing branch with the exact fixture dependency. C06/C08, full model-browser acceptance and main gates remain. Latest evidence is in the final section below.
-- Code reference tested before this note: c6d369f6043a8c9ec86d8f56cf05670e81fba81d, clean task/thin-path.
-- Final check evidence: run strict helper after the final documentation commit; see final chat / ignored .agent/last-check.json for that commit. No self-referential SHA is claimed here.
-- Owned/changed paths: AGENTS.md, README.md, docs/STATUS.md, docs/VERIFICATION.md, docs/TASK_QUEUE.md, docs/prompts/CLAUDE_BATCH.md, docs/prompts/CURSOR_UI.md, docs/reviews/c6d369f.md and this note. No application source changed.
+- Current task: resume G3A R31-R33 design corrections and coordinate acceptance before G3B.
+- Tool and worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination.
+- Updated: October 31, 2026, America/Phoenix.
+- Current state: owner resumed; G3A 06a7c0c remains changes-requested. Active Claude prompt and Codex checklist prepared; no external agent process launched. G3B unstarted.
+- Code reference tested before this note: G3A 06a7c0c docs baseline, rechecked October 31; application remains accepted H01 f091a34.
+- Final check evidence: post-commit scoped documentation/preservation record in canonical .agent/g3a-review/resume-20261031/; no new full application result.
+- Owned/changed paths: current instructions/status/queue/checkpoint/verification, active G3A follow-up, acceptance checklist, October 31 session artifact/index and this note. No application source changed.
 
 ## Implemented
 
@@ -317,3 +317,18 @@ No automatic overnight work; no remote/push/deployment. Candidate, accepted work
 and Cursor's seven saved edits must match preservation checks after publication. New
 coordination commits use the owner alone; final containing SHA/checks belong in ignored
 evidence and chat, not a tracked note edited after verification.
+
+## October 31 owner resumption
+
+Lifted the October 27 task pause after the owner's explicit resumption. Main/coordination
+are clean at c7ca694 before this docs-only publication. G3A candidate stays clean at
+06a7c0c; its supplied validators pass and four additional invalid-state probes still
+accept. R31-R33 remain open. Published the active correction prompt, concrete acceptance
+checklist and current session artifact; updated current status/queue/checkpoint/instructions.
+
+Claude owns the bounded design correction on its existing branch; Codex owns subsequent
+independent re-review. No Claude process was launched by this update. No G3B, runtime,
+provider, remote, push, deployment or environment change is authorized by a document alone.
+Preserve Cursor's seven original edits and all accepted task branches. Sole owner identity
+for new commits; final documentation checks recorded after commit, without relabelling the
+old full application baseline. Next: owner gives Claude the current active prompt.
