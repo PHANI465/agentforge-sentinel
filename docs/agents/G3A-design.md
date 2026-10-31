@@ -2,7 +2,7 @@
 
 Audience: Codex (contract review, then integrator), the G3B implementer and later the analyst-UI implementer. This is a design and contract proposal for an application runtime feature: Sentinel's own fraud-investigation agents. It is not about how coding assistants collaborate.
 
-- **Status:** proposal, **revision 2** (October 31). It resolves review R31–R33 of 06a7c0c (`docs/reviews/G3A-06a7c0c.md` on task/coordination) and applies its four decisions. Nothing here is implemented. Acceptance by Codex freezes these interfaces for G3B.
+- **Status:** accepted design at candidate `43d9e8a5845630deeedfe52fc39b1a6f8ccc1b85` (October 31); runtime unimplemented. See [Codex acceptance](../reviews/G3A-43d9e8a.md). G3B is the separate implementation gate.
 - **Source base:** accepted H01 `f091a34c2ed3f6636625b3141be88d86cd5307dd`, which includes the N2–N7 release. Line references below are to that commit.
 - **Companion files:**
   - [contracts-draft/](contracts-draft/README.md): typed draft schemas, valid and invalid examples, compatibility notes;
@@ -95,7 +95,7 @@ open ──claim──▶ investigating ─┬─ recommend ─▶ awaiting_appr
 ### 3.1 Admission, call leases and the full deadline (R31)
 
 **Two separate quantities:**
-- The **request deadline** (150 s) bounds when the HTTP response and the terminal write happen.
+- The **workflow elapsed budget** (150 s) governs coordinator waiting through the terminal attempt, with the reserve inside it (section 3.2). Request latency is measured separately; response delivery and commit durability are not guaranteed.
 - The **worker lifetime** bounds how long a provider call's thread can keep running after the coordinator stopped waiting for it.
 
 The existing `_run_investigator` helper (`service.py:524-546`) returns on timeout and calls `shutdown(wait=False)`, and the thread cannot be killed. Capacity must therefore follow the *thread*, not the request.
@@ -196,7 +196,7 @@ Sequential lock waits and statements therefore consume one budget. For example, 
 - sequential budget consumption with rollback at the deadline, not after it;
 - the refused, rolled-back and uncertain terminal outcomes, none reported as completion.
 
-The HTTP response is `CaseDetail` with `state=open`, `agent_runs: []` and no intent. Nothing invents a role run. The failure shows in `GET /v1/cases/{id}/audit` (`investigation_completed`/`failure`).
+For **committed zero-role Example B only**, the HTTP response is `CaseDetail` with `state=open`, `agent_runs: []` and no intent. Unconfirmed terminal attempts use the section 3.2 outcome table. Nothing invents a role run. The failure shows in `GET /v1/cases/{id}/audit` (`investigation_completed`/`failure`).
 
 ## 4. Read-only tool registry (`agent-read-tools` t1)
 

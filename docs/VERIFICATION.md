@@ -1,5 +1,16 @@
 # Verification
 
+## October 31 G3A final design acceptance
+
+Exact 43d9e8a closes R31-R33. Independent draft/schema/example/dev-case, Ruff/link/anchor,
+previous semantic-control and pure budget checks pass. Four intentionally broken budget
+helpers produce 15/8/3/14 failures; a 120-combination extra boundary grid passes. Revision2
+schema/example/catalog assets are byte-identical. Parent, owned six-file diff, clean state
+and sole-owner metadata pass. No database/backend/browser/provider runs. Read
+[the acceptance and runtime limits](reviews/G3A-43d9e8a.md). Integrated after-commit doc and
+preservation evidence lives under `.agent/g3a-review/43d9e8a/`; application results remain
+tied to their prior source versions. G3B needs separate real runtime/platform checks.
+
 ## October 31 G3A revision 2 independent review
 
 Exact feb80d1 passes draft export/examples (15 / 35 valid / 50 invalid), 15 dev cases,

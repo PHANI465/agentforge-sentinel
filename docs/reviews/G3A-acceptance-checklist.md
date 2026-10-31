@@ -1,5 +1,15 @@
 # G3A acceptance checklist
 
+## Final status: accepted 43d9e8a, R31-R33 closed
+
+[Independent final acceptance](G3A-43d9e8a.md) closes all design gates. Revision3 passes
+the positive reserve case, no zero/negative rounding, single-host connection/granularity,
+shared transaction budgets and honest uncertain outcomes. Mutations fail (15/8/3/14),
+120 extra budget combinations pass, and all 15 schemas / 35 valid / 50 invalid / 15 dev
+cases and earlier semantic controls remain green. Schema/example/catalog bytes match
+revision2. Runtime proof, real COMMIT behavior and platform gates belong to G3B.
+The original checklist and review chronology below are historical, not open blockers.
+
 ## Revision 2 independent review — October 31
 
 Exact feb80d1 reviewed: **R32/R33 closed; R31 admission/late-worker portion closed**.

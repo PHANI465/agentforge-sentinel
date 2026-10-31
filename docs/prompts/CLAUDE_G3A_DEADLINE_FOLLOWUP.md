@@ -1,5 +1,7 @@
 # G3A revision 2: narrow R31 deadline follow-up
 
+**Completed and superseded: G3A 43d9e8a accepted; R31-R33 closed. Do not rerun this task. Read current coordination for G3B.**
+
 Recommended coding assistant: **Claude Opus 5.5, High effort**. This is one bounded
 absolute-deadline and transaction-budget correction, not another architecture redesign.
 

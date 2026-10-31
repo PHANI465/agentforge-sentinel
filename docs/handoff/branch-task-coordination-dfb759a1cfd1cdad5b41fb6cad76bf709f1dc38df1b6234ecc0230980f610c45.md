@@ -348,3 +348,19 @@ checkpoint/queue updates. G3A not accepted/merged/frozen, G3B unstarted. Source/
 model/UI unchanged; original Claude and Cursor task checkouts preserved. No provider,
 database or full suite needed for this docs-only review. Final scoped evidence is saved
 after commit; no new application test result is claimed. All commits owner-only.
+
+## October 31 G3A final acceptance
+
+Accepted exact 43d9e8a, direct child of feb80d1, after independent budget checks and
+negative controls closed R31. Fifteen schemas / 35 valid / 50 invalid / 15 dev cases,
+Ruff, links/anchors, 120 boundary combinations and all prior semantic controls pass.
+Candidate unchanged; existing frozen schema/example/catalog bytes preserved. Merge
+fb7e104 integrated the exact package with current coordination automatically, without
+application changes. Acceptance adds two prose clarifications and accepted status labels;
+no claim of actual SQL/COMMIT latency, runtime multi-agent behavior or live quality.
+
+G3B is now the next implementation gate, from the exact accepted integration commit to be
+named in its dispatch. Preserve deterministic default, human approval, historical runs,
+legacy contract bytes and all owner identity rules. No provider/new environment/public
+service work. Full application suite intentionally not rerun for documentation. Final
+scoped evidence recorded externally after commit; Cursor's saved seven files preserved.

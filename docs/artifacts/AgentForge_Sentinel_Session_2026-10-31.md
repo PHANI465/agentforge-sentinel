@@ -1,5 +1,26 @@
 # AgentForge Sentinel October 31 session checkpoint
 
+## Latest checkpoint: G3A accepted; G3B next
+
+**Accepted candidate: 43d9e8a5845630deeedfe52fc39b1a6f8ccc1b85. All R31-R33 are closed.**
+[Final review](../reviews/G3A-43d9e8a.md) records the design/schema/evaluation freeze.
+The package is integrated without application changes; the tested Claude branch is preserved.
+
+Independent checks pass: 15 schemas, 35 valid / 50 invalid examples, 15 dev cases, budget
+spec, Ruff, links/anchors, four broken-helper controls (15/8/3/14 failures) and 120 extra
+budget combinations. The previous 14+3 regression controls, 54 usage combinations, 8 role
+subsets and 6 lifecycle controls still pass. No real database, backend/browser or model
+run was needed for this docs-only gate. Local evidence: `.agent/g3a-review/43d9e8a/`.
+
+**Next is G3B implementation, not another G3A design iteration.** The exact accepted
+integration base and ready-to-paste Claude task will be published in coordination. The
+45s/150s/5s/100ms/1s limits remain unmeasured choices; real PostgreSQL transaction outcomes
+and CLI worker lifetime must be proven in G3B. Human approval, synthetic-only data and
+simulated actions remain unchanged. No live comparisons/final held-out evaluation yet.
+
+Earlier records below are history. The last full application evidence retains its original
+commit and scope. Cursor's saved edits and owner-only commit identity remain protected.
+
 ## Latest checkpoint: revision 2 reviewed
 
 Claude delivered **feb80d19cac6c91844d8c7490a7e04e1b1b246d1**, direct child of preserved

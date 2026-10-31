@@ -1,6 +1,6 @@
 # G3A draft contracts (`g3a-draft-1`)
 
-These are proposed shapes for the three-role workflow, kept outside the frozen `contracts/` tree. They become frozen only when Codex accepts G3A. G3B then moves them into `src/sentinel/contracts/agents.py` and exports them beside the v1 schemas.
+These are accepted G3A draft shapes (candidate 43d9e8a), kept outside the legacy `contracts/` tree. See [Codex acceptance](../../reviews/G3A-43d9e8a.md). G3B promotes them into `src/sentinel/contracts/agents.py` and exports them beside the v1 schemas.
 
 | File | Purpose |
 | --- | --- |

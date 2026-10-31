@@ -4,7 +4,7 @@ Audience: Codex (freezes this protocol and later arranges the final case set), t
 
 This protocol measures **investigation quality and safety**, not fraud detection. The fraud scorer's AP and recall (C04 `p1`, frozen) are a different question. Its artifacts and test results are not touched, re-run for selection or reported here.
 
-**Status: v1, proposed.** Freeze it before any tuning; any later change is a new version with a stated reason. No numbers exist yet. **None may be reported** from deterministic fixtures, from the number of roles, or before an actual measured run under this protocol.
+**Status: v1, accepted with G3A candidate 43d9e8a.** Frozen before tuning; any later change is a new version with a stated reason. No numbers exist yet. **None may be reported** from deterministic fixtures, from the number of roles, or before an actual measured run under this protocol.
 
 ## 1. Comparators (the same case definitions for each)
 

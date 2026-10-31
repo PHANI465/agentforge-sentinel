@@ -1,5 +1,24 @@
 # Project status
 
+## October 31 G3A accepted: implementation gate next
+
+**G3A 43d9e8a5845630deeedfe52fc39b1a6f8ccc1b85 is accepted** for design/schema/evaluation;
+[R31-R33 are closed](reviews/G3A-43d9e8a.md). The package is integrated into coordination
+without application changes. Fifteen schemas, 35 valid / 50 invalid examples, 15 dev cases,
+the budget spec, four mutation controls and 120 extra budget boundary combinations pass.
+The earlier semantic checks remain green; exact candidate assets and tested branch are preserved.
+
+The accepted design uses scoped read tools, typed server-checked claims, three sequential
+roles, separate workflow/call leases and one reserve-aware deadline. Unconfirmed terminal
+COMMIT is explicitly unknown; human approval and simulated execution remain separate.
+**The runtime G3B is not implemented.** Codex prepares its exact-base backend dispatch;
+no provider call or final evaluation is part of this design acceptance.
+
+Main's application code remains H01 f091a34, with prior full backend baseline c8b9477
+(449+1 on each platform) and separate H01 checks. No new app result is claimed. Cursor's
+seven saved edits remain protected; all commits use the owner alone. See
+[today's session artifact](artifacts/AgentForge_Sentinel_Session_2026-10-31.md).
+
 ## October 31 G3A revision 2 reviewed: one deadline correction remains
 
 Candidate **feb80d19cac6c91844d8c7490a7e04e1b1b246d1** passed independent scoped checks.
