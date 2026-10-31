@@ -2,7 +2,7 @@
 
 Audience: Codex (contract review, then integrator), the G3B implementer and later the analyst-UI implementer. This is a design and contract proposal for an application runtime feature: Sentinel's own fraud-investigation agents. It is not about how coding assistants collaborate.
 
-- **Status:** proposal. Nothing here is implemented. Acceptance by Codex freezes these interfaces for G3B.
+- **Status:** proposal, **revision 2** (October 31). It resolves review R31–R33 of 06a7c0c (`docs/reviews/G3A-06a7c0c.md` on task/coordination) and applies its four decisions. Nothing here is implemented. Acceptance by Codex freezes these interfaces for G3B.
 - **Source base:** accepted H01 `f091a34c2ed3f6636625b3141be88d86cd5307dd`, which includes the N2–N7 release. Line references below are to that commit.
 - **Companion files:**
   - [contracts-draft/](contracts-draft/README.md): typed draft schemas, valid and invalid examples, compatibility notes;
@@ -59,9 +59,9 @@ open ──claim──▶ investigating ─┬─ recommend ─▶ awaiting_appr
 | --- | --- | --- | --- |
 | 1 | `claimed` | server | → `gathering` |
 | 2 | `gathering` | server runs the baseline tools: `case_evidence`, `scoring_outcome`, `account_history(24h)` | → `analyst` |
-| 3 | `analyst` | analyst invocation 1 | valid: `analyst_tools` if it requested tools, else `investigator`. Failure: a repeat (if budget allows), else inconclusive |
+| 3 | `analyst` | analyst invocation 1 | valid: `analyst_tools` if it requested tools, else `investigator`. Resolved failure (`provider_unavailable`/`invalid_output`): one repeat if a call slot and time remain. Timeout or no repeat left: inconclusive |
 | 4 | `analyst_tools` | server: ≤2 validated requests; excess requests are *denied* and recorded | → `investigator` |
-| 5 | `investigator` | investigator invocation 1 or 2 | output with a tool request (first invocation only): `investigator_tools`. Otherwise `verifying`. Failure: a repeat, else inconclusive |
+| 5 | `investigator` | investigator invocation 1 or 2 | output with a tool request (first invocation only): `investigator_tools`. Otherwise `verifying`. Failure: as for the analyst |
 | 6 | `investigator_tools` | server: ≤1 request | → `investigator` (this consumes the one revision) |
 | 7 | `verifying` | server: claim and policy checks (§5) | → `reviewer` |
 | 8 | `reviewer` | reviewer invocation 1 or 2 | `accept` with all adopted claims supported and policy consistent: **recommend**. `accept` while the server found problems, or `challenge`: back to `investigator` if a revision remains, else **abstain**. `abstain`: **abstain** |
@@ -74,11 +74,11 @@ open ──claim──▶ investigating ─┬─ recommend ─▶ awaiting_appr
 | Role invocations | ≤5 (analyst 1, investigator ≤2, reviewer ≤2) | Covers one revision cycle. It costs at most five subscription calls per case |
 | Investigator revisions | ≤1, shared between a tool follow-up and a reviewer challenge | Prevents ping-pong between roles; a second disagreement becomes abstain |
 | Follow-up tool calls | ≤3 (analyst ≤2, investigator ≤1). The baseline adds 3, so ≤6 tool executions | Tools are cheap SQL aggregates. The limit bounds latency and prompt size |
-| Repeats | ≤1 per workflow, for a `timeout`, `provider_unavailable` or `invalid_output` role call | Gives one bounded retry for a flaky provider. Billing is not exactly once: an abandoned call may still have consumed quota |
+| Repeats | ≤1 per workflow, **only for a resolved failure** (`provider_unavailable` or `invalid_output`, where the worker returned). **Never after a `timeout`**, whose worker is still unresolved (§3.1) | Gives one bounded retry for a flaky provider without overlapping calls. Billing is not exactly once: an abandoned call may still have consumed quota |
 | Transitions | ≤12 (derivable from the above; enforced as an invariant) | A defensive bound |
 | Role timeout | 45 s per live call (5 s for deterministic). `RunBudget.timeout_seconds` allows at most 60 | The live investigator today uses 60 s for one call, and roles have smaller prompts |
-| Workflow deadline | 150 s from the claim. No role starts unless the remaining time ≥ role timeout + 2 s grace; otherwise **inconclusive / budget_exhausted** | Keeps the synchronous HTTP request bounded. The UI client sets no fetch timeout (`web/src/api/client.ts`) |
-| Concurrency | ≤1 live workflow per API process (non-blocking semaphore taken *before* the claim; otherwise 409 `agent_capacity_exhausted`, with no state change). Deterministic adapters are not limited beyond the existing one running run per case | Protects the owner's subscription quota and the laptop |
+| Workflow deadline | 150 s from the claim. It covers gathering, tools, coordinator work and the terminal write, not only role calls (§3.1) | Keeps the synchronous HTTP request bounded. The UI client sets no fetch timeout (`web/src/api/client.ts`). It is a provisional default, not a measured guarantee (review decision 2) |
+| Concurrency | ≤1 admitted workflow and ≤2 outstanding provider calls per API process, late workers included (§3.1). A refused admission returns 409 `agent_capacity_exhausted` with no state change and nothing about other cases. Deterministic adapters take no call slots: no provider, no late worker | Protects the owner's subscription quota and the laptop, including against accumulating timed-out workers |
 | Delegation | 0. Roles never invoke roles; only the coordinator sequences | No unbounded delegation loop |
 | Tokens / money | Recorded only if the adapter reports usage (`Usage.source = adapter_reported`), else `unknown`. There is no monetary cap | The CLI adapter does not meter cost today; a cap would be fiction |
 
@@ -90,7 +90,69 @@ open ──claim──▶ investigating ─┬─ recommend ─▶ awaiting_appr
 - when the workflow was superseded (case no longer `investigating` at the claimed revision);
 - when recovery already reopened the case.
 
-**The `inconclusive` case state stays unused in G3B.** Entering it would strand the case: no route reopens it, and `investigate` requires `open`. An inconclusive *workflow* therefore reopens the case to `open`, exactly as `_fail_run` does today. The `AgentRun` that ended it gets status `inconclusive` (or `failed` with a code), and the audit records `investigation_completed`/`failure`. Using the case state needs a later, explicitly versioned reopen route.
+**The `inconclusive` case state stays unused in G3B** (review decision 3). Entering it would strand the case: no route reopens it, and `investigate` requires `open`. An inconclusive *workflow* reopens the case to `open` with no intent, through the workflow-level terminal transaction in §6.1. That transaction does not require a running role. Using the case state needs a later, explicitly versioned reopen route.
+
+### 3.1 Admission, call leases and the full deadline (R31)
+
+**Two separate quantities:**
+- The **request deadline** (150 s) bounds when the HTTP response and the terminal write happen.
+- The **worker lifetime** bounds how long a provider call's thread can keep running after the coordinator stopped waiting for it.
+
+The existing `_run_investigator` helper (`service.py:524-546`) returns on timeout and calls `shutdown(wait=False)`, and the thread cannot be killed. Capacity must therefore follow the *thread*, not the request.
+
+**What bounds the worker lifetime.** The Claude CLI adapter runs `subprocess.run(..., timeout=...)`. Python kills the CLI child process when that timeout expires (the auth preflight has its own 15 s bound). A worker therefore returns at most about role timeout + 15 s + scheduling after it started. That ends the local process. It does **not** cancel provider-side work or billing, and nothing here claims it does.
+
+**Leases (process-local, in memory).** One `AgentCapacity` object per API process holds two counters, each with a fixed maximum from the pinned limits.
+
+| Lease | Taken | Owner | Released | Crash |
+| --- | --- | --- | --- | --- |
+| **Workflow slot** (max `max_live_workflows_per_process` = 1) | Non-blocking, by `investigate` **before** the claim transaction. It also needs ≥1 free call slot. If either is unavailable: 409 `agent_capacity_exhausted`, no transaction, no case change | The request's coordinator | In a `finally` after the terminal transaction commits or fails, on every path: success, inconclusive, superseded, unexpected exception | Lost with the process; nothing persists it |
+| **Call slot** (max `max_outstanding_calls_per_process` = 2) | Non-blocking, immediately before a live role call is submitted to its worker thread. If none is free, the call is not made and the workflow ends inconclusive `call_capacity_exhausted` | The **worker thread's future**, not the request | By a done-callback when the worker thread **actually returns** (result, typed error or late completion), never when the coordinator stops waiting | Lost with the process; the worker threads are gone too |
+
+**Consequences of these rules:**
+- **Outstanding calls ≤ 2 at all times**, late workers included. Within one workflow at most one call is ever outstanding: roles are sequential, and a timeout ends the workflow because a timed-out call is never repeated.
+- **A late result is never written.** Only the coordinator writes, and only after `future.result` returned in time. The done-callback releases the slot and emits one structured log event (`agent_worker_returned`: workflow ID, role, attempt, seconds after the deadline), with no database write and no output content.
+- **A repeat needs a resolved failure,** a free call slot and the full role timeout + grace + terminal reserve remaining.
+
+**Full-deadline coverage.** Every coordinator step checks the remaining time first:
+- Before a **role call:** remaining ≥ `role_timeout` (45) + `role_grace` (2) + `terminal_reserve` (5).
+- Before a **tool or claims check:** remaining ≥ `db_wait_seconds` (5) + `terminal_reserve` (5).
+- Otherwise the workflow ends inconclusive `budget_exhausted`. The terminal transaction runs inside the reserve.
+
+**Database waits are bounded.** Every coordinator and tool transaction sets `SET LOCAL lock_timeout` and `statement_timeout` to min(`db_wait_seconds`, remaining − `terminal_reserve`). Tool statements are additionally bounded by `tool_statement_timeout_ms` (2 s), and connections use `connect_timeout` = `db_wait_seconds`. A lock or statement timeout during a step is treated like exhaustion: inconclusive `budget_exhausted`. An unexpected exception becomes inconclusive `coordinator_error`.
+
+**If even the terminal write cannot complete** (database unavailable), the workflow stays `running`, and lazy recovery (§6.1) closes it once `deadline_at + RECOVERY_GRACE` has passed.
+
+**Example A: timeout, late completion, another admission** (live adapter, limits as pinned):
+
+| t (s) | Event | Leases (workflow / calls) | Records |
+| --- | --- | --- | --- |
+| 0 | Case X `investigate`: workflow slot taken, call slot free; claim | 1 / 0 | case X `investigating` r2; workflow W1 `running` |
+| 1–2 | Gathering: 3 tools | 1 / 0 | 3 `tool_executed` steps |
+| 2 | Analyst call submitted; call slot taken | 1 / 1 | analyst run `running` |
+| 49 | Coordinator's wait expires (45 + 2). The worker has not returned | 1 / 1 | analyst run `failed`/`timeout`; step `role_failed` with `worker_unresolved=true`. No repeat (timeout) |
+| 49 | Terminal transaction: W1 `inconclusive`/`timeout`, case X → `open` r3, audit failure. Workflow slot released | 0 / 1 | HTTP 200 `CaseDetail`, case open, no intent |
+| 50 | Case Y `investigate`: workflow slot free, one call slot free, so admitted | 1 / 1 | W2 `running` |
+| 52 | Y's analyst call submitted | 1 / 2 | |
+| 55 | X's late worker returns (CLI killed by its own subprocess timeout at about 45 s, plus process exit). Its result is **discarded**, and its call slot is released | 1 / 1 | log `agent_worker_returned`; no database write |
+| 56 | Case Z `investigate` while W2 runs: workflow slot busy | 1 / 1 | **409 `agent_capacity_exhausted`**, case Z unchanged, no record |
+| 80 | Y's analyst returns in time; W2 continues | 1 / 0 → 1 per call | |
+
+*Variant:* if X's late worker were still running at t = 80 and Y's investigator also timed out, two workers would hold both call slots. Every admission would then be refused until one returns, because outstanding calls never exceed 2.
+
+**Example B: deadline exhaustion during gathering** (zero roles):
+
+| t (s) | Event | Records |
+| --- | --- | --- |
+| 0 | Claim (case r1 → r2), W `running`, deadline +150 | `investigation_started` audit (human actor) |
+| 0.1–0.3 | `case_evidence` and `scoring_outcome` succeed | 2 `tool_executed` steps |
+| 0.3 | `account_history` waits on a lock held by an owner-side maintenance session | |
+| 5.3 | `lock_timeout` (`db_wait_seconds` = 5) fires. Tool steps are never retried, and a lock or statement timeout counts as exhaustion | |
+| 5.4 | Terminal transaction (well inside the deadline): W `inconclusive`/`budget_exhausted`, `role_invocations=0`, `tool_calls=2`, case → `open` r3, audit failure (coordinator principal) | `WorkflowRecord.zero_role_budget_exhausted` (example) |
+
+The same terminal path runs when the deadline itself is reached first, for example when earlier roles were slow and the remaining time cannot cover the next step.
+
+The HTTP response is `CaseDetail` with `state=open`, `agent_runs: []` and no intent. Nothing invents a role run. The failure shows in `GET /v1/cases/{id}/audit` (`investigation_completed`/`failure`).
 
 ## 4. Read-only tool registry (`agent-read-tools` t1)
 
@@ -140,7 +202,7 @@ Each claim is structured (`Claim` in the draft): a fact claim `fact relation val
 
 | Object | Columns | Runtime grants |
 | --- | --- | --- |
-| `agent_workflows` | `id`, scope, `case_id` (FK), `case_revision`, `status` (`running`/`completed`/`inconclusive`), `started_at`, `deadline_at`, `finished_at`, `body jsonb` (`WorkflowRecord`). Partial unique index: one `running` row per case | SELECT, INSERT, UPDATE |
+| `agent_workflows` | `id`, scope, `case_id` (FK), `case_revision`, `status` (`running`/`completed`/`inconclusive`), `started_at`, `deadline_at` (CHECK > `started_at`), `finished_at`, `terminal_by`, `body jsonb` (`WorkflowRecord`). A CHECK mirrors the lifecycle rule (`running` ⇔ no `finished_at`/`terminal_by`). Partial unique index: one `running` row per case | SELECT, INSERT, UPDATE |
 | `agent_steps` | `seq bigserial`, `id`, scope, `workflow_id` (FK), `case_id`, `body jsonb` (`StepRecord`), `payload jsonb` (a validated `RoleOutput` or `ToolResult`). Append-only trigger like `audit_events` | SELECT, INSERT |
 | `agent_runs` additions | `workflow_id uuid NULL` (FK), `attempt smallint NULL` | unchanged |
 
@@ -157,13 +219,59 @@ Each claim is structured (`Claim` in the draft): a fact claim `fact relation val
 | `Sentinel._ingest` pins (`service.py:251-256`) | `tool_config` = the selected workflow's tool profile when a workflow is configured (else `scoring.TOOL_PROFILE`) |
 | `Sentinel._claim` (`service.py:570`) | Also check `case.pins.tool_config`, using the same `stale_agent_config` code. For a workflow: insert the `agent_workflows` row (deadline = now + 150 s) instead of one investigator run |
 | `Sentinel.investigate` (`service.py:517`) | If a workflow is configured, call `coordinator.run(ctx, workflow, view)`. Each step commits in its own short transaction, guarded by "case is `investigating` at the claimed revision and the workflow is `running`" (compare-and-set, like `_transition`). Otherwise the existing path is unchanged |
-| `_run_investigator` (`service.py:524`) | Reused per role invocation (thread plus `role_timeout + grace`). A late result is never written: only the coordinator writes, after `future.result` returns in time |
-| `finish_investigation` (`service.py:612`) | Shared tail. `recommend`/`abstain` build the intent exactly as today (`HoldParameters`/`EscalateParameters` from the stored transaction), with `agent_run_id` = the disposition's `basis_run_id`. `inconclusive` uses the `_fail_run` path, with `AgentRun.status="inconclusive"` or `failed`+code |
-| `_recover_lost_run` (`service.py:660`) | Also recover a `running` workflow when `deadline_at + RECOVERY_GRACE < now`: fail its running role run (`timeout`), mark the workflow `inconclusive`/`timeout` and reopen. This makes a workflow interrupted between roles (no running run) recoverable |
+| `_run_investigator` (`service.py:524`) | Not reused as is for live roles. A role-call wrapper takes a call slot, submits the call, and attaches the slot-releasing done-callback (§3.1) **before** waiting on `role_timeout + grace`. A late result is never written: only the coordinator writes, after `future.result` returns in time |
+| `finish_investigation` (`service.py:612`) | Success tail only (`recommend`/`abstain`), inside the workflow terminal transaction (§6.1). The intent is built exactly as today (`HoldParameters`/`EscalateParameters` from the stored transaction), with `agent_run_id` = the disposition's eligible `basis_run_id` |
+| `_fail_run` (`service.py:651`) | **Not** used to end a workflow: it requires a run and would rewrite it. The workflow terminal transaction (§6.1) handles inconclusive endings with or without a running role |
+| `_recover_lost_run` (`service.py:660`), called from `begin_investigation` (`service.py:560`) | Also look for a `running` workflow on the case. Once `deadline_at + RECOVERY_GRACE < now`, run the terminal transaction with `terminal_by="recovery"` and code `interrupted`. This covers zero-role and between-role crashes, where no running role run exists |
 
-**Resumption.** G3B never resumes a workflow mid-way. After a crash, recovery reopens the case, and a new `investigate` starts a fresh workflow with a new ID, re-running all roles. Every earlier step and run stays recorded.
+**Resumption.** G3B never resumes a workflow mid-way. After a crash, recovery reopens the case, and a new `investigate` starts a fresh workflow with a new ID, re-running all roles. Every earlier step and run stays recorded with its true status.
 
-**Where a repeat is safe.** A single role call whose completion is uncertain (`timeout`, `provider_unavailable`) may be repeated once inside the same workflow. This is safe because role calls have no side effects. The abandoned thread cannot be force-stopped and may still finish and consume quota; its result is dropped.
+**Where a repeat is safe.** Only a call whose worker has *returned* with `provider_unavailable` or `invalid_output` may be repeated, once per workflow, and only with a free call slot and enough remaining time (§3.1). A timed-out call is never repeated: its worker is unresolved, and a repeat would overlap it. Role calls have no side effects inside Sentinel. Provider-side quota use of a finished or abandoned call is not reversible, and is not claimed to be exactly once.
+
+### 6.1 Workflow terminal transaction and recovery (R32)
+
+**One function** (`terminate_workflow` in G3B) ends every workflow. It is independent of whether a role run is active, and does the following in **one transaction**:
+
+1. **Guard by scope and revision.** Lock the case `FOR UPDATE`, filtered by the context's tenant and session (as `_case` does). Require `case.state == "investigating"`, `case.revision == workflow.case_revision`, and the workflow row `status = 'running'`. The workflow update is a compare-and-set (`UPDATE … WHERE id = %s AND status = 'running'`). If any guard fails, change nothing and raise `investigation_superseded`, as `finish_investigation` does today.
+2. **Close an active role run, if any.** If one `running` `agent_runs` row exists for this workflow, set it to `failed` with its true code: `timeout` for an expired wait or recovery, else `provider_unavailable`, `invalid_output` or `budget_exhausted`. **Completed, failed or inconclusive role runs are never rewritten.** No role run is created to make the response look complete.
+3. **Write the workflow terminal record:** `status`, `finished_at` = now, `terminal_by`, `disposition` with its code, counters. These must satisfy the `WorkflowRecord` lifecycle rules in the draft.
+4. **Apply the outcome:**
+   - **`recommend`/`abstain`:** re-verify the evidence snapshot (`require_evidence_snapshot`). Then case → `awaiting_approval` (r+2), plus the server-built intent at r+2 with `agent_run_id` = basis. If the snapshot check fails, write instead an `inconclusive`/`stale_evidence_snapshot` record and apply the inconclusive outcome; the same transaction never writes both.
+   - **`inconclusive`:** case → `open` (r+2), no intent.
+5. **Audit.** Append one `investigation_completed` event (`success` for recommend/abstain, `failure` for inconclusive) at the new revision:
+   - with `terminal_by="coordinator"`: actor = the **workflow's coordinator principal** (uuid5 of the workflow config, the `Workflow.principal_id`), `actor_kind="agent"`;
+   - with `terminal_by="recovery"`: actor = `SYSTEM_ACTOR`, `actor_kind="system"`, because no coordinator is alive.
+
+   Role principals appear only on their own `agent_runs`.
+
+**Eligible basis for an intent.** It must be an `agent_runs` row in **the same workflow**, with `role="investigator"`, `status="completed"`, and the **latest** investigator attempt:
+- for `recommend`, the adopted output, all claims supported;
+- for `abstain`, the latest completed investigator output, whose operation is replaced by the server's escalate/`insufficient_evidence`.
+
+An abstention without an eligible completed investigator run is impossible by the state machine, since the reviewer only runs after one. If the check nevertheless finds none, the outcome is `inconclusive`/`coordinator_error` with no intent. The intent never references an analyst or reviewer run. Human approval and execution remain separate steps, as today.
+
+**What CaseDetail (v1.1) shows after each ending:**
+
+| Ending | `case.state` / revision | `agent_runs` | Intent | Audit |
+| --- | --- | --- | --- | --- |
+| recommend / abstain | `awaiting_approval`, r+2 | 3–5 roles, one adopted investigator run with `finding` | 1, at r+2 | started (human), completed/success (coordinator) |
+| Exhausted before the first role (Example B) | `open`, r+2 | `[]` | none | started, completed/failure (coordinator) |
+| Timeout in a role (Example A) | `open`, r+2 | earlier completed roles + the timed-out run `failed`/`timeout` | none | started, completed/failure (coordinator) |
+| **Crash between roles** (analyst completed, process died before the investigator started) | `investigating`, r+1, until the next `investigate` after `deadline_at + 30 s`. That request recovers and returns 409 `investigation_recovered` (existing code); the client re-reads | analyst `completed` (unchanged) | none | started, completed/failure (**system**) |
+| Crash during a role | as above after recovery | that role `failed`/`timeout`; earlier roles unchanged | none | started, completed/failure (system) |
+
+The v1.1 UI shows "No investigation has been recorded" when `agent_runs` is empty (`web/src/ui/CaseFile.tsx:162`), which is literally true. The workflow failure is visible only through the audit until the G3C trace route exists. That is a known display limitation, not a contract violation.
+
+**Example C: between-role crash and recovery.** This is `WorkflowRecord.between_role_interrupted` in the examples.
+
+| t (s) | Event |
+| --- | --- |
+| 0 | Claim r1 → r2; W `running`, deadline 150 |
+| 3–20 | Gathering; analyst `completed` |
+| 21 | The API process is killed. Leases vanish with it; no role run is `running` |
+| 21–179 | `GET` shows `investigating` r2. An `investigate` request before 180 gets 409 `investigation_in_progress` |
+| 249 | A human `investigate` (expected revision 2): `begin_investigation` finds W `running` past `deadline_at + RECOVERY_GRACE`. The terminal transaction runs: W `inconclusive`/`interrupted`, `terminal_by=recovery`, analyst run untouched, case → `open` r3, system audit. Response: 409 `investigation_recovered` |
+| 250 | The client re-reads (r3) and may start a fresh workflow W2 |
 
 **What is untouched.** `audit_events` gets no new event types: `investigation_started` and `investigation_completed` with success/failure, as today. Per-role detail lives in `agent_steps`. Approval, expiry, rejection, stale revision and idempotent execution code is untouched.
 
@@ -189,7 +297,8 @@ Exact payloads are in [contracts-draft/examples/valid](contracts-draft/examples/
 
 **Variants:**
 - *Reviewer challenge with no revision left:* abstain. The intent is `escalate`/`insufficient_evidence`, at revision 3.
-- *Investigator timeout twice:* inconclusive/timeout. The case reopens at revision 3 with no intent; the analyst can retry, or switch to the deterministic investigator through operator configuration (which makes the old case `stale_agent_config`).
+- *Investigator timeout:* no repeat, since the worker is unresolved. The result is inconclusive/timeout: the case reopens at revision 3 with no intent, and the late worker keeps its call slot until it returns (§3.1, Example A). The analyst can retry later. An operator switch to the deterministic investigator makes the old case `stale_agent_config`.
+- *Investigator `provider_unavailable` once:* one repeat (attempt 2), if a call slot and enough time remain, then the normal flow.
 
 ## 8. Errors, compatibility and versions
 
@@ -198,11 +307,13 @@ Exact payloads are in [contracts-draft/examples/valid](contracts-draft/examples/
 - `permission_denied` (403);
 - `not_found` (404) for a case in another session, unchanged.
 
-There is one new code: **409 `agent_capacity_exhausted`** (live adapter busy; no state change). It is additive under the existing `ErrorResponse.error: str`. The docs/api error list needs one line.
+There is one new code: **409 `agent_capacity_exhausted`** (review decision 1). It means process capacity (the workflow slot or every call slot) is held, possibly by *another* case. It is distinct from `investigation_in_progress`, which means this case is busy. The refusal happens before any transaction. It changes no case, writes no record, and says nothing about which case or how many calls hold capacity. It is additive under the existing `ErrorResponse.error: str`, and is added to the documented handled-code list in G3B, not before.
 
 **Outcomes as observed through v1.1 (no route change).** `POST /v1/cases/{id}/investigations` returns 200 `CaseDetail` with:
 - `state=awaiting_approval`, three to five `agent_runs` (roles), one with a `finding`, and one current intent (recommend or abstain); or
-- `state=open` with the last run `inconclusive`/`failed` (inconclusive).
+- `state=open`, no current intent, and whatever role runs truly exist: possibly none, possibly only completed ones, possibly one `failed` (inconclusive). See the table in §6.1.
+
+A crash leaves the case `investigating` until lazy recovery returns 409 `investigation_recovered`.
 
 **HTTP revision.** None is needed for G3B. A **v1.2 additive** read route, `GET /v1/cases/{id}/investigation-trace` → `TraceSummary`, is drafted for the analyst UI (G3C). It needs its own contract freeze, an export update and UI work. Legacy v1 and v1.1 bytes stay frozen.
 
@@ -226,9 +337,17 @@ There is one new code: **409 `agent_capacity_exhausted`** (live adapter busy; no
 - **What is not stored.** No raw prompts with credentials, no provider auth output (the existing CLI rule: stdout is never logged) and no chain-of-thought dumps. Steps store validated outputs and digests.
 - **Deferred.** There is no notes or document input path today. An isolated untrusted-notes reader is not designed or claimed here.
 
-## 10. Assumptions and open decisions
+## 10. Resolved decisions, assumptions and schema boundary
 
-- **Claude CLI per role.** Each role's adapter uses the same subscription and isolation checks as `ClaudeCliInvestigator`, with a role-specific system prompt and JSON schema. Whether the CLI envelope reports usage is verified in G3B, not assumed.
+**Resolved by the review of 06a7c0c** (G3A-06a7c0c.md), and applied throughout:
+1. Use 409 `agent_capacity_exhausted` (§8).
+2. Keep 45 s per live role and 150 s per workflow as **provisional, unmeasured** defaults. Each call needs its full timeout + grace + terminal reserve remaining, so five calls fit only if earlier calls return quickly. The outstanding-call bound (§3.1) applies separately. A measured change is a new pinned config and protocol version.
+3. An inconclusive workflow reopens the case to `open`, with no intent and no reopen route; the case-level `inconclusive` state is not entered (§3, §6.1).
+4. Token usage stays `unknown` unless actually reported and validated (`Usage` rules). Parsing tests may use synthetic envelopes; a real CLI observation is a later, explicitly opt-in step.
+
+**Assumptions:**
+- **Claude CLI per role.** Each role's adapter uses the same subscription and isolation checks as `ClaudeCliInvestigator`, with a role-specific system prompt and JSON schema.
 - **Model alias drift.** The alias (`sonnet`) still resolves over time. Pins record the alias, as ADR 0003 says.
-- **The deterministic role adapters** are a plumbing control and a fixture. They are not evidence of multi-agent quality (see the protocol).
-- **Decision for Codex:** accept `agent_capacity_exhausted`, or reuse `investigation_in_progress`. The recommendation is the new code, because the case is not busy.
+- **The deterministic role adapters** are a plumbing control and a fixture. They are not evidence of multi-agent quality (see the protocol). They take no call slots.
+
+**Schema boundary.** The typed draft enforces everything that one record can show about itself: field types, bounds, the exact role set, usage coherence, the workflow lifecycle and time order, disposition consistency, and tool-result status. **The coordinator must check everything that spans records.** The exact list is in [contracts-draft/README.md](contracts-draft/README.md#coordinator-checks-cross-record). A passing schema check does not establish those.

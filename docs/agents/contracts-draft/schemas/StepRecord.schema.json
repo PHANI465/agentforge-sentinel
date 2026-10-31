@@ -44,7 +44,7 @@
     },
     "Usage": {
       "additionalProperties": false,
-      "description": "What the adapter actually measured; unknown is explicit, never zero.",
+      "description": "What the adapter actually measured; unknown is explicit, never zero (decision 4).\nnot_applicable (server tools, transitions) and unknown carry no counts and measured=False;\nadapter_reported carries both validated counts and measured=True.",
       "properties": {
         "input_tokens": {
           "anyOf": [
@@ -175,7 +175,8 @@
         "role_failed",
         "tool_executed",
         "tool_denied",
-        "claims_checked"
+        "claims_checked",
+        "workflow_terminated"
       ],
       "title": "Kind",
       "type": "string"
@@ -270,6 +271,11 @@
     },
     "usage": {
       "$ref": "#/$defs/Usage"
+    },
+    "worker_unresolved": {
+      "default": false,
+      "title": "Worker Unresolved",
+      "type": "boolean"
     },
     "workflow_id": {
       "format": "uuid",

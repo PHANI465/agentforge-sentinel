@@ -111,7 +111,7 @@
     },
     "Disposition": {
       "additionalProperties": false,
-      "description": "Coordinator outcome. recommend/abstain produce exactly one server-built intent;\ninconclusive produces none and reopens the case.",
+      "description": "Coordinator outcome. recommend/abstain produce exactly one server-built intent whose\nbasis is a completed investigator run of the same workflow (a coordinator check);\ninconclusive produces none and reopens the case (review decision 3).",
       "properties": {
         "basis_run_id": {
           "anyOf": [
@@ -134,7 +134,10 @@
                 "timeout",
                 "invalid_output",
                 "budget_exhausted",
-                "stale_evidence_snapshot"
+                "stale_evidence_snapshot",
+                "call_capacity_exhausted",
+                "coordinator_error",
+                "interrupted"
               ],
               "type": "string"
             },
@@ -517,6 +520,7 @@
         },
         "status": {
           "enum": [
+            "running",
             "completed",
             "failed",
             "inconclusive",
@@ -554,7 +558,7 @@
     },
     "WorkflowRecord": {
       "additionalProperties": false,
-      "description": "Proposed table agent_workflows: one row per coordinator attempt on a case.",
+      "description": "Proposed table agent_workflows: one row per coordinator attempt on a case.\n\nrunning: no finish, disposition or terminal actor. completed: finished, recommend or\nabstain, by the coordinator, after at least analyst, investigator and reviewer.\ninconclusive: finished, an inconclusive disposition, by the coordinator or by recovery;\nrecovery (no live coordinator) always records `interrupted`. Zero role invocations is a\nvalid inconclusive record (exhaustion before the first role).",
       "properties": {
         "case_id": {
           "format": "uuid",
@@ -634,6 +638,22 @@
           ],
           "title": "Status",
           "type": "string"
+        },
+        "terminal_by": {
+          "anyOf": [
+            {
+              "enum": [
+                "coordinator",
+                "recovery"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terminal By"
         },
         "tool_calls": {
           "maximum": 12,

@@ -1,6 +1,6 @@
 {
   "additionalProperties": false,
-  "description": "Coordinator outcome. recommend/abstain produce exactly one server-built intent;\ninconclusive produces none and reopens the case.",
+  "description": "Coordinator outcome. recommend/abstain produce exactly one server-built intent whose\nbasis is a completed investigator run of the same workflow (a coordinator check);\ninconclusive produces none and reopens the case (review decision 3).",
   "properties": {
     "basis_run_id": {
       "anyOf": [
@@ -23,7 +23,10 @@
             "timeout",
             "invalid_output",
             "budget_exhausted",
-            "stale_evidence_snapshot"
+            "stale_evidence_snapshot",
+            "call_capacity_exhausted",
+            "coordinator_error",
+            "interrupted"
           ],
           "type": "string"
         },

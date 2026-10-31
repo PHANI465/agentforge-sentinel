@@ -1,0 +1,5 @@
+{
+  "schema_version": "g3a-draft-1",
+  "max_live_workflows_per_process": 2,
+  "max_outstanding_calls_per_process": 1
+}

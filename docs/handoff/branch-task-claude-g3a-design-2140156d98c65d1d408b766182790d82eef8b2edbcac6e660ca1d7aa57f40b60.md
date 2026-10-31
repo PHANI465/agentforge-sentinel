@@ -1,60 +1,67 @@
 # Handoff: task/claude-g3a-design
 
-- **Task:** G3A three-role investigation contracts, coordinator design, evaluation protocol and the G3B plan (docs/prompts/CLAUDE_G3A_MULTI_AGENT_DESIGN.md on task/coordination 4730010).
-- **Tool and worktree:** Claude Code, E:\PHANI\sentinel-wt\claude-g3a-design (new; the branch and path did not exist before).
-- **Updated:** 2026-10-27.
-- **State:** ready for Codex contract review. **G3B is not started.**
-- **Base:** exact accepted H01 f091a34c2ed3f6636625b3141be88d86cd5307dd (includes N2–N7). No merge or rebase.
-- **Code reference tested before this note:** f091a34 plus these documentation files (working tree). This is a documentation-only proposal: no `src/`, migration, contract, test, UI, script, model or lockfile change.
-- **Changed paths (all new):**
-  - `docs/agents/G3A-design.md`;
-  - `docs/agents/G3B-implementation-plan.md`;
-  - `docs/agents/contracts-draft/` (`README.md`, `g3a_models.py`, 13 generated `schemas/*.json`, 24 valid and 25 invalid `examples/`);
-  - `docs/evals/agents/protocol-v1.md`, `dev-cases-v1.json`, `dev-cases-v1.md` and `dev_cases.py`;
+- **Task:** the G3A three-role design package, **revision 2**: it resolves review R31–R33 of 06a7c0c. Sources on task/coordination dc47bae: docs/prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md, docs/reviews/G3A-06a7c0c.md and docs/reviews/G3A-acceptance-checklist.md. The original assignment was CLAUDE_G3A_MULTI_AGENT_DESIGN.md (4730010).
+- **Tool and worktree:** Claude Code, E:\PHANI\sentinel-wt\claude-g3a-design (existing; resumed October 31 from a clean tree).
+- **Updated:** 2026-10-31.
+- **State:** the correction is complete and ready for Codex re-review. **G3B is not started** and needs a separate accepted design SHA and dispatch.
+- **History:**
+  - application base: exact accepted H01 f091a34c2ed3f6636625b3141be88d86cd5307dd;
+  - 06a7c0c: the reviewed revision 1, preserved unchanged;
+  - the commit containing this note: revision 2, added on top with no reset, rebase or amend.
+- **Code reference tested before this note:** 06a7c0c plus the revision-2 working tree. This is documentation-only: no `src/`, migration, public contract, test, UI, script, model or lockfile change.
+- **Changed paths (owned only):**
+  - `docs/agents/G3A-design.md`, `docs/agents/G3B-implementation-plan.md`;
+  - `docs/agents/contracts-draft/`: README, `g3a_models.py`, schemas (15), valid (35) and invalid (50) examples;
+  - `docs/evals/agents/protocol-v1.md`, `dev-cases-v1.json`, `dev-cases-v1.md`;
   - this note.
 
-## Deliverables and decisions
+## R31–R33 resolution
 
-- **Design** (`G3A-design.md`):
-  - the current limits, with exact f091a34 file and line references;
-  - roles and the coordinator; the state machine with hard limits (≤5 role calls, ≤1 revision, ≤6 tool executions, ≤1 repeat, 45 s per role, 150 s per workflow, 1 live workflow per process, no delegation);
-  - the read-only tool registry with decision-time bounds; typed claims and server verification, with a server-rendered rationale;
-  - persistence (migration 0005: `agent_workflows`, append-only `agent_steps`, `agent_runs.workflow_id`/`attempt`); exact service integration points; recovery and repeat semantics;
-  - the worked case D01; errors, compatibility and version pins.
-- **Key decisions:**
-  - It is an operator-selected mode (`SENTINEL_INVESTIGATOR=three-role`), and the default stays deterministic.
-  - The composite workflow is pinned through the existing `CasePins.agent_config`/`tool_config`, so no v1 contract changes.
-  - An inconclusive workflow reopens the case to `open`. The unused `inconclusive` case state stays unused, because no route reopens it.
-  - Abstain is always server-built escalate/`insufficient_evidence`.
-  - Usage is recorded only when the adapter reports it; there is no monetary cap.
-  - **No HTTP revision for G3B.** v1.1 `CaseDetail` stays valid because only the adopted investigator run carries a `finding`. An additive v1.2 trace route is drafted for G3C. There is one new error code, 409 `agent_capacity_exhausted`.
-- **Contracts draft:** Pydantic models on the frozen v1 primitives, generated schemas and labelled examples. Each invalid example was confirmed to be rejected for its intended reason (forged IDs, SQL, unknown tool, free window, approve verdict, unbounded limits, inconsistent disposition, and so on).
-- **Protocol** (`protocol-v1.md`):
-  - comparators C0 (deterministic), C1 (single live), C2 (three-role live), and C2-det as a plumbing control only;
-  - metric numerators and denominators with acceptance conditions; hard security gates; the human rubric;
-  - the development/final boundary and its independence limits;
-  - no numbers reported.
-- **Development cases:** D01–D12, with separate runtime and evaluator sections. The implemented flags show that no three-role path exists yet, and that the notes-reader defence is deferred.
-- **G3B plan:** one backend vertical slice, owned files, 9 ordered steps with failing-first tests, acceptance checks (the strict gate on both platforms, an unchanged HTTP export, no new pytest skip) and the G3C/G3D dependencies. Recommended settings: Opus, effort High.
+- **R31 (capacity and late workers):** G3A-design §3.1.
+  - **Two leases**, process-local and in memory:
+    - a workflow slot (max 1), taken before the claim and released in `finally` after the terminal write;
+    - a call slot (max 2 outstanding per process, late workers included), taken at submission and released **only when the worker thread actually returns**, by a done-callback.
+  - **Repeats** only after a *resolved* failure, never after a timeout. So there is no overlap within a workflow, and outstanding calls stay ≤ 2.
+  - **Deadline coverage:** the request deadline covers gathering, tools, claim checks and the terminal write. There are remaining-time checks before every step, a 5 s terminal reserve, and bounded `lock_timeout`, `statement_timeout` and `connect_timeout`. A tool statement is bounded at 2 s.
+  - **Worker lifetime** is bounded by the CLI adapter's own subprocess timeout. Provider-side cancellation or billing is not claimed.
+  - **Examples:** A (timeout → late completion → second admission → refused third, then release) and B (lock timeout during gathering).
+- **R32 (terminal state):** G3A-design §6.1.
+  - **One terminal transaction,** independent of an active role: scope/revision/workflow compare-and-set guards; fail only a truly running role run, with its true code; never rewrite completed runs or invent runs; case → `open` (or `awaiting_approval` with an intent).
+  - **Audit actor:** the coordinator principal (`agent`) or `SYSTEM_ACTOR` for recovery.
+  - **Eligible basis:** the same workflow's latest *completed investigator* run, or else inconclusive with no intent. The abstain example previously cited the reviewer run; it now cites the investigator.
+  - **CaseDetail** is specified for every ending, including zero roles (`agent_runs: []`) and between-role recovery. Example C covers a crash, then 409 `investigation_recovered`.
+- **R33 (contract invariants):**
+  - the exact role set;
+  - coherent `Usage` (unknown/not-applicable are unmeasured with no counts; reported is measured with both counts);
+  - the `WorkflowRecord` lifecycle (running/completed/inconclusive with finish, disposition, `terminal_by`, ≥3 roles for completed, recovery ⇔ `interrupted`) and time order;
+  - coherent `WorkflowLimits` (the deadline fits a call plus the reserve; call slots ≥ workflows);
+  - `StepRecord` failure-code and `worker_unresolved` rules;
+  - new inconclusive codes: `call_capacity_exhausted`, `coordinator_error`, `interrupted`.
 
-## Verified (this worktree, Windows 11, locked dev+ml)
+  The 11 cross-record coordinator checks are listed explicitly in contracts-draft/README.
+- **The four decisions,** applied verbatim: the 409 code, the provisional 45/150 s, reopen to `open`, and usage unknown unless observed.
+- **Evaluation:** C1 versus C2 is an end-to-end system comparison with unequal evidence. A role-specific claim needs a future matched-evidence ablation under a new protocol. Cross-system claim quality uses one common human rubric; the machine rate is C2-only. The protocol now covers attempt accounting (refused, dispositions, inconclusive by code), `n/a (0/0)` zero denominators (not met / not exercised), and late-worker metrics.
+- **Development cases:** now 15. D07 has no repeat after a timeout. New: D13 (zero-role exhaustion), D14 (between-role crash and recovery), D15 (late worker against admissions).
 
-- `uv run --locked python docs/agents/contracts-draft/g3a_models.py --check` → "13 draft schemas current; 24 valid and 25 invalid examples behave as labelled", exit 0. A per-example error listing confirmed each invalid example's intended rejection reason.
-- `uv run --locked python docs/evals/agents/dev_cases.py` → "12 development cases consistent with sentinel.scoring; three-role implemented in 0", exit 0. **Negative control:** in-memory changes to a score, a fact and an abstention label were each reported, and an evaluator field placed inside `runtime` was rejected.
-- **Ruff:** `uv run --locked python -m ruff check .` passed.
-- **Links:** every relative link in the 5 new Markdown files resolves.
-- **Protected bytes:** `git diff --stat f091a34` shows only new files under `docs/agents/`, `docs/evals/` and this note.
-- **Not run:** the full backend and browser suites. That is intentional for a documentation-only change, per the assignment.
+## Verified (Windows 11, this worktree's locked dev+ml, `python -B`, no provider/database/model)
 
-## Not verified / open
+- **Baseline on preserved 06a7c0c:** the 14 `*.r33-*.json` payloads use only 06a7c0c vocabulary. Validated against the 06a7c0c models (extracted with `git show` to the scratchpad, outside the repository), all 14 were **ACCEPTED**. The committed 06a7c0c files were not changed.
+- **Revised models:** all 14 are rejected, plus the 3 `*_actor` variants rejected by their own specific contradiction. A per-file listing confirmed each intended reason.
+- `g3a_models.py --check` → "15 draft schemas current; 35 valid and 50 invalid examples behave as labelled", exit 0.
+- `dev_cases.py` → "15 development cases consistent with sentinel.scoring; three-role implemented in 0", exit 0.
+- **Ruff:** passed.
+- **Links:** the relative links and anchors of the 5 Markdown documents resolve, 0 broken.
+- **Scope:** relative to 06a7c0c, nothing outside `docs/agents/`, `docs/evals/agents/` and this note changed.
+- **Not run:** the full backend and browser suites (documentation-only, per the assignment).
 
-- **Not implemented or measured:** no runtime, migration, tool or adapter exists, and no live provider call was made. All numbers in the design are limits, not measurements.
-- **Unverified CLI detail:** whether the Claude CLI JSON envelope reports usage is left for G3B to check.
-- **Decisions for Codex:**
-  1. Accept 409 `agent_capacity_exhausted`, or reuse an existing code.
-  2. Confirm the 45 s / 150 s limits for the laptop and subscription.
-  3. Confirm that inconclusive reopens to `open`, rather than adding a versioned reopen route.
+## Not verified / limits
+
+- **Nothing is implemented.** Leases, timeouts, the terminal transaction and recovery are designs; runtime proof is G3B acceptance work.
+- **Unmeasured limits:** 45/150 s and the 2-call bound are not laptop or subscription measurements.
+- **Worker lifetime:** it relies on the CLI adapter's subprocess timeout killing the local process, which G3B must verify. Provider-side cancellation is not claimed.
+- **UI display gap:** v1.1 shows "No investigation has been recorded" for a zero-role inconclusive workflow; the failure is visible in the audit. The G3C trace route addresses this.
+- **No live usage observation** was made; per the review, it is a later opt-in step.
 
 ## Next action
 
-Codex: review and accept, or request changes to, the G3A contracts and protocol. On acceptance, dispatch G3B from the accepted SHA per `docs/agents/G3B-implementation-plan.md`.
+Codex: re-review revision 2 against the acceptance checklist. On acceptance, freeze `g3a-draft-1` and dispatch G3B from that exact SHA.

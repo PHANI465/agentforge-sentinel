@@ -26,7 +26,7 @@ The existing human approval and simulated execution path is unchanged.
 - **Base and worktree:** the commit Codex names after accepting G3A (G3A's accepted SHA), in a new worktree `task/claude-g3b-workflow`.
 - **Owned (new):**
   - `src/sentinel/contracts/agents.py` (from `docs/agents/contracts-draft/g3a_models.py`, `schema_version` set at freeze);
-  - `src/sentinel/agents/{__init__,coordinator,tools,claims,adapters}.py`;
+  - `src/sentinel/agents/{__init__,coordinator,capacity,tools,claims,adapters}.py`;
   - `src/sentinel/db/migrations/0005_agent_workflows.sql`;
   - `contracts/agents/*.schema.json` (additive export);
   - `tests/test_agent_*.py` and `tests/support/agent_cases.py` (a new support file only);
@@ -56,16 +56,17 @@ The existing human approval and simulated execution path is unchanged.
    - profile `provisioned_at > T` gives `unavailable`;
    - every result digest is stable.
 4. **Claims** (`agents/claims.py`): verification (G3A §5) and the rationale renderer (≤600 characters, money via the currency exponent). *Tests:* every `ClaimCheck` reason; the policy-consistency rules; a renderer test with no model text in the output.
-5. **Coordinator** (`agents/coordinator.py`): the state machine and limits (G3A §3), with an injected clock and adapters, writing each step in its own guarded transaction. *Tests:* D05, D07, D08 and D09 with deterministic or injected adapters, asserting:
-   - the counted limits (≤5 calls, ≤6 tools, ≤1 repeat);
-   - denials;
-   - inconclusive codes;
+5. **Coordinator and leases** (`agents/coordinator.py`, `agents/capacity.py`): the state machine and limits (G3A §3), the process-local `AgentCapacity` workflow and call slots (G3A §3.1), remaining-deadline checks before every step, and bounded `lock_timeout`/`statement_timeout`/`connect_timeout`. It writes each step in its own guarded transaction. *Tests:* D05, D07, D08, D09, D13 and D15, with deterministic or injected adapters and a controllable fake worker that is held, then released, by the test. They assert:
+   - the counted limits (≤5 calls, ≤6 tools, ≤1 repeat, and no repeat after a timeout);
+   - call slots released only when the worker returns, ≤2 outstanding, and a late result never written;
+   - workflow slots released on every path, including exceptions;
+   - denials and inconclusive codes;
    - no write after the case left `investigating`.
 6. **Service integration.**
    - `three-role` in `from_environment`; ingestion pins `tool_config`; `_claim` checks it.
-   - Dispatch in `investigate`; the shared finish builds the intent with `agent_run_id = basis_run_id`.
-   - Recovery by workflow deadline.
-   - The live-capacity semaphore before the claim (409 `agent_capacity_exhausted`, no state change).
+   - Dispatch in `investigate`. `terminate_workflow` (G3A §6.1) is the only way a workflow ends, with or without a running role. The success tail builds the intent with `agent_run_id` = the eligible basis (same workflow, latest completed investigator).
+   - Recovery by workflow deadline through `terminate_workflow` (`terminal_by="recovery"`, `interrupted`, system audit actor).
+   - Admission before the claim (409 `agent_capacity_exhausted`, no transaction, no state change, no disclosure).
 
    *Tests (real PostgreSQL):*
    - D01–D04 and D12 run through `Sentinel.investigate` and the approval and execution path;
@@ -73,10 +74,12 @@ The existing human approval and simulated execution path is unchanged.
    - D10 (foreign citation unsupported; cross-session 404);
    - D11 (`external_id` and note absent from every recorded role input digest source);
    - `CaseDetail` with 3–5 role runs validates against frozen v1.1;
-   - `GET /v1/cases/{id}` for an inconclusive workflow shows `open` and the last run `inconclusive`.
+   - D13 (zero roles: `agent_runs: []`, case open, failure audit by the coordinator principal);
+   - D14 (a crash between roles, simulated by abandoning the coordinator after the analyst commits: recovery after the deadline, analyst still `completed`, system audit, 409 `investigation_recovered`);
+   - completed role runs are never rewritten by any terminal path.
 7. **Claude CLI role adapter** (`agents/adapters.py`): role prompts and JSON schemas pinned in role configs; `--tools ""`, an empty working directory, the subscription preflight and environment scrubbing reused from `investigators.py`; usage recorded only if the envelope reports typed counts. *Tests:* a fake runner only (command shape, scrubbed environment, failure typing, output parsing).
    - **No new pytest skip**, because the structured gate allows exactly one live skip. A live check is manual, through `scripts/agent_eval.py`.
-8. **Development harness** (`tests/support/agent_cases.py`): it loads `dev-cases-v1.json`, ingests each case's `runtime` into a fresh session and feeds `faults` to injected adapters, clocks or owner connections. *Tests:* C0 and C2-det over all 12 cases, asserting the machine-checkable `evaluator` expectations and every **hard gate** in protocol-v1 §5. This proves plumbing and security, not quality.
+8. **Development harness** (`tests/support/agent_cases.py`): it loads `dev-cases-v1.json`, ingests each case's `runtime` into a fresh session and feeds `faults` to injected adapters, clocks or owner connections. *Tests:* C0 and C2-det over all 15 cases, asserting the machine-checkable `evaluator` expectations and every **hard gate** in protocol-v1 §5. This proves plumbing and security, not quality.
 9. **Documentation:** ADR 0007, a G3A design status update and the API error-code line.
 
 ## Acceptance checks for G3B

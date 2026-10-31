@@ -1,0 +1,105 @@
+{
+  "additionalProperties": false,
+  "description": "Pinned hard limits. Times are provisional, unmeasured defaults (review decision 2).",
+  "properties": {
+    "db_wait_seconds": {
+      "default": 5,
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Db Wait Seconds",
+      "type": "integer"
+    },
+    "max_followup_tool_calls": {
+      "default": 3,
+      "maximum": 6,
+      "minimum": 0,
+      "title": "Max Followup Tool Calls",
+      "type": "integer"
+    },
+    "max_investigator_revisions": {
+      "default": 1,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Max Investigator Revisions",
+      "type": "integer"
+    },
+    "max_live_workflows_per_process": {
+      "default": 1,
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Max Live Workflows Per Process",
+      "type": "integer"
+    },
+    "max_outstanding_calls_per_process": {
+      "default": 2,
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Max Outstanding Calls Per Process",
+      "type": "integer"
+    },
+    "max_repeats": {
+      "default": 1,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Max Repeats",
+      "type": "integer"
+    },
+    "max_role_invocations": {
+      "default": 5,
+      "maximum": 8,
+      "minimum": 1,
+      "title": "Max Role Invocations",
+      "type": "integer"
+    },
+    "max_transitions": {
+      "default": 12,
+      "maximum": 24,
+      "minimum": 1,
+      "title": "Max Transitions",
+      "type": "integer"
+    },
+    "role_grace_seconds": {
+      "default": 2,
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Role Grace Seconds",
+      "type": "integer"
+    },
+    "role_timeout_seconds": {
+      "default": 45,
+      "maximum": 60,
+      "minimum": 1,
+      "title": "Role Timeout Seconds",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "g3a-draft-1",
+      "default": "g3a-draft-1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "terminal_reserve_seconds": {
+      "default": 5,
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Terminal Reserve Seconds",
+      "type": "integer"
+    },
+    "tool_statement_timeout_ms": {
+      "default": 2000,
+      "maximum": 5000,
+      "minimum": 100,
+      "title": "Tool Statement Timeout Ms",
+      "type": "integer"
+    },
+    "workflow_deadline_seconds": {
+      "default": 150,
+      "maximum": 170,
+      "minimum": 1,
+      "title": "Workflow Deadline Seconds",
+      "type": "integer"
+    }
+  },
+  "title": "WorkflowLimits",
+  "type": "object"
+}
