@@ -37,5 +37,5 @@ def test_an_extra_shipped_model_file_fails_in_the_wheel():
 
 
 def test_the_asset_list_covers_the_four_migrations_and_registered_scorer():
-    assert len(check_package.MIGRATIONS) == 4
+    assert len(check_package.MIGRATIONS) == 5  # 0001-0005 (G3B migration 0005)
     assert all((ROOT / asset).is_file() for asset in check_package.MODEL_ASSETS)

@@ -29,6 +29,7 @@
 - **Owner-approved extra paths** (asked during this task):
   - `pyproject.toml`: `sentinel.agents` added to the explicit package list, after a probe wheel showed it missing. No dependency or lockfile change; `uv lock --check` passes.
   - `tests/test_backup_restore.py` and `docs/runbooks/local-operations.md`: the inventory guard now lists the two new tables (14 → 16).
+  - `tests/test_check_package.py` (the pinned count 4 → 5, test name and node ID kept) and `docs/ci/README.md` (the current migration description, five, 0001–0005). The first strict gate on the previous commit failed only there; the historical evidence row was left unchanged.
 - **Not changed:**
   - `web/` and existing `tests/support/*`;
   - `contracts/{v1,http}` and `src/sentinel/contracts/{v1,http_v1,guards}.py`;
