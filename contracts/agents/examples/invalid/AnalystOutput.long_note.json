@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "role": "evidence_analyst",
+  "claims": [
+    {
+      "schema_version": "1.0",
+      "kind": "fact",
+      "fact": "amount_minor",
+      "relation": "eq",
+      "value": 250000,
+      "cite": {
+        "schema_version": "1.0",
+        "kind": "evidence",
+        "id": "7a1c0f5e-0001-4c55-8d1e-000000000e01"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "kind": "fact",
+      "fact": "transaction_count_1h",
+      "relation": "eq",
+      "value": 2,
+      "cite": {
+        "schema_version": "1.0",
+        "kind": "evidence",
+        "id": "7a1c0f5e-0001-4c55-8d1e-000000000e02"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "kind": "fact",
+      "fact": "large_amount_rule_hit",
+      "relation": "eq",
+      "value": true,
+      "cite": {
+        "schema_version": "1.0",
+        "kind": "tool_result",
+        "id": "5b2d9e31-0002-4f00-9a00-0000000000a1"
+      }
+    }
+  ],
+  "missing": [
+    "account_age_days"
+  ],
+  "tool_requests": [
+    {
+      "schema_version": "1.0",
+      "tool": "account_history",
+      "window": "30d"
+    }
+  ],
+  "note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}

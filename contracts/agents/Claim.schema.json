@@ -1,0 +1,151 @@
+{
+  "$defs": {
+    "Citation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "evidence",
+            "tool_result"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "FactClaim": {
+      "additionalProperties": false,
+      "description": "`fact` relation `value`, cited to where the server can read that exact value.",
+      "properties": {
+        "cite": {
+          "$ref": "#/$defs/Citation"
+        },
+        "fact": {
+          "enum": [
+            "amount_minor",
+            "transaction_count_1h",
+            "large_amount_rule_hit",
+            "history_count_24h",
+            "history_count_7d",
+            "history_median_amount_minor_30d",
+            "history_max_amount_minor_30d",
+            "account_age_days",
+            "prior_known_fraud"
+          ],
+          "title": "Fact",
+          "type": "string"
+        },
+        "kind": {
+          "const": "fact",
+          "title": "Kind",
+          "type": "string"
+        },
+        "relation": {
+          "enum": [
+            "eq",
+            "gte",
+            "lte"
+          ],
+          "title": "Relation",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "fact",
+        "relation",
+        "value",
+        "cite"
+      ],
+      "title": "FactClaim",
+      "type": "object"
+    },
+    "MissingEvidenceClaim": {
+      "additionalProperties": false,
+      "description": "The role says this fact was not available; the server checks that it really was not.",
+      "properties": {
+        "fact": {
+          "enum": [
+            "amount_minor",
+            "transaction_count_1h",
+            "large_amount_rule_hit",
+            "history_count_24h",
+            "history_count_7d",
+            "history_median_amount_minor_30d",
+            "history_max_amount_minor_30d",
+            "account_age_days",
+            "prior_known_fraud"
+          ],
+          "title": "Fact",
+          "type": "string"
+        },
+        "kind": {
+          "const": "missing",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fact"
+      ],
+      "title": "MissingEvidenceClaim",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "fact": "#/$defs/FactClaim",
+      "missing": "#/$defs/MissingEvidenceClaim"
+    },
+    "propertyName": "kind"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/FactClaim"
+    },
+    {
+      "$ref": "#/$defs/MissingEvidenceClaim"
+    }
+  ]
+}

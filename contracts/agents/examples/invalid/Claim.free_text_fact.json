@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "kind": "fact",
+  "fact": "customer_is_fraudster",
+  "relation": "eq",
+  "value": 2,
+  "cite": {
+    "schema_version": "1.0",
+    "kind": "evidence",
+    "id": "7a1c0f5e-0001-4c55-8d1e-000000000e02"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "additionalProperties": false,
+  "description": "Coordinator outcome. recommend/abstain produce exactly one server-built intent whose\nbasis is a completed investigator run of the same workflow (a coordinator check);\ninconclusive produces none and reopens the case (review decision 3).",
+  "properties": {
+    "basis_run_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Basis Run Id"
+    },
+    "inconclusive_code": {
+      "anyOf": [
+        {
+          "enum": [
+            "provider_unavailable",
+            "timeout",
+            "invalid_output",
+            "budget_exhausted",
+            "stale_evidence_snapshot",
+            "call_capacity_exhausted",
+            "coordinator_error",
+            "interrupted"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Inconclusive Code"
+    },
+    "kind": {
+      "enum": [
+        "recommend",
+        "abstain",
+        "inconclusive"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "operation": {
+      "anyOf": [
+        {
+          "enum": [
+            "simulated_hold",
+            "escalate"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Operation"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "enum": [
+            "velocity_pattern",
+            "unusual_amount",
+            "insufficient_evidence"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason Code"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "supported_claims": {
+      "minimum": 0,
+      "title": "Supported Claims",
+      "type": "integer"
+    },
+    "unsupported_claims": {
+      "minimum": 0,
+      "title": "Unsupported Claims",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "kind",
+    "supported_claims",
+    "unsupported_claims"
+  ],
+  "title": "Disposition",
+  "type": "object"
+}

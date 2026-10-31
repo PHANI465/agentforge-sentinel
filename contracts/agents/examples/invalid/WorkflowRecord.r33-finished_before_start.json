@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "id": "3c4e8a10-0003-4b10-8c00-0000000000f1",
+  "case_id": "c0ffee00-0004-4d00-8e00-0000000000c1",
+  "case_revision": 2,
+  "config": {
+    "name": "three-role-workflow",
+    "version": "w1",
+    "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+  },
+  "tool_profile": {
+    "name": "agent-read-tools",
+    "version": "t1",
+    "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+  },
+  "input_snapshot_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "status": "completed",
+  "started_at": "2026-10-27T15:00:01Z",
+  "deadline_at": "2026-10-27T15:02:31Z",
+  "finished_at": "2026-10-27T14:59:59Z",
+  "role_invocations": 3,
+  "tool_calls": 4,
+  "disposition": {
+    "schema_version": "1.0",
+    "kind": "recommend",
+    "operation": "simulated_hold",
+    "reason_code": "velocity_pattern",
+    "basis_run_id": "a9e0b000-0005-4a00-8a00-00000000a002",
+    "supported_claims": 4,
+    "unsupported_claims": 0
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "kind": "fact",
+  "fact": "transaction_count_1h",
+  "relation": "eq",
+  "value": 2
+}

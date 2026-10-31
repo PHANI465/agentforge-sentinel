@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "kind": "abstain",
+  "operation": "escalate",
+  "reason_code": "insufficient_evidence",
+  "basis_run_id": "a9e0b000-0005-4a00-8a00-00000000a002",
+  "supported_claims": 2,
+  "unsupported_claims": 1
+}

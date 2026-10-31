@@ -207,4 +207,15 @@ def from_environment() -> Investigator:
         if os.environ.get("SENTINEL_MODE", "local") != "local":
             raise RuntimeError("claude-cli uses a personal subscription and is local-only")
         return ClaudeCliInvestigator(model=os.environ.get("SENTINEL_CLAUDE_MODEL", "sonnet"))
-    raise RuntimeError("SENTINEL_INVESTIGATOR must be deterministic or claude-cli")
+    if kind == "three-role":  # G3B; explicit operator choice, deterministic roles by default
+        from sentinel.agents import coordinator
+        adapter = os.environ.get("SENTINEL_AGENT_ADAPTER", "deterministic")
+        if adapter == "deterministic":
+            return coordinator.deterministic_workflow()
+        if adapter == "claude-cli":
+            if os.environ.get("SENTINEL_MODE", "local") != "local":
+                raise RuntimeError("claude-cli uses a personal subscription and is local-only")
+            return coordinator.claude_cli_workflow(
+                model=os.environ.get("SENTINEL_CLAUDE_MODEL", "sonnet"))
+        raise RuntimeError("SENTINEL_AGENT_ADAPTER must be deterministic or claude-cli")
+    raise RuntimeError("SENTINEL_INVESTIGATOR must be deterministic, claude-cli or three-role")

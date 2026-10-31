@@ -12,7 +12,8 @@ from test_thin_path import ANALYST, Harness, alerting_case, approve_pending
 # Every current application table (migrations 0001-0004), including C07's model inputs.
 TABLES = {"transactions", "scoring_outcomes", "alerts", "cases", "evidence_items",
           "agent_runs", "action_intents", "approvals", "simulated_actions", "audit_events",
-          "api_sessions", "schema_migrations", "account_profiles", "fraud_disclosures"}
+          "api_sessions", "schema_migrations", "account_profiles", "fraud_disclosures",
+          "agent_workflows", "agent_steps"}  # G3B migration 0005
 
 
 def counts(url):
