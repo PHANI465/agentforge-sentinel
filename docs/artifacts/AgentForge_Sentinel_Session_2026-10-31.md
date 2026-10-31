@@ -1,5 +1,20 @@
 # AgentForge Sentinel October 31 session checkpoint
 
+## Current next action: start Claude G3B
+
+G3A is accepted and published. Exact implementation base:
+**2919f76a5cad729ea078d5bfb35c226a3d2bff3f**. Use the
+[complete G3B prompt](../prompts/CLAUDE_G3B_WORKFLOW.md) from current task/coordination.
+Claude: **Opus5.5 / High**, new branch task/claude-g3b-workflow and worktree
+E:/PHANI/sentinel-wt/claude-g3b-workflow. Inspect existing paths before creating/resuming.
+No Codex-launched external agent or runtime implementation is claimed.
+
+The prompt owns one backend slice: scoped tools/claims, coordinator/roles, durable steps,
+leases, budgets, terminal/recovery and adapter isolation. It requires real PostgreSQL,
+Windows/native Ubuntu verification and the unchanged browser path. Provider calls, final
+quality evaluation, G3C UI/API, new infrastructure and public deployment are not this task.
+Codex remains integrator; return the exact tested candidate for independent review.
+
 ## Latest checkpoint: G3A accepted; G3B next
 
 **Accepted candidate: 43d9e8a5845630deeedfe52fc39b1a6f8ccc1b85. All R31-R33 are closed.**

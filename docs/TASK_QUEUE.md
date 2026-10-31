@@ -1,5 +1,24 @@
 # Shared implementation queue
 
+## October 31 G3B dispatched from accepted integration 2919f76
+
+G3A is accepted at candidate43d9e8a; all R31-R33 are closed. The exact checked G3B base is
+**2919f76a5cad729ea078d5bfb35c226a3d2bff3f**. [Claude's active implementation prompt](prompts/CLAUDE_G3B_WORKFLOW.md)
+starts a separate task/claude-g3b-workflow checkout with **Opus5.5 / High**. The task is now
+ready for Claude; Codex has not launched an external agent process or implemented G3B.
+
+Deliver the bounded three-role backend with runtime-role tools, server-verified claims,
+persisted workflow/steps, separate leases, deadline budgets, honest terminal/recovery
+outcomes and unchanged human approval. Prove it with real PostgreSQL, sequential Windows/
+Ubuntu backend gates and the existing browser suite. No live provider run or final-case
+quality comparison is assigned. G3C/API trace/UI work follows separate backend acceptance.
+
+The current application remains f091a34; design integration and dispatch are docs only.
+Last full app checks retain c8b9477/H01 scope. Sole owner commit identity, saved Cursor edits,
+existing frozen contracts/model artifacts, no paid fallback/remote/push/deployment remain
+in force. Read [the acceptance](reviews/G3A-43d9e8a.md) and
+[today's artifact](artifacts/AgentForge_Sentinel_Session_2026-10-31.md).
+
 ## October 31 G3A accepted: implementation gate next
 
 **G3A 43d9e8a5845630deeedfe52fc39b1a6f8ccc1b85 is accepted** for design/schema/evaluation;

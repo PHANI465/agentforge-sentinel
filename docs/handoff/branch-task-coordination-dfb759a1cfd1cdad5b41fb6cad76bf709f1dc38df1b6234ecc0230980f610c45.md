@@ -1,11 +1,11 @@
 # Handoff: task/coordination
 
-- Current task: review G3A revision2 and dispatch the one remaining terminal-deadline correction.
+- Current task: accepted G3A and dispatched the separate G3B backend implementation.
 - Tool and worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination.
 - Updated: October 31, 2026, America/Phoenix.
-- Current state: reviewed feb80d1; R32/R33 and R31 capacity closed, R31 terminal deadline still open. G3B unstarted.
-- Code reference tested before this note: exact feb80d1 docs, independent validators and semantic controls; application unchanged at H01 f091a34.
-- Final check evidence: after-commit documentation/preservation report and candidate results in canonical .agent/g3a-review/feb80d1/.
+- Current state: G3A43d9e8a accepted; R31-R33 closed. G3B ready from 2919f76a5cad729ea078d5bfb35c226a3d2bff3f; no external process launched by Codex.
+- Code reference tested before this note: accepted integration 2919f76a5cad729ea078d5bfb35c226a3d2bff3f; budget/schema/example/dev-case/Ruff checks pass; application remains H01f091a34.
+- Final check evidence: final doc/link/schema/preservation/metadata audit under canonical .agent/g3a-review/43d9e8a/; no new full app result.
 - Owned/changed paths: current instructions/status/queue/checkpoint/verification, active G3A follow-up, acceptance checklist, October 31 session artifact/index and this note. No application source changed.
 
 ## Implemented
@@ -364,3 +364,14 @@ named in its dispatch. Preserve deterministic default, human approval, historica
 legacy contract bytes and all owner identity rules. No provider/new environment/public
 service work. Full application suite intentionally not rerun for documentation. Final
 scoped evidence recorded externally after commit; Cursor's saved seven files preserved.
+
+## G3B exact-base dispatch
+
+Published CLAUDE_G3B_WORKFLOW.md from checked accepted integration 2919f76a5cad729ea078d5bfb35c226a3d2bff3f.
+Claude owns the new backend worktree; Codex remains independent reviewer/integrator.
+The implementation scope includes existing safe-log allowlist additions if strictly needed,
+both additive error codes and their unknown-outcome guidance, and all real transaction/
+concurrency/platform gates. No live model call or final-case evaluation is assigned.
+Main promotion contains only accepted G3A docs and coordination; no runtime code changed.
+Sole owner commits, exact frozen schema/model preservation and Cursor's seven saved edits
+are checked after publication. No external agent process was launched by this dispatch.
