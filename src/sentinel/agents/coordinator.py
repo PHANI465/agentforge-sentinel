@@ -677,11 +677,11 @@ def recover_workflow(svc, tx, ctx, case: Case, now) -> bool | None:
     (the claim's, or recover_workflow_bounded's). Returns None when the case has no running
     workflow, False when it is not yet recoverable."""
     from sentinel.service import RECOVERY_GRACE
-    if not isinstance(tx, BoundedTransaction):
-        raise TypeError("a workflow is recovered only inside a bounded transaction")
     row = running_workflow(tx, ctx, case.id)
     if row is None:
         return None
+    if not isinstance(tx, BoundedTransaction):  # begin_investigation defers these instead
+        raise TypeError("a workflow is recovered only inside a bounded transaction")
     if row["deadline_at"] + RECOVERY_GRACE >= now:
         return False
     terminate_workflow(svc, tx, ctx, row["id"],
