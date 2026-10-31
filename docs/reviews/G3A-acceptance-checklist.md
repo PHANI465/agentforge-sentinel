@@ -1,5 +1,21 @@
 # G3A acceptance checklist
 
+## Revision 2 independent review — October 31
+
+Exact feb80d1 reviewed: **R32/R33 closed; R31 admission/late-worker portion closed**.
+**R31 full elapsed budget remains open** for the terminal-reserve formula and contradictory
+protocol definition. See [the review](G3A-feb80d1.md) and
+[current narrow follow-up](../prompts/CLAUDE_G3A_DEADLINE_FOLLOWUP.md).
+
+Actual checks: 15 schemas / 35 valid / 50 invalid examples, 15 dev cases, Ruff, links/anchors,
+14 baseline/regression pairs, 3 actor variants, 54 usage combinations, 8 role subsets and
+6 lifecycle negative controls pass. The old formula independently returns 0/-1/-5 for
+5/4/0 seconds remaining. Scope/parent/sole-owner metadata pass. No corrected deadline
+candidate exists yet; no interface freeze or G3B dispatch. The original checklist below
+is retained as the resumption record, not a list of still-open R32/R33 issues.
+
+## Original resumption checklist (historical status column)
+
 Prepared by Codex on October 31, 2026, on the owner's resumption. This is the review plan
 for the documentation-only correction of 06a7c0c. **No item below is satisfied merely by
 being listed. No corrected candidate has been delivered or accepted yet.**

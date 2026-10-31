@@ -1,5 +1,26 @@
 # AgentForge Sentinel project checkpoint
 
+## October 31 G3A revision 2 reviewed: one deadline correction remains
+
+Candidate **feb80d19cac6c91844d8c7490a7e04e1b1b246d1** passed independent scoped checks.
+[R32/R33 are closed](reviews/G3A-feb80d1.md), as is R31's late-worker capacity design.
+The remaining R31 blocker is narrowly defined: the terminal transaction subtracts its own
+reserve, producing a disabling zero or negative timeout at/inside the reserve, and the
+protocol inconsistently places that reserve inside vs outside 150s. **G3A remains
+changes-requested, not frozen/merged; G3B has not started.**
+
+[Active Claude follow-up](prompts/CLAUDE_G3A_DEADLINE_FOLLOWUP.md): Opus 5.5 / High,
+existing G3A branch from exact feb80d1, docs-only budget correction/checks; preserve all
+closed findings. No full application suite, provider call or new environment is needed.
+After that exact corrected SHA passes Codex review, freeze the design and dispatch G3B.
+
+Actual checks: 15 schemas, 35 valid / 50 invalid supplied examples, 15 dev cases, Ruff and
+five-document links/anchors pass. Independent controls: 14 old-accepted/new-rejected R33
+payloads, 3 actor variants, 54 usage combinations, 8 role subsets and 6 lifecycle negatives
+pass. Candidate remains clean; application and Cursor's seven saved edits are unchanged.
+The last full backend baseline remains c8b9477; no new full-suite result is claimed.
+See [today's checkpoint](artifacts/AgentForge_Sentinel_Session_2026-10-31.md).
+
 ## October 31 resumption: G3A corrections ready for Claude
 
 The owner resumed work. The October 27 pause is lifted for the

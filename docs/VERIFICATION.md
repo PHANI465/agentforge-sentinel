@@ -1,5 +1,16 @@
 # Verification
 
+## October 31 G3A revision 2 independent review
+
+Exact feb80d1 passes draft export/examples (15 / 35 valid / 50 invalid), 15 dev cases,
+Ruff and five-document links/anchors. All 14 R33 payloads validate on original 06a7c0c and
+fail on revision2; 3 actor variants fail for their intended contradiction. Independent
+controls cover 54 usage combinations, 8 role subsets and 6 lifecycle negatives. Scope,
+parent, clean state and owner-only metadata pass. R32/R33 and R31 capacity are closed;
+remaining deadline counterexamples give 0/-1/-5 from the documented formula. See
+[the review](reviews/G3A-feb80d1.md) and `.agent/g3a-review/feb80d1/` evidence.
+No database, provider, full backend or browser run. No G3A acceptance/freeze is claimed.
+
 ## October 31 G3A resumption baseline
 
 On unchanged 06a7c0c, the supplied draft checks still pass: 13 schemas, 24 valid / 25 invalid

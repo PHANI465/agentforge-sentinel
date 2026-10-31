@@ -1,6 +1,6 @@
-# Active G3A review follow-up — October 31 resumption
+# G3A review follow-up — historical revision 1 assignment
 
-**The owner resumed work on October 31, 2026. The October 27 pause is lifted for this task.**
+**Superseded after revision 2 feb80d1. Use [the current deadline follow-up](CLAUDE_G3A_DEADLINE_FOLLOWUP.md); R32/R33 and the capacity portion of R31 are closed.**
 Recommended coding assistant: **Claude Opus 5.5, High effort**. The work concerns resource
 leases, durable terminal states and typed contracts; careful reasoning is needed, but this
 remains a bounded design correction. Do not change global model settings.

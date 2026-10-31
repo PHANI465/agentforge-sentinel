@@ -1,5 +1,29 @@
 # AgentForge Sentinel October 31 session checkpoint
 
+## Latest checkpoint: revision 2 reviewed
+
+Claude delivered **feb80d19cac6c91844d8c7490a7e04e1b1b246d1**, direct child of preserved
+06a7c0c. Codex independently closed **R32, R33 and R31's capacity design**. One narrow
+R31 deadline correction remains: the terminal write subtracts its own five-second reserve,
+giving zero/negative database timeouts at the boundary; the protocol also contradicts
+itself about whether the reserve is inside 150s. This is a design issue, not an observed
+production runtime defect. No G3B implementation exists yet.
+
+All supplied checks pass (15 schemas / 35 valid / 50 invalid / 15 development cases), plus
+Ruff, links/anchors and independent semantic controls: 14 old-accepted/new-rejected payloads,
+3 actor variants, 54 usage combinations, 8 role subsets and 6 lifecycle negatives. Candidate
+scope, direct ancestry and sole-owner metadata pass. No backend/browser/database/provider
+suite ran for this documentation review. Local evidence: `.agent/g3a-review/feb80d1/`.
+
+**Next:** [narrow deadline follow-up](../prompts/CLAUDE_G3A_DEADLINE_FOLLOWUP.md), using
+**Claude Opus 5.5 / High** on the existing G3A worktree at feb80d1. Preserve the closed work;
+add only explicit positive budget rules and a pure executable design check. Codex re-reviews
+before any freeze or G3B dispatch. The accepted app, all earlier dated artifacts and Cursor's
+seven original edits remain preserved. Main receives only coordination records, not the
+unaccepted G3A package. Existing application test evidence keeps its original commit/scope.
+
+## Earlier October 31 resumption record
+
 ## Summary
 
 The owner resumed the project. The application and saved task branches are intact.

@@ -1,11 +1,11 @@
 # Handoff: task/coordination
 
-- Current task: resume G3A R31-R33 design corrections and coordinate acceptance before G3B.
+- Current task: review G3A revision2 and dispatch the one remaining terminal-deadline correction.
 - Tool and worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination.
 - Updated: October 31, 2026, America/Phoenix.
-- Current state: owner resumed; G3A 06a7c0c remains changes-requested. Active Claude prompt and Codex checklist prepared; no external agent process launched. G3B unstarted.
-- Code reference tested before this note: G3A 06a7c0c docs baseline, rechecked October 31; application remains accepted H01 f091a34.
-- Final check evidence: post-commit scoped documentation/preservation record in canonical .agent/g3a-review/resume-20261031/; no new full application result.
+- Current state: reviewed feb80d1; R32/R33 and R31 capacity closed, R31 terminal deadline still open. G3B unstarted.
+- Code reference tested before this note: exact feb80d1 docs, independent validators and semantic controls; application unchanged at H01 f091a34.
+- Final check evidence: after-commit documentation/preservation report and candidate results in canonical .agent/g3a-review/feb80d1/.
 - Owned/changed paths: current instructions/status/queue/checkpoint/verification, active G3A follow-up, acceptance checklist, October 31 session artifact/index and this note. No application source changed.
 
 ## Implemented
@@ -332,3 +332,19 @@ provider, remote, push, deployment or environment change is authorized by a docu
 Preserve Cursor's seven original edits and all accepted task branches. Sole owner identity
 for new commits; final documentation checks recorded after commit, without relabelling the
 old full application baseline. Next: owner gives Claude the current active prompt.
+
+## October 31 G3A revision 2 review
+
+Verified exact feb80d1 direct parent 06a7c0c, 54 owned doc paths, clean candidate and
+sole-owner metadata. Independent supplied checks and 14 baseline/regression pairs,
+3 actor variants, 54 usage combinations, 8 role subsets and 6 lifecycle negatives pass.
+Closed R32/R33 and the R31 capacity policy. The universal DB-timeout formula subtracts
+the terminal reserve from itself: 5/4/0 remaining becomes 0/-1/-5, which does not bound
+the terminal transaction. Verified PostgreSQL16 timeout/connection semantics in official
+documentation; a protocol reserve-inside/outside contradiction also remains.
+
+Published reviews/G3A-feb80d1.md, the narrow CLAUDE_G3A_DEADLINE_FOLLOWUP.md and current
+checkpoint/queue updates. G3A not accepted/merged/frozen, G3B unstarted. Source/contract/
+model/UI unchanged; original Claude and Cursor task checkouts preserved. No provider,
+database or full suite needed for this docs-only review. Final scoped evidence is saved
+after commit; no new application test result is claimed. All commits owner-only.
