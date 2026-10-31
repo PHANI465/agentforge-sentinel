@@ -1,11 +1,11 @@
 # Handoff: task/coordination
 
-- Current task: accepted G3A and dispatched the separate G3B backend implementation.
+- Current task: independent G3B review and R34-R36 correction dispatch.
 - Tool and worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination.
 - Updated: October 31, 2026, America/Phoenix.
-- Current state: G3A43d9e8a accepted; R31-R33 closed. G3B ready from 2919f76a5cad729ea078d5bfb35c226a3d2bff3f; no external process launched by Codex.
-- Code reference tested before this note: accepted integration 2919f76a5cad729ea078d5bfb35c226a3d2bff3f; budget/schema/example/dev-case/Ruff checks pass; application remains H01f091a34.
-- Final check evidence: final doc/link/schema/preservation/metadata audit under canonical .agent/g3a-review/43d9e8a/; no new full app result.
+- Current state: G3A accepted; G3B391effe changes-requested for three reproduced safety-limit gaps; G3C unstarted.
+- Code reference tested before this note: exact391effe isolated review checkout,64 focused passes and four reproduced failures on both platforms. Main runtime remains H01f091a34.
+- Final check evidence: canonical .agent/g3b-review/391effe/ scoped review and final coordination audit; no new main application check result.
 - Owned/changed paths: current instructions/status/queue/checkpoint/verification, active G3A follow-up, acceptance checklist, October 31 session artifact/index and this note. No application source changed.
 
 ## Implemented
@@ -375,3 +375,21 @@ concurrency/platform gates. No live model call or final-case evaluation is assig
 Main promotion contains only accepted G3A docs and coordination; no runtime code changed.
 Sole owner commits, exact frozen schema/model preservation and Cursor's seven saved edits
 are checked after publication. No external agent process was launched by this dispatch.
+
+## October 31 G3B391effe independent review
+
+Read the owner handoff and exact two-commit slice from2919f76; metadata owner-only, legacy
+assets preserved. Accepted narrow packaging/backup and migration-count inventory changes.
+Created an isolated review worktree at391effe, installed the locked environment offline,
+and ran all five agent test files:64 passed. Ruff/domain+HTTP exports pass. Independent
+probes reproduce R34(two no-COMMIT-reply cancellation variants), R35(live start after budget
+consumed by persistence), R36(pinned transition limit unused), four expected failures on
+Windows and native Ubuntu. Real PG/runtime role backs R35/R36; R34 uses controlled transport
+stand-ins. All own threads joined and clusters stopped; no survivors found.
+
+Verified supplied Windows strict clean metadata and native518+1 report against exact519-case
+collection, plus package/HTTP/ML logs. No full/browser suite rerun needed after blockers.
+Published G3B-391effe review and CLAUDE_G3B_REVIEW_FIXES prompt, Opus5.5/High. Main stays on
+accepted code, G3A remains accepted, G3C unstarted. Candidate, native clone, accepted refs and
+Cursor's seven saved edits are preserved. Final doc/link/metadata checks recorded after
+commit; no provider, remote, push, deployment or paid action. All commits owner-only.

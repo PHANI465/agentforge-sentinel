@@ -1,5 +1,16 @@
 # Verification
 
+## October 31 independent G3B review:391effe
+
+Isolated offline locked review environment:64 new G3B focused tests pass in120.72s; Ruff,
+15 legacy+15 agent schema exports/85 examples and frozen HTTP export pass. Four independent
+probes fail on both Windows(19.92s) and native Ubuntu(9.11s), supporting R34-R36. Candidate
+owner Windows strict metadata is clean at391effe with six passes; the owner native report
+has518 passes/one allowed skip,519 exact current collected cases. Package/HTTP/ML logs are
+verified. No independent full-suite/browser run or live provider call is claimed. Review
+and cleanup scope: [G3B391effe](reviews/G3B-391effe.md); ignored evidence lives in
+`.agent/g3b-review/391effe/`. Candidate is changes-requested and must not be merged yet.
+
 ## October 31 G3A final design acceptance
 
 Exact 43d9e8a closes R31-R33. Independent draft/schema/example/dev-case, Ruff/link/anchor,

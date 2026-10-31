@@ -1,5 +1,7 @@
 # Claude G3B: implement the bounded three-role investigation backend
 
+**Delivered at391effe and changes-requested: use [R34-R36 follow-up](CLAUDE_G3B_REVIEW_FIXES.md) on the existing task branch. Do not restart from the old base.**
+
 Recommended coding assistant: **Claude Opus 5.5, High effort**. This slice changes
 transaction boundaries, recovery, concurrency leases and scoped evidence/claim checks.
 Use the existing plan; do not change global model settings or enable paid fallback.

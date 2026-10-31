@@ -1,5 +1,25 @@
 # Project status
 
+## October 31 G3B reviewed: R34-R36 changes requested
+
+Candidate **391effed084adef34ca5852255687fffa3d99d50** is delivered on the exact2919f76
+base. [Independent review](reviews/G3B-391effe.md):64 focused G3B tests pass, but four added
+probes reproduce R34 (COMMIT cancellation is not a finite client wait), R35 (live call
+budget stale after start persistence) and R36 (max_transitions ignored), on **Windows and
+native Ubuntu**. **G3B is not accepted/merged; G3C has not started.**
+
+[Current Claude task](prompts/CLAUDE_G3B_REVIEW_FIXES.md): Opus5.5 / High, same G3B branch
+from exact391effe, narrow R34-R36 corrections with failing-first tests and final sequential
+platform gates. Keep all delivered functionality and approved packaging/inventory edits.
+G3A remains accepted; there is no new architecture-design task.
+
+Supplied evidence verified: clean exact Windows strict record with six passes; Linux
+518 passed/1 allowed skip,519 exact current cases; package/HTTP/ML records. Those passing
+gates do not cover the new failures. Review probes cleaned up owned threads/clusters;
+main, accepted tasks and Cursor's seven original edits remain preserved. No live provider,
+remote, push, deployment or new spending. Current main application remains f091a34.
+See [today's session checkpoint](artifacts/AgentForge_Sentinel_Session_2026-10-31.md).
+
 ## October 31 G3B dispatched from accepted integration 2919f76
 
 G3A is accepted at candidate43d9e8a; all R31-R33 are closed. The exact checked G3B base is

@@ -1,5 +1,31 @@
 # AgentForge Sentinel October 31 session checkpoint
 
+## Latest checkpoint: G3B delivered and reviewed; three fixes pending
+
+**G3B candidate391effed084adef34ca5852255687fffa3d99d50** implements the three-role backend,
+but [Codex review](../reviews/G3B-391effe.md) requests R34-R36 before acceptance:
+finite database client waits, a fresh pre-submission call-budget check and enforcement of
+the pinned transition limit. Four independent probes fail on both Windows and native
+Ubuntu; the64 supplied focused G3B cases pass independently on Windows. No live model call.
+
+The owner final strict record matches the clean candidate; saved Linux full evidence is
+518 passes/one allowed skip,519 exactly matching collected cases. Package/HTTP/ML evidence
+is verified. These are real passing reports, but do not exercise the newly reproduced
+failure boundaries. The owner discloses a baseline timestamp-race flake; Codex has not
+independently repeated the30-run diagnosis. No independent full-suite/browser rerun is
+claimed because the candidate already needs corrections and is not being integrated.
+
+**Next:** [Claude R34-R36 task](../prompts/CLAUDE_G3B_REVIEW_FIXES.md), Opus5.5 / High, on
+the existing G3B worktree at391effe. Preserve the new backend, G3A acceptance and all narrow
+packaging/inventory exceptions; add regressions and return one exact corrected SHA after
+sequential platform gates. Codex re-reviews before merging. G3C and final/live evaluation
+remain unstarted. Candidate and native clone stay clean; Cursor's saved edits are untouched.
+
+Main still runs the accepted f091a34 application plus the G3A design/coordination documents.
+Local review evidence is under `.agent/g3b-review/391effe/`; native originals are retained
+under `/home/sentinel/g3b-reports/`. All test-owned probe workers and clusters were cleaned
+up; read-only process checks found no survivors. No remote/push/deployment/new spending.
+
 ## Current next action: start Claude G3B
 
 G3A is accepted and published. Exact implementation base:
