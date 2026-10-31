@@ -114,14 +114,7 @@ The existing `_run_investigator` helper (`service.py:524-546`) returns on timeou
 - **A late result is never written.** Only the coordinator writes, and only after `future.result` returned in time. The done-callback releases the slot and emits one structured log event (`agent_worker_returned`: workflow ID, role, attempt, seconds after the deadline), with no database write and no output content.
 - **A repeat needs a resolved failure,** a free call slot and the full role timeout + grace + terminal reserve remaining.
 
-**Full-deadline coverage.** Every coordinator step checks the remaining time first:
-- Before a **role call:** remaining ≥ `role_timeout` (45) + `role_grace` (2) + `terminal_reserve` (5).
-- Before a **tool or claims check:** remaining ≥ `db_wait_seconds` (5) + `terminal_reserve` (5).
-- Otherwise the workflow ends inconclusive `budget_exhausted`. The terminal transaction runs inside the reserve.
-
-**Database waits are bounded.** Every coordinator and tool transaction sets `SET LOCAL lock_timeout` and `statement_timeout` to min(`db_wait_seconds`, remaining − `terminal_reserve`). Tool statements are additionally bounded by `tool_statement_timeout_ms` (2 s), and connections use `connect_timeout` = `db_wait_seconds`. A lock or statement timeout during a step is treated like exhaustion: inconclusive `budget_exhausted`. An unexpected exception becomes inconclusive `coordinator_error`.
-
-**If even the terminal write cannot complete** (database unavailable), the workflow stays `running`, and lazy recovery (§6.1) closes it once `deadline_at + RECOVERY_GRACE` has passed.
+**Full-deadline coverage.** Every coordinator step, including gathering, tools, claim checks and the terminal write, takes its waiting budget from the one absolute deadline defined in §3.2. A lock or statement timeout during a working step is treated like exhaustion: inconclusive `budget_exhausted`. An unexpected exception becomes inconclusive `coordinator_error`. If no safe terminal write is possible, or its commit outcome is uncertain, the workflow stays durably `running` for recovery (§3.2, §6.1).
 
 **Example A: timeout, late completion, another admission** (live adapter, limits as pinned):
 
@@ -151,6 +144,57 @@ The existing `_run_investigator` helper (`service.py:524-546`) returns on timeou
 | 5.4 | Terminal transaction (well inside the deadline): W `inconclusive`/`budget_exhausted`, `role_invocations=0`, `tool_calls=2`, case → `open` r3, audit failure (coordinator principal) | `WorkflowRecord.zero_role_budget_exhausted` (example) |
 
 The same terminal path runs when the deadline itself is reached first, for example when earlier roles were slow and the remaining time cannot cover the next step.
+
+### 3.2 Deadline and transaction budgets (R31 correction)
+
+Revision 2 derived every lock and statement timeout as min(`db_wait_seconds`, remaining − `terminal_reserve`), and ran the terminal write inside the reserve. That fails at and inside the reserve: with 6/5/4/0 s remaining it yields 1/0/−1/−5 s. PostgreSQL treats `statement_timeout = 0` and `lock_timeout = 0` as **no timeout** ([PostgreSQL 16](https://www.postgresql.org/docs/16/runtime-config-client.html#GUC-STATEMENT-TIMEOUT)), so the bound disabled itself exactly when it mattered. This section replaces that rule. [`deadline_budget.py`](deadline_budget.py) is its executable specification.
+
+**One absolute deadline, two phases.**
+- **The deadline.** The coordinator reads a monotonic clock `t0` *before* the claim transaction. Its deadline is `t0 + 150 000 ms`. The persisted wall-clock `deadline_at = started_at + 150 s` (`started_at` is read inside the claim, later) is therefore never earlier than the monotonic deadline. Recovery acts only after `deadline_at + RECOVERY_GRACE` (30 s), so a live coordinator and recovery never act at the same time, even with small clock skew.
+- **Working phase** (claim, gathering, roles, tools, claim checks): an operation's budget is measured to `work_end = deadline − terminal_reserve` (5 000 ms before the deadline).
+- **Terminal phase** (only the terminal transaction of §6.1): measured to the deadline itself. It **does not subtract its own reserve**, so up to 5 000 ms are genuinely available for it.
+
+**Budget rule (units and rounding).**
+- **Computation.** Every budget is an integer number of milliseconds, computed as `min(cap, floor(end − now))`. It is never rounded up.
+- **Refusal instead of zero.** A budget below its minimum is a **refusal** (the operation is not started), never 0 or a negative value.
+
+| Operation | Phase | Cap | Minimum to start |
+| --- | --- | --- | --- |
+| Role call (+ grace) | working | 47 000 ms | 47 000 ms (the full call must fit) |
+| Tool or claims transaction | working | `db_wait_seconds` 5 000 ms per transaction; each tool statement ≤ `tool_statement_timeout_ms` 2 000 ms | 100 ms |
+| Terminal transaction | terminal | 5 000 ms | 1 000 ms to begin; 100 ms per statement and before COMMIT |
+
+**One transaction, one combined budget.** A transaction gets a total budget `B` (above) and an end time `now + B`. Before **every** statement, and before `COMMIT`, it recomputes `remaining = floor(min(tx_end, phase_end) − now)`:
+- if `remaining ≥ 100 ms`, it sets `SET LOCAL statement_timeout` and `lock_timeout` to `remaining` and sends the statement;
+- otherwise it rolls back.
+
+Sequential lock waits and statements therefore consume one budget. For example, three 1.5 s statements from 5 s get 5 000, 3 500 and 2 000 ms, and COMMIT gets 500 ms. The combined duration cannot exceed `B`, apart from the time the server needs to notice a timeout, which the specification does not claim to measure. `statement_timeout` already includes a statement's lock waits; `lock_timeout` is set to the same value, so neither can exceed the remaining budget.
+
+**Connections.**
+- **One connection per workflow.** The coordinator opens a single-host connection during the claim and keeps it for every later step, so the terminal phase needs no new connection.
+- **libpq granularity.** `connect_timeout` is whole seconds, `0` means wait forever, `1` is treated as 2, and the limit applies **per host tried** ([libpq](https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-CONNECT-TIMEOUT)). A new connection is opened only with `connect_timeout = min(5, floor(available_ms / 1000))` and only if that is ≥ 2. A multi-host connection string is refused for the workflow connection.
+- **Lost connection.** A connection lost in the working phase may be replaced within these rules. In the terminal phase, a replacement uses `connect_timeout = floor((available_ms − 1000) / 1000)`, capped at 5 and only if ≥ 2, so its worst case still leaves the 1 000 ms terminal start budget. That needs ≥ 3 s left (4 s left allows 3 s; below 3 s it is refused), so a connection lost late in the reserve means **no safe terminal write**.
+
+**Terminal outcomes.** These are reported honestly; none is promoted to success.
+
+| Terminal attempt | Durable state | HTTP result |
+| --- | --- | --- |
+| Committed. The `CaseDetail` was read *inside* the terminal transaction, before COMMIT, so no post-commit query is needed | Workflow terminal; case `open` or `awaiting_approval` | 200 `CaseDetail` |
+| Refused (less than 1 000 ms left, or no usable connection), or rolled back because a budget ran out or a statement timed out | **Unchanged: workflow `running`, case `investigating`**, known not written | 409 `investigation_in_progress`. The case really is still investigating; lazy recovery closes it after `deadline_at + 30 s` |
+| COMMIT sent, but no definitive reply (connection lost, timeout during commit) | **Unknown:** either terminal, or still `running` | 409 `investigation_outcome_unknown` (new, additive). The client re-reads; if it is still `running`, recovery closes it |
+| Guard failed (case or workflow already moved on) | Unchanged by this transaction | 409 `investigation_superseded` (existing) |
+
+**In every row, the workflow slot is released** in the request's `finally`. **Call slots are unaffected:** each stays held until its worker thread returns, whether or not the terminal write succeeded (§3.1).
+
+**What this does and does not bound.** It bounds *elapsed waiting* on the coordinator's monotonic clock. It is not a proof that a commit becomes durable within the deadline, that the server notices a timeout instantly, or that the HTTP response leaves the process by then. The protocol therefore measures the bounded quantity (workflow elapsed) and reports request wall time separately ([protocol-v1 §3](../evals/agents/protocol-v1.md#3-metrics)).
+
+**The check.** `uv run --locked python docs/agents/deadline_budget.py` verifies:
+- the old formula's 1/0/−1/−5 s at 6/5/4/0 s remaining;
+- working refusals at and inside the reserve, and a **valid** terminal budget inside it (5 000 ms at exactly 5 s, 4 000 ms at 4 s, 100 ms at 0.1 s), so an always-refuse helper fails;
+- sub-second floors (99 ms gives a refusal, 100 ms passes), and that zero or expired time is never 0 or negative;
+- libpq rules (2.5 s gives 2, 1.9 s and 0.9 s give a refusal, multi-host gives a refusal);
+- sequential budget consumption with rollback at the deadline, not after it;
+- the refused, rolled-back and uncertain terminal outcomes, none reported as completion.
 
 The HTTP response is `CaseDetail` with `state=open`, `agent_runs: []` and no intent. Nothing invents a role run. The failure shows in `GET /v1/cases/{id}/audit` (`investigation_completed`/`failure`).
 
@@ -230,7 +274,7 @@ Each claim is structured (`Claim` in the draft): a fact claim `fact relation val
 
 ### 6.1 Workflow terminal transaction and recovery (R32)
 
-**One function** (`terminate_workflow` in G3B) ends every workflow. It is independent of whether a role run is active, and does the following in **one transaction**:
+**One function** (`terminate_workflow` in G3B) ends every workflow. It is independent of whether a role run is active, and does the following in **one terminal-phase transaction**, budgeted by §3.2 (≤ 5 000 ms, never started below 1 000 ms, on the workflow's already-open connection):
 
 1. **Guard by scope and revision.** Lock the case `FOR UPDATE`, filtered by the context's tenant and session (as `_case` does). Require `case.state == "investigating"`, `case.revision == workflow.case_revision`, and the workflow row `status = 'running'`. The workflow update is a compare-and-set (`UPDATE … WHERE id = %s AND status = 'running'`). If any guard fails, change nothing and raise `investigation_superseded`, as `finish_investigation` does today.
 2. **Close an active role run, if any.** If one `running` `agent_runs` row exists for this workflow, set it to `failed` with its true code: `timeout` for an expired wait or recovery, else `provider_unavailable`, `invalid_output` or `budget_exhausted`. **Completed, failed or inconclusive role runs are never rewritten.** No role run is created to make the response look complete.
@@ -243,6 +287,7 @@ Each claim is structured (`Claim` in the draft): a fact claim `fact relation val
    - with `terminal_by="recovery"`: actor = `SYSTEM_ACTOR`, `actor_kind="system"`, because no coordinator is alive.
 
    Role principals appear only on their own `agent_runs`.
+6. **Read the response, then commit.** Read the `CaseDetail` inside the same transaction, then `COMMIT`. If the transaction was refused or rolled back, or the COMMIT reply is uncertain, the request returns the honest 409 from §3.2 (`investigation_in_progress` or `investigation_outcome_unknown`), never a success. A workflow left `running` is closed later by recovery, which uses this same function in its own transaction (a fresh `db_wait_seconds` budget under the §3.2 rules, outside the expired workflow deadline) with `terminal_by="recovery"`.
 
 **Eligible basis for an intent.** It must be an `agent_runs` row in **the same workflow**, with `role="investigator"`, `status="completed"`, and the **latest** investigator attempt:
 - for `recommend`, the adopted output, all claims supported;
@@ -250,7 +295,7 @@ Each claim is structured (`Claim` in the draft): a fact claim `fact relation val
 
 An abstention without an eligible completed investigator run is impossible by the state machine, since the reviewer only runs after one. If the check nevertheless finds none, the outcome is `inconclusive`/`coordinator_error` with no intent. The intent never references an analyst or reviewer run. Human approval and execution remain separate steps, as today.
 
-**What CaseDetail (v1.1) shows after each ending:**
+**What CaseDetail (v1.1) shows after each ending.** The counts below describe a **fresh case and this workflow**. `CaseDetail.agent_runs` keeps returning **every** historical run of the case, as v1.1 does today. After a retry it also contains earlier workflows' runs, and G3B must not filter them to match these illustrative counts.
 
 | Ending | `case.state` / revision | `agent_runs` | Intent | Audit |
 | --- | --- | --- | --- | --- |
@@ -307,7 +352,9 @@ Exact payloads are in [contracts-draft/examples/valid](contracts-draft/examples/
 - `permission_denied` (403);
 - `not_found` (404) for a case in another session, unchanged.
 
-There is one new code: **409 `agent_capacity_exhausted`** (review decision 1). It means process capacity (the workflow slot or every call slot) is held, possibly by *another* case. It is distinct from `investigation_in_progress`, which means this case is busy. The refusal happens before any transaction. It changes no case, writes no record, and says nothing about which case or how many calls hold capacity. It is additive under the existing `ErrorResponse.error: str`, and is added to the documented handled-code list in G3B, not before.
+There are two new additive codes, both 409. The first is **`agent_capacity_exhausted`** (review decision 1). It means process capacity (the workflow slot or every call slot) is held, possibly by *another* case. It is distinct from `investigation_in_progress`, which means this case is busy. The refusal happens before any transaction. It changes no case, writes no record, and says nothing about which case or how many calls hold capacity. It is additive under the existing `ErrorResponse.error: str`, and is added to the documented handled-code list in G3B, not before.
+
+The second is **`investigation_outcome_unknown`**: the terminal COMMIT was sent but no definitive reply arrived (§3.2). The server makes no claim about the resulting state. The client re-reads the case, and a workflow still `running` is closed by recovery. When the terminal write was refused or rolled back, the case really is still investigating, so the existing `investigation_in_progress` is returned.
 
 **Outcomes as observed through v1.1 (no route change).** `POST /v1/cases/{id}/investigations` returns 200 `CaseDetail` with:
 - `state=awaiting_approval`, three to five `agent_runs` (roles), one with a `finding`, and one current intent (recommend or abstain); or

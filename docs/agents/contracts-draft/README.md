@@ -35,7 +35,11 @@ The example file prefix names the model it is checked against.
   - per-role runs reuse `AgentRun.role`, including `evidence_analyst`/`reviewer`, and status `inconclusive`, which v1 already allows.
 - **The v1.1 `CaseDetail` stays valid.** `agent_runs[*].finding` is filled only for the adopted investigator run, with a server-rendered `InvestigationFinding`. Analyst, reviewer and superseded runs return `finding: null`. Exhaustion before the first role returns `agent_runs: []` (G3A-design §6.1).
 - **A role output failing validation** is the typed failure `invalid_output`, recorded as a `role_failed` step. It may use the workflow's single repeat (the worker returned), and is otherwise inconclusive. A forged identifier is rejected by `extra="forbid"`, not by sanitizing. **An excess or not-in-profile tool request** is not a role failure: it becomes `ToolResult(status="denied")`.
-- **New HTTP error code:** 409 `agent_capacity_exhausted` (process capacity held, possibly by another case; no state change or disclosure). It is additive, and documented in the handled-code list in G3B. Existing codes keep their meanings; see G3A-design §8.
+- **New HTTP error codes (additive, 409):**
+  - `agent_capacity_exhausted`: process capacity is held, possibly by another case; no state change or disclosure;
+  - `investigation_outcome_unknown`: the terminal COMMIT reply was lost, and the client re-reads.
+
+  Both are documented in the handled-code list in G3B. Existing codes keep their meanings; see G3A-design §8 and §3.2. The deadline correction changes no schema: its budget rules live in `docs/agents/deadline_budget.py`.
 - **Version strings:** the draft schemas carry `schema_version: "g3a-draft-1"`. G3B may rename it to `"1.0"` under a new `sentinel.agents` namespace at freeze. The canonicalization namespace for digests will be `sentinel.agent-step.v1` and `sentinel.tool-result.v1`.
 - **Is an HTTP revision needed?** No, not for the G3B backend slice. A v1.2 additive read route (`GET /v1/cases/{id}/investigation-trace` → `TraceSummary`) is needed only when the UI shows the role trace (G3C). It needs its own export, frozen examples and UI work.
 

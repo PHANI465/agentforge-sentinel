@@ -1,19 +1,42 @@
 # Handoff: task/claude-g3a-design
 
-- **Task:** the G3A three-role design package, **revision 2**: it resolves review R31–R33 of 06a7c0c. Sources on task/coordination dc47bae: docs/prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md, docs/reviews/G3A-06a7c0c.md and docs/reviews/G3A-acceptance-checklist.md. The original assignment was CLAUDE_G3A_MULTI_AGENT_DESIGN.md (4730010).
-- **Tool and worktree:** Claude Code, E:\PHANI\sentinel-wt\claude-g3a-design (existing; resumed October 31 from a clean tree).
+- **Task:** the G3A three-role design package, **revision 3**: the narrow R31 deadline correction from review G3A-feb80d1. Sources on task/coordination 96ce294: docs/reviews/G3A-feb80d1.md and docs/prompts/CLAUDE_G3A_DEADLINE_FOLLOWUP.md. Revision 2 resolved R31–R33 of 06a7c0c; feb80d1 closed R32, R33 and R31's capacity rules, which are preserved unchanged. The original assignment was CLAUDE_G3A_MULTI_AGENT_DESIGN.md (4730010).
+- **Tool and worktree:** Claude Code, E:\PHANI\sentinel-wt\claude-g3a-design (existing; resumed from a clean tree at feb80d1).
 - **Updated:** 2026-10-31.
-- **State:** the correction is complete and ready for Codex re-review. **G3B is not started** and needs a separate accepted design SHA and dispatch.
+- **State:** the deadline correction is complete and ready for Codex re-review. **G3B is not started** and needs a separate accepted design SHA and dispatch.
 - **History:**
   - application base: exact accepted H01 f091a34c2ed3f6636625b3141be88d86cd5307dd;
-  - 06a7c0c: the reviewed revision 1, preserved unchanged;
-  - the commit containing this note: revision 2, added on top with no reset, rebase or amend.
-- **Code reference tested before this note:** 06a7c0c plus the revision-2 working tree. This is documentation-only: no `src/`, migration, public contract, test, UI, script, model or lockfile change.
-- **Changed paths (owned only):**
-  - `docs/agents/G3A-design.md`, `docs/agents/G3B-implementation-plan.md`;
-  - `docs/agents/contracts-draft/`: README, `g3a_models.py`, schemas (15), valid (35) and invalid (50) examples;
-  - `docs/evals/agents/protocol-v1.md`, `dev-cases-v1.json`, `dev-cases-v1.md`;
+  - 06a7c0c: revision 1;
+  - feb80d1: revision 2 (reviewed; one R31 deadline blocker);
+  - the commit containing this note: revision 3, on top of feb80d1 with no reset, rebase or amend.
+- **Code reference tested before this note:** feb80d1 plus the revision-3 working tree. This is documentation-only: no `src/`, migration, public contract, test, UI, script, model or lockfile change. All 15 draft schema files are byte-identical to feb80d1.
+- **Changed paths in revision 3 (owned only):**
+  - `docs/agents/G3A-design.md` (§3.1 pointer, new §3.2, §6.1, §8);
+  - `docs/agents/deadline_budget.py` (new executable budget specification);
+  - `docs/agents/G3B-implementation-plan.md`;
+  - `docs/agents/contracts-draft/README.md` (error codes only);
+  - `docs/evals/agents/protocol-v1.md`;
   - this note.
+
+## Revision 3: deadline correction (R31 remainder)
+
+- **The defect.** Revision 2's `min(db_wait, remaining − reserve)` gave 1/0/−1/−5 s at 6/5/4/0 s remaining. PostgreSQL 0 disables `statement_timeout` and `lock_timeout`, and the terminal write subtracted its own reserve.
+- **The fix** (G3A-design §3.2):
+  - **One deadline, two phases.** One monotonic deadline is read before the claim, so it is never after the persisted `deadline_at`; recovery waits for `deadline_at + 30 s`. The **working** phase is measured to `deadline − 5 s`. The **terminal** phase is measured to the deadline itself, so up to 5 s are truly available inside the reserve.
+  - **Budgets.** Integer milliseconds, `min(cap, floor(end − now))`, refused below a positive minimum (100 ms per statement or COMMIT, 1 000 ms to start a terminal transaction), never 0 or negative. They are recomputed before every statement and before COMMIT, so sequential waits share one budget.
+  - **Connections.** One single-host workflow connection is opened at the claim. libpq `connect_timeout` is whole seconds, with a minimum of 2 (0 means forever, 1 means 2); multi-host strings are refused. A terminal reconnect is allowed only if it still leaves the 1 s start budget.
+- **Honest outcomes:**
+
+  | Terminal attempt | Result |
+  | --- | --- |
+  | committed | 200 `CaseDetail`, read inside the transaction before COMMIT |
+  | refused or rolled back | 409 `investigation_in_progress`; the workflow stays `running`, and recovery closes it |
+  | COMMIT reply lost | 409 `investigation_outcome_unknown` (new, additive); the client re-reads |
+  | guard failed | 409 `investigation_superseded` |
+
+  The workflow slot is always released. Call slots stay with their workers.
+- **Protocol.** One definition: *workflow elapsed* (monotonic, `t0` to the end of the terminal attempt) ≤ 150 s, with the reserve inside, is the gate. *Request latency* is reported, not claimed. The pending-recovery outcomes are counted in attempt accounting and in failure recovery.
+- **Clarification recorded.** `CaseDetail` keeps returning every historical run of the case. The draft's counts describe a fresh case and must not become a filter (§6.1, G3B plan).
 
 ## R31–R33 resolution
 
@@ -45,23 +68,32 @@
 
 ## Verified (Windows 11, this worktree's locked dev+ml, `python -B`, no provider/database/model)
 
-- **Baseline on preserved 06a7c0c:** the 14 `*.r33-*.json` payloads use only 06a7c0c vocabulary. Validated against the 06a7c0c models (extracted with `git show` to the scratchpad, outside the repository), all 14 were **ACCEPTED**. The committed 06a7c0c files were not changed.
-- **Revised models:** all 14 are rejected, plus the 3 `*_actor` variants rejected by their own specific contradiction. A per-file listing confirmed each intended reason.
-- `g3a_models.py --check` → "15 draft schemas current; 35 valid and 50 invalid examples behave as labelled", exit 0.
-- `dev_cases.py` → "15 development cases consistent with sentinel.scoring; three-role implemented in 0", exit 0.
-- **Ruff:** passed.
-- **Links:** the relative links and anchors of the 5 Markdown documents resolve, 0 broken.
-- **Scope:** relative to 06a7c0c, nothing outside `docs/agents/`, `docs/evals/agents/` and this note changed.
-- **Not run:** the full backend and browser suites (documentation-only, per the assignment).
+**Revision 3, before its commit:**
+- `deadline_budget.py` → exit 0: the old formula gives 1/0/−1/−5 s at 6/5/4/0 s; working refusals at and inside the reserve; valid terminal budgets inside it (5 000/4 000/100 ms); sub-second floors; zero and expired never 0 or negative; libpq granularity; sequential waits; refused, rolled-back and uncertain outcomes never reported as success.
+- **Negative controls** (in-memory substitutions of the helper):
+  - always-refuse: 15 failing checks;
+  - terminal subtracting its own reserve: 8;
+  - rounding up: 3;
+  - allowing 0 or negative values: 14;
+  - the real helper: 0.
+- `g3a_models.py --check`: 15 schemas current; 35 valid and 50 invalid examples behave as labelled. The schema files are unchanged from feb80d1.
+- `dev_cases.py`: 15 cases consistent with `sentinel.scoring`.
+- **Ruff:** passed. **Links and anchors:** 0 broken.
+- **Scope:** only owned paths changed relative to feb80d1.
+
+**Revision 2 evidence (feb80d1), unchanged:** the 14 `*.r33-*.json` payloads were accepted by the preserved 06a7c0c models and rejected by revision 2, together with the 3 `*_actor` variants.
+
+**Not run:** the full backend and browser suites (documentation-only, per the assignment).
 
 ## Not verified / limits
 
-- **Nothing is implemented.** Leases, timeouts, the terminal transaction and recovery are designs; runtime proof is G3B acceptance work.
-- **Unmeasured limits:** 45/150 s and the 2-call bound are not laptop or subscription measurements.
-- **Worker lifetime:** it relies on the CLI adapter's subprocess timeout killing the local process, which G3B must verify. Provider-side cancellation is not claimed.
+- **Nothing is implemented.** Leases, budgets, the terminal transaction and recovery are designs; runtime proof against a real PostgreSQL connection is G3B acceptance work.
+- **Elapsed waiting, not durability.** The budget rules bound elapsed waiting on the coordinator's clock. They do not prove commit durability within the deadline, instant server-side timeout detection, or response transport time.
+- **Unmeasured limits:** 45/150 s, the 5 s reserve, the 100 ms and 1 000 ms minimums and the 2-call bound are not measurements.
+- **Worker lifetime:** it relies on the CLI adapter's subprocess timeout killing the local process, which G3B must verify. Provider-side cancellation is not claimed, and the process-local call cap is not a cross-process provider cap.
 - **UI display gap:** v1.1 shows "No investigation has been recorded" for a zero-role inconclusive workflow; the failure is visible in the audit. The G3C trace route addresses this.
-- **No live usage observation** was made; per the review, it is a later opt-in step.
+- **No live usage observation** was made.
 
 ## Next action
 
-Codex: re-review revision 2 against the acceptance checklist. On acceptance, freeze `g3a-draft-1` and dispatch G3B from that exact SHA.
+Codex: re-review revision 3 (the R31 deadline correction) against G3A-feb80d1. On acceptance, freeze `g3a-draft-1` and dispatch G3B from that exact SHA.

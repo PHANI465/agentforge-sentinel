@@ -26,7 +26,7 @@ The existing human approval and simulated execution path is unchanged.
 - **Base and worktree:** the commit Codex names after accepting G3A (G3A's accepted SHA), in a new worktree `task/claude-g3b-workflow`.
 - **Owned (new):**
   - `src/sentinel/contracts/agents.py` (from `docs/agents/contracts-draft/g3a_models.py`, `schema_version` set at freeze);
-  - `src/sentinel/agents/{__init__,coordinator,capacity,tools,claims,adapters}.py`;
+  - `src/sentinel/agents/{__init__,coordinator,capacity,budget,tools,claims,adapters}.py`;
   - `src/sentinel/db/migrations/0005_agent_workflows.sql`;
   - `contracts/agents/*.schema.json` (additive export);
   - `tests/test_agent_*.py` and `tests/support/agent_cases.py` (a new support file only);
@@ -56,7 +56,7 @@ The existing human approval and simulated execution path is unchanged.
    - profile `provisioned_at > T` gives `unavailable`;
    - every result digest is stable.
 4. **Claims** (`agents/claims.py`): verification (G3A §5) and the rationale renderer (≤600 characters, money via the currency exponent). *Tests:* every `ClaimCheck` reason; the policy-consistency rules; a renderer test with no model text in the output.
-5. **Coordinator and leases** (`agents/coordinator.py`, `agents/capacity.py`): the state machine and limits (G3A §3), the process-local `AgentCapacity` workflow and call slots (G3A §3.1), remaining-deadline checks before every step, and bounded `lock_timeout`/`statement_timeout`/`connect_timeout`. It writes each step in its own guarded transaction. *Tests:* D05, D07, D08, D09, D13 and D15, with deterministic or injected adapters and a controllable fake worker that is held, then released, by the test. They assert:
+5. **Coordinator and leases** (`agents/coordinator.py`, `agents/capacity.py`): the state machine and limits (G3A §3), the process-local `AgentCapacity` workflow and call slots (G3A §3.1), the working/terminal budget rules of G3A §3.2 (one monotonic deadline; integer milliseconds rounded down; refusal instead of 0 or negative values; per-statement recomputation; one single-host workflow connection; libpq whole-second connect with a minimum of 2). The pure helpers in `docs/agents/deadline_budget.py` become `agents/budget.py`, and its checks become unit tests. It writes each step in its own guarded transaction. *Tests:* D05, D07, D08, D09, D13 and D15, with deterministic or injected adapters and a controllable fake worker that is held, then released, by the test. They assert:
    - the counted limits (≤5 calls, ≤6 tools, ≤1 repeat, and no repeat after a timeout);
    - call slots released only when the worker returns, ≤2 outstanding, and a late result never written;
    - workflow slots released on every path, including exceptions;
@@ -76,7 +76,9 @@ The existing human approval and simulated execution path is unchanged.
    - `CaseDetail` with 3–5 role runs validates against frozen v1.1;
    - D13 (zero roles: `agent_runs: []`, case open, failure audit by the coordinator principal);
    - D14 (a crash between roles, simulated by abandoning the coordinator after the analyst commits: recovery after the deadline, analyst still `completed`, system audit, 409 `investigation_recovered`);
-   - completed role runs are never rewritten by any terminal path.
+   - completed role runs are never rewritten by any terminal path;
+   - terminal outcomes against a real PostgreSQL connection (G3A §3.2): a terminal write inside the reserve commits; one refused or rolled back by budget leaves the workflow `running` and returns 409 `investigation_in_progress`; an interrupted COMMIT reply returns 409 `investigation_outcome_unknown`. In every case the workflow slot is released, and call slots follow their workers;
+   - `CaseDetail` after a retry still lists all historical runs of the case.
 7. **Claude CLI role adapter** (`agents/adapters.py`): role prompts and JSON schemas pinned in role configs; `--tools ""`, an empty working directory, the subscription preflight and environment scrubbing reused from `investigators.py`; usage recorded only if the envelope reports typed counts. *Tests:* a fake runner only (command shape, scrubbed environment, failure typing, output parsing).
    - **No new pytest skip**, because the structured gate allows exactly one live skip. A live check is manual, through `scripts/agent_eval.py`.
 8. **Development harness** (`tests/support/agent_cases.py`): it loads `dev-cases-v1.json`, ingests each case's `runtime` into a fresh session and feeds `faults` to injected adapters, clocks or owner connections. *Tests:* C0 and C2-det over all 15 cases, asserting the machine-checkable `evaluator` expectations and every **hard gate** in protocol-v1 §5. This proves plumbing and security, not quality.
