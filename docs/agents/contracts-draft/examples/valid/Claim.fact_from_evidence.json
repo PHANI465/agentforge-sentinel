@@ -1,0 +1,12 @@
+{
+  "schema_version": "g3a-draft-1",
+  "kind": "fact",
+  "fact": "transaction_count_1h",
+  "relation": "eq",
+  "value": 2,
+  "cite": {
+    "schema_version": "g3a-draft-1",
+    "kind": "evidence",
+    "id": "7a1c0f5e-0001-4c55-8d1e-000000000e02"
+  }
+}

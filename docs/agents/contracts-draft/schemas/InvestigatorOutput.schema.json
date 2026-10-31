@@ -1,0 +1,337 @@
+{
+  "$defs": {
+    "AccountHistoryArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool": {
+          "const": "account_history",
+          "title": "Tool",
+          "type": "string"
+        },
+        "window": {
+          "enum": [
+            "24h",
+            "7d",
+            "30d"
+          ],
+          "title": "Window",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "window"
+      ],
+      "title": "AccountHistoryArgs",
+      "type": "object"
+    },
+    "AccountProfileArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool": {
+          "const": "account_profile",
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "AccountProfileArgs",
+      "type": "object"
+    },
+    "CaseEvidenceArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool": {
+          "const": "case_evidence",
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "CaseEvidenceArgs",
+      "type": "object"
+    },
+    "Citation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "evidence",
+            "tool_result"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "FactClaim": {
+      "additionalProperties": false,
+      "description": "`fact` relation `value`, cited to where the server can read that exact value.",
+      "properties": {
+        "cite": {
+          "$ref": "#/$defs/Citation"
+        },
+        "fact": {
+          "enum": [
+            "amount_minor",
+            "transaction_count_1h",
+            "large_amount_rule_hit",
+            "history_count_24h",
+            "history_count_7d",
+            "history_median_amount_minor_30d",
+            "history_max_amount_minor_30d",
+            "account_age_days",
+            "prior_known_fraud"
+          ],
+          "title": "Fact",
+          "type": "string"
+        },
+        "kind": {
+          "const": "fact",
+          "title": "Kind",
+          "type": "string"
+        },
+        "relation": {
+          "enum": [
+            "eq",
+            "gte",
+            "lte"
+          ],
+          "title": "Relation",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "fact",
+        "relation",
+        "value",
+        "cite"
+      ],
+      "title": "FactClaim",
+      "type": "object"
+    },
+    "MissingEvidenceClaim": {
+      "additionalProperties": false,
+      "description": "The role says this fact was not available; the server checks that it really was not.",
+      "properties": {
+        "fact": {
+          "enum": [
+            "amount_minor",
+            "transaction_count_1h",
+            "large_amount_rule_hit",
+            "history_count_24h",
+            "history_count_7d",
+            "history_median_amount_minor_30d",
+            "history_max_amount_minor_30d",
+            "account_age_days",
+            "prior_known_fraud"
+          ],
+          "title": "Fact",
+          "type": "string"
+        },
+        "kind": {
+          "const": "missing",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fact"
+      ],
+      "title": "MissingEvidenceClaim",
+      "type": "object"
+    },
+    "ScoringOutcomeArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool": {
+          "const": "scoring_outcome",
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "ScoringOutcomeArgs",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "fact": "#/$defs/FactClaim",
+            "missing": "#/$defs/MissingEvidenceClaim"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/FactClaim"
+          },
+          {
+            "$ref": "#/$defs/MissingEvidenceClaim"
+          }
+        ]
+      },
+      "maxItems": 12,
+      "minItems": 1,
+      "title": "Claims",
+      "type": "array"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "maxLength": 400,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Note"
+    },
+    "operation": {
+      "enum": [
+        "simulated_hold",
+        "escalate"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "reason_code": {
+      "enum": [
+        "velocity_pattern",
+        "unusual_amount",
+        "insufficient_evidence"
+      ],
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "role": {
+      "const": "investigator",
+      "title": "Role",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "g3a-draft-1",
+      "default": "g3a-draft-1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool_requests": {
+      "default": [],
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "account_history": "#/$defs/AccountHistoryArgs",
+            "account_profile": "#/$defs/AccountProfileArgs",
+            "case_evidence": "#/$defs/CaseEvidenceArgs",
+            "scoring_outcome": "#/$defs/ScoringOutcomeArgs"
+          },
+          "propertyName": "tool"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/CaseEvidenceArgs"
+          },
+          {
+            "$ref": "#/$defs/ScoringOutcomeArgs"
+          },
+          {
+            "$ref": "#/$defs/AccountHistoryArgs"
+          },
+          {
+            "$ref": "#/$defs/AccountProfileArgs"
+          }
+        ]
+      },
+      "maxItems": 2,
+      "title": "Tool Requests",
+      "type": "array"
+    }
+  },
+  "required": [
+    "role",
+    "operation",
+    "reason_code",
+    "claims"
+  ],
+  "title": "InvestigatorOutput",
+  "type": "object"
+}

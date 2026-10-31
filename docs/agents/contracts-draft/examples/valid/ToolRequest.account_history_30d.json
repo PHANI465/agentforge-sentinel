@@ -1,0 +1,5 @@
+{
+  "schema_version": "g3a-draft-1",
+  "tool": "account_history",
+  "window": "30d"
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": "g3a-draft-1",
+  "kind": "three-role",
+  "roles": {
+    "evidence_analyst": {
+      "name": "analyst-claude-cli",
+      "version": "a1",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "investigator": {
+      "name": "investigator-claude-cli",
+      "version": "i2",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    "reviewer": {
+      "name": "reviewer-claude-cli",
+      "version": "r1",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  },
+  "tool_profile": {
+    "name": "agent-read-tools",
+    "version": "t1",
+    "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+  },
+  "claim_schema": "g3a-draft-1",
+  "limits": {
+    "schema_version": "g3a-draft-1"
+  }
+}

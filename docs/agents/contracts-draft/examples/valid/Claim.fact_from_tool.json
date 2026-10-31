@@ -1,0 +1,12 @@
+{
+  "schema_version": "g3a-draft-1",
+  "kind": "fact",
+  "fact": "history_max_amount_minor_30d",
+  "relation": "lte",
+  "value": 9800,
+  "cite": {
+    "schema_version": "g3a-draft-1",
+    "kind": "tool_result",
+    "id": "5b2d9e31-0002-4f00-9a00-0000000000a3"
+  }
+}

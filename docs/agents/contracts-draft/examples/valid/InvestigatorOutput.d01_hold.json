@@ -1,0 +1,56 @@
+{
+  "schema_version": "g3a-draft-1",
+  "role": "investigator",
+  "operation": "simulated_hold",
+  "reason_code": "velocity_pattern",
+  "claims": [
+    {
+      "schema_version": "g3a-draft-1",
+      "kind": "fact",
+      "fact": "amount_minor",
+      "relation": "eq",
+      "value": 250000,
+      "cite": {
+        "schema_version": "g3a-draft-1",
+        "kind": "evidence",
+        "id": "7a1c0f5e-0001-4c55-8d1e-000000000e01"
+      }
+    },
+    {
+      "schema_version": "g3a-draft-1",
+      "kind": "fact",
+      "fact": "transaction_count_1h",
+      "relation": "eq",
+      "value": 2,
+      "cite": {
+        "schema_version": "g3a-draft-1",
+        "kind": "evidence",
+        "id": "7a1c0f5e-0001-4c55-8d1e-000000000e02"
+      }
+    },
+    {
+      "schema_version": "g3a-draft-1",
+      "kind": "fact",
+      "fact": "large_amount_rule_hit",
+      "relation": "eq",
+      "value": true,
+      "cite": {
+        "schema_version": "g3a-draft-1",
+        "kind": "tool_result",
+        "id": "5b2d9e31-0002-4f00-9a00-0000000000a1"
+      }
+    },
+    {
+      "schema_version": "g3a-draft-1",
+      "kind": "fact",
+      "fact": "history_max_amount_minor_30d",
+      "relation": "lte",
+      "value": 9800,
+      "cite": {
+        "schema_version": "g3a-draft-1",
+        "kind": "tool_result",
+        "id": "5b2d9e31-0002-4f00-9a00-0000000000a3"
+      }
+    }
+  ]
+}

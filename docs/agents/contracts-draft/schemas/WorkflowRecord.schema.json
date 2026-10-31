@@ -1,0 +1,270 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "Disposition": {
+      "additionalProperties": false,
+      "description": "Coordinator outcome. recommend/abstain produce exactly one server-built intent whose\nbasis is a completed investigator run of the same workflow (a coordinator check);\ninconclusive produces none and reopens the case (review decision 3).",
+      "properties": {
+        "basis_run_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basis Run Id"
+        },
+        "inconclusive_code": {
+          "anyOf": [
+            {
+              "enum": [
+                "provider_unavailable",
+                "timeout",
+                "invalid_output",
+                "budget_exhausted",
+                "stale_evidence_snapshot",
+                "call_capacity_exhausted",
+                "coordinator_error",
+                "interrupted"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inconclusive Code"
+        },
+        "kind": {
+          "enum": [
+            "recommend",
+            "abstain",
+            "inconclusive"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation": {
+          "anyOf": [
+            {
+              "enum": [
+                "simulated_hold",
+                "escalate"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operation"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "enum": [
+                "velocity_pattern",
+                "unusual_amount",
+                "insufficient_evidence"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        },
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "supported_claims": {
+          "minimum": 0,
+          "title": "Supported Claims",
+          "type": "integer"
+        },
+        "unsupported_claims": {
+          "minimum": 0,
+          "title": "Unsupported Claims",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "supported_claims",
+        "unsupported_claims"
+      ],
+      "title": "Disposition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Proposed table agent_workflows: one row per coordinator attempt on a case.\n\nrunning: no finish, disposition or terminal actor. completed: finished, recommend or\nabstain, by the coordinator, after at least analyst, investigator and reviewer.\ninconclusive: finished, an inconclusive disposition, by the coordinator or by recovery;\nrecovery (no live coordinator) always records `interrupted`. Zero role invocations is a\nvalid inconclusive record (exhaustion before the first role).",
+  "properties": {
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_revision": {
+      "maximum": 2147483647,
+      "minimum": 1,
+      "title": "Case Revision",
+      "type": "integer"
+    },
+    "config": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "deadline_at": {
+      "format": "date-time",
+      "title": "Deadline At",
+      "type": "string"
+    },
+    "disposition": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Disposition"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "finished_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Finished At"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "input_snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Snapshot Sha256",
+      "type": "string"
+    },
+    "role_invocations": {
+      "maximum": 8,
+      "minimum": 0,
+      "title": "Role Invocations",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "g3a-draft-1",
+      "default": "g3a-draft-1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "running",
+        "completed",
+        "inconclusive"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "terminal_by": {
+      "anyOf": [
+        {
+          "enum": [
+            "coordinator",
+            "recovery"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Terminal By"
+    },
+    "tool_calls": {
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Tool Calls",
+      "type": "integer"
+    },
+    "tool_profile": {
+      "$ref": "#/$defs/ArtifactRef"
+    }
+  },
+  "required": [
+    "id",
+    "case_id",
+    "case_revision",
+    "config",
+    "tool_profile",
+    "input_snapshot_sha256",
+    "status",
+    "started_at",
+    "deadline_at",
+    "role_invocations",
+    "tool_calls"
+  ],
+  "title": "WorkflowRecord",
+  "type": "object"
+}

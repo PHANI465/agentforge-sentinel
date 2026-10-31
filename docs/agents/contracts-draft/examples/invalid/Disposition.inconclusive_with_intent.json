@@ -1,0 +1,8 @@
+{
+  "schema_version": "g3a-draft-1",
+  "kind": "inconclusive",
+  "operation": "escalate",
+  "inconclusive_code": "timeout",
+  "supported_claims": 0,
+  "unsupported_claims": 0
+}

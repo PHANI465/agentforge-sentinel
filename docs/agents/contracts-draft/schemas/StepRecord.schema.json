@@ -1,0 +1,297 @@
+{
+  "$defs": {
+    "ClaimCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "title": "Index",
+          "type": "integer"
+        },
+        "reason": {
+          "enum": [
+            "value_mismatch",
+            "citation_not_in_scope",
+            "fact_not_in_cited_record",
+            "fact_was_available",
+            "verified"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "supported",
+            "unsupported",
+            "uncheckable"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "index",
+        "status",
+        "reason"
+      ],
+      "title": "ClaimCheck",
+      "type": "object"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "description": "What the adapter actually measured; unknown is explicit, never zero (decision 4).\nnot_applicable (server tools, transitions) and unknown carry no counts and measured=False;\nadapter_reported carries both validated counts and measured=True.",
+      "properties": {
+        "input_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens"
+        },
+        "measured": {
+          "title": "Measured",
+          "type": "boolean"
+        },
+        "output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens"
+        },
+        "schema_version": {
+          "const": "g3a-draft-1",
+          "default": "g3a-draft-1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "not_applicable",
+            "adapter_reported",
+            "unknown"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "measured",
+        "source"
+      ],
+      "title": "Usage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One append-only coordinator event (proposed table agent_steps).",
+  "properties": {
+    "agent_run_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Agent Run Id"
+    },
+    "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+    },
+    "attempt": {
+      "anyOf": [
+        {
+          "maximum": 2,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attempt"
+    },
+    "checks": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ClaimCheck"
+      },
+      "maxItems": 12,
+      "title": "Checks",
+      "type": "array"
+    },
+    "elapsed_ms": {
+      "minimum": 0,
+      "title": "Elapsed Ms",
+      "type": "integer"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "enum": [
+            "provider_unavailable",
+            "timeout",
+            "invalid_output",
+            "budget_exhausted"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Code"
+    },
+    "kind": {
+      "enum": [
+        "transition",
+        "role_started",
+        "role_completed",
+        "role_failed",
+        "tool_executed",
+        "tool_denied",
+        "claims_checked",
+        "workflow_terminated"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "output_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Output Sha256"
+    },
+    "role": {
+      "anyOf": [
+        {
+          "enum": [
+            "evidence_analyst",
+            "investigator",
+            "reviewer"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Role"
+    },
+    "schema_version": {
+      "const": "g3a-draft-1",
+      "default": "g3a-draft-1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seq": {
+      "maximum": 64,
+      "minimum": 1,
+      "title": "Seq",
+      "type": "integer"
+    },
+    "state": {
+      "enum": [
+        "claimed",
+        "gathering",
+        "analyst",
+        "analyst_tools",
+        "investigator",
+        "investigator_tools",
+        "reviewer",
+        "verifying",
+        "done"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "tool": {
+      "anyOf": [
+        {
+          "enum": [
+            "case_evidence",
+            "scoring_outcome",
+            "account_history",
+            "account_profile"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tool"
+    },
+    "tool_result_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tool Result Id"
+    },
+    "usage": {
+      "$ref": "#/$defs/Usage"
+    },
+    "worker_unresolved": {
+      "default": false,
+      "title": "Worker Unresolved",
+      "type": "boolean"
+    },
+    "workflow_id": {
+      "format": "uuid",
+      "title": "Workflow Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "workflow_id",
+    "seq",
+    "kind",
+    "state",
+    "elapsed_ms",
+    "usage",
+    "at"
+  ],
+  "title": "StepRecord",
+  "type": "object"
+}
