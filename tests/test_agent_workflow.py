@@ -245,7 +245,8 @@ def test_d08_excess_tool_requests_are_denied_and_the_workflow_continues(url, clo
     assert detail["case"]["state"] == "awaiting_approval"
     kinds = [(s["kind"], s.get("tool")) for s in ac.steps(url, case)
              if s["state"] == "analyst_tools"]
-    assert kinds == [("tool_executed", "account_history"), ("tool_executed", "account_history"),
+    assert kinds == [("transition", None),
+                     ("tool_executed", "account_history"), ("tool_executed", "account_history"),
                      ("tool_denied", "account_profile"), ("tool_denied", "account_profile")]
 
 

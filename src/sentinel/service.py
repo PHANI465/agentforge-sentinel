@@ -581,10 +581,18 @@ class Sentinel:
                 if case.revision != expected_revision:
                     raise ServiceError("stale_case_revision", 409)
                 busy = case.state == "investigating"
-                # Recovery or expiry (if any) commits with this block; the client re-reads.
-                recovered = busy and self._recover_lost_run(conn, ctx, case, now)
+                # A running three-role workflow is recovered by its own bounded transaction
+                # after this one ends (R34); a single-investigator run, or an expiry,
+                # commits with this block. Either way the client re-reads.
+                from sentinel.agents.coordinator import running_workflow
+                workflow = busy and running_workflow(conn, ctx, case.id) is not None
+                recovered = busy and not workflow and self._recover_lost_run(conn, ctx, case,
+                                                                             now)
                 expired = (case.state == "awaiting_approval"
                            and self._expire_lapsed_approval(conn, ctx, case, now) is not None)
+            if workflow:
+                from sentinel.agents.coordinator import recover_workflow_bounded
+                recovered = recover_workflow_bounded(self, ctx, case.id)
             if busy:
                 raise ServiceError("investigation_recovered" if recovered
                                    else "investigation_in_progress", 409)

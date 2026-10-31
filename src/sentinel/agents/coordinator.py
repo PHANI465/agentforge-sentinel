@@ -19,8 +19,8 @@ from psycopg.types.json import Jsonb
 
 from sentinel.agents import adapters as role_adapters
 from sentinel.agents.budget import (
-    BoundedTransaction, BudgetExhausted, CommitUncertain, ConnectionLost, Deadline,
-    open_connection,
+    QUARANTINE, BoundedTransaction, BudgetExhausted, CommitUncertain, ConnectionLost, Deadline,
+    discard, open_connection, usable,
 )
 from sentinel.agents.capacity import CapacityExhausted, late_worker_event
 from sentinel.agents.claims import Ledger, check_all, policy_problems, render_rationale
@@ -115,6 +115,9 @@ class Run:
     completed_investigator_run: object = None
     claims_supported: int = 0
     claims_unsupported: int = 0
+    state: str = "claimed"
+    transitions: int = 0
+    opened: list = field(default_factory=list)
 
     @property
     def limits(self) -> WorkflowLimits:
@@ -127,6 +130,16 @@ class Run:
     def hook(self, name: str) -> None:
         if name in self.hooks:
             self.hooks[name](self)
+
+    def connection(self, phase: str):
+        """The workflow connection, replaced within the phase's rules when the previous one
+        broke, was closed after a failed rollback or is quarantined behind an unanswered
+        operation (budget.bounded_call). A quarantined connection is never reused."""
+        if not usable(self.conn):
+            self.conn = open_connection(self.svc.database_url, self.deadline, phase,
+                                        self.limits)
+            self.opened.append(self.conn)
+        return self.conn
 
     # ---- claim ----------------------------------------------------------------------------
 
@@ -217,7 +230,8 @@ class Run:
     def write(self, action) -> None:
         """One guarded, bounded working transaction. A known failure raises; an uncertain
         COMMIT ends the workflow (the step may or may not exist, so its seq is skipped)."""
-        tx = BoundedTransaction(self.conn, self.deadline, "working", self.db_wait_ms)
+        tx = BoundedTransaction(self.connection("working"), self.deadline, "working",
+                                self.db_wait_ms)
         try:
             self._guard(tx)
             action(tx)
@@ -240,6 +254,18 @@ class Run:
                    (uuid.uuid5(uuid.NAMESPACE_URL, canonical_digest(STEP_NAMESPACE, body)),
                     *_scope(self.ctx), self.record.id, self.record.case_id, self.seq,
                     Jsonb(body), Jsonb(payload) if payload is not None else None))
+
+    def advance(self, state: str) -> None:
+        """One coordinator state change (G3A-design section 3), recorded as a `transition`
+        step and counted against the pinned max_transitions before it happens. A repeat
+        (invoke) stays in its state and never comes here. The final change to `done` is the
+        terminal transaction's own workflow_terminated step and is never refused, so an
+        exhausted limit still ends the workflow honestly."""
+        if self.transitions >= self.limits.max_transitions:
+            raise End("budget_exhausted")
+        self.write(lambda tx: self.step(tx, "transition", state))
+        self.transitions += 1
+        self.state = state
 
     # ---- tools ----------------------------------------------------------------------------
 
@@ -357,6 +383,15 @@ class Run:
                 slot.cancel()
             raise
         self.role_invocations += 1
+        # The start record (and anything before it) took time: the full call must still fit
+        # in the working phase now, immediately before submission (R35). Otherwise nothing is
+        # submitted, the reserved call slot is released, and the recorded attempt fails as
+        # budget_exhausted with no usage.
+        if self.deadline.budget_ms("working", call_ms, call_ms) is None:
+            if slot is not None:
+                slot.cancel()
+            self._fail_run(run, role, attempt, "budget_exhausted", returned=True)
+            raise End("budget_exhausted")
         result, failure, returned = None, None, True
         if slot is None:
             try:
@@ -374,8 +409,9 @@ class Run:
                     late = (self.deadline.clock() - started_ms - call_ms) / 1000
                     late_worker_event(str(self.record.id), role, attempt, max(0.0, late))
             future = slot.start(adapter.call, role_input, on_return=on_return)
-            try:
-                result = future.result(timeout=call_ms / 1000)
+            try:  # never past the working phase, which the recheck above showed fits call_ms
+                wait_ms = min(call_ms, self.deadline.available_ms("working"))
+                result = future.result(timeout=max(wait_ms, 0) / 1000)
             except futures.TimeoutError:
                 abandoned["flag"] = True
                 failure, returned = "timeout", False
@@ -391,15 +427,7 @@ class Run:
             except ValidationError:
                 failure = "invalid_output"
         if failure is not None:
-            failed = AgentRun.model_validate({**run.model_dump(), "status": "failed",
-                                              "failure_code": failure})
-            self.write(lambda tx: (tx.execute(
-                "UPDATE agent_runs SET status = 'failed', finished_at = %s, body = %s"
-                " WHERE id = %s AND status = 'running'",
-                (self.svc.clock(), Jsonb(failed.model_dump(mode="json")), run.id)),
-                self.step(tx, "role_failed", _STATE[role], role=role, agent_run_id=run.id,
-                          attempt=attempt, failure_code=failure,
-                          worker_unresolved=not returned)))
+            self._fail_run(run, role, attempt, failure, returned)
             return ("failed", failure, returned)
         done = AgentRun.model_validate({**run.model_dump(), "status": "completed"})
         payload = output.model_dump(mode="json")
@@ -412,6 +440,17 @@ class Run:
                       output_sha256=canonical_digest(STEP_NAMESPACE, payload),
                       usage=result.usage)))
         return ("ok", output, run.id)
+
+    def _fail_run(self, run: AgentRun, role: str, attempt: int, failure: str,
+                  returned: bool) -> None:
+        failed = AgentRun.model_validate({**run.model_dump(), "status": "failed",
+                                          "failure_code": failure})
+        self.write(lambda tx: (tx.execute(
+            "UPDATE agent_runs SET status = 'failed', finished_at = %s, body = %s"
+            " WHERE id = %s AND status = 'running'",
+            (self.svc.clock(), Jsonb(failed.model_dump(mode="json")), run.id)),
+            self.step(tx, "role_failed", _STATE[role], role=role, agent_run_id=run.id,
+                      attempt=attempt, failure_code=failure, worker_unresolved=not returned)))
 
     # ---- the state machine ----------------------------------------------------------------
 
@@ -426,13 +465,8 @@ class Run:
             raise _service_error("investigation_superseded") from None
         except BudgetExhausted:
             disposition = self._inconclusive("budget_exhausted")
-        except ConnectionLost:
+        except ConnectionLost:  # terminate() replaces the connection under the terminal rules
             disposition = self._inconclusive("coordinator_error")
-            try:  # a replacement connection within the working budget, else terminal rules
-                self.conn = open_connection(self.svc.database_url, self.deadline, "terminal",
-                                            self.limits)
-            except (BudgetExhausted, ConnectionLost):
-                raise _service_error("investigation_in_progress") from None
         except Exception as error:  # an unexpected server-side error: type only
             LOG.warning('{"event": "workflow_error", "error_type": "%s"}',
                         type(error).__name__)
@@ -445,10 +479,14 @@ class Run:
                            unsupported_claims=self.claims_unsupported)
 
     def _decide(self) -> Disposition:
+        self.advance("gathering")
         self.tools(BASELINE_TOOLS, "gathering", len(BASELINE_TOOLS))
+        self.advance("analyst")
         analyst, _ = self.invoke("evidence_analyst", self.role_input(
             "evidence_analyst", tool_requests_allowed=ANALYST_FOLLOWUPS))
         analyst_checks = check_all(analyst.claims, self.ledger)
+        if analyst.tool_requests:
+            self.advance("analyst_tools")
         self.tools(analyst.tool_requests, "analyst_tools", ANALYST_FOLLOWUPS)
         analyst_view = {"claims": [c.model_dump(mode="json") for c in analyst.claims],
                         "checks": [k.model_dump(mode="json") for k in analyst_checks],
@@ -456,6 +494,7 @@ class Run:
         challenge = None
         investigator_tools_used = False
         while True:
+            self.advance("investigator")
             investigator, run_id = self.invoke("investigator", self.role_input(
                 "investigator", analyst=analyst_view, challenge=challenge,
                 tool_requests_allowed=0 if investigator_tools_used else INVESTIGATOR_FOLLOWUPS))
@@ -463,6 +502,7 @@ class Run:
                     and self.revisions_left > 0:
                 investigator_tools_used = True
                 self.revisions_left -= 1
+                self.advance("investigator_tools")
                 self.tools(investigator.tool_requests, "investigator_tools",
                            INVESTIGATOR_FOLLOWUPS)
                 continue
@@ -471,7 +511,9 @@ class Run:
             problems = policy_problems(investigator, checks)
             self.claims_supported = sum(k.status == "supported" for k in checks)
             self.claims_unsupported = len(checks) - self.claims_supported
+            self.advance("verifying")
             self.write(lambda tx: self.step(tx, "claims_checked", "verifying", checks=checks))
+            self.advance("reviewer")
             reviewer, _ = self.invoke("reviewer", self.role_input(
                 "reviewer", investigator={
                     "operation": investigator.operation, "reason_code": investigator.reason_code,
@@ -501,8 +543,9 @@ class Run:
     def terminate(self, disposition: Disposition) -> dict:
         self.hook("before_terminal")
         try:
-            tx = BoundedTransaction(self.conn, self.deadline, "terminal", self.db_wait_ms)
-        except BudgetExhausted:
+            tx = BoundedTransaction(self.connection("terminal"), self.deadline, "terminal",
+                                    self.db_wait_ms)
+        except (BudgetExhausted, ConnectionLost):
             raise _service_error("investigation_in_progress") from None
         try:
             adopted = getattr(self, "adopted", None)
@@ -622,23 +665,25 @@ def terminate_workflow(svc, tx, ctx, workflow_id, disposition: Disposition, term
     return disposition
 
 
-def recover_workflow(svc, conn, ctx, case: Case, now) -> bool | None:
-    """Lazy recovery of a running workflow past deadline_at + RECOVERY_GRACE, inside the
-    caller's transaction (which holds the case lock) under a fresh bounded budget. Returns
-    None when the case has no running workflow, False when it is not yet recoverable."""
+def running_workflow(conn, ctx, case_id):
+    return conn.execute("SELECT id, deadline_at FROM agent_workflows WHERE case_id = %s"
+                        " AND tenant_id = %s AND session_id = %s AND status = 'running'",
+                        (case_id, *_scope(ctx))).fetchone()
+
+
+def recover_workflow(svc, tx, ctx, case: Case, now) -> bool | None:
+    """Lazy recovery of a running workflow past deadline_at + RECOVERY_GRACE, inside an owned
+    BoundedTransaction that holds the case lock and is committed by its own bounded COMMIT
+    (the claim's, or recover_workflow_bounded's). Returns None when the case has no running
+    workflow, False when it is not yet recoverable."""
     from sentinel.service import RECOVERY_GRACE
-    row = conn.execute("SELECT id, deadline_at FROM agent_workflows WHERE case_id = %s"
-                       " AND tenant_id = %s AND session_id = %s AND status = 'running'",
-                       (case.id, *_scope(ctx))).fetchone()
+    if not isinstance(tx, BoundedTransaction):
+        raise TypeError("a workflow is recovered only inside a bounded transaction")
+    row = running_workflow(tx, ctx, case.id)
     if row is None:
         return None
     if row["deadline_at"] + RECOVERY_GRACE >= now:
         return False
-    limits = WorkflowLimits()
-    fresh = Deadline(limits, svc.monotonic, total_ms=limits.db_wait_seconds * 1000,
-                     reserve_ms=0)
-    tx = conn if isinstance(conn, BoundedTransaction) else BoundedTransaction(
-        conn, fresh, "terminal", limits.db_wait_seconds * 1000, owned=False)
     terminate_workflow(svc, tx, ctx, row["id"],
                        Disposition(kind="inconclusive", inconclusive_code="interrupted",
                                    supported_claims=0, unsupported_claims=0),
@@ -646,11 +691,56 @@ def recover_workflow(svc, conn, ctx, case: Case, now) -> bool | None:
     return True
 
 
+def recover_workflow_bounded(svc, ctx, case_id) -> bool:
+    """Recovery requested outside the coordinator (Sentinel.begin_investigation, after its
+    own transaction released the case): a fresh connection and one owned terminal
+    transaction under a fresh db_wait budget, re-checked under the case lock. True when it
+    committed; False when the workflow is not recoverable yet, or the attempt was refused or
+    known rolled back; an unanswered COMMIT is investigation_outcome_unknown."""
+    from sentinel.service import ServiceError
+    limits = WorkflowLimits()
+    fresh = Deadline(limits, svc.monotonic, total_ms=limits.db_wait_seconds * 1000,
+                     reserve_ms=0)
+    try:
+        conn = open_connection(svc.database_url, fresh, "terminal", limits)
+    except (BudgetExhausted, ConnectionLost):
+        return False
+    try:
+        tx = BoundedTransaction(conn, fresh, "terminal", limits.db_wait_seconds * 1000)
+        try:
+            case = svc._case(tx, ctx, case_id, lock=True)
+            recovered = case.state == "investigating" and \
+                recover_workflow(svc, tx, ctx, case, svc.clock())
+            if not recovered:
+                tx.rollback()
+                return False
+            tx.commit()
+            return True
+        except Superseded:
+            tx.rollback()
+            return False
+        except (BudgetExhausted, ConnectionLost):
+            return False
+        except CommitUncertain:
+            raise ServiceError("investigation_outcome_unknown", 409) from None
+        except BaseException:
+            tx.rollback()
+            raise
+    except BudgetExhausted:
+        return False
+    finally:
+        discard(conn)
+
+
 def run_workflow(svc, ctx, case_id, expected_revision: int, hooks: dict | None = None) -> dict:
     """Entry point from Sentinel.investigate under SENTINEL_INVESTIGATOR=three-role."""
     from sentinel.service import ServiceError, _require
     _require(ctx, "read_case", human=True)
     workflow: Workflow = svc.investigator
+    # Abandoned database operations hold their connections and threads until they return;
+    # while they reach the per-process workflow limit, nothing new is admitted (R34).
+    if QUARANTINE.count() >= workflow.limits.max_live_workflows_per_process:
+        raise ServiceError("agent_capacity_exhausted", 409)
     try:
         admission = svc.capacity.admit(workflow.live)
     except CapacityExhausted:
@@ -661,15 +751,12 @@ def run_workflow(svc, ctx, case_id, expected_revision: int, hooks: dict | None =
             conn = open_connection(svc.database_url, deadline, "working", workflow.limits)
         except (BudgetExhausted, ConnectionLost):
             raise ServiceError("conflict", 409) from None
-        run = Run(svc, ctx, workflow, deadline, conn, hooks or {})
+        run = Run(svc, ctx, workflow, deadline, conn, hooks or {}, opened=[conn])
         try:
             run.claim(case_id, expected_revision)
             return run.execute()
         finally:
-            for connection in {id(conn): conn, id(run.conn): run.conn}.values():
-                try:
-                    connection.close()
-                except Exception:
-                    pass
+            for connection in run.opened:
+                discard(connection)
     finally:
         admission.release()

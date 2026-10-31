@@ -3,9 +3,28 @@
 - **Task:** G3B, the bounded three-role investigation backend (docs/prompts/CLAUDE_G3B_WORKFLOW.md on task/coordination a3198bc; accepted design G3A 43d9e8a, review G3A-43d9e8a.md).
 - **Tool and worktree:** Claude Code, E:\PHANI\sentinel-wt\claude-g3b-workflow (new; the branch and path did not exist; the G3A checkout is untouched).
 - **Updated:** 2026-10-31.
-- **State:** ready for Codex review. G3C, final and live evaluation are not started.
-- **Base:** exact 2919f76a5cad729ea078d5bfb35c226a3d2bff3f (it contains no G3B runtime code).
-- **Code reference tested before this note:** the G3B working tree on 2919f76. The final Windows strict gate, native Linux gate and browser results are for the final commit and are reported in chat.
+- **State:** R34-R36 corrections ready for Codex re-review (review docs/reviews/G3B-391effe.md, prompt CLAUDE_G3B_REVIEW_FIXES.md). G3C, final and live evaluation are not started.
+- **Base:** exact 2919f76a5cad729ea078d5bfb35c226a3d2bff3f (it contains no G3B runtime code); the corrections continue from reviewed candidate 391effe on the same branch (no reset, rebase or amend).
+- **Code reference tested before this note:** the corrections' working tree on 391effe. The final Windows strict gate, native Linux gate and browser results are for the final commit and are reported in chat.
+
+## R34-R36 corrections (ADR 0007, items 6-9)
+
+- **R34, finite client waits:**
+  - `budget.bounded_call` runs every statement, COMMIT and rollback on an operation thread, and the caller waits at most the remaining transaction budget;
+  - COMMIT's cancel request goes 150 ms before that end, and an unanswered COMMIT is `CommitUncertain`;
+  - **quarantine:** an abandoned connection is never reused; its operation thread closes it, its socket is shut down, and admission is refused while the quarantine is at the limit;
+  - **recovery owns its transaction:** `owned=False` is gone, and `begin_investigation` defers to `recover_workflow_bounded`.
+- **R35:** the full call budget is rechecked after the start record, before submission. If it no longer fits, the unused slot is released and the run fails `budget_exhausted` with no usage. The wait is capped by the working time left.
+- **R36:** persisted `transition` steps, checked against the pinned `max_transitions` before each one; `done` is the terminal step and is never refused.
+- **Changed paths:**
+  - `src/sentinel/agents/{budget,coordinator}.py`;
+  - `src/sentinel/service.py` (`begin_investigation` recovery hand-off);
+  - new `tests/test_agent_bounds.py` (16 cases);
+  - `tests/test_agent_workflow.py` (the D08 step list now includes its `transition` step);
+  - ADR 0007, `docs/api/README.md` (the capacity cause) and this note.
+- **Failing-first on 391effe source** (scratch export, scratch release timer): 15 of 16 new cases failed. Stalled waits lasted 30 s, withheld replies blocked until released, the recovery waited out an 8 s COMMIT, a live call was made with 45 s of 47 s left, and no transitions were recorded or limited. The quarantine-admission case failed with an AttributeError, because the mechanism did not exist. The "still fits" control passed.
+- **Codex's four independent probes** pass on the corrections (3 runs).
+- **Tests use a test-owned TCP relay** that withholds server replies to give real-PostgreSQL no-reply coverage, both for a terminal COMMIT (unknown within 2 s; the client re-read shows the commit) and for a working statement (connection quarantined and replaced, inconclusive `budget_exhausted`).
 
 ## Changed paths
 

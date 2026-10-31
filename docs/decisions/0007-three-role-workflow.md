@@ -31,6 +31,29 @@ G3 needs evidence analyst, investigator and reviewer roles behind a deterministi
 4. **Admission.** Every workflow takes the per-process workflow slot, as design §3 requires. Only live adapters also need, and take, call slots.
 5. **Sessions.** The runtime role cannot issue sessions; tests issue them as the operator, as production does.
 
+## Review corrections R34-R36 (G3B-391effe review)
+
+6. **Finite client waits (R34).** A server timeout or a cancel request does not make a blocked client call return, so item 1's watchdog alone was not a bound.
+   - Every coordinator statement, COMMIT and rollback now runs on a short-lived operation thread (`budget.bounded_call`). The caller waits at most the transaction's remaining budget, never past the phase end. For COMMIT, the cancel request goes out 150 ms (at most half the budget) before that end, so a server that honours it can still answer with an error (a known rollback).
+   - Unanswered at the budget:
+     - an unanswered COMMIT is `CommitUncertain` (409 `investigation_outcome_unknown`), never a rollback or success;
+     - an unanswered statement is `BudgetExhausted`, because COMMIT was never sent.
+   - **Quarantine:** the abandoned operation's connection is never reused or closed underneath libpq. The operation thread owns it and closes it when the call returns. Its socket is shut down (not closed) so that the thread ends promptly. The coordinator replaces a quarantined, broken or closed connection under the phase's connection rules.
+   - **Admission:** new workflows are refused (409 `agent_capacity_exhausted`, no state change) while quarantined operations reach `max_live_workflows_per_process`.
+   - Provider call leases are unchanged and separate.
+7. **Recovery owns its transaction (R34).** The `owned=False` wrapper is removed. In the claim, recovery runs inside the claim's own bounded transaction. When `Sentinel.begin_investigation` finds a running workflow, it ends its own transaction first. Then `recover_workflow_bounded` takes a fresh connection and runs one owned terminal transaction under a fresh `db_wait` budget, re-checked under the case lock and committed with the bounded COMMIT.
+8. **Recheck before submission (R35).** After the role-start record commits, the full role timeout plus grace must still fit in the working phase. Otherwise:
+   - nothing is submitted, and a reserved call slot is released unused;
+   - the recorded attempt fails `budget_exhausted` (no usage, worker resolved), and the workflow ends through the terminal path with no intent.
+
+   The wait is capped by the working time left. `role_invocations` counts recorded runs, including such an attempt; its failure code and `not_applicable` usage show that it never ran.
+9. **Transitions (R36).** Each coordinator state change (`gathering`, `analyst`, `analyst_tools`, `investigator`, `investigator_tools`, `verifying`, `reviewer`) is a persisted `transition` step, and the pinned `max_transitions` is checked before each one; exceeding it ends the workflow `budget_exhausted`.
+   - A repeat stays in its state, so it is not counted.
+   - The final change to `done` is the terminal transaction's `workflow_terminated` step: it is not counted and never refused, so exhaustion always finishes honestly.
+   - The longest permitted path has 9 counted transitions, under the default 12.
+
+   The frozen contracts are unchanged; `transition` was already a `StepRecord` kind.
+
 ## Consequences
 
 - **Capacity.** One workflow per API process is admitted at a time. A second request gets 409 `agent_capacity_exhausted` with no state change.
