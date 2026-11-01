@@ -40,7 +40,7 @@ Third-party actions are pinned to full commit SHAs, resolved from their tags on 
 `uv run --locked python scripts/check_package.py`:
 
 - **Clean build.** Builds the wheel and sdist from a clean copy of tracked and non-ignored files. An in-place build can silently reuse a stale `*.egg-info/SOURCES.txt` or `build/`.
-- **Migrations.** Every `src/sentinel/db/migrations/*.sql` file (currently four, 0001–0004) must be byte-identical in both archives, with nothing extra.
+- **Migrations.** Every `src/sentinel/db/migrations/*.sql` file (currently five, 0001–0005) must be byte-identical in both archives, with nothing extra.
 - **Model and data assets.** The accepted model and data identity assets must be byte-identical in both archives:
   - `ml/protocol.json`;
   - `ml/runs/p1/selection.json` and `select_stats.json`;

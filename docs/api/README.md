@@ -68,11 +68,17 @@ Every **handled** error (the codes below, plus unknown routes/methods and reques
 | 403 | `permission_denied`, `action_permission_denied`, `approver_mismatch` |
 | 404 | `not_found` (missing, foreign-session or unknown route) |
 | 405 | `method_not_allowed` |
-| 409 | `stale_case_revision`, `case_not_investigable`, `investigation_in_progress`, `investigation_recovered`, `investigation_superseded`, `approval_expired`, `approval_exists`, `approval_not_available`, `approval_outside_validity`, `case_not_executable`, `stale_agent_config`, `stale_evidence_snapshot`, `stale_policy`, `stale_action_intent`, `inactive_policy`, `idempotency_conflict`, `conflict`, evidence-verification codes (`evidence_*`, `incomplete_evidence_snapshot`, `duplicate_evidence`) |
+| 409 | `stale_case_revision`, `case_not_investigable`, `investigation_in_progress`, `investigation_recovered`, `investigation_superseded`, `approval_expired`, `approval_exists`, `approval_not_available`, `approval_outside_validity`, `case_not_executable`, `stale_agent_config`, `stale_evidence_snapshot`, `stale_policy`, `stale_action_intent`, `inactive_policy`, `idempotency_conflict`, `conflict`, evidence-verification codes (`evidence_*`, `incomplete_evidence_snapshot`, `duplicate_evidence`), and in three-role mode (G3B) `agent_capacity_exhausted` and `investigation_outcome_unknown` |
 | 413 | `body_too_large` |
 | 422 | `invalid_request` (body or query/path validation), `invalid_cursor`, `future_event_time`, `account_profile_missing` (v1.1, model mode only) |
 
 For a 409, re-read authoritative state before offering the next step. Codes are stable within v1; new codes may be added, so the UI should show a generic message for an unknown code.
+
+**Three-role mode (`SENTINEL_INVESTIGATOR=three-role`, G3B).** It adds two handled codes. Neither changes a route or response shape.
+- **`409 agent_capacity_exhausted`:** this API process is already running its admitted workflow, or every provider-call slot is held, possibly by another case's late worker, or an earlier database operation that got no reply is still unresolved. Nothing was started; the case is unchanged. No other case is described. Retry later.
+- **`409 investigation_outcome_unknown`:** the workflow's final write was sent, but its COMMIT was not confirmed. **This is not a confirmed result, despite the 4xx status.** The case may already be `open` or `awaiting_approval`, or it may still be `investigating`; in that last case, lazy recovery reopens it after the workflow deadline plus 30 s. Re-read `GET /v1/cases/{id}` and use only that state. Do not retry the investigation blindly.
+
+In this mode, `409 investigation_in_progress` after an investigate request means the final write was refused or rolled back within its time budget. The case really is still `investigating` and will be recovered the same way. Action execution keeps the idempotency rule below: after any ambiguous execute failure, retry with the same `idempotency_key`.
 
 ## Failures outside the error contract (client fallback is required)
 
@@ -84,7 +90,7 @@ The API does not guarantee a JSON body for every failure:
 Client requirements:
 1. Parse an error body as `ErrorResponse` only if the status is 4xx/5xx, the content type is JSON and the body validates. Otherwise show a safe generic message and never render the raw body.
 2. Treat any non-JSON 5xx, empty or invalid body, timeout or network failure as **outcome unknown**. Re-read authoritative state (`GET /v1/cases/{id}`) before offering the next step.
-3. **Execution:** after an ambiguous `POST /v1/actions` failure (network failure, timeout, any 5xx, or an unparseable body), retry with the same `idempotency_key`; never generate a new one. An ambiguous failure does not establish that no action occurred. The retry either returns the original action (`replayed: true`) or a handled error. Only a handled 4xx/409 response is a definite outcome.
+3. **Execution:** after an ambiguous `POST /v1/actions` failure (network failure, timeout, any 5xx, or an unparseable body), retry with the same `idempotency_key`; never generate a new one. An ambiguous failure does not establish that no action occurred. The retry either returns the original action (`replayed: true`) or a handled error. A handled 4xx/409 response is a definite outcome, except `409 investigation_outcome_unknown` (three-role investigate only), which explicitly reports an unconfirmed outcome; re-read the case.
 4. Ingestion retries reuse the same `external_id` and body for the same reason.
 
 Safe logging and observability for unexpected errors are tracked separately (C05).

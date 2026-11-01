@@ -1,5 +1,8 @@
 # Claude G3B R37: connection and helper lifetime ownership
 
+Completed at accepted e23a7cd; R37 is closed under [the re-review](../reviews/G3B-e23a7cd.md).
+The assignment below is historical. Do not repeat it or start G3C before its new dispatch.
+
 Recommended coding assistant: **Claude Opus5.5 / High**. This focused resource-lifetime
 correction needs event ordering, transaction semantics and concurrency reasoning.
 

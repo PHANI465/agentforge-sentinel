@@ -1,5 +1,9 @@
 # AgentForge Sentinel: what it is and what remains
 
+Current November 1 status: G3B e23a7cd is accepted; R34-R37 are closed. Integrated gates
+are in progress. See the [current checkpoint](AgentForge_Sentinel_Session_2026-11-01.md)
+and [acceptance](../reviews/G3B-e23a7cd.md). Earlier dated status text below is superseded.
+
 Current checkpoint: October31,2026. Read this first for current scope. The
 [Word guide with real-life examples](AgentForge_Sentinel_Project_Guide_2026-10-26.docx)
 and its [Markdown copy](AgentForge_Sentinel_Project_Guide_2026-10-26.md) remain useful
@@ -30,8 +34,7 @@ A legitimate invoice can look unusual too. The human can reject a proposed hold 
 following the AI blindly. If an approval expires, the old proposal cannot be executed. If
 a network reply is lost, an idempotent action retry avoids a second simulated effect.
 Audits show the decisions. The examples illustrate intended use, not measured real-bank
-accuracy. The three-role backend is implemented on a review branch and still needs R37
-closure before it is accepted into main.
+accuracy. The three-role backend is accepted at e23a7cd and is undergoing integrated release checks.
 
 This demonstrates fraud-review work found in banks, payment processors and marketplaces.
 It is a portfolio/research system; real deployment would require domain, privacy, regulatory
@@ -47,12 +50,11 @@ and operational work beyond this synthetic demonstration. No real financial advi
 | Analyst interface | Accepted case queue/detail/evidence/audit/approval and model-results views, React/TypeScript/Vite, real browser/API/PostgreSQL tests |
 | Local operations | Windows and native Ubuntu backend validation, package installation checks, restart/recovery and backup/restore tooling; actual GitHub Actions/hosting still unverified |
 | Multi-agent design | G3A accepted: analyst/investigator/reviewer, scoped tools, server-checked claims, finite budgets and persisted boundaries |
-| Multi-agent runtime | G3B implemented atb74473e; original R34-R36 closed, new R37 connection/helper ownership races pending; not merged into main |
+| Multi-agent runtime | G3B e23a7cd accepted, R34-R37 closed; integrated release verification in progress |
 
-Current main application code remains f091a34. The corrected G3B candidate has85 independent
-agent/original-probe passes; supplied full gates have535 passes and one allowed skip. Those
-counts are evidence for specific checks, not a percentage-complete score or proof of agent
-quality. The two new R37 probes still reproduce a resource-lifetime problem.
+Independent G3B review has 90 Windows passes and six native probe passes. Supplied full
+gates have 539 passes and one allowed skip. Final integration evidence is recorded separately;
+test counts are not a percentage-complete score or evidence of live agent quality.
 
 ## How much is left?
 
@@ -67,7 +69,7 @@ Use accepted capabilities and these concrete next deliverables to track progress
 
 | Order | Remaining deliverable | What will demonstrate completion |
 | --- | --- | --- |
-| 1 | Finish G3B review and integration | Fix R37 ownership, preserve closed limits, independent re-review and final integrated Windows/Linux/browser gates |
+| 1 | Finish G3B review and integration | Candidate review complete; finish final integrated Windows/Linux/browser gates |
 | 2 | G3C trace API and analyst UI | Freeze the additive trace contract, then show roles, tools, citations, claim checks, disagreement, budgets and incomplete recovery honestly |
 | 3 | G3D measured agent evaluation | Safe runtime-role evaluator; separately authored final synthetic cases; actual one-live vs three-role comparisons under the frozen protocol, human rubric and reported failures/latency/observable usage |
 | 4 | Deeper data-analyst workspace | Curated read-only queries, data quality, financial reconciliation, cohorts/time trends, error slices and exports checked against known answers |
@@ -79,14 +81,11 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Give Claude the [R37 prompt](../prompts/CLAUDE_G3B_OWNERSHIP_FIX.md), using Opus5.5/High,
-   in the existing G3B worktree atb74473e. Keep the tested branch/history and do not merge.
-2. Return its exact committed result and real checks to Codex for re-review/integration.
-3. After that gate, start G3C with the API contract first, then the trace UI. Cursor may
-   contribute again when available; it has already supplied substantive frontend work.
-4. Run agent quality evaluations only after the implementation/configuration/protocol are
-   frozen and safe evaluation connections are prepared. Deterministic fixtures alone are
-   not evidence that three language-model agents improve fraud investigations.
+1. Let Codex complete the integrated checks and record their exact commit.
+2. Start G3C with the versioned trace API contract first; the UI follows its acceptance.
+3. Run agent quality evaluations only after implementation/configuration/protocol are frozen
+   and safe evaluation connections are prepared. Deterministic fixtures are not evidence
+   that three language-model agents improve fraud investigations.
 
 The two previously noted manual-evaluator operator/runtime split and a backup round-trip
 with populated workflow tables remain explicit follow-ups before claiming those paths

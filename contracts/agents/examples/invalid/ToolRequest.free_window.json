@@ -1,0 +1,5 @@
+{
+  "schema_version": "1.0",
+  "tool": "account_history",
+  "window": "365d"
+}

@@ -23,7 +23,9 @@ LATENCY_BUCKETS_MS = (5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000)
 # metric and log cardinality stay fixed (review R20).
 HTTP_METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"})
 _ALLOWED_FIELDS = {"request_id", "method", "route", "status", "duration_ms", "outcome",
-                   "error_type", "case_id", "revision", "run_id", "failure_code", "seconds"}
+                   "error_type", "case_id", "revision", "run_id", "failure_code", "seconds",
+                   # G3B workflow metadata: identifiers and a bounded role/attempt only.
+                   "workflow_id", "role", "attempt"}
 
 
 def request_id(supplied: str | None) -> str:

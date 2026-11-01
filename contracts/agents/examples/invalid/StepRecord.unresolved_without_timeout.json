@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "workflow_id": "3c4e8a10-0003-4b10-8c00-0000000000f1",
+  "seq": 6,
+  "kind": "role_completed",
+  "state": "investigator",
+  "role": "investigator",
+  "agent_run_id": "a9e0b000-0005-4a00-8a00-00000000a002",
+  "attempt": 1,
+  "output_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "checks": [
+    {
+      "schema_version": "1.0",
+      "index": 0,
+      "status": "supported",
+      "reason": "verified"
+    },
+    {
+      "schema_version": "1.0",
+      "index": 1,
+      "status": "supported",
+      "reason": "verified"
+    },
+    {
+      "schema_version": "1.0",
+      "index": 2,
+      "status": "supported",
+      "reason": "verified"
+    },
+    {
+      "schema_version": "1.0",
+      "index": 3,
+      "status": "supported",
+      "reason": "verified"
+    }
+  ],
+  "elapsed_ms": 21430,
+  "usage": {
+    "schema_version": "1.0",
+    "measured": false,
+    "source": "unknown"
+  },
+  "at": "2026-10-27T15:00:05Z",
+  "worker_unresolved": true
+}

@@ -58,8 +58,11 @@ RUNTIME_PRIVILEGES: dict[str, tuple[str, ...]] = {
     # C07: provisioned by the operator; the API only reads them for decision-time features.
     "account_profiles": ("SELECT",),
     "fraud_disclosures": ("SELECT",),
+    # G3B (migration 0005): workflows are claimed and finished; steps are append-only.
+    "agent_workflows": ("SELECT", "INSERT", "UPDATE"),
+    "agent_steps": ("SELECT", "INSERT"),
 }
-SEQUENCES = ("audit_events_seq_seq",)
+SEQUENCES = ("audit_events_seq_seq", "agent_steps_seq_seq", "agent_runs_seq_seq")
 SCHEMA = "public"
 _TABLE_KINDS = ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER")
 _COLUMN_KINDS = ("SELECT", "INSERT", "UPDATE", "REFERENCES")

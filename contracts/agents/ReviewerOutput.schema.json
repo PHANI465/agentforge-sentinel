@@ -1,0 +1,70 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "challenged_claims": {
+      "default": [],
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 12,
+      "title": "Challenged Claims",
+      "type": "array"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "maxLength": 400,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Note"
+    },
+    "reasons": {
+      "default": [],
+      "items": {
+        "enum": [
+          "unsupported_claim",
+          "contradiction",
+          "missing_evidence",
+          "reason_mismatch",
+          "operation_not_supported"
+        ],
+        "type": "string"
+      },
+      "maxItems": 5,
+      "title": "Reasons",
+      "type": "array"
+    },
+    "role": {
+      "const": "reviewer",
+      "title": "Role",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "verdict": {
+      "enum": [
+        "accept",
+        "challenge",
+        "abstain"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    }
+  },
+  "required": [
+    "role",
+    "verdict"
+  ],
+  "title": "ReviewerOutput",
+  "type": "object"
+}

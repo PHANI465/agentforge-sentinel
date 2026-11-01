@@ -1,5 +1,23 @@
 # AgentForge Sentinel project checkpoint
 
+## November 1: G3B accepted; merged-commit gates in progress
+
+**G3B e23a7cde20d5d1db9202ea66a84f56c8130f3ac8 is accepted. R34-R37 are closed.**
+[Independent acceptance](reviews/G3B-e23a7cd.md): 90 Windows agent/original-probe cases
+pass, and six independent probes pass on native Ubuntu. The late-cancel probe now honors
+retirement before reuse; the real native descriptor-reuse case passes. Supplied candidate
+full gates have 539 passes and only the allowed live-Claude skip, 540 exact cases.
+
+Codex is integrating the exact candidate automatically, preserving its history. Final
+Windows strict/frontend/browser and native backend checks will be tied to the merged
+commit; do not treat candidate reports as those integration results. G3C has not started.
+The next task is its additive trace contract/API, followed by UI only after contract review.
+Manual-evaluator least privilege and a populated workflow backup remain follow-ups. Earlier
+unexplained failures and their unchanged assertions remain disclosed. No live model,
+remote/push/deployment or new spending; the original Cursor edits remain untouched.
+See [the current overview](artifacts/AgentForge_Sentinel_Overview_and_Remaining_Work.md)
+and [November 1 checkpoint](artifacts/AgentForge_Sentinel_Session_2026-11-01.md).
+
 ## October31 corrected G3B reviewed: R34-R36 closed; R37 ownership pending
 
 Candidate **b74473e820ae95effbd165eaad4e5faf974115d0** closes the original R34-R36 behaviors:

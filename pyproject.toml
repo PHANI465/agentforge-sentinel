@@ -28,7 +28,7 @@ ml = [
 [tool.setuptools]
 # sentinel lives under src/; the C03/C04 packages the model scorer needs stay at the root.
 package-dir = { "" = "src", "ml" = "ml", "data_pipeline" = "data_pipeline" }
-packages = ["sentinel", "sentinel.contracts", "sentinel.db", "ml", "data_pipeline"]
+packages = ["sentinel", "sentinel.agents", "sentinel.contracts", "sentinel.db", "ml", "data_pipeline"]
 
 [tool.setuptools.package-data]
 "sentinel.db" = ["migrations/*.sql"]

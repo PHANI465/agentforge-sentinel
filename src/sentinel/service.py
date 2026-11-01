@@ -124,11 +124,23 @@ class Sentinel:
     clock: Callable[[], datetime] = utc_now
     metrics: Metrics | None = None
     scorer: object = None  # RuleScorer by default; set once by the operator config
+    # G3B: the workflow coordinator's monotonic clock (ms) and per-process agent leases.
+    monotonic: Callable[[], float] | None = None
+    capacity: object = None
 
     def __post_init__(self):
         if self.scorer is None:
             from sentinel.scorers import RuleScorer
             self.scorer = RuleScorer()
+        from sentinel.agents.budget import monotonic_ms
+        from sentinel.agents.capacity import AgentCapacity
+        from sentinel.contracts.agents import WorkflowLimits
+        if self.monotonic is None:
+            self.monotonic = monotonic_ms
+        if self.capacity is None:
+            limits = getattr(self.investigator, "limits", WorkflowLimits())
+            self.capacity = AgentCapacity(limits.max_live_workflows_per_process,
+                                          limits.max_outstanding_calls_per_process)
 
     def _event(self, event: str, **fields) -> None:
         emit(LOG, event, logging.WARNING if event != "approval_expired" else logging.INFO,
@@ -252,7 +264,8 @@ class Sentinel:
             id=case_id, scope=ctx.scope, alert_id=alert.id, revision=1, state="open",
             pins=CasePins(dataset=scoring.DATASET, scorer=scorer.scorer,
                           threshold_policy=scorer.threshold_policy, policy=scoring.ACTION_POLICY,
-                          agent_config=self.investigator.config, tool_config=scoring.TOOL_PROFILE,
+                          agent_config=self.investigator.config,
+                          tool_config=self._tool_profile(),
                           evidence_snapshot_sha256=evidence_snapshot_digest(evidence)),
             evidence_ids=tuple(item.id for item in evidence), created_at=now, updated_at=now)
         conn.execute("INSERT INTO cases (id, tenant_id, session_id, alert_id, revision, state,"
@@ -377,6 +390,10 @@ class Sentinel:
         digest = evidence_content_digest(EvidenceItem(**draft))
         return EvidenceItem(**{**draft, "content_sha256": digest})
 
+    def _tool_profile(self):
+        """The pinned tool profile: the workflow's read tools, else the no-tools profile."""
+        return getattr(self.investigator, "tool_profile", scoring.TOOL_PROFILE)
+
     def _ingest_result(self, conn, ctx, txn_id, *, replayed: bool) -> dict:
         tenant, session = _scoped(ctx)
         row = conn.execute(
@@ -411,25 +428,30 @@ class Sentinel:
 
     def get_case(self, ctx: TrustedContext, case_id: uuid.UUID) -> dict:
         _require(ctx, "read_case")
-        tenant, session = _scoped(ctx)
         with db.connect(self.database_url) as conn:
-            case = self._case(conn, ctx, case_id)
-            alert = conn.execute("SELECT body FROM alerts WHERE id = %s", (case.alert_id,)
-                                 ).fetchone()["body"]
-            txn = conn.execute("SELECT body FROM transactions WHERE id = %s",
-                               (alert["transaction_id"],)).fetchone()["body"]
-            scored = conn.execute("SELECT body FROM scoring_outcomes WHERE transaction_id = %s",
-                                  (alert["transaction_id"],)).fetchone()
-            runs = conn.execute(
-                "SELECT body, finding FROM agent_runs WHERE case_id = %s AND tenant_id = %s"
-                " AND session_id = %s ORDER BY started_at", (case.id, tenant, session)).fetchall()
-            intents = conn.execute(
-                "SELECT i.id, i.body, i.intent_sha256, ap.body AS approval, sa.body AS action"
-                " FROM action_intents i LEFT JOIN approvals ap ON ap.intent_id = i.id"
-                " LEFT JOIN simulated_actions sa ON sa.approval_id = ap.id"
-                " WHERE i.case_id = %s AND i.tenant_id = %s AND i.session_id = %s"
-                " ORDER BY i.case_revision", (case.id, tenant, session)).fetchall()
-            evidence = self._rows(conn, ctx, "evidence_items", case.id)
+            return self._case_detail(conn, ctx, case_id)
+
+    def _case_detail(self, conn, ctx: TrustedContext, case_id) -> dict:
+        """CaseDetail over `conn` or a bounded transaction: every historical run of the case,
+        oldest first, exactly as v1.1 defines; nothing is filtered by workflow."""
+        tenant, session = _scoped(ctx)
+        case = self._case(conn, ctx, case_id)
+        alert = conn.execute("SELECT body FROM alerts WHERE id = %s", (case.alert_id,)
+                             ).fetchone()["body"]
+        txn = conn.execute("SELECT body FROM transactions WHERE id = %s",
+                           (alert["transaction_id"],)).fetchone()["body"]
+        scored = conn.execute("SELECT body FROM scoring_outcomes WHERE transaction_id = %s",
+                              (alert["transaction_id"],)).fetchone()
+        runs = conn.execute(
+            "SELECT body, finding FROM agent_runs WHERE case_id = %s AND tenant_id = %s"
+            " AND session_id = %s ORDER BY started_at, seq", (case.id, tenant, session)).fetchall()
+        intents = conn.execute(
+            "SELECT i.id, i.body, i.intent_sha256, ap.body AS approval, sa.body AS action"
+            " FROM action_intents i LEFT JOIN approvals ap ON ap.intent_id = i.id"
+            " LEFT JOIN simulated_actions sa ON sa.approval_id = ap.id"
+            " WHERE i.case_id = %s AND i.tenant_id = %s AND i.session_id = %s"
+            " ORDER BY i.case_revision", (case.id, tenant, session)).fetchall()
+        evidence = self._rows(conn, ctx, "evidence_items", case.id)
         return {
             "case": case.model_dump(mode="json"), "alert": alert, "transaction": txn,
             "scoring": scored["body"] if scored else None, "evidence": evidence,
@@ -516,6 +538,9 @@ class Sentinel:
 
     def investigate(self, ctx: TrustedContext, case_id: uuid.UUID, expected_revision: int,
                     ) -> dict:
+        from sentinel.agents.coordinator import Workflow, run_workflow
+        if isinstance(self.investigator, Workflow):  # SENTINEL_INVESTIGATOR=three-role
+            return run_workflow(self, ctx, case_id, expected_revision)
         run, view = self.begin_investigation(ctx, case_id, expected_revision)
         finding, failure = self._run_investigator(run, view)
         self.finish_investigation(ctx, run, finding, failure)
@@ -556,10 +581,18 @@ class Sentinel:
                 if case.revision != expected_revision:
                     raise ServiceError("stale_case_revision", 409)
                 busy = case.state == "investigating"
-                # Recovery or expiry (if any) commits with this block; the client re-reads.
-                recovered = busy and self._recover_lost_run(conn, ctx, case, now)
+                # A running three-role workflow is recovered by its own bounded transaction
+                # after this one ends (R34); a single-investigator run, or an expiry,
+                # commits with this block. Either way the client re-reads.
+                from sentinel.agents.coordinator import running_workflow
+                workflow = busy and running_workflow(conn, ctx, case.id) is not None
+                recovered = busy and not workflow and self._recover_lost_run(conn, ctx, case,
+                                                                             now)
                 expired = (case.state == "awaiting_approval"
                            and self._expire_lapsed_approval(conn, ctx, case, now) is not None)
+            if workflow:
+                from sentinel.agents.coordinator import recover_workflow_bounded
+                recovered = recover_workflow_bounded(self, ctx, case.id)
             if busy:
                 raise ServiceError("investigation_recovered" if recovered
                                    else "investigation_in_progress", 409)
@@ -576,7 +609,8 @@ class Sentinel:
                 raise ServiceError("stale_case_revision", 409)
             if case.state != "open":
                 raise ServiceError("case_not_investigable", 409)
-            if case.pins.agent_config != self.investigator.config:
+            if (case.pins.agent_config != self.investigator.config
+                    or case.pins.tool_config != self._tool_profile()):
                 raise ServiceError("stale_agent_config", 409)
             evidence = tuple(EvidenceItem.model_validate(body)
                              for body in self._rows(conn, ctx, "evidence_items", case.id))
@@ -625,28 +659,35 @@ class Sentinel:
                          " finding = %s, body = %s WHERE id = %s",
                          (now, _dump(finding), _dump(done), run.id))
             awaiting = self._transition(conn, case, "awaiting_approval", now)
-            txn_row = conn.execute(
-                "SELECT t.body FROM transactions t JOIN alerts a ON a.transaction_id = t.id"
-                " WHERE a.id = %s", (case.alert_id,)).fetchone()
-            txn = Transaction.model_validate(txn_row["body"])
-            if finding.operation == "simulated_hold":
-                parameters = HoldParameters(operation="simulated_hold", transaction_id=txn.id,
-                                            amount=txn.amount)
-            else:
-                parameters = EscalateParameters(operation="escalate", transaction_id=txn.id,
-                                                reason_code=finding.reason_code)
-            intent = ActionIntent(
-                id=uuid.uuid4(), scope=ctx.scope, case_id=case.id,
-                case_revision=awaiting.revision,
-                evidence_snapshot_sha256=case.pins.evidence_snapshot_sha256,
-                policy=case.pins.policy, parameters=parameters)
-            conn.execute("INSERT INTO action_intents (id, tenant_id, session_id, case_id,"
-                         " case_revision, agent_run_id, intent_sha256, body)"
-                         " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                         (intent.id, *_scoped(ctx), case.id, awaiting.revision, run.id,
-                          intent_digest(intent), _dump(intent)))
+            self._build_intent(conn, ctx, awaiting, run.id, finding)
             self._audit(conn, ctx, awaiting, uuid.uuid4(), run.principal_id, "agent",
                         "investigation_completed", "success", now)
+
+    def _build_intent(self, conn, ctx, awaiting: Case, run_id, finding: InvestigationFinding
+                      ) -> ActionIntent:
+        """The server builds exact action parameters from stored records (never from agent
+        output beyond the enumerated operation and reason)."""
+        txn_row = conn.execute(
+            "SELECT t.body FROM transactions t JOIN alerts a ON a.transaction_id = t.id"
+            " WHERE a.id = %s", (awaiting.alert_id,)).fetchone()
+        txn = Transaction.model_validate(txn_row["body"])
+        if finding.operation == "simulated_hold":
+            parameters = HoldParameters(operation="simulated_hold", transaction_id=txn.id,
+                                        amount=txn.amount)
+        else:
+            parameters = EscalateParameters(operation="escalate", transaction_id=txn.id,
+                                            reason_code=finding.reason_code)
+        intent = ActionIntent(
+            id=uuid.uuid4(), scope=ctx.scope, case_id=awaiting.id,
+            case_revision=awaiting.revision,
+            evidence_snapshot_sha256=awaiting.pins.evidence_snapshot_sha256,
+            policy=awaiting.pins.policy, parameters=parameters)
+        conn.execute("INSERT INTO action_intents (id, tenant_id, session_id, case_id,"
+                     " case_revision, agent_run_id, intent_sha256, body)"
+                     " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                     (intent.id, *_scoped(ctx), awaiting.id, awaiting.revision, run_id,
+                      intent_digest(intent), _dump(intent)))
+        return intent
 
     def _fail_run(self, conn, ctx, case, run, code, now) -> None:
         failed = AgentRun.model_validate({**run.model_dump(), "status": "failed",
@@ -658,7 +699,13 @@ class Sentinel:
                     "investigation_completed", "failure", now)
 
     def _recover_lost_run(self, conn, ctx, case, now) -> bool:
-        """Reopen a case whose run outlived its budget, e.g. after a server crash."""
+        """Reopen a case whose run outlived its budget, e.g. after a server crash. A running
+        three-role workflow is recovered by its own deadline, with or without a running role
+        (G3A-design section 6.1), under a fresh bounded budget."""
+        from sentinel.agents.coordinator import recover_workflow
+        recovered = recover_workflow(self, conn, ctx, case, now)
+        if recovered is not None:
+            return recovered
         row = conn.execute("SELECT body, started_at FROM agent_runs WHERE case_id = %s"
                            " AND status = 'running'", (case.id,)).fetchone()
         if row is None:

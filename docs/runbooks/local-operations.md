@@ -100,7 +100,7 @@ uv run --locked python scripts/local_stack.py restore FILE --database NAME   # A
 ```
 
 `tests/test_backup_restore.py` round-trips a populated database, including C07's `account_profiles` and `fraud_disclosures`, and checks:
-- equal row counts in **all 14 current tables**, checked against the live schema inventory;
+- equal row counts in **all 16 current tables** (including the G3B `agent_workflows` and `agent_steps`), checked against the live schema inventory;
 - no pending migrations;
 - audit `DELETE` rejected;
 - the restored case is served to the same token.
