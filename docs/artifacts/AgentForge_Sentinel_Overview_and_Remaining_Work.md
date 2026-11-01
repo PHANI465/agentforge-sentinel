@@ -1,5 +1,9 @@
 # AgentForge Sentinel: project overview and remaining work
 
+G3C-A update: candidate 16b67fd is implemented on its task branch, with 23 independent
+contract checks passing. Final gates, independent trace/Postgres review and acceptance
+are pending; the trace UI waits. [Current checkpoint](AgentForge_Sentinel_Session_2026-11-01.md).
+
 Current November 1, 2026 checkpoint: accepted G3B is integrated at a7c71f5 and passes full
 Windows/native Ubuntu backend gates, Windows frontend and browser checks. See the
 [release record](../releases/G3B-main-integration-2026-11-01.md) and
@@ -76,8 +80,8 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Give Claude the [G3C-A trace API prompt](../prompts/CLAUDE_G3C_TRACE_API.md), using Opus 5.5 / High, in a new worktree from current main.
-2. Return the tested SHA to Codex. The trace UI follows acceptance of that exact versioned contract.
+1. Let Claude finish the [existing G3C-A gates](../prompts/CLAUDE_G3C_GATE_COMPLETION.md), using Opus 5.5 / High, on candidate 16b67fd; keep the tracked tree unchanged during checks.
+2. Return the full final report to Codex for independent trace/Postgres review and contract acceptance. The trace UI follows that acceptance.
 3. Run agent quality evaluations only after implementation/configuration/protocol are frozen
    and safe evaluation connections are prepared. Deterministic fixtures are not evidence
    that three language-model agents improve fraud investigations.

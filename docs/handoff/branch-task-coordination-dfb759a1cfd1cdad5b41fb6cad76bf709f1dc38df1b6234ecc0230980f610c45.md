@@ -1,12 +1,11 @@
 # Handoff: task/coordination
 
-- Current task: accepted G3B integration and verified release; dispatch G3C-A trace API.
-- Tool/worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination.
+- Current task: preliminary G3C-A review while owner final gates run; no acceptance/merge yet.
+- Tool/worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination; isolated review task/codex-g3c-review at exact 16b67fd.
 - Updated: November 1, 2026, America/Phoenix.
-- Current state: R34-R37 closed; integrated a7c71f5 passes Windows/native full gates (539+1), frontend44 and browser19. G3C unstarted.
-- Independently reviewed candidate: e23a7cd; 90 focused Windows passes, six native probes; corrected probe still fails on old source.
-- Final evidence: canonical .agent/g3b-integration/ and native /home/sentinel/g3b-integration-reports/. Final publication is docs-only with identical tested code.
-- Next: docs/prompts/CLAUDE_G3C_TRACE_API.md, Opus 5.5 / High, new current-main worktree. Preserve original Cursor edits and sole-owner metadata.
+- Current state: 23 independent contract tests and Ruff pass; four HTTP validation-order scenarios checked. Final owner gates and independent trace/Postgres review remain pending.
+- App baseline: accepted G3B a7c71f5; no G3C code is merged. Cursor's seven original edits remain untouched.
+- Next: docs/prompts/CLAUDE_G3C_GATE_COMPLETION.md, Opus 5.5 / High, existing candidate worktree; no duplicate full run or UI task.
 
 The earlier sections below are chronological history, not current task status.
 

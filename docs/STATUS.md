@@ -1,5 +1,24 @@
 # Project status
 
+## November 1: G3C-A delivered; final gates and acceptance pending
+
+Candidate **16b67fd0cd09cdd08bbfa64a159035a7a188bf5b** adds the trace read API and HTTP v1.2
+on its task branch. **It is not accepted, frozen or merged. G3C-B waits.** Main still runs
+accepted G3B a7c71f5. The owner Windows strict run was active at this checkpoint; native
+and compatibility evidence is not yet complete. No duplicate full run was launched.
+
+[Preliminary review](reviews/G3C-A-16b67fd.md): 23 independent pure contract tests and
+Ruff pass; four HTTP validation scenarios expose a small documentation-order mismatch,
+not an authorization bypass. Independent trace/Postgres checks remain for final review.
+The candidate's current full collection is 581 cases, not a claimed pass count. Its ignored
+Linux runner must fail setup/aggregate statuses correctly; final echo 0 alone proves nothing.
+
+[Continue the existing Claude gates](prompts/CLAUDE_G3C_GATE_COMPLETION.md), Opus 5.5 / High,
+keeping the tracked candidate unchanged unless a real failure requires a new tested commit.
+Return complete exact-commit Windows/native/frontend/browser evidence; Codex then completes
+review before freezing v1.2 and assigning the UI. No model calls, merge, remote or deployment.
+See [current session](artifacts/AgentForge_Sentinel_Session_2026-11-01.md).
+
 ## November 1: G3B integrated and verified; trace API is next
 
 **G3B is accepted and integrated at a7c71f553328b5872df53039daf572ad3b8fda81. R34-R37 are

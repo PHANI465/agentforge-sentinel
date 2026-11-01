@@ -1,5 +1,27 @@
 # AgentForge Sentinel November 1 checkpoint
 
+## Latest checkpoint: G3C-A candidate delivered, gates in progress
+
+Candidate 16b67fd0cd09cdd08bbfa64a159035a7a188bf5b implements the read-only trace route
+and a new HTTP v1.2 response. It is not yet accepted or integrated. The Windows owner
+gate was running at this checkpoint; native Ubuntu and frontend/browser final results
+remain pending. Codex independently passed 23 pure contract tests and Ruff and checked
+four HTTP validation-order scenarios. No independent new Postgres suite or duplicate
+full gate was run while Claude's full run was active.
+
+The read model distinguishes missing data, running/overdue/recovered workflows and role
+attempts versus provider calls. Legacy v1/v1.1 bytes, agents-1.0, G3B, UI, migrations,
+model/data and dependency files remain preserved. A small permission/validation-order
+documentation correction is queued for integration. The ignored native runner needs
+fail-closed setup and real status aggregation before its wrapper can be trusted as a gate.
+
+Next: finish [the existing Claude gates](../prompts/CLAUDE_G3C_GATE_COMPLETION.md), using
+Opus 5.5 / High, preserving the tracked candidate. Return its complete exact-commit report;
+Codex then finishes independent DB review and freezes the contract before the trace UI.
+See [preliminary review](../reviews/G3C-A-16b67fd.md). Main's tested application remains
+G3B a7c71f5; no G3C UI, live comparison, push or hosting is complete. The earlier entries
+below describe the accepted G3B release and its original G3C dispatch, not a new dispatch.
+
 ## Summary first
 
 The local three-role backend is **accepted and integrated**. R34-R37 are closed.
