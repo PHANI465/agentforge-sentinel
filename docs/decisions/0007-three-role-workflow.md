@@ -34,7 +34,7 @@ G3 needs evidence analyst, investigator and reviewer roles behind a deterministi
 ## Review corrections R34-R36 (G3B-391effe review)
 
 6. **Finite client waits (R34).** A server timeout or a cancel request does not make a blocked client call return, so item 1's watchdog alone was not a bound.
-   - Every coordinator statement, COMMIT and rollback now runs on a short-lived operation thread (`budget.bounded_call`). The caller waits at most the transaction's remaining budget, never past the phase end. For COMMIT, the cancel request goes out 150 ms (at most half the budget) before that end, so a server that honours it can still answer with an error (a known rollback).
+   - Every coordinator statement, COMMIT and rollback now runs on a short-lived operation thread (`budget.bounded_call`). The caller waits at most the transaction's remaining budget, never past the phase end. For COMMIT, the cancel request goes out 1 s (at most half the budget) before that end, so a slow cancel connection still lands in time. Once the request has completed, acknowledged or failed, the reply is awaited at most 150 ms more. A server that honours the cancel answers with an error, a known rollback. Native Ubuntu showed why the lead matters: with a 150 ms lead, the suite intermittently turned a known rollback into an unknown outcome.
    - Unanswered at the budget:
      - an unanswered COMMIT is `CommitUncertain` (409 `investigation_outcome_unknown`), never a rollback or success;
      - an unanswered statement is `BudgetExhausted`, because COMMIT was never sent.

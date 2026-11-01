@@ -89,6 +89,8 @@ class Silent:
         self.cancelled.set()
         if self.cancel_reply == "failure":
             raise OSError("test-owned failed cancellation")
+        if self.cancel_reply == "unfinished":  # the cancel request itself gets no answer
+            self.release.wait(timeout)
 
     def close(self):
         self.closed = True
@@ -100,7 +102,7 @@ def silent_transaction(conn, budget_ms=1000):
     return budget.BoundedTransaction(conn, deadline, "terminal", budget_ms)
 
 
-@pytest.mark.parametrize("cancel_reply", ["failure", "ack"])
+@pytest.mark.parametrize("cancel_reply", ["failure", "ack", "unfinished"])
 def test_commit_without_a_reply_ends_at_its_budget(cancel_reply):
     conn = Silent("commit", cancel_reply)
     tx = silent_transaction(conn)
@@ -110,7 +112,10 @@ def test_commit_without_a_reply_ends_at_its_budget(cancel_reply):
             tx.commit()
         elapsed = time.monotonic() - started
         assert conn.cancelled.is_set()  # the cancel request went out inside the budget ...
-        assert 0.95 <= elapsed < 1.2  # ... and the wait ended at the budget regardless
+        if cancel_reply == "unfinished":  # ... and the wait ended at the budget, or ...
+            assert 0.95 <= elapsed < 1.2
+        else:  # ... shortly after a completed cancel request (sent at half this budget)
+            assert 0.5 <= elapsed < 0.5 + budget.COMMIT_CANCEL_REPLY_MS / 1000 + 0.15
         assert not conn.release.is_set() and budget.QUARANTINE.holds(conn)
         assert not conn.closed_by.is_set()  # nobody closes it under the blocked call
     finally:
@@ -207,11 +212,7 @@ class StallingRelay:
         except OSError:
             pass
         finally:
-            for sock in (pair["client"], pair["server"]):
-                try:
-                    sock.close()
-                except OSError:
-                    pass
+            _end(pair["client"], pair["server"])
 
     def withhold(self):
         with self.lock:
@@ -229,18 +230,28 @@ class StallingRelay:
 
     def close(self):
         self.stopped = True
-        self.listener.close()
+        _end(self.listener)
         with self.lock:
             pairs, threads = list(self.pairs), list(self.threads)
         for pair in pairs:
-            for sock in (pair["client"], pair["server"]):
-                try:
-                    sock.close()
-                except OSError:
-                    pass
+            _end(pair["client"], pair["server"])
         for thread in threads:
             thread.join(5)
         assert not any(t.is_alive() for t in threads)
+
+
+def _end(*socks):
+    """Shut down, then close: on Linux, close() alone does not wake a thread blocked in
+    recv() or accept() on the same socket."""
+    for sock in socks:
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        try:
+            sock.close()
+        except OSError:
+            pass
 
 
 @pytest.fixture

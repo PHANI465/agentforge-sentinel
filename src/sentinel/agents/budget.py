@@ -40,8 +40,11 @@ MIN_DB_MS = 100
 MIN_TERMINAL_START_MS = 1000
 LIBPQ_MIN_EFFECTIVE_S = 2
 # COMMIT's cancel request is sent this long (at most half the COMMIT budget) before the
-# client stops waiting, so that a server honouring it can answer inside the budget.
-COMMIT_CANCEL_LEAD_MS = 150
+# budget ends, so a slow cancel connection still lands inside it. Once the request has
+# completed (acknowledged or failed), the reply is awaited at most COMMIT_CANCEL_REPLY_MS
+# more, and never past the budget.
+COMMIT_CANCEL_LEAD_MS = 1000
+COMMIT_CANCEL_REPLY_MS = 150
 
 
 def monotonic_ms() -> float:
@@ -131,7 +134,7 @@ def _shutdown_socket(conn) -> None:
 def _cancel(conn, timeout_s: float) -> None:
     try:
         conn.cancel_safe(timeout=timeout_s)
-    except Exception:  # the outcome is decided by the reply, or its absence, at the budget
+    except Exception:  # the outcome is decided by the reply, or its absence
         pass
 
 
@@ -140,14 +143,16 @@ def bounded_call(conn, operation: Callable, wait_ms: float,
     """Run `operation` on its own thread and wait at most `wait_ms` for it.
 
     With `cancel_after_ms`, a cancel request (itself bounded by the wait left) is sent if the
-    operation is still running then; failed or acknowledged, the wait still ends at
-    `wait_ms`. Unanswered by then, the operation is abandoned: the connection is quarantined
-    and its socket shut down, and NoReply is raised. The operation thread then owns the
+    operation is still running then. Once that request completes, acknowledged or failed,
+    the reply is awaited at most COMMIT_CANCEL_REPLY_MS more; the wait never passes
+    `wait_ms`. Unanswered, the operation is abandoned: the connection is quarantined and
+    its socket shut down, and NoReply is raised. The operation thread then owns the
     connection and closes it when the call returns."""
-    state = {"abandoned": False}
+    state = {"abandoned": False, "cancelled_at": None}
     box: dict = {}
     done = threading.Event()
     lock = threading.Lock()
+    wake = threading.Condition(lock)
 
     def work():
         try:
@@ -157,6 +162,7 @@ def bounded_call(conn, operation: Callable, wait_ms: float,
         with lock:
             done.set()
             abandoned = state["abandoned"]
+            wake.notify_all()
         if abandoned:
             try:
                 conn.close()
@@ -169,13 +175,27 @@ def bounded_call(conn, operation: Callable, wait_ms: float,
     def left_s() -> float:
         return max(wait_ms / 1000 - (time.monotonic() - started), 0.0)
 
+    def cancel(timeout_s: float):
+        _cancel(conn, timeout_s)
+        with lock:
+            state["cancelled_at"] = time.monotonic()
+            wake.notify_all()
+
+    def wait_left_s() -> float:  # called holding the lock
+        left = left_s()
+        if state["cancelled_at"] is not None:
+            left = min(left, COMMIT_CANCEL_REPLY_MS / 1000
+                       - (time.monotonic() - state["cancelled_at"]))
+        return left
+
     threading.Thread(target=work, name="sentinel-sql", daemon=True).start()
     if cancel_after_ms is not None and not done.wait(max(cancel_after_ms, 0) / 1000) \
             and left_s() > 0:
-        threading.Thread(target=_cancel, args=(conn, left_s()), name="sentinel-sql-cancel",
+        threading.Thread(target=cancel, args=(left_s(),), name="sentinel-sql-cancel",
                          daemon=True).start()
-    done.wait(left_s())
     with lock:
+        while not done.is_set() and wait_left_s() > 0:
+            wake.wait(wait_left_s())
         if not done.is_set():
             state["abandoned"] = True
             QUARANTINE.hold(conn)
@@ -322,8 +342,9 @@ class BoundedTransaction:
         self._arm()
         # PostgreSQL disables statement_timeout before commit processing (deferred triggers,
         # the commit record), so COMMIT is bounded on the client: a cancel request goes out
-        # shortly before the budget ends, and the wait ends at the budget whatever becomes of
-        # that request. A server error reply is a known rollback; no reply is uncertain.
+        # before the budget ends, and the wait ends shortly after that request completes, or
+        # at the budget, whatever becomes of it. A server error reply is a known rollback; no
+        # reply is uncertain.
         remaining = max(self.remaining_ms(), 0)
         self.done = True
         try:

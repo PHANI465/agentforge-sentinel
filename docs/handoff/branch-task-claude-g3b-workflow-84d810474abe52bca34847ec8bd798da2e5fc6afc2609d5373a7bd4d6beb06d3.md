@@ -11,7 +11,7 @@
 
 - **R34, finite client waits:**
   - `budget.bounded_call` runs every statement, COMMIT and rollback on an operation thread, and the caller waits at most the remaining transaction budget;
-  - COMMIT's cancel request goes 150 ms before that end, and an unanswered COMMIT is `CommitUncertain`;
+  - COMMIT's cancel request goes 1 s (at most half the budget) before that end, with at most 150 ms more for the reply once the request completes; an unanswered COMMIT is `CommitUncertain`;
   - **quarantine:** an abandoned connection is never reused; its operation thread closes it, its socket is shut down, and admission is refused while the quarantine is at the limit;
   - **recovery owns its transaction:** `owned=False` is gone, and `begin_investigation` defers to `recover_workflow_bounded`.
 - **R35:** the full call budget is rechecked after the start record, before submission. If it no longer fits, the unused slot is released and the run fails `budget_exhausted` with no usage. The wait is capped by the working time left.
