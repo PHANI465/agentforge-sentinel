@@ -1,5 +1,9 @@
 # Claude G3C-A: finish existing gates at 16b67fd
 
+Completed: exact 16b67fd is accepted under [the final review](../reviews/G3C-A-16b67fd.md).
+This assignment is historical. Continue with [G3C-B](CLAUDE_G3C_TRACE_UI.md) in a new
+worktree from its named accepted dependency, preserving the tested API branch.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**, continuing the current task.
 Use it for diagnosing real gate failures and preserving contract/security semantics; this
 is not a new implementation assignment or a request for provider calls.

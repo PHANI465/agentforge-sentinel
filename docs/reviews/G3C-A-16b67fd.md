@@ -1,72 +1,77 @@
-# G3C-A preliminary review: 16b67fd
+# G3C-A acceptance: HTTP v1.2 at 16b67fd
 
-November 1, 2026 (America/Phoenix). Candidate **16b67fd0cd09cdd08bbfa64a159035a7a188bf5b**
-is a clean direct child of accepted main b69b8bc. Owner-only author/committer metadata and
-no trailers are verified. **Not accepted or frozen; final gates and independent database
-review remain pending. G3C-B must wait.** Main's application remains accepted G3B a7c71f5.
+November 1, 2026 (America/Phoenix). **Accept and freeze**
+**16b67fd0cd09cdd08bbfa64a159035a7a188bf5b** for the trace read API/contract.
+No blocking findings remain in the reviewed scope. Decision 0008's new InvestigationTrace
+read model, the v1.2 revision and the two live-schema assertion updates are accepted.
+The frozen agents-1.0 TraceSummary is not silently changed into this response.
 
-## Scope checked so far
+This is an **accepted dependency on its preserved task branch**, not a main-runtime merge.
+Main application remains G3B a7c71f5; G3C-B starts from exact 16b67fd and API/UI integration
+follows UI review. No full integrated-main gate or trace UI result is claimed here.
 
-Read the complete projection and response types, route integration, contract revision,
-selection/recovery semantics and focused-test coverage. The read uses one REPEATABLE READ
-READ ONLY transaction, scope predicates and typed projection; workflow ordering uses the
-monotonic case revision and prior workflows remain selectable. Analyst checks and provider
-submission are not invented. Running counters are null; terminal counts are stored values.
-Legacy workflows, role repeats/revisions and incomplete recovery have distinct projections.
-The different HTTP read DTO is justified without modifying frozen agents-1.0 types.
+## Independent review and checks
 
-No blocking implementation finding has emerged from this limited review. This is not a
-completed independent database review or permission to merge. In an isolated checkout with
-its own locked dev/ml environment, **23 contract tests pass**, Ruff passes, and four
-no-database HTTP validation-order scenarios produce the results below. Current full test
-collection is **581 cases**; this is a collection count, not a passing-gate claim.
+Isolated Windows checkout with its own locked dev/ml environment: **95 passed**, 174.64s,
+across trace/real-Postgres and legacy/v1.1/v1.2 HTTP tests; Ruff passes. Real HTTP auth,
+foreign-session/tenant denial, workflow selection/cap, retry/revision, zero/legacy/running/
+recovery cases, immutable reads and repeatable read during a concurrent recovery are covered.
+Native Ubuntu: **3 passed**, 21.16s, independently exercising real HTTP authorization,
+consistent snapshot during recovery and database-enforced read-only refusal.
 
-Independent Git comparisons show no changes to legacy v1/v1.1 snapshots/examples,
-agents-1.0, migrations/grants/G3B machinery, model/data/evals, UI, dependencies/lockfiles,
-CI/skip policy or checker timeout. The two live-schema assertions now target v1.2 while
-v1.1 is frozen by hash; this is a versioning change, not removed compatibility coverage.
-Claude reports 79 pre-commit focused passes; those are not independent final-commit results.
+Three extra real-Postgres probes pass on **each platform** with controlled adapters:
+partial reported usage after a failed retry (one reported, one not-applicable, two unknown),
+reported 0/0 kept distinct from null, and investigator tool-followup producing another
+attempt 1 with no invented checks on the first output. These are plumbing probes, not
+live provider/token/billing measurements. All test-owned clusters were stopped.
 
-## Low: the documented error-check order differs from framework validation
+Review confirms scoped pure projection, one read-only consistent snapshot, stable
+case-revision ordering, preserved legacy behavior, safe DTO fields, unknown data left
+unknown and no inference about current late workers. Git comparisons preserve all frozen
+v1/v1.1, agents-1.0, migrations/grants, G3B, model/data/evals, UI, locks and CI/check policy.
+Owner-only author/committer and clean exact candidate are verified; Cursor remains untouched.
 
-The table in docs/api/investigation-trace-v1.2.md puts read_case permission before UUID
-validation. With a successfully authenticated read-less session, malformed case_id or
-workflow_id returns **422 invalid_request** before the endpoint checks capabilities. A
-valid UUID returns **403 permission_denied**. Missing authentication still returns **401**,
-even with a malformed path. These four cases were exercised through the production app's
-TestClient with a controlled authentication stand-in and no database access.
+## Owner full-gate evidence verified
 
-This does not expose a case or bypass authorization. Correct the documentation ordering
-when the contract is finalized; no backend permission change is needed. Do not edit the
-candidate during its running checks just for this documentation detail. Codex can include
-the correction in the integration documentation. SETUP's active-v1.1 sentence likewise
-needs changing when v1.2 is accepted; it is still correct for current main today.
+Windows and native strict records both name clean exact 16b67fd, six passed commands.
+Their JUnit reports contain **581 cases: 580 passed, one allowed live-Claude skip, zero
+failures/errors**. Each matches its current platform collection. The native individual
+sync/strict/JUnit/HTTP/ML statuses are all 0 and ML reports reproduced:true. Its separate
+clone /home/sentinel/g3c-trace-contract is clean; the accepted a7c71f5 clone is preserved.
+These full gates are Claude's runs, not new Codex full-suite runs. Frontend 44/typecheck/
+build and baseline browser 19 are Claude-reported compatibility; no new trace UI was tested.
 
-## Verification-harness note, before native execution
+The initial native non-login attempt's 127 logs are kept under attempt1-no-path. It ran no
+checks and is not counted as a pass. Login-shell results above are the actual passing run.
+Wrapper exit 0 alone was not used as evidence; structured records and individual statuses
+were checked. Preserve fail-closed setup/aggregation in future runners.
 
-The candidate's ignored .agent/g3c/linux_gate.sh records individual statuses but uses only
-set -u. Setup failure can fall through, and the final echo normally makes the wrapper exit
-0 even if a check failed. This is not a product-source finding and does not invalidate a
-valid individual report, but **wrapper exit 0 alone is not a green gate**.
+## Frozen UI inputs and documentation addendum
 
-Before using it, fail setup immediately on wrong directory/clone/fetch/checkout, unexpected
-HEAD or a dirty tree; verify native tools and the unprivileged user. Aggregate the actual
-check statuses (including pipelines) into the final exit. Independently require strict.json
-passed at exact candidate/clean before+after with six successful checks, the matching JUnit
-allowlist, HTTP/model results and final cleanliness. An ignored runner can be corrected
-without changing the tracked candidate. Never rerun a finished suite solely to make XML.
+- Source: exact 16b67fd, contracts/http/openapi.v1.2.json, SHA-256
+  **b52f8fd4d323f59565b3e1148557cb85221b76c793377e021c32f9c877e5b053**.
+- Sixteen examples under contracts/http/examples-v1.2/; record exact per-file hashes when
+  copying into UI fixtures. The contract note is docs/api/investigation-trace-v1.2.md at
+  the dependency commit. Current raw hash/probe reports are ignored under .agent/g3c-review/16b67fd/.
+- Accepted correction to that note's error-order table: authentication failure is 401;
+  for an authenticated caller UUID validation can return 422 before the endpoint's
+  read_case check returns 403. Scope/not-found lookup follows. Four TestClient scenarios
+  with an authentication stand-in prove this; it is not a permission bypass.
+- At combined integration, correct that documentation table and SETUP's active version.
+  SETUP remains correctly active-v1.1 on current main until API/UI integration. These
+  documentation edits do not require a backend or frozen OpenAPI change.
 
-## Still required
+## Remaining limits and next task
 
-Finish the already-running Windows strict gate, then validate its own JUnit with
-ci_test_gate.py --validate-only PATH, run HTTP export and read-only ML reproduction. Run
-native Ubuntu sequentially in the separate owned g3c-trace-contract clone, preserving the
-accepted a7c71f5 checkout. Finish frontend/typecheck/build and the existing 19-browser
-compatibility suite; they do not verify a trace UI. Keep source at 16b67fd unless a real
-failure needs a new owner-authored commit; preserve failed evidence and diagnose it.
+The read has no dedicated statement timeout; public load/retention/abuse protection is not
+certified. Analyst checks and provider-submission flags are not stored; neither may be
+invented by the UI. Limits are resolved only for the current matching config, per process.
+No new UI, live comparison, final-case quality evaluation, macOS, real CI/hosting or Linux
+browser test is accepted. Earlier G3B intermittent failures remain disclosed, not diagnosed.
+Manual-evaluator least privilege, populated workflow backup and a three-role convenience
+CLI option remain separate follow-ups.
 
-Codex has deliberately not started a duplicate full backend run, another database suite
-while the owner run is active, a merge, a trace UI or a model call. After the final handoff,
-complete independent trace/real-Postgres checks and inspect all exact-commit reports
-before accepting/freezing v1.2. Current continuation:
-[Claude gate completion](../prompts/CLAUDE_G3C_GATE_COMPLETION.md).
+[Assign G3C-B](../prompts/CLAUDE_G3C_TRACE_UI.md), **Claude Opus 5.5 / High**, from exact
+16b67fd in a new worktree. Preserve existing approval/idempotency, contract bytes and
+lifecycle/secret protections. Codex reviews the UI, then integrates API/UI together.
+No provider call, paid fallback, push, remote or deployment occurred in this review.

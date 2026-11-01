@@ -1,11 +1,12 @@
 # Handoff: task/coordination
 
-- Current task: preliminary G3C-A review while owner final gates run; no acceptance/merge yet.
-- Tool/worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination; isolated review task/codex-g3c-review at exact 16b67fd.
+- Current task: G3C-A acceptance/freeze and exact-base G3C-B UI dispatch.
+- Tool/worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination; isolated review at exact 16b67fd.
 - Updated: November 1, 2026, America/Phoenix.
-- Current state: 23 independent contract tests and Ruff pass; four HTTP validation-order scenarios checked. Final owner gates and independent trace/Postgres review remain pending.
-- App baseline: accepted G3B a7c71f5; no G3C code is merged. Cursor's seven original edits remain untouched.
-- Next: docs/prompts/CLAUDE_G3C_GATE_COMPLETION.md, Opus 5.5 / High, existing candidate worktree; no duplicate full run or UI task.
+- Current state: G3C-A 16b67fd accepted/frozen, not merged. Independent 95 Windows/3 native tests and 3 extra probes each pass; both full owner 580+1 records verified against 581 current cases.
+- Main application: unchanged G3B a7c71f5; current publication is documentation only. No G3C-B implementation, live comparison or main API/UI result is claimed.
+- Next: docs/prompts/CLAUDE_G3C_TRACE_UI.md, Opus 5.5 / High, new worktree from exact accepted 16b67fd. Preserve API bytes and original Cursor checkout; Codex reviews before API/UI integration.
+- Evidence: canonical .agent/g3c-review/16b67fd/ acceptance audit, independent XML/probes and supplied exact-commit reports. Prior failed PATH logs stay in the native report directory.
 
 The earlier sections below are chronological history, not current task status.
 
@@ -310,7 +311,7 @@ The new capacity409, provisional45/150 budgets, reopen-open policy and unknown u
 resolved for revision. Protocol clarification prevents a role-specific causal claim from
 an end-to-end comparison with unequal evidence access.
 
-Prepared prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md for after the owner resumes, Opus5.5/High,
+Prepared prompts/CLAUDE_G3A_REVIEW_FOLLOWUP.md for after the owner resumes, Opus 5.5/High,
 docs only. Updated current status/queue/checkpoint/verification and session artifact.
 G3A is unaccepted/unmerged; G3B unstarted. Main application remains f091a34; last full
 backend evidence remains c8b9477. No provider/full-suite/browser calls for this review.
@@ -390,7 +391,7 @@ stand-ins. All own threads joined and clusters stopped; no survivors found.
 
 Verified supplied Windows strict clean metadata and native518+1 report against exact519-case
 collection, plus package/HTTP/ML logs. No full/browser suite rerun needed after blockers.
-Published G3B-391effe review and CLAUDE_G3B_REVIEW_FIXES prompt, Opus5.5/High. Main stays on
+Published G3B-391effe review and CLAUDE_G3B_REVIEW_FIXES prompt, Opus 5.5/High. Main stays on
 accepted code, G3A remains accepted, G3C unstarted. Candidate, native clone, accepted refs and
 Cursor's seven saved edits are preserved. Final doc/link/metadata checks recorded after
 commit; no provider, remote, push, deployment or paid action. All commits owner-only.
@@ -403,7 +404,7 @@ exports pass; owner Windows strict record verified, correct latest fix3 native53
 matches536 current cases (old519-case report was not misattributed). New deterministic
 ownership probes show late cancel crossing into a later statement on both platforms and
 native descriptor shutdown after close/reuse (all real socket endpoints owned by probe).
-Recorded R37 and prepared one focused Opus5.5/High correction prompt. No architecture
+Recorded R37 and prepared one focused Opus 5.5/High correction prompt. No architecture
 redesign or re-opening of settled R34-R36 behavior.
 
 Published living plain-language product/progress/remaining-work artifact and linked the

@@ -1,5 +1,9 @@
 # Claude G3C-A: investigation trace read contract and API
 
+Completed: exact 16b67fd is accepted under [the final review](../reviews/G3C-A-16b67fd.md).
+This assignment is historical. Continue with [G3C-B](CLAUDE_G3C_TRACE_UI.md) in a new
+worktree from its named accepted dependency, preserving the tested API branch.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. This task needs careful
 versioning, scoped evidence projection and consistent reads, rather than new orchestration.
 These settings select the coding assistant; do not call Sentinel's live provider.

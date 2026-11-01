@@ -1,5 +1,27 @@
 # Verification
 
+## November 1: G3C-A accepted and v1.2 frozen; G3C-B ready
+
+**Accept/freeze 16b67fd0cd09cdd08bbfa64a159035a7a188bf5b** for the read-only trace API and
+HTTP v1.2. [Final acceptance](reviews/G3C-A-16b67fd.md): 95 independent Windows tests,
+three native authorization/snapshot/read-only tests and three extra real-Postgres probes
+on each platform pass. Both owner full gates are verified at exact clean 16b67fd: six
+commands, 580 passes and one allowed skip, 581 cases matching current collection.
+
+This is an accepted dependency on its task branch; **G3C code is not merged into main**.
+Main's application remains G3B a7c71f5. G3C-B starts from exact 16b67fd, with the frozen
+v1.2 schema and sixteen examples. The different read DTO and frozen-v1.1 assertion updates
+are accepted. The small error-order documentation correction and SETUP version update
+are queued for combined integration, without altering the accepted OpenAPI bytes.
+
+[Next Claude assignment](prompts/CLAUDE_G3C_TRACE_UI.md): Opus 5.5 / High, a new isolated
+trace-UI worktree from the accepted API commit; one active editor. Deliver typed parsing,
+truthful partial/recovery/usage states, context-safe requests and real trace browser tests.
+The baseline 19 browser cases do not establish trace-UI coverage. API/UI main integration
+follows UI review; G3C-B has not started. No live provider, remote/push/deployment or new
+spending. Native PATH-failure evidence is retained; passing individual statuses/structured
+reports were verified, not merely a wrapper's exit. Current artifacts are updated.
+
 ## November 1: G3C-A delivered; final gates and acceptance pending
 
 Candidate **16b67fd0cd09cdd08bbfa64a159035a7a188bf5b** adds the trace read API and HTTP v1.2

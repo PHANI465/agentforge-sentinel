@@ -1,8 +1,10 @@
 # AgentForge Sentinel: project overview and remaining work
 
-G3C-A update: candidate 16b67fd is implemented on its task branch, with 23 independent
-contract checks passing. Final gates, independent trace/Postgres review and acceptance
-are pending; the trace UI waits. [Current checkpoint](AgentForge_Sentinel_Session_2026-11-01.md).
+G3C-A update: **16b67fd is accepted and HTTP v1.2 is frozen for the trace UI**. Independent
+trace/database/contract checks pass and both supplied full gates are verified (580+1).
+The accepted API stays on its branch; main still runs G3B. Next is the
+[G3C-B trace UI](../prompts/CLAUDE_G3C_TRACE_UI.md), starting from exact 16b67fd.
+[Current checkpoint](AgentForge_Sentinel_Session_2026-11-01.md).
 
 Current November 1, 2026 checkpoint: accepted G3B is integrated at a7c71f5 and passes full
 Windows/native Ubuntu backend gates, Windows frontend and browser checks. See the
@@ -69,7 +71,7 @@ Use accepted capabilities and these concrete next deliverables to track progress
 
 | Order | Remaining deliverable | What will demonstrate completion |
 | --- | --- | --- |
-| 1 | G3C trace API and analyst UI | Freeze the additive trace contract, then show roles, tools, citations, claim checks, disagreement, budgets and incomplete recovery honestly |
+| 1 | G3C trace API and analyst UI | API/contract accepted at 16b67fd; build the trace panel, real browser tests and reviewed API/UI integration |
 | 2 | G3D measured agent evaluation | Safe runtime-role evaluator; separately authored final synthetic cases; actual one-live vs three-role comparisons under the frozen protocol, human rubric and reported failures/latency/observable usage |
 | 3 | Deeper data-analyst workspace | Curated read-only queries, data quality, financial reconciliation, cohorts/time trends, error slices and exports checked against known answers |
 | 4 | Public demo and operational release | Recorded replay, authorized staging/remote/real CI, measured capacity, secret-safe visitor BYOK if included, session isolation, retention/cleanup and deployment/run instructions; README and short demo video |
@@ -80,8 +82,8 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Let Claude finish the [existing G3C-A gates](../prompts/CLAUDE_G3C_GATE_COMPLETION.md), using Opus 5.5 / High, on candidate 16b67fd; keep the tracked tree unchanged during checks.
-2. Return the full final report to Codex for independent trace/Postgres review and contract acceptance. The trace UI follows that acceptance.
+1. Give Claude the [G3C-B trace UI prompt](../prompts/CLAUDE_G3C_TRACE_UI.md), using Opus 5.5 / High, in its new worktree from accepted 16b67fd.
+2. Return the tested UI commit and browser results to Codex for review, then combined API/UI integration. Do not change the accepted API or edit the preserved worktrees.
 3. Run agent quality evaluations only after implementation/configuration/protocol are frozen
    and safe evaluation connections are prepared. Deterministic fixtures are not evidence
    that three language-model agents improve fraud investigations.

@@ -1,6 +1,38 @@
 # AgentForge Sentinel November 1 checkpoint
 
-## Latest checkpoint: G3C-A candidate delivered, gates in progress
+## Latest checkpoint: trace API accepted; trace UI is next
+
+**G3C-A 16b67fd0cd09cdd08bbfa64a159035a7a188bf5b is accepted and HTTP v1.2 frozen**.
+The independent final review passed 95 Windows tests and three native tests for real HTTP
+authorization, repeatable read during recovery and database read-only enforcement. Three
+additional Postgres probes passed on each platform: partial usage reporting with unknown
+attempts, reported 0/0 remaining zero, and tool-followup as another attempt 1 rather than
+a provider retry. No live provider was used. Both supplied full gates were verified at
+clean exact 16b67fd: 580 passes, one allowed skip, 581 cases and all six commands passed.
+The native non-login PATH failure is retained as setup evidence, not counted as success.
+
+The accepted dependency remains on its task branch. **No G3C application code has been
+merged into main**; its current runtime is still accepted G3B a7c71f5. G3C-B uses exact
+16b67fd so it has the real trace API. Contract SHA-256:
+b52f8fd4d323f59565b3e1148557cb85221b76c793377e021c32f9c877e5b053.
+The sixteen examples and all earlier frozen assets stay unchanged.
+
+Next: [G3C-B trace UI](../prompts/CLAUDE_G3C_TRACE_UI.md), Claude Opus 5.5 / High, in a
+new isolated worktree. Show the stored roles/tools/claims, partial data, history and
+unconfirmed recovery honestly; preserve human approval and request/session isolation.
+New real browser tests are required; the old 19 cover only existing UI. Codex reviews
+before combined API/UI integration. Two small doc corrections are queued for that merge:
+UUID-validation/permission-check ordering and SETUP's active HTTP version. No backend
+contract change is requested. [Final API acceptance](../reviews/G3C-A-16b67fd.md).
+
+G3C-B has not started; no trace UI or live agent-quality result is complete. The broader
+[overview and remaining work](AgentForge_Sentinel_Overview_and_Remaining_Work.md) stays
+current. Manual-evaluator least privilege, populated workflow backup and a three-role
+convenience CLI remain follow-ups. Original Cursor files and accepted branches are
+preserved. New commits use only the owner identity. No push, hosting or new spend.
+Earlier entries below are historical checkpoints, not the current assignment.
+
+## Previous checkpoint: G3C-A candidate delivered, gates in progress
 
 Candidate 16b67fd0cd09cdd08bbfa64a159035a7a188bf5b implements the read-only trace route
 and a new HTTP v1.2 response. It is not yet accepted or integrated. The Windows owner
