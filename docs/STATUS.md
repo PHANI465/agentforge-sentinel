@@ -1,22 +1,30 @@
 # Project status
 
-## November 1: G3B accepted; merged-commit gates in progress
+## November 1: G3B integrated and verified; trace API is next
 
-**G3B e23a7cde20d5d1db9202ea66a84f56c8130f3ac8 is accepted. R34-R37 are closed.**
-[Independent acceptance](reviews/G3B-e23a7cd.md): 90 Windows agent/original-probe cases
-pass, and six independent probes pass on native Ubuntu. The late-cancel probe now honors
-retirement before reuse; the real native descriptor-reuse case passes. Supplied candidate
-full gates have 539 passes and only the allowed live-Claude skip, 540 exact cases.
+**G3B is accepted and integrated at a7c71f553328b5872df53039daf572ad3b8fda81. R34-R37 are
+closed.** Both platforms pass their own full integrated backend gates: **539 passed,
+one allowed live-Claude skip, 540 cases**. Canonical main's Windows strict gate has six
+passes; its frontend typecheck/build, 44 unit tests and 19 real browser tests pass. Native
+Ubuntu passes the six-command backend gate, structured JUnit validation, HTTP and package
+checks and read-only ML reproduction. The suites ran sequentially, with no model calls.
 
-Codex is integrating the exact candidate automatically, preserving its history. Final
-Windows strict/frontend/browser and native backend checks will be tied to the merged
-commit; do not treat candidate reports as those integration results. G3C has not started.
-The next task is its additive trace contract/API, followed by UI only after contract review.
-Manual-evaluator least privilege and a populated workflow backup remain follow-ups. Earlier
-unexplained failures and their unchanged assertions remain disclosed. No live model,
-remote/push/deployment or new spending; the original Cursor edits remain untouched.
-See [the current overview](artifacts/AgentForge_Sentinel_Overview_and_Remaining_Work.md)
-and [November 1 checkpoint](artifacts/AgentForge_Sentinel_Session_2026-11-01.md).
+Independent candidate review: 90 Windows cases and six native probes pass, including
+retirement-aware cancellation and real native socket descriptor reuse. See
+[acceptance](reviews/G3B-e23a7cd.md) and [integrated release record](releases/G3B-main-integration-2026-11-01.md).
+The containing publication changes documentation only; application/test/dependency assets
+are identical to that tested integration. Earlier intermittent failures remain disclosed.
+The first integration run used an incorrect global log-off setting and failed its logging
+tests; that harness error was reproduced, corrected and retained separately before the
+complete standard-environment rerun. No application fix or assertion weakening was needed.
+
+**Next: [Claude G3C-A trace contract/API](prompts/CLAUDE_G3C_TRACE_API.md), Opus 5.5 / High.**
+Use a new worktree from current published main. The trace UI waits for accepted v1.2
+contract/fixtures; G3C has not started yet. The manual evaluator's runtime/operator split
+and populated workflow backup remain follow-ups before those paths are claimed verified.
+No paid usage, provider calls, remote/push or hosting. Cursor's seven edits remain untouched.
+See [current overview](artifacts/AgentForge_Sentinel_Overview_and_Remaining_Work.md) and
+[November 1 checkpoint](artifacts/AgentForge_Sentinel_Session_2026-11-01.md).
 
 ## October31 corrected G3B reviewed: R34-R36 closed; R37 ownership pending
 

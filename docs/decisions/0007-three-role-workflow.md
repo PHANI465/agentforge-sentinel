@@ -1,6 +1,6 @@
 # 0007: Bounded three-role investigation workflow (G3B)
 
-- Status: implemented for review (G3B); the design was accepted at G3A 43d9e8a and integrated at 2919f76
+- Status: accepted at e23a7cd and integrated at a7c71f5 (November 1); the design was accepted at G3A 43d9e8a and integrated at 2919f76
 - Date: 2026-10-31
 - Decided by: the project owner and Codex (G3A acceptance); implemented by Claude Code
 

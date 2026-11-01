@@ -1,10 +1,10 @@
 # G3A: three-role investigation workflow design
 
-> **G3B implementation (task/claude-g3b-workflow, for review):** the backend slice is implemented in `sentinel.agents`, migration 0005 and `sentinel.contracts.agents`. Implementation decisions beyond this text (COMMIT watchdog, `agent_runs.seq`, packaging entry, admission) are listed in [ADR 0007](../decisions/0007-three-role-workflow.md).
+> **G3B accepted and integrated (e23a7cd / a7c71f5):** the backend slice is implemented in `sentinel.agents`, migration 0005 and `sentinel.contracts.agents`. Implementation decisions beyond this text (COMMIT watchdog, `agent_runs.seq`, packaging entry, admission) are listed in [ADR 0007](../decisions/0007-three-role-workflow.md).
 
 Audience: Codex (contract review, then integrator), the G3B implementer and later the analyst-UI implementer. This is a design and contract proposal for an application runtime feature: Sentinel's own fraud-investigation agents. It is not about how coding assistants collaborate.
 
-- **Status:** accepted design at candidate `43d9e8a5845630deeedfe52fc39b1a6f8ccc1b85` (October 31); runtime unimplemented. See [Codex acceptance](../reviews/G3A-43d9e8a.md). G3B is the separate implementation gate.
+- **Status:** accepted design at candidate `43d9e8a5845630deeedfe52fc39b1a6f8ccc1b85` (October 31); runtime accepted separately at e23a7cd and integrated at a7c71f5. See [Codex acceptance](../reviews/G3A-43d9e8a.md). G3B is the separate implementation gate.
 - **Source base:** accepted H01 `f091a34c2ed3f6636625b3141be88d86cd5307dd`, which includes the N2–N7 release. Line references below are to that commit.
 - **Companion files:**
   - [contracts-draft/](contracts-draft/README.md): typed draft schemas, valid and invalid examples, compatibility notes;

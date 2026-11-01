@@ -1,6 +1,6 @@
 # AgentForge Sentinel setup
 
-The canonical project is E:/PHANI/agentforge-sentinel on main after the October 26 integration. Use new task branches/worktrees for later work; preserve reviewed component checkouts. Main combines the accepted I03 application, reviewed N2-N7 Linux-readiness changes and current coordination. See docs/releases/MAIN-linux-readiness-2026-10-26.md for exact verification records and limits.
+The canonical project is E:/PHANI/agentforge-sentinel on main after the October 26 integration. Use new task branches/worktrees for later work; preserve reviewed component checkouts. Main combines the accepted I03 application, reviewed N2-N7 Linux-readiness changes and current coordination. Accepted G3B adds bounded three-role orchestration and migration 0005; see docs/releases/G3B-main-integration-2026-11-01.md for current verification records and limits.
 
 ## Requirements and install
 
@@ -46,7 +46,7 @@ uv run --locked python -m ml test --reproduce
 
 The strict helper has an 1800-second bound per command and records ignored evidence in `.agent/last-check.json`. An old report or one from another checkout does not certify current HEAD. HTTP checks cover frozen v1 and active v1.1/examples. ML reproduction is the accepted read-only comparison; do not rerun model selection or tune against frozen p1 test data.
 
-For CI-equivalent structured test validation, `uv run --locked python scripts/ci_test_gate.py --junit .agent/pytest-results.xml` runs the full suite and permits exactly the opt-in live-Claude skip. During final integration, use a JUnit report from the strict gate's same pytest run and `--validate-only` to avoid a duplicate full run. Current CI setup and package details are in [docs/ci](docs/ci/README.md).
+For CI-equivalent structured test validation, `uv run --locked python scripts/ci_test_gate.py --junit .agent/pytest-results.xml` runs the full suite and permits exactly the opt-in live-Claude skip. During final integration, use a JUnit report from the strict gate's same pytest run and `--validate-only PATH` to avoid a duplicate full run. Current CI setup and package details are in [docs/ci](docs/ci/README.md).
 
 From web/ run:
 

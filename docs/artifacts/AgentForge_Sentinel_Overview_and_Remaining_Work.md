@@ -1,14 +1,10 @@
-# AgentForge Sentinel: what it is and what remains
+# AgentForge Sentinel: project overview and remaining work
 
-Current November 1 status: G3B e23a7cd is accepted; R34-R37 are closed. Integrated gates
-are in progress. See the [current checkpoint](AgentForge_Sentinel_Session_2026-11-01.md)
-and [acceptance](../reviews/G3B-e23a7cd.md). Earlier dated status text below is superseded.
-
-Current checkpoint: October31,2026. Read this first for current scope. The
-[Word guide with real-life examples](AgentForge_Sentinel_Project_Guide_2026-10-26.docx)
-and its [Markdown copy](AgentForge_Sentinel_Project_Guide_2026-10-26.md) remain useful
-October26 snapshots. [STATUS](../STATUS.md) and the
-[session checkpoint](AgentForge_Sentinel_Session_2026-10-31.md) hold detailed review history.
+Current November 1, 2026 checkpoint: accepted G3B is integrated at a7c71f5 and passes full
+Windows/native Ubuntu backend gates, Windows frontend and browser checks. See the
+[release record](../releases/G3B-main-integration-2026-11-01.md) and
+[session checkpoint](AgentForge_Sentinel_Session_2026-11-01.md).
+The [Word guide](AgentForge_Sentinel_Project_Guide_2026-10-26.docx) remains a dated snapshot.
 
 ## The project in plain language
 
@@ -26,7 +22,7 @@ interface exposes the stored facts, score, case history, proposal and final outc
 
 Imagine several rapid payments followed by an unusually large payment. A risk score raises
 an alert. The analyst opens the case, checks the available history and recorded model/rule
-identity, and requests an investigation. In the candidate three-role backend, the evidence
+identity, and requests an investigation. In the accepted three-role backend, the evidence
 analyst gathers allowed facts, the investigator proposes hold/escalate, and the reviewer
 challenges unsupported claims. The server checks claims and builds the exact proposal.
 
@@ -34,7 +30,7 @@ A legitimate invoice can look unusual too. The human can reject a proposed hold 
 following the AI blindly. If an approval expires, the old proposal cannot be executed. If
 a network reply is lost, an idempotent action retry avoids a second simulated effect.
 Audits show the decisions. The examples illustrate intended use, not measured real-bank
-accuracy. The three-role backend is accepted at e23a7cd and is undergoing integrated release checks.
+accuracy. The three-role backend is accepted at e23a7cd and has passed integrated release checks.
 
 This demonstrates fraud-review work found in banks, payment processors and marketplaces.
 It is a portfolio/research system; real deployment would require domain, privacy, regulatory
@@ -50,30 +46,29 @@ and operational work beyond this synthetic demonstration. No real financial advi
 | Analyst interface | Accepted case queue/detail/evidence/audit/approval and model-results views, React/TypeScript/Vite, real browser/API/PostgreSQL tests |
 | Local operations | Windows and native Ubuntu backend validation, package installation checks, restart/recovery and backup/restore tooling; actual GitHub Actions/hosting still unverified |
 | Multi-agent design | G3A accepted: analyst/investigator/reviewer, scoped tools, server-checked claims, finite budgets and persisted boundaries |
-| Multi-agent runtime | G3B e23a7cd accepted, R34-R37 closed; integrated release verification in progress |
+| Multi-agent runtime | G3B e23a7cd accepted, R34-R37 closed; integrated and verified at a7c71f5 |
 
-Independent G3B review has 90 Windows passes and six native probe passes. Supplied full
-gates have 539 passes and one allowed skip. Final integration evidence is recorded separately;
-test counts are not a percentage-complete score or evidence of live agent quality.
+Independent G3B review has 90 Windows passes and six native probe passes. The integrated
+backend has 539 passes and one allowed skip on each platform; Windows frontend44 and
+browser19 pass. These checks do not establish live agent quality or production capacity.
 
 ## How much is left?
 
-The core local application and classical ML foundation are built. There are **five main
-release workstreams remaining**, including the current integration gate. Some original
+The core local application and classical ML foundation are built. There are **four main
+product workstreams remaining** after the accepted multi-agent backend integration. Some original
 milestones span both completed and pending work: G1's local path is done while its hosted
-path is not; G2's ML is done while the broader analyst workspace is incomplete. G3's design
-is accepted while runtime integration/UI/quality evaluation remain.
+path is not; G2's ML is done while the broader analyst workspace is incomplete. G3's design and runtime
+are accepted while its trace UI and quality evaluation remain.
 
 A single percentage would depend on whether the optional G5 research extensions are counted.
 Use accepted capabilities and these concrete next deliverables to track progress.
 
 | Order | Remaining deliverable | What will demonstrate completion |
 | --- | --- | --- |
-| 1 | Finish G3B review and integration | Candidate review complete; finish final integrated Windows/Linux/browser gates |
-| 2 | G3C trace API and analyst UI | Freeze the additive trace contract, then show roles, tools, citations, claim checks, disagreement, budgets and incomplete recovery honestly |
-| 3 | G3D measured agent evaluation | Safe runtime-role evaluator; separately authored final synthetic cases; actual one-live vs three-role comparisons under the frozen protocol, human rubric and reported failures/latency/observable usage |
-| 4 | Deeper data-analyst workspace | Curated read-only queries, data quality, financial reconciliation, cohorts/time trends, error slices and exports checked against known answers |
-| 5 | Public demo and operational release | Recorded replay, authorized staging/remote/real CI, measured capacity, secret-safe visitor BYOK if included, session isolation, retention/cleanup and deployment/run instructions; README and short demo video |
+| 1 | G3C trace API and analyst UI | Freeze the additive trace contract, then show roles, tools, citations, claim checks, disagreement, budgets and incomplete recovery honestly |
+| 2 | G3D measured agent evaluation | Safe runtime-role evaluator; separately authored final synthetic cases; actual one-live vs three-role comparisons under the frozen protocol, human rubric and reported failures/latency/observable usage |
+| 3 | Deeper data-analyst workspace | Curated read-only queries, data quality, financial reconciliation, cohorts/time trends, error slices and exports checked against known answers |
+| 4 | Public demo and operational release | Recorded replay, authorized staging/remote/real CI, measured capacity, secret-safe visitor BYOK if included, session isolation, retention/cleanup and deployment/run instructions; README and short demo video |
 
 Security tests belong to each workstream. Public keys/retention, document prompt injection
 and public SQL introduce new boundaries and cannot inherit a safety claim from the local
@@ -81,11 +76,13 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Let Codex complete the integrated checks and record their exact commit.
-2. Start G3C with the versioned trace API contract first; the UI follows its acceptance.
+1. Give Claude the [G3C-A trace API prompt](../prompts/CLAUDE_G3C_TRACE_API.md), using Opus 5.5 / High, in a new worktree from current main.
+2. Return the tested SHA to Codex. The trace UI follows acceptance of that exact versioned contract.
 3. Run agent quality evaluations only after implementation/configuration/protocol are frozen
    and safe evaluation connections are prepared. Deterministic fixtures are not evidence
    that three language-model agents improve fraud investigations.
+
+The local_stack.py convenience command still needs a tested three-role choice; API configuration already supports it.
 
 The two previously noted manual-evaluator operator/runtime split and a backup round-trip
 with populated workflow tables remain explicit follow-ups before claiming those paths

@@ -1,30 +1,50 @@
 # AgentForge Sentinel November 1 checkpoint
 
-## Current outcome
+## Summary first
 
-G3B e23a7cd is independently accepted; R34-R37 are closed. Ninety focused Windows cases
-pass; all six independent native Ubuntu probes pass. The late-cancel probe now checks the
-specified retirement/reuse rule. Real native socket descriptor reuse no longer redirects
-shutdown. Supplied candidate full gates: 539 passed, one allowed skip, 540 exact cases.
+The local three-role backend is **accepted and integrated**. R34-R37 are closed.
+Tested application commit: **a7c71f553328b5872df53039daf572ad3b8fda81**, combining current
+coordination with accepted candidate e23a7cd automatically. Both native Ubuntu and canonical
+Windows pass their full gates: **539 tests passed, one allowed skip, 540 cases**. Windows
+also passes 44 frontend tests/typecheck/build and all 19 real browser/API/Postgres tests.
+The final documentation publication has identical application/test/dependency assets.
+No live model was called and G3C has not started.
 
-Codex is integrating the accepted candidate with current coordination, without conflict
-or history rewriting. The merged commit needs its own sequential Windows/native backend
-checks and the Windows browser/frontend checks before release verification is complete.
-No G3C work or live model evaluation has started. Current acceptance and limits are in
-[the review](../reviews/G3B-e23a7cd.md). The [current overview](AgentForge_Sentinel_Overview_and_Remaining_Work.md)
-explains the product and remaining milestones. October 31 and older artifacts are dated
-history, including old unaccepted-candidate statuses.
+## What happened today, in order
 
-## Next product steps
+1. Read Claude's exact R37 handoff and four-file correction; preserved its clean worktree.
+2. Inspected connection/SQL/cancel/socket lifetime ownership and confirmed the coordinator
+   replaces retired connections. Confirmed a known COMMIT keeps its known outcome.
+3. Corrected independent probe A to honor retirement before reuse, as the accepted remedy
+   allows. It still fails on b74473e for the original missing retirement. Probe B exercises
+   actual native socket reuse. All six native probes and 90 focused Windows cases pass.
+4. Verified the candidate owner strict metadata and exact native 540-case full report;
+   checked frozen contracts, metadata, unchanged assets and Cursor preservation.
+5. Accepted R37 and automatically merged exact e23a7cd as a7c71f5 with sole-owner identity.
+6. Ran integrated gates sequentially. The initial Windows runner mistakenly disabled all
+   logging and caused eight logging-sensitive tests to fail. Reproduced that setup error and corrected
+   only the external runner; retained the first report, then ran the full standard gate.
+7. Verified canonical Windows strict/JUnit/HTTP/ML/frontend/browser and native Ubuntu full
+   backend/JUnit/HTTP/package/ML checks on the same clean integration. No new skip/timeout
+   or application change was used to obtain the pass.
+8. Published [the release record](../releases/G3B-main-integration-2026-11-01.md), current
+   overview/queue and [next Claude trace API assignment](../prompts/CLAUDE_G3C_TRACE_API.md).
 
-1. Complete the integrated release checks and checkpoint.
-2. G3C-A: versioned trace read contract/API and reproducible examples, then Codex review.
-3. G3C-B: analyst trace panel and real browser checks against the accepted contract.
-4. G3D preparation: safe evaluator connection separation and populated workflow backup;
-   then explicitly authorized measured live-agent comparison under the frozen protocol.
-5. Deeper analyst workspace and a separately authorized public demo/CI/hosting/BYOK release.
+## Next actions
 
-Existing intermittent failures remain undiagnosed and their reports/unchanged assertions
-are kept. Current evidence is synthetic/local, with simulated actions. The original Cursor
-seven edits and all accepted component checkouts are preserved. No remote, push, deployment,
-live call or additional spending. New commits use the sole owner identity, no trailers.
+Use **Claude Opus 5.5 / High** for G3C-A in a new worktree from current published main.
+Deliver only the additive trace contract/read API and reproducible fixtures; Codex reviews
+before the UI consumes them. No trace UI or new live evaluation is implemented yet.
+The earlier evaluator least-privilege split and populated workflow backup remain preparation
+for measured agent evaluation/operations. After G3C, run explicitly authorized quality
+comparisons, deepen the analyst workspace, and plan public demo/CI/hosting separately.
+
+The [current overview](AgentForge_Sentinel_Overview_and_Remaining_Work.md) explains the
+project with a fraud-review example. Four major product workstreams remain after this
+backend gate: trace API/UI, measured agents, analyst depth and public operational release.
+Optional G5 research extensions are additional, not a fixed completion percentage.
+
+Existing unexplained b74473e timing/retry failures are still disclosed; no root cause is
+claimed. Provisional per-process budgets do not prove production scale or live quality.
+All current data/actions are synthetic/simulated. Sole-owner commit metadata and original
+Cursor seven edits remain preserved. No paid usage, provider call, remote, push or hosting.

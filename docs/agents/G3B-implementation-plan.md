@@ -1,6 +1,6 @@
 # G3B implementation plan: the three-role backend slice
 
-> **G3B implementation (task/claude-g3b-workflow, for review):** the backend slice is implemented in `sentinel.agents`, migration 0005 and `sentinel.contracts.agents`. Implementation decisions beyond this text (COMMIT watchdog, `agent_runs.seq`, packaging entry, admission) are listed in [ADR 0007](../decisions/0007-three-role-workflow.md).
+> **G3B accepted and integrated (e23a7cd / a7c71f5):** the backend slice is implemented in `sentinel.agents`, migration 0005 and `sentinel.contracts.agents`. Implementation decisions beyond this text (COMMIT watchdog, `agent_runs.seq`, packaging entry, admission) are listed in [ADR 0007](../decisions/0007-three-role-workflow.md).
 
 Audience: Codex (dispatches G3B after accepting G3A) and the G3B implementer.
 

@@ -1,12 +1,14 @@
 # Handoff: task/coordination
 
-- Current task: corrected G3B review and connection-lifetime R37 follow-up; publish current project overview.
-- Tool and worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination.
-- Updated: October 31, 2026, America/Phoenix.
-- Current state: b74473e closes original R34-R36; new R37 helper/descriptor ownership races block G3B integration. G3C unstarted.
-- Code reference tested before this note: exactb74473e;85 independent Windows passes,4 original native probe passes, new ownership counterexamples; main runtime remains f091a34.
-- Final check evidence: canonical .agent/g3b-review/b74473e/ review/publication evidence; no new main application gate result.
-- Owned/changed paths: current instructions/status/queue/checkpoint/verification, active G3A follow-up, acceptance checklist, October 31 session artifact/index and this note. No application source changed.
+- Current task: accepted G3B integration and verified release; dispatch G3C-A trace API.
+- Tool/worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination.
+- Updated: November 1, 2026, America/Phoenix.
+- Current state: R34-R37 closed; integrated a7c71f5 passes Windows/native full gates (539+1), frontend44 and browser19. G3C unstarted.
+- Independently reviewed candidate: e23a7cd; 90 focused Windows passes, six native probes; corrected probe still fails on old source.
+- Final evidence: canonical .agent/g3b-integration/ and native /home/sentinel/g3b-integration-reports/. Final publication is docs-only with identical tested code.
+- Next: docs/prompts/CLAUDE_G3C_TRACE_API.md, Opus 5.5 / High, new current-main worktree. Preserve original Cursor edits and sole-owner metadata.
+
+The earlier sections below are chronological history, not current task status.
 
 ## Implemented
 
