@@ -31,8 +31,11 @@ def test_legacy_v1_snapshot_is_frozen():
     assert LEGACY["info"]["version"] == "1.0.0" and ACTIVE["info"]["version"] == "1.1.0"
 
 
-def test_active_snapshot_matches_code():
-    assert (HTTP / "openapi.v1.1.json").read_bytes() == exporter.dumps(exporter.openapi())
+def test_v11_snapshot_is_frozen():
+    # v1.1 was the live schema until G3C-A; v1.2 is now (test_http_contract_v12) and v1.1 is
+    # a frozen snapshot, checked by hash like legacy v1.
+    digest = hashlib.sha256((HTTP / "openapi.v1.1.json").read_bytes()).hexdigest()
+    assert digest == exporter.V11_SHA256
 
 
 def test_every_v1_operation_survives_unchanged_in_v11():

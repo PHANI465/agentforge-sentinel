@@ -109,6 +109,16 @@ Safe logging and observability for unexpected errors are tracked separately (C05
 
 Not in the frozen set (C02 will supply fixtures): investigator failure, a rejected approval, and permission-denied sessions.
 
+## HTTP v1.2 revision (G3C-A contract candidate)
+
+Status: **candidate for Codex review; not accepted.** The trace UI (G3C-B) must not consume it until Codex accepts it by commit. v1.2 adds one read-only route, `GET /v1/cases/{case_id}/investigation-trace`, defined in [investigation-trace-v1.2.md](investigation-trace-v1.2.md).
+
+- **Active snapshot:** `contracts/http/openapi.v1.2.json`, with `info.version` 1.2.0. Examples are in `contracts/http/examples-v1.2/`.
+- **Frozen:** `openapi.v1.1.json` is now checked by SHA-256 (`V11_SHA256`) like legacy v1, and is no longer regenerated. The v1 and v1.1 example sets are still regenerated and byte-identical.
+- **Compatibility, tested in `tests/test_http_contract_v12.py`:** every v1.1 path and component schema is byte-identical in v1.2. The single new path and its new components are the only differences.
+
+The v1.1 section below describes v1.1 as it was frozen. Where it says "active snapshot", read v1.2 for the live schema.
+
 ## HTTP v1.1 revision (C07 contract candidate)
 
 Status: **candidate for Codex review; not accepted.** U03 must not consume it until Codex accepts it by commit. The C07 inference increment adds model-mode examples and one error code without changing the reviewed shapes. The revision is explicit and additive:
