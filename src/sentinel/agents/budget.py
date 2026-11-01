@@ -14,10 +14,12 @@ Rules, from the accepted specification docs/agents/deadline_budget.py:
   COMMIT and rollback runs on a short-lived operation thread, and the caller stops waiting
   at the end of its budget whether or not the server, or a cancel request, ever answers.
 
-An operation still unanswered at its budget is abandoned. Its connection is quarantined:
-never reused, and closed by the operation thread when that returns. Its socket is shut down
-(not closed) so the blocked libpq wait ends promptly, and new workflows are refused while
-quarantined operations reach the per-process limit (coordinator.run_workflow).
+An operation still unanswered at its budget is abandoned, and its connection retired:
+quarantined, never reused, and closed exactly once after its last user (the SQL worker or a
+cancel helper) has left (R37). Its socket is shut down through an independent duplicate
+taken before the operation began, so the blocked libpq wait ends promptly and no reused
+descriptor is ever touched. New workflows are refused while quarantined connections reach
+the per-process limit (coordinator.run_workflow).
 
 This bounds elapsed waiting on this process's clock. It does not prove that a COMMIT is
 durable within the deadline or that the server notices a timeout instantly.
@@ -25,6 +27,7 @@ durable within the deadline or that the server notices a timeout instantly.
 from __future__ import annotations
 
 import math
+import os
 import socket
 import threading
 import time
@@ -70,9 +73,9 @@ class NoReply(Exception):
 
 
 class Quarantine:
-    """Abandoned database operations of this process. Each keeps its connection (strongly
-    referenced here) until its operation thread returns and closes it, so a quarantined
-    connection is never reused, nor closed underneath a running libpq call."""
+    """Retired connections of this process. Each is strongly referenced here until its last
+    user (SQL worker or cancel helper) has left and it has been closed, so a quarantined
+    connection is never reused, nor closed underneath a running libpq or cancel call."""
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -107,9 +110,9 @@ def usable(conn) -> bool:
 
 
 def discard(conn) -> None:
-    """Close a connection the coordinator owns. A quarantined one is left to its operation
-    thread, which closes it when the blocked call returns."""
-    if conn is None or QUARANTINE.holds(conn):
+    """Close a connection the coordinator owns. A quarantined one is left to its last user,
+    which closes it; one already closed is not closed again."""
+    if conn is None or QUARANTINE.holds(conn) or getattr(conn, "closed", False):
         return
     try:
         conn.close()
@@ -117,18 +120,104 @@ def discard(conn) -> None:
         pass
 
 
-def _shutdown_socket(conn) -> None:
-    """End a blocked libpq wait without closing, and so without freeing, its descriptor."""
-    try:
-        sock = socket.socket(fileno=conn.fileno())
-    except Exception:
-        return
-    try:
-        sock.shutdown(socket.SHUT_RDWR)
-    except OSError:
-        pass
-    finally:
-        sock.detach()
+class _OwnSocket:
+    """An independent reference to the connection's socket, taken before the operation
+    starts, while nothing else can use or close the connection. libpq closes its own
+    descriptor when it reads EOF, and close() frees it, so a descriptor borrowed later could
+    already belong to an unrelated socket; a shutdown through this duplicate reaches only
+    the connection's own socket."""
+
+    def __init__(self, conn):
+        self.fd, self.sock = None, None
+        try:
+            fileno = conn.fileno()
+        except Exception:  # no native socket to shut down (or none any more)
+            return
+        try:
+            if os.name == "posix":
+                self.fd = os.dup(fileno)
+            else:  # Windows socket handles are duplicated through the socket API
+                borrowed = socket.socket(fileno=fileno)
+                try:
+                    self.sock = borrowed.dup()
+                finally:
+                    borrowed.detach()
+        except OSError:
+            self.fd, self.sock = None, None
+
+    def shutdown(self) -> None:
+        """End a blocked libpq wait on this socket without closing libpq's descriptor."""
+        sock, self.sock = self.sock, None
+        if sock is None and self.fd is not None:
+            fd, self.fd = self.fd, None
+            try:
+                sock = socket.socket(fileno=fd)
+            except Exception:
+                os.close(fd)
+                return
+        if sock is None:
+            return
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        finally:
+            sock.close()
+
+    def release(self) -> None:
+        if self.sock is not None:
+            self.sock.close()
+        elif self.fd is not None:
+            os.close(self.fd)
+        self.fd, self.sock = None, None
+
+
+class _Lease:
+    """Every user of one connection during one bounded call: its SQL worker and, for
+    COMMIT, its cancel helper. A retired connection is quarantined at once and closed
+    exactly once, by whichever user leaves last; only then is it released from the
+    quarantine. So it is never handed back, closed or uncounted while any helper can
+    still act on it (R37)."""
+
+    def __init__(self, conn):
+        self.conn = conn
+        self.cond = threading.Condition()
+        self.users: set[str] = set()
+        self.retired = self.closed = False
+
+    def enter(self, user: str) -> None:
+        with self.cond:
+            self.users.add(user)
+
+    def leave(self, user: str) -> None:
+        with self.cond:
+            self.users.discard(user)
+            self.cond.notify_all()
+            close = self._closing()
+        if close:
+            self._close()
+
+    def retire(self) -> None:
+        with self.cond:
+            if not self.retired:
+                self.retired = True
+                QUARANTINE.hold(self.conn)
+            close = self._closing()
+        if close:
+            self._close()
+
+    def _closing(self) -> bool:  # holding the lock
+        if self.retired and not self.users and not self.closed:
+            self.closed = True
+            return True
+        return False
+
+    def _close(self) -> None:
+        try:
+            self.conn.close()
+        except Exception:
+            pass
+        QUARANTINE.release(self.conn)
 
 
 def _cancel(conn, timeout_s: float) -> None:
@@ -145,63 +234,72 @@ def bounded_call(conn, operation: Callable, wait_ms: float,
     With `cancel_after_ms`, a cancel request (itself bounded by the wait left) is sent if the
     operation is still running then. Once that request completes, acknowledged or failed,
     the reply is awaited at most COMMIT_CANCEL_REPLY_MS more; the wait never passes
-    `wait_ms`. Unanswered, the operation is abandoned: the connection is quarantined and
-    its socket shut down, and NoReply is raised. The operation thread then owns the
-    connection and closes it when the call returns."""
-    state = {"abandoned": False, "cancelled_at": None}
+    `wait_ms`.
+
+    - Unanswered, the operation is abandoned: the connection is retired and its own socket
+      shut down, and NoReply is raised.
+    - Answered, the result (or the server's error) keeps its meaning. It is handed back
+      only after the cancel helper has also finished; a helper still running at `wait_ms`
+      retires the connection instead, so it is never reused.
+
+    A retired connection is closed exactly once, after its last user left (_Lease)."""
+    lease = _Lease(conn)
+    own = _OwnSocket(conn)
+    state = {"cancelled_at": None}
     box: dict = {}
     done = threading.Event()
-    lock = threading.Lock()
-    wake = threading.Condition(lock)
+    started = time.monotonic()
+
+    def left_s() -> float:
+        return max(wait_ms / 1000 - (time.monotonic() - started), 0.0)
 
     def work():
         try:
             box["value"] = operation()
         except BaseException as error:  # handed to the waiting caller
             box["error"] = error
-        with lock:
+        finally:
             done.set()
-            abandoned = state["abandoned"]
-            wake.notify_all()
-        if abandoned:
-            try:
-                conn.close()
-            except Exception:
-                pass
-            QUARANTINE.release(conn)
-
-    started = time.monotonic()
-
-    def left_s() -> float:
-        return max(wait_ms / 1000 - (time.monotonic() - started), 0.0)
+            lease.leave("sql")
 
     def cancel(timeout_s: float):
-        _cancel(conn, timeout_s)
-        with lock:
-            state["cancelled_at"] = time.monotonic()
-            wake.notify_all()
+        try:
+            _cancel(conn, timeout_s)
+        finally:
+            with lease.cond:
+                state["cancelled_at"] = time.monotonic()
+            lease.leave("cancel")
 
-    def wait_left_s() -> float:  # called holding the lock
+    def wait_left_s() -> float:  # holding the lock
         left = left_s()
         if state["cancelled_at"] is not None:
             left = min(left, COMMIT_CANCEL_REPLY_MS / 1000
                        - (time.monotonic() - state["cancelled_at"]))
         return left
 
-    threading.Thread(target=work, name="sentinel-sql", daemon=True).start()
-    if cancel_after_ms is not None and not done.wait(max(cancel_after_ms, 0) / 1000) \
-            and left_s() > 0:
-        threading.Thread(target=cancel, args=(left_s(),), name="sentinel-sql-cancel",
-                         daemon=True).start()
-    with lock:
-        while not done.is_set() and wait_left_s() > 0:
-            wake.wait(wait_left_s())
-        if not done.is_set():
-            state["abandoned"] = True
-            QUARANTINE.hold(conn)
-    if state["abandoned"]:
-        _shutdown_socket(conn)
-        raise NoReply()
+    try:
+        lease.enter("sql")
+        threading.Thread(target=work, name="sentinel-sql", daemon=True).start()
+        if cancel_after_ms is not None and not done.wait(max(cancel_after_ms, 0) / 1000) \
+                and left_s() > 0:
+            lease.enter("cancel")
+            threading.Thread(target=cancel, args=(left_s(),), name="sentinel-sql-cancel",
+                             daemon=True).start()
+        with lease.cond:
+            while not done.is_set() and wait_left_s() > 0:
+                lease.cond.wait(wait_left_s())
+            answered = done.is_set()
+            while answered and lease.users and left_s() > 0:
+                lease.cond.wait(left_s())
+            helpers_left = bool(lease.users)
+        if not answered:
+            lease.retire()
+            own.shutdown()
+            raise NoReply()
+        if helpers_left:
+            lease.retire()
+    finally:
+        own.release()
     if "error" in box:
         raise box["error"]
     return box.get("value")

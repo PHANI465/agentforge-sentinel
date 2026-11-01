@@ -54,6 +54,14 @@ G3 needs evidence analyst, investigator and reviewer roles behind a deterministi
 
    The frozen contracts are unchanged; `transition` was already a `StepRecord` kind.
 
+## Review correction R37 (G3B-b74473e review)
+
+10. **One lifetime owner per bounded call.** A per-call lease covers the connection's users: the SQL worker and, for COMMIT, its cancel helper.
+    - **Hand-back:** a reply, success or server error, keeps its meaning, but it is handed back only after the helpers have also left.
+    - **Retirement:** a helper still running at the response budget retires the connection instead, without waiting longer. Retired means quarantined at once, never reused (`usable()` is False, so the coordinator replaces it), and closed exactly once by whichever user leaves last. Only after that close is it released from the quarantine, so quarantine accounting covers every outstanding helper, and admission stays gated by it.
+    - **Shutdown:** socket shutdown uses an independent duplicate taken before the operation starts, while nothing else can use or close the connection (`os.dup` on POSIX, the socket API's `dup()` on Windows). libpq itself closes its descriptor when it reads EOF, and `close()` frees it, so a descriptor borrowed later could already belong to another socket. The duplicate is released when the call ends.
+    - **Unchanged:** unknown-COMMIT, recovery and provider-lease semantics.
+
 ## Consequences
 
 - **Capacity.** One workflow per API process is admitted at a time. A second request gets 409 `agent_capacity_exhausted` with no state change.

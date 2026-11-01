@@ -3,9 +3,27 @@
 - **Task:** G3B, the bounded three-role investigation backend (docs/prompts/CLAUDE_G3B_WORKFLOW.md on task/coordination a3198bc; accepted design G3A 43d9e8a, review G3A-43d9e8a.md).
 - **Tool and worktree:** Claude Code, E:\PHANI\sentinel-wt\claude-g3b-workflow (new; the branch and path did not exist; the G3A checkout is untouched).
 - **Updated:** 2026-10-31.
-- **State:** R34-R36 corrections ready for Codex re-review (review docs/reviews/G3B-391effe.md, prompt CLAUDE_G3B_REVIEW_FIXES.md). G3C, final and live evaluation are not started.
-- **Base:** exact 2919f76a5cad729ea078d5bfb35c226a3d2bff3f (it contains no G3B runtime code); the corrections continue from reviewed candidate 391effe on the same branch (no reset, rebase or amend).
-- **Code reference tested before this note:** the corrections' working tree on 391effe. The final Windows strict gate, native Linux gate and browser results are for the final commit and are reported in chat.
+- **State:** the R37 correction is ready for Codex re-review (review docs/reviews/G3B-b74473e.md, prompt CLAUDE_G3B_OWNERSHIP_FIX.md). R34-R36 are closed. G3C, final and live evaluation are not started.
+- **Base:** exact 2919f76a5cad729ea078d5bfb35c226a3d2bff3f (it contains no G3B runtime code). The corrections continue on the same branch, from reviewed candidates 391effe and then b74473e (no reset, rebase or amend).
+- **Code reference tested before this note:** the R37 working tree on b74473e. The final Windows strict gate, native Linux gate and browser results are for the final commit and are reported in chat.
+
+## R37 correction (ADR 0007, item 10)
+
+- **Lifetime owner:** `budget._Lease` owns the connection's users during a bounded call (the SQL worker and the COMMIT cancel helper).
+  - A reply is handed back only after the helpers have left.
+  - A helper outliving the response budget retires the connection: quarantined, never reused, and closed exactly once by the last user, before its quarantine entry is released.
+- **Shutdown:** `budget._OwnSocket` duplicates the socket before the operation starts, so a shutdown can never reach a closed and reused descriptor.
+- **Changed paths:** `src/sentinel/agents/budget.py`, new `tests/test_agent_ownership.py` (4 cases), ADR 0007 and this note.
+- **Failing-first on b74473e:** the same 3 of the 4 new cases failed on Windows and on native Ubuntu, each for its lifetime behaviour:
+  - the confirmed COMMIT's connection was not retired while its canceller ran;
+  - the connection was closed while a cancel request was still active;
+  - a shutdown was built on the closed descriptor (Windows, intercepted); on Ubuntu, the reused foreign socket's peer received EOF.
+
+  The positive reuse case passed, as expected.
+- **Codex's ownership probes:**
+  - Probe B (a real reused descriptor) passes natively after the correction.
+  - Probe A still fails by construction: its canceller is released only after the call returns, so the connection is (correctly) retired, and the probe then marks a next statement on it itself. The maintained case asserts the same scenario under the production reuse rule (`usable()`).
+- **Mutation controls:** 5 of 5 caught on Windows; the descriptor mutation was also caught on native Ubuntu.
 
 ## R34-R36 corrections (ADR 0007, items 6-9)
 
