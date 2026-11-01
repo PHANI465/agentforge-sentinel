@@ -1,5 +1,30 @@
 # AgentForge Sentinel October 31 session checkpoint
 
+## Latest: corrected G3B original findings closed; R37 ownership next
+
+Corrected candidate **b74473e820ae95effbd165eaad4e5faf974115d0** passes85 independent
+Windows tests (81 agent cases plus four original probes). The four original probes also
+pass natively. R34-R36 original findings are closed. Supplied latest Linux report is535
+passes/one allowed skip,536 exactly matching current collection; Windows strict metadata
+is clean at the same SHA. No additional independent full-suite/browser run is claimed.
+
+[Review R37](../reviews/G3B-b74473e.md) reproduces a new connection-lifetime gap: an old
+canceller can affect the next operation (Windows/Linux stand-ins), and socket shutdown can
+hit a reused unrelated descriptor (real probe-owned Linux sockets). **G3B is not accepted
+or merged yet.** [Claude ownership correction](../prompts/CLAUDE_G3B_OWNERSHIP_FIX.md),
+Opus5.5/High, is the next task on the existing branch. Preserve the closed work, all passing
+behavior and earlier unexplained failure reports. G3C remains unstarted.
+
+The owner-facing [current overview and remaining work](AgentForge_Sentinel_Overview_and_Remaining_Work.md)
+now explains the product, examples, completed capabilities and five remaining release
+workstreams. The older Word guide remains a dated, useful explanation, not today's status.
+Core local case/ML work is built; trace UI, measured agents, advanced analytics and public
+release/operational checks still require separate delivery. Optional research is separate.
+
+Private evidence is under `.agent/g3b-review/b74473e/`. Main remains the accepted f091a34
+runtime plus design/coordination docs. Candidate, native clone, prior artifacts and Cursor's
+seven saved edits stay preserved. No live model call, remote/push/deployment or new cost.
+
 ## Latest checkpoint: G3B delivered and reviewed; three fixes pending
 
 **G3B candidate391effed084adef34ca5852255687fffa3d99d50** implements the three-role backend,

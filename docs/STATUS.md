@@ -1,5 +1,25 @@
 # Project status
 
+## October31 corrected G3B reviewed: R34-R36 closed; R37 ownership pending
+
+Candidate **b74473e820ae95effbd165eaad4e5faf974115d0** closes the original R34-R36 behaviors:
+**85 independent Windows tests pass**, including the original four probes; the same four
+probes pass natively. Ruff/domain/HTTP checks pass. The latest supplied Linux full report
+is535 passed/one allowed skip,536 exact current cases; Windows strict metadata matches
+this clean candidate. No new independent full-suite or browser result is claimed.
+
+[New R37 review](reviews/G3B-b74473e.md) reproduces two ownership races: a late COMMIT
+canceller acts on the next operation (Windows/Linux), and native socket shutdown can hit
+a reused unrelated descriptor (real probe-owned Linux sockets). **G3B remains unaccepted/
+unmerged for this focused correction; G3A stays accepted; G3C has not started.**
+
+[Claude's current task](prompts/CLAUDE_G3B_OWNERSHIP_FIX.md): Opus5.5/High, existing G3B
+branch from exactb74473e, preserve closed work, fix connection/helper lifetime and re-run
+required final gates. Keep unexplained earlier failure reports visible; no cause is inferred.
+Main application remains f091a34, all task/Cursor changes preserved, no provider/paid/
+remote/push/deployment. [Current plain-language overview and remaining work](artifacts/AgentForge_Sentinel_Overview_and_Remaining_Work.md)
+answers the owner-facing scope and next steps; the older Word guide stays a dated snapshot.
+
 ## October 31 G3B reviewed: R34-R36 changes requested
 
 Candidate **391effed084adef34ca5852255687fffa3d99d50** is delivered on the exact2919f76

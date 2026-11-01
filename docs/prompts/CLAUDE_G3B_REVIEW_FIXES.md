@@ -1,5 +1,7 @@
 # Claude G3B review fixes R34-R36
 
+**R34-R36 original findings closed atb74473e. Use [R37 ownership follow-up](CLAUDE_G3B_OWNERSHIP_FIX.md); do not restart from391effe or redesign the closed fixes.**
+
 Recommended coding assistant: **Claude Opus5.5, High effort**. These are client-I/O lifetime,
 role-admission and state-machine enforcement corrections; use careful reasoning and real
 failure tests, without adding frameworks, providers or paid calls.

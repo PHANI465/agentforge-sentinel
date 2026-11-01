@@ -4,6 +4,7 @@ Owner-facing project documents live here and are versioned with the project. Sav
 
 ## Project explanation with real life examples
 
+- [Current project overview, progress and remaining work](AgentForge_Sentinel_Overview_and_Remaining_Work.md) — start here for current scope and next steps.
 - [Word project guide](AgentForge_Sentinel_Project_Guide_2026-10-26.docx)
 - [Readable Markdown copy](AgentForge_Sentinel_Project_Guide_2026-10-26.md)
 

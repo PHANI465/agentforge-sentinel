@@ -1,11 +1,11 @@
 # Handoff: task/coordination
 
-- Current task: independent G3B review and R34-R36 correction dispatch.
+- Current task: corrected G3B review and connection-lifetime R37 follow-up; publish current project overview.
 - Tool and worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination.
 - Updated: October 31, 2026, America/Phoenix.
-- Current state: G3A accepted; G3B391effe changes-requested for three reproduced safety-limit gaps; G3C unstarted.
-- Code reference tested before this note: exact391effe isolated review checkout,64 focused passes and four reproduced failures on both platforms. Main runtime remains H01f091a34.
-- Final check evidence: canonical .agent/g3b-review/391effe/ scoped review and final coordination audit; no new main application check result.
+- Current state: b74473e closes original R34-R36; new R37 helper/descriptor ownership races block G3B integration. G3C unstarted.
+- Code reference tested before this note: exactb74473e;85 independent Windows passes,4 original native probe passes, new ownership counterexamples; main runtime remains f091a34.
+- Final check evidence: canonical .agent/g3b-review/b74473e/ review/publication evidence; no new main application gate result.
 - Owned/changed paths: current instructions/status/queue/checkpoint/verification, active G3A follow-up, acceptance checklist, October 31 session artifact/index and this note. No application source changed.
 
 ## Implemented
@@ -393,3 +393,21 @@ Published G3B-391effe review and CLAUDE_G3B_REVIEW_FIXES prompt, Opus5.5/High. M
 accepted code, G3A remains accepted, G3C unstarted. Candidate, native clone, accepted refs and
 Cursor's seven saved edits are preserved. Final doc/link/metadata checks recorded after
 commit; no provider, remote, push, deployment or paid action. All commits owner-only.
+
+## Corrected G3B and current product overview
+
+Reviewed b74473e without editing the candidate. Original findings closed:85 independent
+Windows agent+original-probe passes;4 original probes pass natively. Ruff/domain/HTTP
+exports pass; owner Windows strict record verified, correct latest fix3 native535+1 report
+matches536 current cases (old519-case report was not misattributed). New deterministic
+ownership probes show late cancel crossing into a later statement on both platforms and
+native descriptor shutdown after close/reuse (all real socket endpoints owned by probe).
+Recorded R37 and prepared one focused Opus5.5/High correction prompt. No architecture
+redesign or re-opening of settled R34-R36 behavior.
+
+Published living plain-language product/progress/remaining-work artifact and linked the
+existing dated Word/Markdown guide. Main gets docs only; candidate/native/review checkout,
+old artifacts and Cursor's seven saved edits stay preserved. Keep intermittent failure
+reports visible; no causal diagnosis asserted. No full suite/browser/model/remote/deployment
+claim from this review. Final owner-only publication audit and ignored evidence follow
+commit; G3B remains unmerged and G3C unstarted.

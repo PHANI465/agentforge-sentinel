@@ -1,5 +1,16 @@
 # Verification
 
+## October31 corrected G3B review:b74473e
+
+Original R34-R36 probes pass; combined independent Windows agent/original-probe suite is85
+passed in190.18s, native original probes4 passed in8.29s. Ruff/domain/HTTP exports pass.
+Verified owner Windows six-check record and latest native535+1 report against current536
+cases. New ownership probes fail: one Windows late-cancel case and two native cases, one
+using real owned socket descriptor reuse. Review [R37](reviews/G3B-b74473e.md) is blocking;
+no G3B integration or independent full-suite/browser result is claimed. Earlier unexplained
+owner failures remain disclosed. Private raw reports/probes and final preservation audit
+are saved in `.agent/g3b-review/b74473e/` after publication.
+
 ## October 31 independent G3B review:391effe
 
 Isolated offline locked review environment:64 new G3B focused tests pass in120.72s; Ruff,
