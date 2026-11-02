@@ -1,6 +1,7 @@
 """HTTP boundary. Bodies are validated here with code-only errors; identity comes only from
 the bearer token lookup, never from a request or model payload. Response shapes are the
-typed HTTP v1 contract (sentinel.contracts.http_v1, docs/api/README.md).
+typed HTTP v1 contract (sentinel.contracts.http_v1, docs/api/README.md) and its additive
+revisions (http_v12: docs/api/investigation-trace-v1.2.md).
 """
 from __future__ import annotations
 
@@ -19,11 +20,12 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.routing import Match
 
-from sentinel import investigators, model_results, scorers
+from sentinel import investigators, model_results, scorers, trace
 from sentinel.contracts.http_v1 import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, CaseDetail, CasePage, CaseState, ErrorResponse,
     ExecuteResponse, Health, IngestResponse, ModelResults, Overview, ScorerInfo, SessionView,
 )
+from sentinel.contracts.http_v12 import InvestigationTrace
 from sentinel.contracts.v1 import (
     Approval, ApprovalDecisionInput, AuditEvent, ExecuteActionInput, InvestigationRequestInput,
     TransactionInput, TrustedContext, safe_validation_errors,
@@ -36,7 +38,8 @@ from sentinel.service import MAX_CURSOR_LENGTH, Sentinel, ServiceError
 HTTP_LOG = logging.getLogger("sentinel.http")
 
 MAX_BODY_BYTES = 16_384
-API_VERSION = "1.1.0"  # v1.1 (C07): additive; legacy v1 frozen in contracts/http
+# v1.2 (G3C-A): additive investigation trace; v1 and v1.1 snapshots frozen in contracts/http
+API_VERSION = "1.2.0"
 _ERRORS = {status: {"model": ErrorResponse} for status in (401, 403, 404, 409, 413, 422)}
 # operation_id -> request model; bodies are read manually (size limit, code-only errors).
 REQUEST_BODIES: dict[str, type[BaseModel]] = {
@@ -148,6 +151,14 @@ def create_app(service: Sentinel | None = None) -> FastAPI:
              operation_id="get_case_audit")
     def get_audit(case_id: uuid.UUID, ctx: TrustedContext = Depends(context)):
         return service.get_audit(ctx, case_id)
+
+    @app.get("/v1/cases/{case_id}/investigation-trace", response_model=InvestigationTrace,
+             responses=_ERRORS, operation_id="get_investigation_trace")
+    def get_trace(case_id: uuid.UUID, ctx: TrustedContext = Depends(context),
+                  workflow_id: uuid.UUID | None = Query(None)):
+        """v1.2: the stored three-role workflow trace. Read-only: it never runs, recovers or
+        changes anything (docs/api/investigation-trace-v1.2.md)."""
+        return trace.investigation_trace(service, ctx, case_id, workflow_id)
 
     @app.post("/v1/cases/{case_id}/investigations", response_model=CaseDetail,
               responses=_ERRORS, operation_id="investigate_case")

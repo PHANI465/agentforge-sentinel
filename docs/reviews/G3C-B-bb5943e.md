@@ -1,5 +1,12 @@
 # G3C-B review: bb5943e — R38/R39 changes requested
 
+## Superseded by accepted correction, November 2
+
+R38/R39 close at 6014680 after independent 133-test and original six-probe passes,
+type/build verification and inspection of exact-candidate final evidence.
+See [the correction acceptance](G3C-B-6014680.md). The historical bb5943e findings and
+previous pending checkpoint below are retained; they do not describe current acceptance.
+
 ## Follow-up received; re-review pending
 
 Corrected candidate 6014680b5713105b5c29b8857561af650bec2b9c is saved as a direct child

@@ -1,0 +1,221 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/cases/7c000000-0000-4000-8000-000000000073/investigation-trace"
+  },
+  "response": {
+    "case_id": "7c000000-0000-4000-8000-000000000073",
+    "case_revision": 3,
+    "case_state": "open",
+    "legacy_investigator_runs": 0,
+    "read_at": "2026-10-23T17:00:35Z",
+    "selected": {
+      "attempts": [],
+      "limits": {
+        "db_wait_seconds": 5,
+        "max_followup_tool_calls": 3,
+        "max_investigator_revisions": 1,
+        "max_live_workflows_per_process": 1,
+        "max_outstanding_calls_per_process": 2,
+        "max_repeats": 1,
+        "max_role_invocations": 5,
+        "max_transitions": 1,
+        "role_grace_seconds": 2,
+        "role_timeout_seconds": 45,
+        "schema_version": "1.0",
+        "terminal_reserve_seconds": 5,
+        "tool_statement_timeout_ms": 2000,
+        "workflow_deadline_seconds": 150
+      },
+      "steps": [
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:35Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "transition",
+          "output_sha256": null,
+          "role": null,
+          "seq": 1,
+          "state": "gathering",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:35Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "tool_executed",
+          "output_sha256": null,
+          "role": null,
+          "seq": 2,
+          "state": "gathering",
+          "tool": "case_evidence",
+          "tool_result_id": "7c000000-0000-4000-8000-00000000007c",
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:35Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "tool_executed",
+          "output_sha256": null,
+          "role": null,
+          "seq": 3,
+          "state": "gathering",
+          "tool": "scoring_outcome",
+          "tool_result_id": "7c000000-0000-4000-8000-00000000007d",
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:35Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "tool_executed",
+          "output_sha256": null,
+          "role": null,
+          "seq": 4,
+          "state": "gathering",
+          "tool": "account_history",
+          "tool_result_id": "7c000000-0000-4000-8000-00000000007e",
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:35Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "workflow_terminated",
+          "output_sha256": null,
+          "role": null,
+          "seq": 5,
+          "state": "done",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        }
+      ],
+      "tool_results": [
+        {
+          "as_of": "2026-10-23T17:00:34Z",
+          "content_sha256": "37e13cf8008723cb843f720e8d9628b11b780071abcdca6e6298c04f319fcc9d",
+          "denial": null,
+          "evidence_ids": [
+            "7c000000-0000-4000-8000-000000000074",
+            "7c000000-0000-4000-8000-000000000075"
+          ],
+          "id": "7c000000-0000-4000-8000-00000000007c",
+          "schema_version": "1.0",
+          "status": "ok",
+          "tool": "case_evidence",
+          "values": {
+            "amount_minor": 250000,
+            "transaction_count_1h": 2
+          },
+          "window": null
+        },
+        {
+          "as_of": "2026-10-23T17:00:34Z",
+          "content_sha256": "892aa9f0096905bca423720e9134ba3c9c857e7c775dd382583accac34e761de",
+          "denial": null,
+          "evidence_ids": [],
+          "id": "7c000000-0000-4000-8000-00000000007d",
+          "schema_version": "1.0",
+          "status": "ok",
+          "tool": "scoring_outcome",
+          "values": {
+            "large_amount_rule_hit": true
+          },
+          "window": null
+        },
+        {
+          "as_of": "2026-10-23T17:00:34Z",
+          "content_sha256": "2520de0ef9f1722e4a52b01146f9c22683e2d6457151ea15e7ab389a029922de",
+          "denial": null,
+          "evidence_ids": [],
+          "id": "7c000000-0000-4000-8000-00000000007e",
+          "schema_version": "1.0",
+          "status": "ok",
+          "tool": "account_history",
+          "values": {
+            "history_count_24h": 2
+          },
+          "window": "24h"
+        }
+      ],
+      "usage_summary": {
+        "input_tokens": null,
+        "not_applicable_attempts": 0,
+        "output_tokens": null,
+        "reported_attempts": 0,
+        "unknown_attempts": 0
+      },
+      "workflow": {
+        "case_revision": 2,
+        "config": {
+          "name": "three-role-workflow",
+          "schema_version": "1.0",
+          "sha256": "f2e8e2778b94c23578b76f7c4fcbaef29202aeeff4c418fcb60629846d0c6465",
+          "version": "w1"
+        },
+        "deadline_at": "2026-10-23T17:03:05Z",
+        "deadline_status": null,
+        "disposition": {
+          "basis_run_id": null,
+          "inconclusive_code": "budget_exhausted",
+          "kind": "inconclusive",
+          "operation": null,
+          "reason_code": null,
+          "schema_version": "1.0",
+          "supported_claims": 0,
+          "unsupported_claims": 0
+        },
+        "finished_at": "2026-10-23T17:00:35Z",
+        "id": "7c000000-0000-4000-8000-000000000079",
+        "input_snapshot_sha256": "c9741b2a9291411c967c6fbd2a091a5589b88a1b8c21344622f3f9d269bdbae9",
+        "recorded_role_invocations": 0,
+        "recorded_tool_calls": 3,
+        "started_at": "2026-10-23T17:00:35Z",
+        "status": "inconclusive",
+        "terminal_by": "coordinator",
+        "tool_profile": {
+          "name": "agent-read-tools",
+          "schema_version": "1.0",
+          "sha256": "7065ef0fb0dd83a4b7c639f5e84ed7bc14b5b9d0bdbe144cfa9db956bbdc4aba",
+          "version": "t1"
+        }
+      }
+    },
+    "workflow_count": 1,
+    "workflows": [
+      {
+        "case_revision": 2,
+        "deadline_at": "2026-10-23T17:03:05Z",
+        "disposition_kind": "inconclusive",
+        "finished_at": "2026-10-23T17:00:35Z",
+        "id": "7c000000-0000-4000-8000-000000000079",
+        "inconclusive_code": "budget_exhausted",
+        "started_at": "2026-10-23T17:00:35Z",
+        "status": "inconclusive",
+        "terminal_by": "coordinator"
+      }
+    ]
+  },
+  "status": 200
+}

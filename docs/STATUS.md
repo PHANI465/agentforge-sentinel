@@ -1,5 +1,29 @@
 # Project status
 
+## November 2: G3C-B accepted; combined release verification underway
+
+Codex accepts corrected UI **6014680b5713105b5c29b8857561af650bec2b9c**; R38/R39 close.
+[Independent re-review](reviews/G3C-B-6014680.md): isolated frontend 133/133, original
+six probes 6/6, both TypeScript configurations and production build pass. The exact
+candidate's saved Windows and native strict/JUnit evidence is verified: six commands,
+594 passes and only the allowed live-Claude skip on each platform. No live model ran.
+
+The owner resumed work today. API 16b67fd and UI 6014680 are combined automatically in
+task/codex-g3c-integration, with no content conflicts. The error-order documentation and
+SETUP active-v1.2 corrections are applied; frozen API/model/data bytes are unchanged.
+**Main application is not advanced until this combined commit's release checks pass.**
+Component gate results do not certify integration. Full Windows and native backend checks
+will run sequentially, with JUnit from each strict run, followed by exact skip validation,
+HTTP export and read-only ML reproduction. Windows frontend and both real browser suites
+must pass, with ownership/secret-scanning cleanup intact. No assertion/timeout/skip changes.
+
+Remaining workstreams: measured G3D agent comparison, the deeper analyst workspace, and
+public demonstration/operational release. Evaluator role separation, populated workflow
+backup and operator three-role convenience remain explicit follow-ups. No new Claude
+implementation assignment is needed now. No remote/push/deployment or paid/provider use.
+Cursor's seven saved changes and accepted component worktrees remain untouched.
+Earlier dated entries are history, superseded by this resumed checkpoint.
+
 ## Latest: paused at owner request; corrected UI awaits re-review
 
 Saved candidate **6014680b5713105b5c29b8857561af650bec2b9c** is a clean direct child of

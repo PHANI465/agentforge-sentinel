@@ -34,3 +34,20 @@ export type RuntimeFile = {
 export function readRuntime(): RuntimeFile {
   return JSON.parse(readFileSync(runtimePath, "utf8")) as RuntimeFile;
 }
+
+/** serve.mjs writes runtime.json only after it has captured the Vite and API process
+ * identities, which can be seconds after Vite already answers Playwright's readiness probe.
+ * Anything that reads the run record at the start of a run waits for this invocation's. */
+export async function waitForRuntime(timeoutMs = 60_000): Promise<void> {
+  const runId = process.env.SENTINEL_E2E_RUN_ID ?? "";
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      if (readRuntime().runId === runId) return;
+    } catch {
+      // not written yet
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error("runtime_not_recorded");
+}
