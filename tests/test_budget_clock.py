@@ -1,7 +1,6 @@
 """G3C native diagnosis: bounded_call's limits are measured on the monotonic clock.
 
-On CPython builds without sem_clockwait (for example the portable interpreters uv installs on
-Linux), a timed threading wait (Event.wait, Condition.wait, Lock.acquire with a timeout)
+On the observed uv-managed CPython 3.11.14 build (HAVE_SEM_CLOCKWAIT = 0), a timed threading wait (Event.wait, Condition.wait, Lock.acquire with a timeout)
 expires on CLOCK_REALTIME. On the WSL2 host used for the native gates, CLOCK_REALTIME steps
 by about 2.5 s (mostly backwards, sometimes forwards; docs/agents/G3C-native-clock-diagnosis.md).
 A backward step made a 2 s COMMIT bound take 3.46 s; a forward step cancels a COMMIT early.

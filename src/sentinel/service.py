@@ -22,6 +22,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from sentinel import db, scoring
+from sentinel.clock import wait_future
 from sentinel.contracts.http_v1 import CASE_STATES
 from sentinel.contracts.guards import (
     ContractViolation, require_evidence_snapshot, require_executable_approval,
@@ -556,7 +557,9 @@ class Sentinel:
         pool = futures.ThreadPoolExecutor(1, thread_name_prefix="investigator")
         future = pool.submit(self.investigator.investigate, view)
         try:
-            return future.result(timeout=deadline), None
+            if not wait_future(future, deadline):  # monotonic deadline (R40)
+                raise futures.TimeoutError()
+            return future.result(timeout=0), None  # finished: no timed wait
         except futures.TimeoutError:
             self._event("investigation_timeout", run_id=str(run.id), seconds=deadline)
             return None, "timeout"

@@ -33,8 +33,9 @@ Investigated November 2, 2026 on the native Ubuntu (WSL2) host used for the gate
 
 Without `sem_clockwait`, CPython's `PyThread_acquire_lock_timed` computes an absolute
 `CLOCK_REALTIME` deadline once and calls `sem_timedwait`. `threading.py:331` is
-`waiter.acquire(True, timeout)`. `time.sleep` uses relative `clock_nanosleep(CLOCK_MONOTONIC)`
-and is not affected.
+`waiter.acquire(True, timeout)`. On this build `time.sleep` waits on the monotonic clock
+(an absolute `CLOCK_MONOTONIC` `clock_nanosleep` deadline) and is not affected. These
+statements describe the observed build and host, not every Python interpreter.
 
 ## Evidence
 
@@ -43,11 +44,11 @@ natively. It holds identifiers, counts, typed classes and `file:line` frames onl
 messages or credentials.
 
 1. **Standalone clock probe, idle, 240 s** (`clock/idle-240s.json`). There were seven
-   realtime steps of −2.52 to −2.66 s, about 33 s apart. Each was followed by a 500 ms timed
-   lock wait taking **3.17–3.41 s** (measured by monotonic time). There were no other
+   realtime steps of Ã¢Ë†â€™2.52 to Ã¢Ë†â€™2.66 s, about 33 s apart. Each was followed by a 500 ms timed
+   lock wait taking **3.17Ã¢â‚¬â€œ3.41 s** (measured by monotonic time). There were no other
    overshoots.
 2. **pg_sleep probe** (`clock/pgsleep.json`, a disposable cluster that was then stopped).
-   - A **+2601.5 ms** (forward) step occurred, and a −2595.4 ms step 15 s later.
+   - A **+2601.5 ms** (forward) step occurred, and a Ã¢Ë†â€™2595.4 ms step 15 s later.
    - The `pg_sleep(3)` spanning the backward step took **5599 ms**.
    - No `pg_sleep(3)` finished under 3003 ms. A forward step does not shorten it, because it
      first waits its full interval on a relative latch.
@@ -57,7 +58,7 @@ messages or credentials.
      `test_statement_without_a_reply_is_budget_exhausted_and_quarantined` took 3.61 s
      against 1.2 s, using the in-process `Silent` fake.
    - Failure 1 recurred twice. In the run with the realtime monitor (`prefix-clock/run2`),
-     a **−2490 ms step landed during that test**, and its COMMIT bound took **3461 ms against
+     a **Ã¢Ë†â€™2490 ms step landed during that test**, and its COMMIT bound took **3461 ms against
      1939 ms**.
    - A passing test, `test_withheld_statement_reply_replaces_the_quarantined_connection`
      (whose bound allows 15 s), overran **7628 ms against 4999 ms**. All 1288 main-thread
@@ -67,10 +68,10 @@ messages or credentials.
      The process was not frozen; only the realtime-timed wait was late.
 4. **Failure 2.**
    - Every passing native run of `test_uncertain_commit_reports_outcome_unknown` takes
-     4.18–7.40 s, because the recovery COMMIT always includes the 3 s delay. The failed run
+     4.18Ã¢â‚¬â€œ7.40 s, because the recovery COMMIT always includes the 3 s delay. The failed run
      took **2.65 s**, so its recovery COMMIT ended early.
    - The only typed path to `conflict` there is a COMMIT error. A cancel sent at about
-     `3.97 − step` s (the forward step shortening `done.wait`) while the server still sleeps
+     `3.97 Ã¢Ë†â€™ step` s (the forward step shortening `done.wait`) while the server still sleeps
      3 s fits that duration.
    - The client fix alone was then run 20 times. One run failed with the reverse mechanism,
      captured in full: a backward step stretched the server's `pg_sleep(3)`, and the now
@@ -84,12 +85,15 @@ messages or credentials.
 
 - **`src/sentinel/agents/budget.py`.** `_await(ready, left_s)` waits by sleeping on the
   monotonic clock: 0.2 ms, doubling to 5 ms, until the operation answers or the limit passes.
+  The 5 ms is the polling interval, not a guaranteed observed latency under OS scheduling.
+  (The helper is now `sentinel.clock.wait_until`; see R40 below. The f61b755 commit message
+  called `time.sleep` "relative"; it waits on an absolute monotonic deadline on this build.)
   `bounded_call` uses it in place of `done.wait(cancel_after)`, the reply-wait
   `Condition.wait` and the helper-wait `Condition.wait`. Shared state is still read under
   the lease lock. These are unchanged:
   - budgets, `COMMIT_CANCEL_LEAD_MS` and `COMMIT_CANCEL_REPLY_MS`;
   - unknown COMMIT versus known rollback;
-  - retirement, quarantine and socket shutdown (R34–R37).
+  - retirement, quarantine and socket shutdown (R34Ã¢â‚¬â€œR37).
 - **`tests/test_agent_workflow.py`, fixture `slow_commit` only.**
   - The deferred trigger now waits on an advisory lock instead of calling `pg_sleep(3)`,
     and the function runs with `lock_timeout = 0`.
@@ -100,7 +104,7 @@ messages or credentials.
     change for Codex review: the intended 3 s server-side COMMIT is kept, and only its clock
     changes.
 - **`tests/test_budget_clock.py`, new.** It replaces only budget.py's view of `threading`
-  with timed waits skewed as a stepping realtime clock would skew them (±1.5 s), and does not
+  with timed waits skewed as a stepping realtime clock would skew them (Ã‚Â±1.5 s), and does not
   touch the system clock.
 
 ## Regression and verification
@@ -120,19 +124,19 @@ messages or credentials.
 
 **Native, with the full patch applied to the diagnostic clone (restored afterwards):**
 
-- `test_uncertain_commit…` passed **20/20**, with **9 steps (6 backward, 3 forward) during
-  the runs** and no bounded-wait overrun. Recovery COMMITs took 3016–3048 ms, and the first
+- `test_uncertain_commitÃ¢â‚¬Â¦` passed **20/20**, with **9 steps (6 backward, 3 forward) during
+  the runs** and no bounded-wait overrun. Recovery COMMITs took 3016Ã¢â‚¬â€œ3048 ms, and the first
   COMMIT ended `AdminShutdown` then unknown each time.
-- The known-rollback control passed **10/10**, cancelled at 975–993 ms.
+- The known-rollback control passed **10/10**, cancelled at 975Ã¢â‚¬â€œ993 ms.
 - The failing-order prefix passed **3/3**. Steps landed during
-  `test_statement_without_a_reply…` (−2491 ms, which had failed before) and
-  `test_withheld_statement_reply…`, with no overrun.
+  `test_statement_without_a_replyÃ¢â‚¬Â¦` (Ã¢Ë†â€™2491 ms, which had failed before) and
+  `test_withheld_statement_replyÃ¢â‚¬Â¦`, with no overrun.
 
 The final exact-commit gates are reported in the task handoff chat.
 
 ## Not changed, and remaining exposure (for Codex)
 
-- **Same-class waits outside `bounded_call`.**
+- **Same-class waits outside `bounded_call`. Resolved by R40 below; the original note follows.**
   - `coordinator.py:414` uses `future.result(timeout)` for live role calls.
   - `service.py:559` is the single-investigator deadline. That file is outside this task's
     ownership.
@@ -156,3 +160,39 @@ The final exact-commit gates are reported in the task handoff chat.
 - **Not established.** Failure 2's forward-step mechanism was not observed inside the
   original failed run itself. No full native suite was rerun before the fix; the final
   exact-commit gates follow the commit.
+
+## R40 follow-up: the two caller waits (review G3C-clock-f61b755)
+
+- **Defect.** Two waits had the same weakness:
+  - `coordinator.py`: the live-role `Future.result(timeout)`;
+  - `service.py` `_run_investigator`: the single-investigator `Future.result(timeout)`.
+
+  Both are timed condition waits on the observed build. A forward step recorded a successful
+  150 ms worker as `timeout`. A backward step stretched the 1 s + 2 s grace deadline by about
+  a second.
+- **Fix.** A shared `sentinel/clock.py` holds `wait_until`, moved unchanged from budget.py,
+  and `wait_future(future, timeout_s)`, which waits for `future.done()` on the monotonic
+  clock. Each caller then collects the finished future with `future.result(timeout=0)`,
+  which performs no timed wait on a finished future. These are unchanged:
+  - the deadlines: timeout plus grace, and the coordinator's working-phase cap;
+  - result and exception classification;
+  - honest timeout and reopen;
+  - discarded late results;
+  - the late-worker call slot, released only when the worker really returns
+    (`capacity.Slot.start`'s done-callback);
+  - `pool.shutdown(wait=False)`, and no repeat after a timeout.
+- **Regressions.** `tests/test_future_clock.py` skews only `Future`'s condition: forward
+  ends a positive timed wait at once, and backward adds 1 s. It runs the real service over
+  HTTP and the real coordinator with a live synthetic role, on disposable PostgreSQL.
+  - **Failing first on exact f61b755, on Windows and native alike:** 6 fail on their
+    intended assertions and 4 normal controls pass. The six are: forward skew turning a
+    150 ms success into `timeout` (both callers); forward skew turning a 150 ms provider
+    failure into `timeout` (both callers); and backward skew stretching the 3 s deadline to
+    4.06â€“4.39 s (both callers).
+  - **With the fix:** all pass, including the late-result discard and the call slot staying
+    held after the timeout until the worker returns. Codex's six original probes pass
+    (4 failed before); they ran as a temporary file that was then removed.
+- **Fixture scope.** The advisory-lock `slow_commit` gate suits the current serial tests. It
+  is not a general per-COMMIT scheduling policy for arbitrarily overlapping waiters.
+- **Server side.** PostgreSQL `statement_timeout`, `lock_timeout` and `pg_sleep` still follow
+  the server's realtime clock. That limitation is unchanged and not addressed here.

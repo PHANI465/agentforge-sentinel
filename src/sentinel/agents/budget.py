@@ -37,6 +37,7 @@ import psycopg
 from psycopg.conninfo import conninfo_to_dict
 from psycopg.rows import dict_row
 
+from sentinel.clock import wait_until as _await
 from sentinel.contracts.agents import WorkflowLimits
 
 MIN_DB_MS = 100
@@ -225,27 +226,6 @@ def _cancel(conn, timeout_s: float) -> None:
         conn.cancel_safe(timeout=timeout_s)
     except Exception:  # the outcome is decided by the reply, or its absence
         pass
-
-
-POLL_MIN_S, POLL_MAX_S = 0.0002, 0.005
-
-
-def _await(ready: Callable[[], bool], left_s: Callable[[], float]) -> bool:
-    """Wait until ready() or until left_s() reaches 0, on the monotonic clock; True if ready.
-
-    A bound is never a timed threading wait: on CPython builds without sem_clockwait (such as
-    the portable interpreters uv installs on Linux) those expire on CLOCK_REALTIME, which host
-    time sync can step by seconds mid-wait: a backward step overran a COMMIT bound and a
-    forward one cancelled a COMMIT early (docs/agents/G3C-native-clock-diagnosis.md).
-    time.sleep is relative and monotonic; a reply is noticed within POLL_MAX_S."""
-    pause = POLL_MIN_S
-    while not ready():
-        remaining = left_s()
-        if remaining <= 0:
-            return ready()
-        time.sleep(min(pause, remaining))
-        pause = min(pause * 2, POLL_MAX_S)
-    return True
 
 
 def bounded_call(conn, operation: Callable, wait_ms: float,
