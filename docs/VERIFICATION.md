@@ -1,5 +1,31 @@
 # Verification
 
+## November 2: SQL clock fix validated; R40 caller-wait correction required
+
+Candidate **f61b7554da532a0f8149f7ac02d0ab7e4cd84337**, direct child of preserved 7bc0027,
+fixes database waits with monotonic polling and replaces the slow-COMMIT fixture's
+wall-clock pg_sleep with a monotonic advisory-lock gate. Codex independently passes
+**24 Windows and seven native checks**, including both real COMMIT tests, and verifies
+the exact-candidate full records: **599 passes + one allowed skip on both platforms**.
+No assertion/timeout/skip policy was weakened; source/contracts/UI/model bytes outside
+the documented change are preserved. UI 6014680/R38/R39 acceptance remains unchanged.
+
+**Overall review: changes requested for R40, not ready for main.** The two acknowledged
+Future.result(timeout=...) callers in coordinator.py and service.py reproduce the same
+clock defect. Six independent production-path probes on EACH platform give **four
+assertion failures and two controls passing**: forward skew causes false timeouts, and
+backward skew stretches a three-second budget to about 4.1-4.3 s. Adapters are synthetic;
+no provider is called and system time is untouched. [Review](reviews/G3C-clock-f61b755.md).
+
+[Claude focused follow-up](prompts/CLAUDE_G3C_CLOCK_WAIT_FOLLOWUP.md), **Opus 5.5 / High**,
+continues the SAME branch from f61b755. Explicit ownership now includes the service.py
+deadline caller; do not reopen the completed clock diagnosis or rewrite history. Keep
+the SQL fix and fixture, extend monotonic waiting to both callers, add meaningful
+regressions and certify a new SHA. Do not rerun full f61b755 gates merely for another pass.
+Main application stays G3B a7c71f5 until the reviewed combined release passes. No G3D/live
+evaluation, main application merge, remote/push/deployment or new paid usage. Cursor's
+seven saved edits and component worktrees are preserved. Older entries are history.
+
 ## November 2: UI accepted; combined release blocked by two native checks
 
 The owner resumed today. **G3C-B 6014680 is accepted; R38/R39 are closed** after independent

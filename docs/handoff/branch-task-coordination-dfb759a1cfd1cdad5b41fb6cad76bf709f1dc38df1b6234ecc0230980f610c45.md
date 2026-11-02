@@ -1,5 +1,17 @@
 # Handoff: task/coordination
 
+## November 2 clock review: R40 changes requested
+
+f61b755 is clean/preserved, scoped SQL/fixture checks pass 24 Windows and seven native;
+owner full exact-commit reports verified 599+one skip each, UI133/browser19+10 logs pass.
+Remaining two Future waits reproduce four assertion failures/two controls on EACH
+platform; no provider/system-clock changes. R40 must finish both callers before main.
+Next: docs/prompts/CLAUDE_G3C_CLOCK_WAIT_FOLLOWUP.md, Opus 5.5 / High, SAME existing
+Claude branch from f61b755; explicit service.py helper ownership. No new old-base worktree
+or full f61b755 rerun. Main stays G3B; R38/R39 closed. Preserve all component/Cursor edits.
+Canonical .agent/g3c-clock-review/f61b755 contains independent, full and clock evidence.
+Older notes below are chronological history.
+
 ## November 2 resumed: UI accepted, integration blocked
 
 UI 6014680 is accepted, R38/R39 closed after independent 133+six probe/type/build passes.

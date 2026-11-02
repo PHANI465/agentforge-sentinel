@@ -1,5 +1,12 @@
 # G3C integration review: 7bc0027, native release gate blocked
 
+## Clock diagnosis follow-up, November 2
+
+f61b755 fixes SQL wait-clock sensitivity and the COMMIT fixture; independent checks pass,
+and its full platform reports show 599+one skip each. This does not erase the original
+failed 7bc0027 reports below. New R40 probes show the two caller Future waits still fail
+under skew; see [the current review](G3C-clock-f61b755.md). Main remains unchanged.
+
 November 2, 2026, America/Phoenix. Candidate **7bc00272e083bb30d673eb4b11311623b992f942**
 on task/codex-g3c-integration combines canonical documentation main 0caadda and accepted
 UI 6014680 (containing accepted API 16b67fd). The merge is automatic with no conflicts.

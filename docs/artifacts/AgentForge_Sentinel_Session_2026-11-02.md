@@ -1,5 +1,26 @@
 # AgentForge Sentinel: November 2, 2026 checkpoint
 
+## Latest: clock diagnosis validated, one focused R40 correction remains
+
+Claude delivered f61b755 with monotonic SQL waits and a monotonic advisory-lock slow-COMMIT
+fixture. Codex passes 24 Windows and seven native focused checks, and verifies its full
+records at 599 passes plus one allowed skip per platform. The fixture keeps the test's
+intended three-second deferred COMMIT without relaxing assertions. Original failure 1's
+clock mechanism is observed; original failure 2 remains a qualified inference.
+
+The two disclosed Future.result(timeout) callers remain vulnerable on this host/build.
+Independent production-path probes on BOTH platforms give four assertion failures and
+two normal controls: false timeouts on forward skew and ~4.1-4.3 s for a three-second
+budget on backward skew. They use synthetic workers and never modify system time.
+
+**Current action:** give Claude [the R40 prompt](../prompts/CLAUDE_G3C_CLOCK_WAIT_FOLLOWUP.md),
+Opus 5.5 / High, on the same existing branch from f61b755. Keep the delivered SQL/fixture
+fix, finish both caller waits, and return a new tested commit. No repeat of the original
+diagnosis or unchanged full f61b755 gates is needed. Main stays G3B; API/UI acceptance is
+unchanged, and public release/evaluator/analytics work still follows integration.
+The full [review](../reviews/G3C-clock-f61b755.md) and ignored evidence preserve all results.
+Earlier checkpoint sections below are history, superseded by this update.
+
 ## Summary
 
 **Trace UI 6014680 is accepted; R38/R39 are closed.** Independent isolated review passed

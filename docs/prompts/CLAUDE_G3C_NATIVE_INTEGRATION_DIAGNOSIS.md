@@ -1,5 +1,10 @@
 # G3C integration: diagnose native COMMIT timing and recovery failures
 
+**Follow-up:** diagnosis/SQL-clock correction is delivered at f61b755 and passes scoped
+review. Do not repeat the original investigation. Current task is
+[R40 caller waits](CLAUDE_G3C_CLOCK_WAIT_FOLLOWUP.md) on the same branch, with explicit
+service.py ownership. Main integration still waits for that correction.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. This requires careful Postgres
 transaction/cancellation, thread/connection lifetime and monotonic-budget analysis. No
 new feature or framework is requested; Sentinel providers remain deterministic/off.
