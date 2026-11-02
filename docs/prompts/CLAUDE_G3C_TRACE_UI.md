@@ -1,5 +1,10 @@
 # G3C-B: analyst investigation trace UI and real browser integration
 
+**Checkpoint:** Claude has delivered the R38/R39 correction at 6014680b5713105b5c29b8857561af650bec2b9c.
+The owner paused work for today. Do not rerun this completed implementation assignment.
+Codex re-reviews that exact candidate tomorrow; acceptance and integration remain pending.
+The original assignment below is retained as implementation/review history.
+
 Delivered at bb5943e; [review R38/R39](../reviews/G3C-B-bb5943e.md) requests focused fixes.
 The current task is [the correction prompt](CLAUDE_G3CB_REVIEW_FIXES.md) on the existing
 UI branch, not another fresh implementation worktree. The original assignment follows.

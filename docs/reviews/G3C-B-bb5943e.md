@@ -1,5 +1,14 @@
 # G3C-B review: bb5943e — R38/R39 changes requested
 
+## Follow-up received; re-review pending
+
+Corrected candidate 6014680b5713105b5c29b8857561af650bec2b9c is saved as a direct child
+of bb5943e. Claude reports both fixes and all final gates passing. Codex inspected the
+clean commit and local passing strict/JUnit/frontend records, but has not performed the
+correction re-review. R38/R39 are not yet closed. Work is paused at the owner's request;
+tomorrow review the correction and focused probes before any API/UI integration.
+The original findings and bb5943e evidence below remain unchanged.
+
 November 1, 2026 (America/Phoenix). Candidate
 **bb5943e681708d8fbf3db031f06f5d37a57389c9**, task/claude-g3c-trace-ui, based on accepted
 G3C-A 16b67fd. **Not accepted or merged.** G3C-A and its frozen HTTP v1.2 contract remain

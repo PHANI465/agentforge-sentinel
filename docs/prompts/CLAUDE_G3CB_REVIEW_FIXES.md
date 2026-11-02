@@ -1,5 +1,10 @@
 # Claude G3C-B R38/R39 review corrections
 
+**Checkpoint:** Claude has delivered the R38/R39 correction at 6014680b5713105b5c29b8857561af650bec2b9c.
+The owner paused work for today. Do not rerun this completed implementation assignment.
+Codex re-reviews that exact candidate tomorrow; acceptance and integration remain pending.
+The original assignment below is retained as implementation/review history.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. This is a focused Unicode-contract
 and React render-ownership correction, with event/commit ordering and regression evidence.
 No architecture redesign or live provider call is requested.

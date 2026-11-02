@@ -1,5 +1,32 @@
 # AgentForge Sentinel November 1 checkpoint
 
+## Latest: paused at owner request; corrected UI awaits re-review
+
+Saved candidate **6014680b5713105b5c29b8857561af650bec2b9c** is a clean direct child of
+bb5943e on task/claude-g3c-trace-ui. Claude reports R38 Unicode code-point bounds and
+R39 render-time context ownership corrected, with 18 maintained regressions and the
+original six Codex probes passing. These are delivered corrections, **not Codex acceptance**.
+The earlier bb5943e changes-requested review remains history; do not rerun its assignment.
+
+Codex checked the saved SHA, parent, sole owner author/committer, clean checkout and the
+local six-command strict record. Its JUnit has 595 cases: 594 passed, only the allowed
+live-Claude skip, no errors/failures. Local frontend logs record 133 unit tests and
+19 legacy / 10 trace browser passes. These are inspected Claude run artifacts, not new
+independent executions. Claude also reports the same full native Ubuntu gate and frozen
+export/ML checks passed; those native artifacts are not independently inspected tonight.
+
+**Paused for today.** No new tests, implementation, provider call or application merge
+is started. Tomorrow Codex reviews the exact six-file correction diff, reruns meaningful
+focused Unicode/context probes, and checks the final evidence. R38/R39 close only after
+that review. If accepted, combine API/UI, apply the two queued documentation corrections,
+and verify the integrated commit. Otherwise dispatch only concrete remaining findings.
+
+G3C-A 16b67fd stays accepted/frozen; main runtime remains G3B a7c71f5. No API/UI application
+integration, push or deployment occurred. Original Cursor seven saved edits stay intact.
+Claude should preserve its clean branch/reports and wait; no further assignment tonight.
+For any later Claude correction handoff use Opus 5.5 / High, with scope-specific reasoning.
+Earlier dated entries below are chronological history, superseded by this checkpoint.
+
 ## Latest checkpoint: trace UI delivered; two corrections before acceptance
 
 UI candidate bb5943e681708d8fbf3db031f06f5d37a57389c9 is committed on its own branch,
