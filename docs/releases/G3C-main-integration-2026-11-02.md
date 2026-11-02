@@ -16,13 +16,36 @@ model/evaluation artifacts, locks, CI and limits remain unchanged from the candi
 
 ## Combined release gate
 
-**Pending on this new exact integration commit.** Main will advance only after full
-Windows/native strict gates run sequentially, with same-run JUnit/structured validation,
-HTTP export, read-only ML reproduction, and Windows frontend plus both real browser suites.
-Component full passes (609+one each) are not represented as an integrated pass. Exact
-results and the tested merge hash will be added in the subsequent docs-only publication.
-No report relies on cross-platform wall-clock timestamps to prove sequencing on the
-observed stepping WSL host; the orchestrator observes Windows completion before native start.
+**Accepted/tested merge: f78869834597840934fb449da10c2adfb440145a.** First parent f93e35e; second parent accepted
+0c17bc8. Complete Windows and native Ubuntu suites run sequentially on that exact clean
+merge, with no assertions, skips, dependencies or checker timeouts changed.
+
+| Check | Windows | Native Ubuntu, sentinel UID 1000 |
+| --- | --- | --- |
+| Strict six commands | 6/6 passed | 6/6 passed |
+| Full backend | 609 passed, one allowed skip | 609 passed, one allowed skip |
+| Same-run structured JUnit | exit 0, 610 cases | exit 0, 610 cases |
+| Frozen/current HTTP export | passed | passed |
+| Read-only ML reproduction | reproduced true | reproduced true |
+| Frontend type / unit / build | pass / 133 / pass | not run |
+| Real browser suites | legacy19 + trace10 passed | not run |
+
+The strict gate's own pytest run produces each XML, so no second full run exists merely
+to produce a report. Only the opt-in live-Claude test is skipped for its allowed reason.
+Package checks verify five migrations, eight model/data assets and installed inference
+outside source. Browser scanner/lifecycle harnesses, intentional error-artifact scanning
+and exact owned-process cleanup are retained. No recovery files or disposable stacks
+remain; the original test/clock failures are preserved rather than overwritten.
+
+The parent Windows orchestrator observes the completed passing Windows report before
+starting native, recording monotonic timestamps and native exit. Cross-platform realtime
+timestamps on the stepping WSL host are not used as sequencing proof.
+
+Raw Windows originals are in the release checkout .agent/g3c-release/windows/; native
+originals are /home/sentinel/g3c-final-release-reports/. Canonical ignored copies live
+under .agent/g3c-release/f788698/ with sequence, review and publication audit. The
+separately committed final publication changes documentation only; its application bytes
+are identical to the tested merge. It is not misrepresented as another full strict run.
 
 ## Retained evidence and limits
 
@@ -39,3 +62,10 @@ separation, populated-workflow backup and operator three-role helper remain foll
 The owner designated Codex as integrator. All new commits use PHANI465 <pgavara1@asu.edu>
 as sole author AND committer, no trailers/history rewriting. Accepted component worktrees
 and Cursor's original seven saved changes remain preserved.
+
+## Next
+
+[Safe evaluator preparation](../prompts/CLAUDE_G3D_EVALUATOR_PREP.md), Opus 5.5 / High,
+separates provisioning authority from runtime investigation before any live comparison.
+Populated-workflow backup and the operator's three-role convenience option remain separate
+follow-ups. No additional feature is needed to close this G3C release gate.

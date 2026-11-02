@@ -1,5 +1,15 @@
 # Handoff: task/coordination
 
+## Final G3C release: f788698
+
+R40 and G3C API/UI/clock integration complete. Exact Windows/native strict gates609+one
+each, same-run structured XML, HTTP/ML and Windows frontend133/browser19+10 pass.
+Parent monotonic orchestration proves sequential full suites. Final publication docs-only,
+application bytes equal tested f788698; prior failures/components/Cursor preserved.
+Next: docs/prompts/CLAUDE_G3D_EVALUATOR_PREP.md, Opus5.5 / High, new isolated worktree.
+No live evaluation, remote push or deployment. Evidence: canonical .agent/g3c-release/f788698/.
+Older pending/checkpoint notes below are history.
+
 ## R40 accepted; release integration now verifies
 
 Accepted candidate 0c17bc8 closes R40: independent Windows34+six and native17+six,

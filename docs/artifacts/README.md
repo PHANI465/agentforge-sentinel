@@ -12,6 +12,8 @@ Ten pages explaining the verified application, fictional fraud examples, archite
 
 ## Current session
 
+- [November 2 G3C release, clock corrections and remaining work](AgentForge_Sentinel_Session_2026-11-02.md) — current checkpoint.
+
 - [November 1 G3B/G3C-A acceptance and trace UI plan](AgentForge_Sentinel_Session_2026-11-01.md)
 
 - [October 31 resumption and active G3A correction](AgentForge_Sentinel_Session_2026-10-31.md)

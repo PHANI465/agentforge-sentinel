@@ -2,7 +2,7 @@
 
 A local fraud investigation workbench using synthetic financial transactions, rule or trained-model scoring, evidence review, bounded investigation, human approval, simulated actions and an audit trail.
 
-The consolidated Windows-local codebase includes the React/TypeScript analyst UI, FastAPI/PostgreSQL API, reproducible scikit-learn baseline and model reports, persisted approval/replay workflow, operator backup/rollback tooling and backend CI configuration. Main combines I03 `4fff776` with accepted N2-N7 native Linux backend portability/recovery changes. See the [current integration](docs/releases/G3B-main-integration-2026-11-01.md) for exact platform verification records. GitHub Actions, macOS, Linux browser and hosted/public access are not verified. Model scores are uncalibrated rankings from a synthetic benchmark.
+The consolidated Windows-local codebase includes the React/TypeScript analyst UI, FastAPI/PostgreSQL API, reproducible scikit-learn baseline and model reports, persisted approval/replay workflow, operator backup/rollback tooling and backend CI configuration. Main carries tested G3C `f788698`: the trace API/UI and monotonic workflow deadlines on the accepted I03 and native Linux backend foundation. See the [current integration](docs/releases/G3C-main-integration-2026-11-02.md) for exact platform verification records. GitHub Actions, macOS, Linux browser and hosted/public access are not verified. Model scores are uncalibrated rankings from a synthetic benchmark.
 
 ## Run locally
 
@@ -29,9 +29,9 @@ Model mode is explicit (`up --scorer model`) and requires operator-provisioned a
 
 ## Verify and understand the project
 
-- [Current G3B local release](docs/releases/G3B-main-integration-2026-11-01.md): integrated references, verification commands and limits.
+- [Current local release](docs/releases/G3C-main-integration-2026-11-02.md): integrated references, verification commands and limits.
 - [Current status](docs/STATUS.md), [task queue](docs/TASK_QUEUE.md) and [roadmap](docs/PROJECT_PLAN.md): accepted scope and remaining milestones.
 - [Project artifacts](docs/artifacts/README.md): saved HTML, Word and Markdown checkpoints.
 - [Setup and checks](SETUP.md): locked dev+ml, strict/package/contract checks and real browser/API/Postgres tests.
 
-The rule scorer and deterministic investigator need no model key. The optional local Claude adapter is separate from hosted inference. Bounded evidence-analyst/investigator/reviewer orchestration is integrated; its read-only investigation trace UI is accepted, while measured live quality comparison remains next. Public visitor keys, deeper financial analytics, broader AI attack evaluations and hosted operation remain future work; native Linux coverage is currently the local backend scope. All actions are simulated; there is no real-bank fraud-performance or production-capacity claim.
+The rule scorer and deterministic investigator need no model key. The optional local Claude adapter is separate from hosted inference. Bounded evidence-analyst/investigator/reviewer orchestration is integrated; its read-only investigation trace UI is integrated, while measured live quality comparison remains next. Public visitor keys, deeper financial analytics, broader AI attack evaluations and hosted operation remain future work; native Linux coverage is currently the local backend scope. All actions are simulated; there is no real-bank fraud-performance or production-capacity claim.

@@ -1,12 +1,11 @@
 # AgentForge Sentinel: project overview and remaining work
 
-November 2: **R40 closes at accepted 0c17bc8**; UI 6014680 and API 16b67fd stay accepted.
-Independent checks pass Windows 34+six original probes and native 17+six. Both exact
-component full gates pass 609+one skip. Final combined release verification is underway;
-main remains on the previous runtime until that new merge passes. No new Claude correction.
-[Today's checkpoint](AgentForge_Sentinel_Session_2026-11-02.md).
+November 2: **G3C is integrated and verified at f788698.** R38/R39/R40 are closed.
+Both complete backend platform gates pass 609+one allowed skip; Windows frontend133 and
+real browsers19 legacy +10 trace pass. Main carries this tested application and updated
+documentation. [Today's checkpoint](AgentForge_Sentinel_Session_2026-11-02.md).
 
-Current November 1, 2026 checkpoint: accepted G3B is integrated at a7c71f5 and passes full
+Historical November 1, 2026 checkpoint: accepted G3B is integrated at a7c71f5 and passes full
 Windows/native Ubuntu backend gates, Windows frontend and browser checks. See the
 [release record](../releases/G3B-main-integration-2026-11-01.md) and
 [session checkpoint](AgentForge_Sentinel_Session_2026-11-01.md).
@@ -52,29 +51,31 @@ and operational work beyond this synthetic demonstration. No real financial advi
 | Analyst interface | Accepted case queue/detail/evidence/audit/approval and model-results views, React/TypeScript/Vite, real browser/API/PostgreSQL tests |
 | Local operations | Windows and native Ubuntu backend validation, package installation checks, restart/recovery and backup/restore tooling; actual GitHub Actions/hosting still unverified |
 | Multi-agent design | G3A accepted: analyst/investigator/reviewer, scoped tools, server-checked claims, finite budgets and persisted boundaries |
-| Multi-agent runtime | G3B e23a7cd accepted, R34-R37 closed; integrated and verified at a7c71f5 |
+| Multi-agent runtime | G3B accepted, R34-R37 closed; included in verified G3C f788698 |
+| Investigation trace | Read-only API/UI plus monotonic SQL/caller waits integrated; R38/R39/R40 closed |
 
-Independent G3B review has 90 Windows passes and six native probe passes. The integrated
-backend has 539 passes and one allowed skip on each platform; Windows frontend44 and
-browser19 pass. These checks do not establish live agent quality or production capacity.
+Independent R40 review passes Windows34+six original probes and native17+six. The current
+integrated backend has 609 passes and one allowed skip per platform; Windows frontend133
+and browser19 legacy +10 trace pass. Earlier G3B review has Windows90/native six. None
+of these checks establish live agent quality or production capacity.
 
 ## How much is left?
 
-The core local application and classical ML foundation are built. There are **four main
-product workstreams remaining** after the accepted multi-agent backend integration. Some original
+The core local application and classical ML foundation are built. There are **three main
+product workstreams remaining** after the verified trace API/UI/clock integration. Some original
 milestones span both completed and pending work: G1's local path is done while its hosted
 path is not; G2's ML is done while the broader analyst workspace is incomplete. G3's design and runtime
-are accepted while its trace UI and quality evaluation remain.
+and trace UI are accepted while measured live quality evaluation remains.
 
 A single percentage would depend on whether the optional G5 research extensions are counted.
 Use accepted capabilities and these concrete next deliverables to track progress.
 
 | Order | Remaining deliverable | What will demonstrate completion |
 | --- | --- | --- |
-| 1 | G3C trace API and analyst UI | API accepted at 16b67fd; API/UI and clock fixes accepted at 0c17bc8; final combined release checks remain |
-| 2 | G3D measured agent evaluation | Safe runtime-role evaluator; separately authored final synthetic cases; actual one-live vs three-role comparisons under the frozen protocol, human rubric and reported failures/latency/observable usage |
-| 3 | Deeper data-analyst workspace | Curated read-only queries, data quality, financial reconciliation, cohorts/time trends, error slices and exports checked against known answers |
-| 4 | Public demo and operational release | Recorded replay, authorized staging/remote/real CI, measured capacity, secret-safe visitor BYOK if included, session isolation, retention/cleanup and deployment/run instructions; README and short demo video |
+| Done | G3C trace API/UI and clock waits | Integrated/tested f788698; both backend platform gates and Windows frontend/29 browser checks pass |
+| 1 | G3D measured agent evaluation | Safe runtime-role evaluator; separately authored final synthetic cases; actual one-live vs three-role comparisons under the frozen protocol, human rubric and reported failures/latency/observable usage |
+| 2 | Deeper data-analyst workspace | Curated read-only queries, data quality, financial reconciliation, cohorts/time trends, error slices and exports checked against known answers |
+| 3 | Public demo and operational release | Recorded replay, authorized staging/remote/real CI, measured capacity, secret-safe visitor BYOK if included, session isolation, retention/cleanup and deployment/run instructions; README and short demo video |
 
 Security tests belong to each workstream. Public keys/retention, document prompt injection
 and public SQL introduce new boundaries and cannot inherit a safety claim from the local
@@ -82,11 +83,12 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Codex completes final API/UI/clock release verification before main advances. Claude can remain idle; R40 implementation and re-review are complete.
-2. Codex reviews the diagnosis/fix and completes release verification before advancing main. Component UI acceptance is complete; do not restart that assignment. Keep frozen API bytes and preserved worktrees unchanged.
-3. Run agent quality evaluations only after implementation/configuration/protocol are frozen
-   and safe evaluation connections are prepared. Deterministic fixtures are not evidence
-   that three language-model agents improve fraud investigations.
+1. Give Claude [safe evaluator preparation](../prompts/CLAUDE_G3D_EVALUATOR_PREP.md),
+   Opus5.5 / High, in a new isolated worktree from current main. G3C corrections are complete.
+2. Complete populated-workflow backup and operator convenience follow-ups separately,
+   then run the measured G3D comparison under its frozen protocol/common human rubric.
+3. Deepen the analyst workspace and prepare the public demonstration/operations gates.
+   Preserve frozen API/model/evaluation bytes and all accepted/Cursor worktrees.
 
 The local_stack.py convenience command still needs a tested three-role choice; API configuration already supports it.
 

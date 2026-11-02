@@ -1,10 +1,10 @@
 # G3C-B: investigation trace panel
 
 **November 2 acceptance:** UI 6014680 and its R38/R39 corrections are accepted under
-[the independent review](../reviews/G3C-B-6014680.md). Integration verification is a
-separate gate; component results below do not certify the combined application.
+[the independent review](../reviews/G3C-B-6014680.md). Combined release f788698 passes full Windows/native backend gates and Windows
+frontend/legacy19/trace10 browser suites; see the release record for exact-commit scope.
 
-Status: candidate for Codex UI review; not integrated. Base and dependency: G3C-A accepted
+Status: accepted at 6014680 and integrated with clock corrections at tested f788698. Base and dependency: G3C-A accepted
 at 16b67fd0cd09cdd08bbfa64a159035a7a188bf5b (docs/reviews/G3C-A-16b67fd.md on
 task/coordination). The server, contracts and fixtures are unchanged.
 

@@ -1,5 +1,32 @@
 # Shared implementation queue
 
+## November 2: G3C released; R38/R39/R40 closed
+
+**Tested integration f78869834597840934fb449da10c2adfb440145a is accepted for main.** It combines current coordination
+and exact accepted 0c17bc8, including trace API 16b67fd, UI 6014680, SQL-clock fix f61b755
+and the shared monotonic caller waits. Twelve central document conflicts were reconciled;
+no production conflict or source fix was introduced. Application/test/contract/model/lock
+bytes match accepted 0c17bc8. The queued error-order and active-v1.2 SETUP corrections ship.
+
+Both complete release gates pass on exact clean f788698: **609 passed + one allowed
+live-Claude skip** on Windows and native Ubuntu, each with six strict commands, same-run
+structured JUnit validation, HTTP export and read-only ML reproduce. Windows frontend
+typecheck/build and **133 tests** pass, along with real browser **19 legacy + 10 trace**.
+Full runs are sequential, recorded by the parent Windows monotonic orchestrator rather
+than comparing stepping cross-platform wall clocks. [Release record](releases/G3C-main-integration-2026-11-02.md).
+
+This final publication is docs-only; application bytes match the tested merge, without
+claiming a new full strict pass on the publication's different HEAD. Original failures,
+clock observations and independent regression evidence remain archived. Cursor's seven
+saved edits and all accepted component worktrees are preserved.
+
+**Next:** [safe evaluator preparation](prompts/CLAUDE_G3D_EVALUATOR_PREP.md), Opus 5.5 / High,
+in a new isolated task. Then populated-workflow backup/operator follow-ups, measured G3D
+comparison, deeper financial analytics and public demonstration/operations. No live agent
+quality, Linux browser, macOS, real CI, hosting, BYOK or capacity is certified by this
+release. No paid/provider call, real financial action, external push or deployment.
+Older entries below are chronological history, superseded by this release checkpoint.
+
 ## November 2: R40 accepted; final combined release verification underway
 
 **Accept 0c17bc897002ba611451e93337de26fdd98c4b96; R40 closes.** Both role/investigator

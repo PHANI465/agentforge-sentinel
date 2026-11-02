@@ -1,5 +1,11 @@
 # G3C integration review: 7bc0027, native release gate blocked
 
+## Superseded by verified release f788698
+
+The clock corrections and R40 are accepted and integrated. Both complete final platform
+gates pass 609+one allowed skip. See [the release](../releases/G3C-main-integration-2026-11-02.md).
+The original failed integration and qualified causal evidence below are retained as history.
+
 ## Clock diagnosis follow-up, November 2
 
 f61b755 fixes SQL wait-clock sensitivity and the COMMIT fixture; independent checks pass,

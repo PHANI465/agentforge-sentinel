@@ -1,5 +1,29 @@
 # AgentForge Sentinel: November 2, 2026 checkpoint
 
+## Final checkpoint: G3C complete and integrated at f788698
+
+R38/R39/R40 are closed. Independent R40 review passes Windows34+six original probes and
+native17+six. The final combined merge **f78869834597840934fb449da10c2adfb440145a** now passes its own exact-clean-commit
+Windows/native backend gates: 609 passes and one allowed skip each, with structured
+same-run XML, HTTP export and read-only ML reproduction. Windows frontend133, legacy19
+and trace10 browser suites pass. Full suites run sequentially with parent monotonic proof.
+
+Main receives this tested application plus documentation publication; the publication
+does not change application bytes or claim another full strict run. Twelve coordination
+conflicts were resolved without source conflicts. All original failures, observations and
+accepted component worktrees are preserved; Cursor's seven edits are untouched.
+
+**Three major workstreams remain:** measured G3D agent comparison, deeper financial/data
+analysis, and public demonstration/operational release. First prepare evaluator privilege
+separation, then populated-workflow backup/operator conveniences. Give Claude
+[the safe evaluator task](../prompts/CLAUDE_G3D_EVALUATOR_PREP.md), Opus5.5 / High, in a
+new worktree; no live model/final-case evaluation is assigned by that task.
+
+No live provider/new spend, real money action, push/deployment, Linux browser, macOS,
+GitHub Actions or hosting run occurred. Older checkpoint sections below are history.
+Read [the release record](../releases/G3C-main-integration-2026-11-02.md) and
+[whole-project overview](AgentForge_Sentinel_Overview_and_Remaining_Work.md).
+
 ## Latest: R40 accepted, final release verification running
 
 R40 closes at accepted 0c17bc8. Independent Windows 34+six original probes and native

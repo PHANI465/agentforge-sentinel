@@ -1,6 +1,6 @@
 # AgentForge Sentinel setup
 
-The canonical project is E:/PHANI/agentforge-sentinel on main after the October 26 integration. Use new task branches/worktrees for later work; preserve reviewed component checkouts. Main combines the accepted I03 application, reviewed N2-N7 Linux-readiness changes and current coordination. Accepted G3B adds bounded three-role orchestration and migration 0005. G3C adds the read-only investigation trace API and analyst panel; see docs/releases/G3C-main-integration-2026-11-02.md for combined verification status and limits.
+The canonical project is E:/PHANI/agentforge-sentinel on main after the October 26 integration. Use new task branches/worktrees for later work; preserve reviewed component checkouts. Main combines the accepted I03 application, reviewed N2-N7 Linux-readiness changes and current coordination. Accepted G3B adds bounded three-role orchestration and migration 0005. G3C adds the read-only investigation trace API and analyst panel; see docs/releases/G3C-main-integration-2026-11-02.md for passing combined verification evidence and limits.
 
 ## Requirements and install
 
