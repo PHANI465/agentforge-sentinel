@@ -294,6 +294,52 @@ button.row.selected .alert-score {
   overflow-wrap: anywhere;
 }
 
+.case-column {
+  min-width: 0;
+}
+
+.trace {
+  border-top: 2px solid var(--line);
+}
+
+.attempts,
+.claims {
+  margin: 0.4rem 0;
+  padding-left: 1.4rem;
+}
+
+.attempt {
+  margin: 0.6rem 0 0.9rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--sheet);
+  border-left: 3px solid var(--line);
+}
+
+.attempt h5,
+.trace h4 {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.attempt h5 {
+  margin-top: 0;
+}
+
+details.tech {
+  margin: 0.5rem 0;
+}
+
+details.tech summary {
+  cursor: pointer;
+  color: var(--stamp);
+}
+
+details.tech summary:focus-visible,
+.trace a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
 @media (max-width: 800px) {
   .desk {
     grid-template-columns: 1fr;

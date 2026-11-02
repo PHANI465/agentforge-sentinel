@@ -17,6 +17,7 @@ import type {
 import { CaseFile } from "./CaseFile";
 import { IngestForm } from "./IngestForm";
 import { Queue } from "./Queue";
+import { TracePanel, useTrace } from "./TracePanel";
 
 class CasePaneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -70,6 +71,8 @@ export function Workbench({
   const [busy, setBusy] = useState(false);
   const [configured, setConfigured] = useState<ScorerInfo | null>(null);
   const [loadingQueue, setLoadingQueue] = useState(true);
+  // Bumped after a case re-read that follows a mutation or refresh; the trace re-reads too.
+  const [traceRefresh, setTraceRefresh] = useState(0);
   const rememberScorer = useCallback((value: ScorerInfo | null) => {
     setConfigured(value);
   }, []);
@@ -83,6 +86,14 @@ export function Workbench({
   const selectedRef = useRef<string | null>(null);
   const queryRef = useRef<{ filter: CaseState | ""; cursor: string | null }>({ filter: "", cursor: null });
   const pageIndex = cursors.length - 1;
+  const trace = useTrace({
+    client,
+    token,
+    caseId: selectedId,
+    canRead: allows(session, "read_case"),
+    refreshKey: traceRefresh,
+  });
+  const workflowCount = trace.state.phase === "ready" ? trace.state.trace.workflow_count : null;
 
   const finishQueue = useCallback((generation: number) => {
     if (generation !== queueGeneration.current) return;
@@ -166,7 +177,7 @@ export function Workbench({
       const query = queryRef.current;
       await loadQueue(query.cursor, query.filter);
       const currentId = selectedRef.current ?? caseId;
-      if (currentId) await loadCase(currentId);
+      if (currentId && (await loadCase(currentId))) setTraceRefresh((value) => value + 1);
     },
     [loadCase, loadOverview, loadQueue],
   );
@@ -317,6 +328,7 @@ export function Workbench({
         </div>
         <CasePaneBoundary key={selectedId ?? "none"}>
         {detail && selectedId === detail.case.id ? (
+          <div className="case-column">
           <CaseFile
             detail={detail}
             audit={audit}
@@ -324,6 +336,7 @@ export function Workbench({
             busy={busy}
             replayed={replayed}
             configured={configured}
+            workflowCount={workflowCount}
             onInvestigate={() =>
               void mutate(async () => {
                 const result = await client.investigate(token, detail.case.id, detail.case.revision);
@@ -369,6 +382,12 @@ export function Workbench({
               })
             }
           />
+          <TracePanel
+            control={trace}
+            caseRevision={detail.case.revision}
+            evidenceIds={new Set(detail.evidence.map((item) => item.id))}
+          />
+          </div>
         ) : (
           <p className="case">Select a case to read its evidence, proposal, and audit.</p>
         )}

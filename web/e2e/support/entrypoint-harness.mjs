@@ -132,6 +132,7 @@ async function runServe(mode) {
     Atomics: { wait() {} },
   });
   const identity = new vm.SourceTextModule(readFileSync(path.join(web, "e2e", "support", "process-identity.mjs"), "utf8"), { context });
+  const suite = new vm.SourceTextModule(readFileSync(path.join(web, "e2e", "support", "suite.mjs"), "utf8"), { context });
   const modules = new Map();
   function synth(key, values) {
     if (modules.has(key)) return modules.get(key);
@@ -154,6 +155,7 @@ async function runServe(mode) {
     if (specifier === "node:path") return synth(specifier, { default: path });
     if (specifier === "node:url") return synth(specifier, { fileURLToPath: pathToFileURL && ((value) => require("node:url").fileURLToPath(value)) });
     if (specifier === "./process-identity.mjs") return identity;
+    if (specifier === "./suite.mjs") return suite;
     throw new Error(`unexpected module ${specifier}`);
   });
   try {

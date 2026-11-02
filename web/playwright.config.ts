@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveSuite, testMatchFor } from "./e2e/support/suite.mjs";
 
 const runtimeDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "e2e", ".runtime");
 const portFile = path.join(runtimeDir, "vite-port.txt");
@@ -82,7 +83,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: "**/*.pw.ts",
+  testMatch: testMatchFor(resolveSuite(process.env.SENTINEL_E2E_SUITE)),
   fullyParallel: false,
   workers: 1,
   forbidOnly: true,

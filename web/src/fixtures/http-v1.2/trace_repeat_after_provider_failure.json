@@ -1,0 +1,794 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/cases/7c000000-0000-4000-8000-000000000040/investigation-trace"
+  },
+  "response": {
+    "case_id": "7c000000-0000-4000-8000-000000000040",
+    "case_revision": 3,
+    "case_state": "awaiting_approval",
+    "legacy_investigator_runs": 0,
+    "read_at": "2026-10-23T17:00:27Z",
+    "selected": {
+      "attempts": [
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-00000000004c",
+          "attempt": 1,
+          "basis": false,
+          "claim_checks": null,
+          "config": {
+            "name": "analyst-deterministic",
+            "schema_version": "1.0",
+            "sha256": "81ce0ae8f15e71f7708f030d64a6e03d5c8488d7f27ee3382d6b1e811430ebcc",
+            "version": "a1"
+          },
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "failure_source": null,
+          "finding": null,
+          "finished_at": "2026-10-23T17:00:21Z",
+          "output": {
+            "claims": [
+              {
+                "cite": {
+                  "id": "7c000000-0000-4000-8000-000000000041",
+                  "kind": "evidence",
+                  "schema_version": "1.0"
+                },
+                "fact": "amount_minor",
+                "kind": "fact",
+                "relation": "eq",
+                "schema_version": "1.0",
+                "value": 250000
+              },
+              {
+                "cite": {
+                  "id": "7c000000-0000-4000-8000-000000000042",
+                  "kind": "evidence",
+                  "schema_version": "1.0"
+                },
+                "fact": "transaction_count_1h",
+                "kind": "fact",
+                "relation": "eq",
+                "schema_version": "1.0",
+                "value": 2
+              },
+              {
+                "cite": {
+                  "id": "7c000000-0000-4000-8000-00000000004a",
+                  "kind": "tool_result",
+                  "schema_version": "1.0"
+                },
+                "fact": "large_amount_rule_hit",
+                "kind": "fact",
+                "relation": "eq",
+                "schema_version": "1.0",
+                "value": true
+              }
+            ],
+            "missing": [
+              "account_age_days"
+            ],
+            "note": null,
+            "role": "evidence_analyst",
+            "schema_version": "1.0",
+            "tool_requests": [
+              {
+                "schema_version": "1.0",
+                "tool": "account_history",
+                "window": "30d"
+              },
+              {
+                "schema_version": "1.0",
+                "tool": "account_profile"
+              }
+            ]
+          },
+          "output_sha256": "c87a48eb23d459419d9e769e128155bd79b7110913889cc95297145882ccc266",
+          "role": "evidence_analyst",
+          "started_at": "2026-10-23T17:00:19Z",
+          "status": "completed",
+          "usage": {
+            "input_tokens": null,
+            "measured": false,
+            "output_tokens": null,
+            "schema_version": "1.0",
+            "source": "not_applicable"
+          },
+          "worker_unresolved": null
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-00000000004f",
+          "attempt": 1,
+          "basis": false,
+          "claim_checks": null,
+          "config": {
+            "name": "investigator-deterministic",
+            "schema_version": "1.0",
+            "sha256": "9ad42e4b3cdff7b3f1b45ee9ec178fc80389c4ec726f2b5b5bf58a0941fa009e",
+            "version": "i2"
+          },
+          "elapsed_ms": 2000,
+          "failure_code": "provider_unavailable",
+          "failure_source": "role_step",
+          "finding": null,
+          "finished_at": "2026-10-23T17:00:23Z",
+          "output": null,
+          "output_sha256": null,
+          "role": "investigator",
+          "started_at": "2026-10-23T17:00:21Z",
+          "status": "failed",
+          "usage": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-000000000050",
+          "attempt": 2,
+          "basis": true,
+          "claim_checks": [
+            {
+              "index": 0,
+              "reason": "verified",
+              "schema_version": "1.0",
+              "status": "supported"
+            },
+            {
+              "index": 1,
+              "reason": "verified",
+              "schema_version": "1.0",
+              "status": "supported"
+            },
+            {
+              "index": 2,
+              "reason": "verified",
+              "schema_version": "1.0",
+              "status": "supported"
+            },
+            {
+              "index": 3,
+              "reason": "verified",
+              "schema_version": "1.0",
+              "status": "supported"
+            }
+          ],
+          "config": {
+            "name": "investigator-deterministic",
+            "schema_version": "1.0",
+            "sha256": "9ad42e4b3cdff7b3f1b45ee9ec178fc80389c4ec726f2b5b5bf58a0941fa009e",
+            "version": "i2"
+          },
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "failure_source": null,
+          "finding": {
+            "operation": "simulated_hold",
+            "rationale": "simulated_hold (velocity_pattern). Supported: amount 2,500.00 USD [evidence \u20260041]; 2 transactions in the prior hour [evidence \u20260042]; large-amount rule hit [tool_result \u2026004a]; 30-day maximum same-currency payment 40.00 USD [tool_result \u2026004d]. Reviewer: accept.",
+            "reason_code": "velocity_pattern",
+            "schema_version": "1.0"
+          },
+          "finished_at": "2026-10-23T17:00:25Z",
+          "output": {
+            "claims": [
+              {
+                "cite": {
+                  "id": "7c000000-0000-4000-8000-000000000041",
+                  "kind": "evidence",
+                  "schema_version": "1.0"
+                },
+                "fact": "amount_minor",
+                "kind": "fact",
+                "relation": "eq",
+                "schema_version": "1.0",
+                "value": 250000
+              },
+              {
+                "cite": {
+                  "id": "7c000000-0000-4000-8000-000000000042",
+                  "kind": "evidence",
+                  "schema_version": "1.0"
+                },
+                "fact": "transaction_count_1h",
+                "kind": "fact",
+                "relation": "eq",
+                "schema_version": "1.0",
+                "value": 2
+              },
+              {
+                "cite": {
+                  "id": "7c000000-0000-4000-8000-00000000004a",
+                  "kind": "tool_result",
+                  "schema_version": "1.0"
+                },
+                "fact": "large_amount_rule_hit",
+                "kind": "fact",
+                "relation": "eq",
+                "schema_version": "1.0",
+                "value": true
+              },
+              {
+                "cite": {
+                  "id": "7c000000-0000-4000-8000-00000000004d",
+                  "kind": "tool_result",
+                  "schema_version": "1.0"
+                },
+                "fact": "history_max_amount_minor_30d",
+                "kind": "fact",
+                "relation": "eq",
+                "schema_version": "1.0",
+                "value": 4000
+              }
+            ],
+            "note": null,
+            "operation": "simulated_hold",
+            "reason_code": "velocity_pattern",
+            "role": "investigator",
+            "schema_version": "1.0",
+            "tool_requests": []
+          },
+          "output_sha256": "949fb199f3bc78e321b03ef08692291af473d0415830828622de8de53f9c307a",
+          "role": "investigator",
+          "started_at": "2026-10-23T17:00:23Z",
+          "status": "completed",
+          "usage": {
+            "input_tokens": null,
+            "measured": false,
+            "output_tokens": null,
+            "schema_version": "1.0",
+            "source": "not_applicable"
+          },
+          "worker_unresolved": null
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-000000000051",
+          "attempt": 1,
+          "basis": false,
+          "claim_checks": null,
+          "config": {
+            "name": "reviewer-deterministic",
+            "schema_version": "1.0",
+            "sha256": "dda496036657b5b26a6484383875c82c6368340ccb130a9cf1280e5831509dd1",
+            "version": "r1"
+          },
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "failure_source": null,
+          "finding": null,
+          "finished_at": "2026-10-23T17:00:27Z",
+          "output": {
+            "challenged_claims": [],
+            "note": null,
+            "reasons": [],
+            "role": "reviewer",
+            "schema_version": "1.0",
+            "verdict": "accept"
+          },
+          "output_sha256": "b9177f65626c0f1e269b28e9a400ce793ccb7010ca04acc28ac13e6e293a0c13",
+          "role": "reviewer",
+          "started_at": "2026-10-23T17:00:25Z",
+          "status": "completed",
+          "usage": {
+            "input_tokens": null,
+            "measured": false,
+            "output_tokens": null,
+            "schema_version": "1.0",
+            "source": "not_applicable"
+          },
+          "worker_unresolved": null
+        }
+      ],
+      "limits": {
+        "db_wait_seconds": 5,
+        "max_followup_tool_calls": 3,
+        "max_investigator_revisions": 1,
+        "max_live_workflows_per_process": 1,
+        "max_outstanding_calls_per_process": 2,
+        "max_repeats": 1,
+        "max_role_invocations": 5,
+        "max_transitions": 12,
+        "role_grace_seconds": 2,
+        "role_timeout_seconds": 45,
+        "schema_version": "1.0",
+        "terminal_reserve_seconds": 5,
+        "tool_statement_timeout_ms": 2000,
+        "workflow_deadline_seconds": 150
+      },
+      "steps": [
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:19Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "transition",
+          "output_sha256": null,
+          "role": null,
+          "seq": 1,
+          "state": "gathering",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:19Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "tool_executed",
+          "output_sha256": null,
+          "role": null,
+          "seq": 2,
+          "state": "gathering",
+          "tool": "case_evidence",
+          "tool_result_id": "7c000000-0000-4000-8000-000000000049",
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:19Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "tool_executed",
+          "output_sha256": null,
+          "role": null,
+          "seq": 3,
+          "state": "gathering",
+          "tool": "scoring_outcome",
+          "tool_result_id": "7c000000-0000-4000-8000-00000000004a",
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:19Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "tool_executed",
+          "output_sha256": null,
+          "role": null,
+          "seq": 4,
+          "state": "gathering",
+          "tool": "account_history",
+          "tool_result_id": "7c000000-0000-4000-8000-00000000004b",
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:19Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "transition",
+          "output_sha256": null,
+          "role": null,
+          "seq": 5,
+          "state": "analyst",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-00000000004c",
+          "at": "2026-10-23T17:00:19Z",
+          "attempt": 1,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "role_started",
+          "output_sha256": null,
+          "role": "evidence_analyst",
+          "seq": 6,
+          "state": "analyst",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-00000000004c",
+          "at": "2026-10-23T17:00:21Z",
+          "attempt": 1,
+          "checks": [],
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "kind": "role_completed",
+          "output_sha256": "c87a48eb23d459419d9e769e128155bd79b7110913889cc95297145882ccc266",
+          "role": "evidence_analyst",
+          "seq": 7,
+          "state": "analyst",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:21Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "kind": "transition",
+          "output_sha256": null,
+          "role": null,
+          "seq": 8,
+          "state": "analyst_tools",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:21Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "kind": "tool_executed",
+          "output_sha256": null,
+          "role": null,
+          "seq": 9,
+          "state": "analyst_tools",
+          "tool": "account_history",
+          "tool_result_id": "7c000000-0000-4000-8000-00000000004d",
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:21Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "kind": "tool_executed",
+          "output_sha256": null,
+          "role": null,
+          "seq": 10,
+          "state": "analyst_tools",
+          "tool": "account_profile",
+          "tool_result_id": "7c000000-0000-4000-8000-00000000004e",
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:21Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "kind": "transition",
+          "output_sha256": null,
+          "role": null,
+          "seq": 11,
+          "state": "investigator",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-00000000004f",
+          "at": "2026-10-23T17:00:21Z",
+          "attempt": 1,
+          "checks": [],
+          "elapsed_ms": 2000,
+          "failure_code": null,
+          "kind": "role_started",
+          "output_sha256": null,
+          "role": "investigator",
+          "seq": 12,
+          "state": "investigator",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-00000000004f",
+          "at": "2026-10-23T17:00:23Z",
+          "attempt": 1,
+          "checks": [],
+          "elapsed_ms": 4000,
+          "failure_code": "provider_unavailable",
+          "kind": "role_failed",
+          "output_sha256": null,
+          "role": "investigator",
+          "seq": 13,
+          "state": "investigator",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-000000000050",
+          "at": "2026-10-23T17:00:23Z",
+          "attempt": 2,
+          "checks": [],
+          "elapsed_ms": 4000,
+          "failure_code": null,
+          "kind": "role_started",
+          "output_sha256": null,
+          "role": "investigator",
+          "seq": 14,
+          "state": "investigator",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-000000000050",
+          "at": "2026-10-23T17:00:25Z",
+          "attempt": 2,
+          "checks": [],
+          "elapsed_ms": 6000,
+          "failure_code": null,
+          "kind": "role_completed",
+          "output_sha256": "949fb199f3bc78e321b03ef08692291af473d0415830828622de8de53f9c307a",
+          "role": "investigator",
+          "seq": 15,
+          "state": "investigator",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:25Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 6000,
+          "failure_code": null,
+          "kind": "transition",
+          "output_sha256": null,
+          "role": null,
+          "seq": 16,
+          "state": "verifying",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:25Z",
+          "attempt": null,
+          "checks": [
+            {
+              "index": 0,
+              "reason": "verified",
+              "schema_version": "1.0",
+              "status": "supported"
+            },
+            {
+              "index": 1,
+              "reason": "verified",
+              "schema_version": "1.0",
+              "status": "supported"
+            },
+            {
+              "index": 2,
+              "reason": "verified",
+              "schema_version": "1.0",
+              "status": "supported"
+            },
+            {
+              "index": 3,
+              "reason": "verified",
+              "schema_version": "1.0",
+              "status": "supported"
+            }
+          ],
+          "elapsed_ms": 6000,
+          "failure_code": null,
+          "kind": "claims_checked",
+          "output_sha256": null,
+          "role": null,
+          "seq": 17,
+          "state": "verifying",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:25Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 6000,
+          "failure_code": null,
+          "kind": "transition",
+          "output_sha256": null,
+          "role": null,
+          "seq": 18,
+          "state": "reviewer",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-000000000051",
+          "at": "2026-10-23T17:00:25Z",
+          "attempt": 1,
+          "checks": [],
+          "elapsed_ms": 6000,
+          "failure_code": null,
+          "kind": "role_started",
+          "output_sha256": null,
+          "role": "reviewer",
+          "seq": 19,
+          "state": "reviewer",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": "7c000000-0000-4000-8000-000000000051",
+          "at": "2026-10-23T17:00:27Z",
+          "attempt": 1,
+          "checks": [],
+          "elapsed_ms": 8000,
+          "failure_code": null,
+          "kind": "role_completed",
+          "output_sha256": "b9177f65626c0f1e269b28e9a400ce793ccb7010ca04acc28ac13e6e293a0c13",
+          "role": "reviewer",
+          "seq": 20,
+          "state": "reviewer",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        },
+        {
+          "agent_run_id": null,
+          "at": "2026-10-23T17:00:27Z",
+          "attempt": null,
+          "checks": [],
+          "elapsed_ms": 0,
+          "failure_code": null,
+          "kind": "workflow_terminated",
+          "output_sha256": null,
+          "role": null,
+          "seq": 21,
+          "state": "done",
+          "tool": null,
+          "tool_result_id": null,
+          "worker_unresolved": false
+        }
+      ],
+      "tool_results": [
+        {
+          "as_of": "2026-10-23T17:00:18Z",
+          "content_sha256": "8f2bc09cac4f8aebed5d937d1008939f1365882ea415afc4a1ebef889e12ae31",
+          "denial": null,
+          "evidence_ids": [
+            "7c000000-0000-4000-8000-000000000041",
+            "7c000000-0000-4000-8000-000000000042"
+          ],
+          "id": "7c000000-0000-4000-8000-000000000049",
+          "schema_version": "1.0",
+          "status": "ok",
+          "tool": "case_evidence",
+          "values": {
+            "amount_minor": 250000,
+            "transaction_count_1h": 2
+          },
+          "window": null
+        },
+        {
+          "as_of": "2026-10-23T17:00:18Z",
+          "content_sha256": "ba5200742414fe6ecf35b578e333100394661ba9782c7ec40f81a57fafcaa449",
+          "denial": null,
+          "evidence_ids": [],
+          "id": "7c000000-0000-4000-8000-00000000004a",
+          "schema_version": "1.0",
+          "status": "ok",
+          "tool": "scoring_outcome",
+          "values": {
+            "large_amount_rule_hit": true
+          },
+          "window": null
+        },
+        {
+          "as_of": "2026-10-23T17:00:18Z",
+          "content_sha256": "611c810d2c38f275fe0b96ea2df042e90fa6669f04cb8ab8afd1cb067923f197",
+          "denial": null,
+          "evidence_ids": [],
+          "id": "7c000000-0000-4000-8000-00000000004b",
+          "schema_version": "1.0",
+          "status": "ok",
+          "tool": "account_history",
+          "values": {
+            "history_count_24h": 2
+          },
+          "window": "24h"
+        },
+        {
+          "as_of": "2026-10-23T17:00:18Z",
+          "content_sha256": "1f8f453211c90c4cee4aa4357d114b8f8537d61d3124e7cf46c215557d824dc2",
+          "denial": null,
+          "evidence_ids": [],
+          "id": "7c000000-0000-4000-8000-00000000004d",
+          "schema_version": "1.0",
+          "status": "ok",
+          "tool": "account_history",
+          "values": {
+            "history_max_amount_minor_30d": 4000,
+            "history_median_amount_minor_30d": 3750
+          },
+          "window": "30d"
+        },
+        {
+          "as_of": "2026-10-23T17:00:18Z",
+          "content_sha256": "32cb565d6c180ae01bb8d772ccc9ef4a058f5ef30fae62214fbe5a9f431f0555",
+          "denial": null,
+          "evidence_ids": [],
+          "id": "7c000000-0000-4000-8000-00000000004e",
+          "schema_version": "1.0",
+          "status": "unavailable",
+          "tool": "account_profile",
+          "values": {},
+          "window": null
+        }
+      ],
+      "usage_summary": {
+        "input_tokens": null,
+        "not_applicable_attempts": 3,
+        "output_tokens": null,
+        "reported_attempts": 0,
+        "unknown_attempts": 1
+      },
+      "workflow": {
+        "case_revision": 2,
+        "config": {
+          "name": "three-role-workflow",
+          "schema_version": "1.0",
+          "sha256": "8dcd8935fa3642f2cdd4c4f0a782575346d6054401efb2304180badb4a79ac4f",
+          "version": "w1"
+        },
+        "deadline_at": "2026-10-23T17:02:49Z",
+        "deadline_status": null,
+        "disposition": {
+          "basis_run_id": "7c000000-0000-4000-8000-000000000050",
+          "inconclusive_code": null,
+          "kind": "recommend",
+          "operation": "simulated_hold",
+          "reason_code": "velocity_pattern",
+          "schema_version": "1.0",
+          "supported_claims": 4,
+          "unsupported_claims": 0
+        },
+        "finished_at": "2026-10-23T17:00:27Z",
+        "id": "7c000000-0000-4000-8000-000000000046",
+        "input_snapshot_sha256": "edde5f57fee171233d49f27eb3afb93a5164d5f408195c7540d7d2a4bf257139",
+        "recorded_role_invocations": 4,
+        "recorded_tool_calls": 5,
+        "started_at": "2026-10-23T17:00:19Z",
+        "status": "completed",
+        "terminal_by": "coordinator",
+        "tool_profile": {
+          "name": "agent-read-tools",
+          "schema_version": "1.0",
+          "sha256": "7065ef0fb0dd83a4b7c639f5e84ed7bc14b5b9d0bdbe144cfa9db956bbdc4aba",
+          "version": "t1"
+        }
+      }
+    },
+    "workflow_count": 1,
+    "workflows": [
+      {
+        "case_revision": 2,
+        "deadline_at": "2026-10-23T17:02:49Z",
+        "disposition_kind": "recommend",
+        "finished_at": "2026-10-23T17:00:27Z",
+        "id": "7c000000-0000-4000-8000-000000000046",
+        "inconclusive_code": null,
+        "started_at": "2026-10-23T17:00:19Z",
+        "status": "completed",
+        "terminal_by": "coordinator"
+      }
+    ]
+  },
+  "status": 200
+}

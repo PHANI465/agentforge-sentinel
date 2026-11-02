@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { waitForRuntime } from "./runtime";
 import { tokenFor, type SessionRole } from "./stack";
 
 declare global {
@@ -27,7 +28,10 @@ async function installToken(page: Page, role: SessionRole): Promise<void> {
     return;
   }
   const currentSession = { role };
-  await page.exposeBinding("sentinelTakeToken", () => tokenFor(currentSession.role));
+  await page.exposeBinding("sentinelTakeToken", async () => {
+    await waitForRuntime(); // the first read of a run can precede serve.mjs's run record
+    return tokenFor(currentSession.role);
+  });
   pageSessions.set(page, currentSession);
 }
 

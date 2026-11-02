@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveSuite } from "./suite.mjs";
 
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const runtimeDir = path.join(webRoot, "e2e", ".runtime");
@@ -15,6 +16,8 @@ export function planInvocation(dir, exists = existsSync) {
 }
 
 function main() {
+  const flag = process.argv.indexOf("--suite");
+  const suite = resolveSuite(flag === -1 ? undefined : process.argv[flag + 1]);
   const plan = planInvocation(runtimeDir);
   if (!plan.start || !plan.runId) {
     process.stderr.write(`${plan.reason}\n`);
@@ -25,7 +28,7 @@ function main() {
     [path.join(webRoot, "node_modules", "@playwright", "test", "cli.js"), "test", "--reporter=line"],
     {
       cwd: webRoot,
-      env: { ...process.env, SENTINEL_E2E_RUN_ID: plan.runId, SENTINEL_LIVE_CLAUDE: "0" },
+      env: { ...process.env, SENTINEL_E2E_RUN_ID: plan.runId, SENTINEL_LIVE_CLAUDE: "0", SENTINEL_E2E_SUITE: suite },
       stdio: "inherit",
       windowsHide: true,
     },
