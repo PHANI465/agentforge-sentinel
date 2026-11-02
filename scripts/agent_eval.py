@@ -20,7 +20,9 @@ evaluator data is never read here. Runtime `faults` are test-harness instruction
 runner does not apply; they are listed per case as not applied. Live comparators (C1, C2)
 call the owner's local Claude subscription and are refused unless `--allow-live` is given
 explicitly; this script never falls back to a paid key. It prints protocol-v1 attempt
-accounting and a run record as JSON. Development results only: never a final held-out
+accounting and a run record as JSON. Exit 0: complete. Exit 2: refused before any work.
+Exit 3: a setup failure stopped the run; earlier attempts are kept and the record says what
+stopped and what never started (runbook §4). Development results only: never a final held-out
 evaluation.
 """
 from __future__ import annotations
@@ -119,29 +121,32 @@ def verify_authorities(operator_url: str, runtime_url: str) -> None:
     from psycopg.rows import tuple_row
 
     from sentinel.db import roles
-    with _connect(runtime_url, "runtime") as rt:
-        here = rt.execute(IDENTITY).fetchone()
-        attributes = rt.execute(
-            "SELECT rolsuper, rolcreaterole, rolcreatedb, rolreplication, rolbypassrls"
-            " FROM pg_roles WHERE rolname = session_user").fetchone()
-    with _connect(operator_url, "operator") as op:
-        there = op.execute(IDENTITY).fetchone()
-        if any(here[k] != there[k] for k in SAME):
-            raise Refused("database_mismatch",
-                          "the operator and runtime configurations reach different databases")
-        if here["login"] == there["login"] or here["current"] != here["login"] \
-                or any(attributes.values()):
-            raise Refused("runtime_unsafe", "the runtime login is the operator, switched "
-                          "role, or holds superuser/administration attributes")
-        op.row_factory = tuple_row  # roles.py reads positional rows
-        try:
+    try:  # every catalog read and the close, not only the connect (R41)
+        with _connect(runtime_url, "runtime") as rt:
+            here = rt.execute(IDENTITY).fetchone()
+            attributes = rt.execute(
+                "SELECT rolsuper, rolcreaterole, rolcreatedb, rolreplication, rolbypassrls"
+                " FROM pg_roles WHERE rolname = session_user").fetchone()
+    except psycopg.Error:
+        raise Refused("runtime_check_failed", "a runtime catalog check failed") from None
+    try:
+        with _connect(operator_url, "operator") as op:
+            there = op.execute(IDENTITY).fetchone()
+            if any(here[k] != there[k] for k in SAME):
+                raise Refused("database_mismatch", "the operator and runtime configurations "
+                              "reach different databases")
+            if here["login"] == there["login"] or here["current"] != here["login"] \
+                    or any(attributes.values()):
+                raise Refused("runtime_unsafe", "the runtime login is the operator, switched "
+                              "role, or holds superuser/administration attributes")
+            op.row_factory = tuple_row  # roles.py reads positional rows
             reasons = (roles.unsafe_reasons(op, here["login"])
                        + roles.verify_effective(op, here["login"])
                        + roles.environment_reasons(op))
-        except psycopg.Error:
-            raise Refused("runtime_check_failed",
-                          "the operator could not inspect the runtime role") from None
-        op.rollback()
+            op.rollback()
+    except psycopg.Error:
+        raise Refused("operator_check_failed",
+                      "an operator catalog check of the runtime role failed") from None
     if reasons:
         raise Refused("runtime_unsafe", "not a least-privilege runtime role: "
                       + "; ".join(sorted(set(reasons))))
@@ -178,15 +183,36 @@ def usage_sources(runtime_url: str, case_id) -> list[str]:
             (case_id,)))
 
 
+class SetupFailed(Exception):
+    """Setup before the request (provision, authenticate, ingest) failed: not an attempt."""
+
+    def __init__(self, phase: str, code: str):
+        super().__init__(phase)
+        self.phase, self.code = phase, code
+
+
+def safe_code(error: Exception) -> str:
+    """A typed service code, else the exception class name; never its message."""
+    from sentinel.service import ServiceError
+    return error.code if isinstance(error, ServiceError) else type(error).__name__
+
+
 def attempt(provisioner, runtime_url: str, investigator, case_id: str) -> dict:
-    """One protocol-v1 attempt: the operator issues the session; the rest is runtime."""
+    """One protocol-v1 attempt (one investigate request): the operator issues the session;
+    the rest is runtime. Raises SetupFailed if the request could not be started."""
     import agent_cases as ac
     from sentinel.service import Sentinel, ServiceError, utc_now
 
-    token = provisioner.create_session(ac.ANALYST)[0]
-    svc = Sentinel(runtime_url, investigator, utc_now)
-    ctx = svc.authenticate(token)
-    case = ac.seed(svc, ctx, case_id, utc_now)["case"]
+    phase = "provision"
+    try:  # Exception only: KeyboardInterrupt and SystemExit still stop the process
+        token = provisioner.create_session(ac.ANALYST)[0]
+        phase = "authenticate"
+        svc = Sentinel(runtime_url, investigator, utc_now)
+        ctx = svc.authenticate(token)
+        phase = "ingest"
+        case = ac.seed(svc, ctx, case_id, utc_now)["case"]
+    except Exception as error:
+        raise SetupFailed(phase, safe_code(error)) from None
     row = {"case": case_id}
     started = time.monotonic()
     try:
@@ -201,34 +227,67 @@ def attempt(provisioner, runtime_url: str, investigator, case_id: str) -> dict:
                           "pending" if error.code in PENDING else "error")
         row["code"] = error.code
     except Exception as error:  # outside the typed paths: counted, never dropped or re-run
-        row["outcome"], row["code"] = "error", type(error).__name__
+        row["outcome"], row["code"] = "error", safe_code(error)
     row["request_latency_s"] = round(time.monotonic() - started, 3)
-    if row["outcome"] != "error":
+    if row["outcome"] == "error":
+        row["usage_sources"] = ["not_read"]
+        return row
+    try:  # telemetry after the outcome: a failure leaves the known outcome as it is
         row["usage_sources"] = usage_sources(runtime_url, case["id"]) or ["no_role_steps"]
+    except Exception as error:
+        row["usage_sources"], row["usage_error"] = ["unavailable"], safe_code(error)
     return row
 
 
-def run(operator_url: str, runtime_url: str, names: list[str], case_ids: list[str]) -> dict:
+def summarize(rows: list[dict], not_attempted: list[str]) -> dict:
+    tally = Counter({"attempts": len(rows)})
+    for row in rows:
+        tally[{"disposition": "dispositions"}.get(row["outcome"], row["outcome"])] += 1
+    inconclusive = Counter(row["failure_codes"][-1] if row["failure_codes"] else "none"
+                           for row in rows if row["outcome"] == "inconclusive")
+    # Tokens only if every attempt's usage is known to be adapter-reported (protocol-v1);
+    # missing, unavailable, not-read or unknown provenance leaves the comparator unknown.
+    reported = bool(rows) and all(row.get("usage_sources") == ["adapter_reported"]
+                                  for row in rows)
+    return {"counts": dict(tally), "inconclusive_by_code": dict(inconclusive),
+            "tokens": "adapter_reported" if reported else "unknown",
+            "request_latency_s": [row["request_latency_s"] for row in rows],
+            "attempts": rows, "cases_not_attempted": not_attempted}
+
+
+def run(operator_url: str, runtime_url: str, names: list[str], case_ids: list[str],
+        progress: dict | None = None) -> dict:
+    """Comparator name -> summary, for every comparator that started. If setup fails, the
+    run stops there; `progress` (if given) gets `stopped` and `comparators_not_started`."""
     from sentinel.investigators import DeterministicInvestigator
     from sentinel.service import Sentinel, utc_now
 
+    progress = {} if progress is None else progress
+    progress.update(stopped=None, comparators_not_started=[])
     # Provisioning only: this object issues sessions; it never ingests, reads or investigates.
     provisioner = Sentinel(operator_url, DeterministicInvestigator(), utc_now)
     report = {}
-    for name in names:
-        rows = [attempt(provisioner, runtime_url, comparator(name), c) for c in case_ids]
-        tally = Counter({"attempts": len(rows)})
-        for row in rows:
-            tally[{"disposition": "dispositions"}.get(row["outcome"], row["outcome"])] += 1
-        inconclusive = Counter(row["failure_codes"][-1] if row["failure_codes"] else "none"
-                               for row in rows if row["outcome"] == "inconclusive")
-        sources = {s for row in rows for s in row.get("usage_sources", ())}
-        report[name] = {
-            "counts": dict(tally), "inconclusive_by_code": dict(inconclusive),
-            # Tokens only if every call in the comparator measured them (protocol-v1).
-            "tokens": "adapter_reported" if sources == {"adapter_reported"} else "unknown",
-            "request_latency_s": [row["request_latency_s"] for row in rows],
-            "attempts": rows}
+    for index, name in enumerate(names):
+        try:
+            investigator = comparator(name)
+        except Exception as error:
+            progress.update(comparators_not_started=names[index:], stopped={
+                "comparator": name, "case": None, "phase": "comparator",
+                "code": safe_code(error)})
+            return report
+        rows = []
+        for case_id in case_ids:
+            try:
+                rows.append(attempt(provisioner, runtime_url, investigator, case_id))
+            except SetupFailed as failure:  # stop; earlier attempts are kept as they are
+                progress.update(comparators_not_started=names[index + 1:], stopped={
+                    "comparator": name, "case": case_id, "phase": failure.phase,
+                    "code": failure.code})
+                break
+        stopped = progress["stopped"] is not None
+        report[name] = summarize(rows, case_ids[len(rows):] if stopped else [])
+        if stopped:
+            break
     return report
 
 
@@ -260,6 +319,8 @@ def main() -> int:
     try:
         if not names or set(names) - set(COMPARATORS):
             raise Refused("unknown_comparator", "comparators are " + ", ".join(COMPARATORS))
+        if len(set(names)) != len(names):
+            raise Refused("duplicate_comparator", "name each comparator once")
         check_cases(case_ids)
         operator_url, runtime_url = configuration(args.database_url)
         verify_authorities(operator_url, runtime_url)
@@ -267,10 +328,15 @@ def main() -> int:
         print(f"refused: {refusal.code}: {refusal.detail}")
         return 2
     started = datetime.now(timezone.utc)
-    results = run(operator_url, runtime_url, names, case_ids)
+    progress = {}
+    results = run(operator_url, runtime_url, names, case_ids, progress)
     print(json.dumps({
         "record": {
-            "kind": "development (not a held-out evaluation)", "git": git_head(),
+            "kind": "development (not a held-out evaluation)",
+            "status": "incomplete" if progress["stopped"] else "complete",
+            "stopped": progress["stopped"],
+            "comparators_not_started": progress["comparators_not_started"],
+            "git": git_head(),
             "platform": platform.platform(), "python": platform.python_version(),
             "started_at": started.isoformat(),
             "ended_at": datetime.now(timezone.utc).isoformat(),
@@ -282,7 +348,7 @@ def main() -> int:
                                                  ac.CASES[c]["runtime"]["faults"]]}
                       for c in case_ids}},
         "comparators": results}, indent=2))
-    return 0
+    return 3 if progress["stopped"] else 0
 
 
 if __name__ == "__main__":

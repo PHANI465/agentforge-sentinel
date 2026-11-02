@@ -1,5 +1,36 @@
 # Handoff: task/claude-g3d-evaluator-prep
 
+## R41/R42 continuation (latest)
+
+- **Task:** [CLAUDE_G3DP1_REVIEW_FIXES.md](../prompts/CLAUDE_G3DP1_REVIEW_FIXES.md), following review [G3D-P1-5811a29](../reviews/G3D-P1-5811a29.md). Continued on this branch from exact 5811a29fef9ccc5678ca6aa2f5efe0f2a6a6df78. The authority split, read-only checks and existing tests are unchanged.
+- **State:** ready for Codex re-review. Tested before this note: the working tree on 5811a29. Exact-commit gates are reported in chat.
+- **Changed paths:**
+  - scripts/agent_eval.py
+  - tests/test_agent_eval_failures.py (new)
+  - docs/evals/agents/evaluator-runbook.md
+  - this note
+- **R41 fix:**
+  - Preflight catalog reads and connection close now raise typed refusals, `runtime_check_failed` or `operator_check_failed`.
+  - Setup (provision, authenticate, ingest) raising `SetupFailed` is not an attempt: no row, no latency. The run stops, earlier attempts are kept, and the record shows `status`, `stopped` and `comparators_not_started`, plus per-comparator `cases_not_attempted`. Exit is 3.
+  - An investigate failure is still a counted attempt with its latency.
+  - A failed usage read keeps the committed outcome and gives `usage_sources: ["unavailable"]` plus `usage_error`.
+  - Codes are only service codes or exception class names. KeyboardInterrupt and SystemExit are not caught. The policy is in runbook §4.
+- **R42 fix:** `tokens` is `adapter_reported` only if every attempt's `usage_sources` is exactly that. Errored requests get `["not_read"]`.
+- **Duplicate names:** `--comparators C0,C0` is refused before any work (`duplicate_comparator`).
+- **JSON shape:** additive only. New fields are `record.status`, `record.stopped`, `record.comparators_not_started`, per-comparator `cases_not_attempted` and per-row `usage_error`. Rows also get `usage_sources` values `not_read` and `unavailable`, and there is the new exit 3. `run()` keeps its return shape; stop state goes to an optional `progress` dict.
+- **Failing first on 5811a29** (`.agent/g3d-p1/r41-failing-first-5811a29.log`): the new module gave 8 failed and 4 passed.
+  - Failures:
+    - both setup-failure cases (traceback printing the canary message, no report);
+    - both preflight sides (a raw `OperationalError`);
+    - the usage-read failure escaping;
+    - provenance with a missing field reported as `adapter_reported`;
+    - duplicate names executing twice.
+  - The investigate-failure test failed only on the new `record.status` field. The base already counted that request as an attempt; it is a request-boundary control.
+  - The other four provenance cases are controls and passed.
+- **After the fix:**
+  - 31 focused tests pass: the new module, the authority tests and the adapter tests.
+  - Codex's seven original probes pass unchanged from a temporary copy, since removed (`.agent/g3d-p1/codex-probes-after-fix.log`).
+
 - **Task and acceptance criteria:** G3D-P1 ([docs/prompts/CLAUDE_G3D_EVALUATOR_PREP.md](../prompts/CLAUDE_G3D_EVALUATOR_PREP.md) on task/coordination). Separate the manual runner's operator and runtime authority, verify on deterministic comparators only, and keep live comparators disabled.
 - **Tool and worktree:** Claude Code (Opus 5.5 / High), in E:/PHANI/sentinel-wt/claude-g3d-evaluator-prep.
 - **Base:** canonical main 365d32654be0cb7500d94176c87fc374ceb0659b. This is the published G3C release; its application commit is f788698.
