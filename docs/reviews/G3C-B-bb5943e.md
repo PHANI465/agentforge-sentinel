@@ -1,5 +1,11 @@
 # G3C-B review: bb5943e — R38/R39 changes requested
 
+## November 2: correction accepted
+
+R38/R39 close at 6014680 after independent re-review; see
+[the acceptance](G3C-B-6014680.md). The subsequent combined release is blocked by two
+native timing/recovery checks, not these UI findings. Original review/history follows.
+
 ## Follow-up received; re-review pending
 
 Corrected candidate 6014680b5713105b5c29b8857561af650bec2b9c is saved as a direct child

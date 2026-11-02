@@ -1,5 +1,10 @@
 # Claude G3C-B R38/R39 review corrections
 
+**November 2:** UI 6014680 is accepted and R38/R39 closed under
+[the independent review](../reviews/G3C-B-6014680.md). Do not rerun this completed task.
+The current follow-up is [native integration diagnosis](CLAUDE_G3C_NATIVE_INTEGRATION_DIAGNOSIS.md).
+Older pending/pause banners and assignments below are historical.
+
 **Checkpoint:** Claude has delivered the R38/R39 correction at 6014680b5713105b5c29b8857561af650bec2b9c.
 The owner paused work for today. Do not rerun this completed implementation assignment.
 Codex re-reviews that exact candidate tomorrow; acceptance and integration remain pending.

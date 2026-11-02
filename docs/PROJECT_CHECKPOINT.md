@@ -1,5 +1,33 @@
 # AgentForge Sentinel project checkpoint
 
+## November 2: UI accepted; combined release blocked by two native checks
+
+The owner resumed today. **G3C-B 6014680 is accepted; R38/R39 are closed** after independent
+133 frontend tests, the six original probes, both type configurations and build passed.
+Saved exact-candidate Windows/native full records were inspected. API 16b67fd stays frozen.
+[UI acceptance](reviews/G3C-B-6014680.md).
+
+Automatic API/UI integration **7bc0027** is preserved on task/codex-g3c-integration, not
+merged into main. Source/tests/contracts/model/lock bytes match accepted 6014680. Windows
+release verification passes: full strict six commands, 594+one allowed skip, structured
+XML, HTTP export, ML reproduce, frontend 133 and real browser legacy 19 / trace 10.
+
+Native Ubuntu's complete strict run on the same clean merge has **592 passes, two failures,
+one allowed skip**. Five strict commands pass; pytest fails, and structured validation
+correctly rejects its report. HTTP export and ML reproduction pass separately. One test
+exceeds its lost-COMMIT response bound (2.953 s vs <2.5); another gets conflict instead of
+investigation_recovered. A single externally instrumented focused run of both plus a
+related control passes 3/3, but **no root cause or fix is established**. It does not replace
+the failed full gate. [Integration evidence](reviews/G3C-integration-7bc0027.md).
+
+Main runtime remains accepted G3B a7c71f5; this publication is documentation only. Next:
+[Claude native timing/recovery diagnosis](prompts/CLAUDE_G3C_NATIVE_INTEGRATION_DIAGNOSIS.md),
+Opus 5.5 / High, from exact preserved integration candidate. Do not relax tests, rerun
+until green or advance main without understanding the failures. G3D evaluator preparation
+waits for this release. No live provider, new spend, remote/push or deployment. Original
+Cursor seven saved edits and component worktrees remain preserved. Both platform runs
+were sequential; owned stacks/processes are cleaned up. Older entries are history.
+
 ## Latest: paused at owner request; corrected UI awaits re-review
 
 Saved candidate **6014680b5713105b5c29b8857561af650bec2b9c** is a clean direct child of

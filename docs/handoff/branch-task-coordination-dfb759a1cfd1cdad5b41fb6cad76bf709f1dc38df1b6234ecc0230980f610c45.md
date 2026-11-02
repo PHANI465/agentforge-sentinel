@@ -1,5 +1,18 @@
 # Handoff: task/coordination
 
+## November 2 resumed: UI accepted, integration blocked
+
+UI 6014680 is accepted, R38/R39 closed after independent 133+six probe/type/build passes.
+Automatic merge 7bc0027 is preserved and source-matches accepted UI. Windows full release
+passes (594+1, 133 frontend, 19+10 browser); native full has 592+two failures+one skip.
+The two failures concern COMMIT timing and recovery; a focused 3/3 diagnostic pass is not
+a fix or root cause. No further full rerun. HTTP/ML pass; structured gate rejects failures.
+Main app stays G3B. Next: docs/prompts/CLAUDE_G3C_NATIVE_INTEGRATION_DIAGNOSIS.md,
+Opus 5.5 / High, exact 7bc0027 new task worktree. Preserve candidate, accepted API/UI,
+Cursor edits and raw failed XML. Cleanup checked on both platforms. No live/push/deploy.
+See current November 2 artifact and docs/reviews/G3C-integration-7bc0027.md. Older notes
+below are chronological history, superseded by this resumed checkpoint.
+
 - Owner requested pause for today; no more implementation/testing tonight.
 - Saved corrected UI: 6014680b5713105b5c29b8857561af650bec2b9c, direct child of bb5943e,
   task/claude-g3c-trace-ui; sole owner author/committer, clean checkout.

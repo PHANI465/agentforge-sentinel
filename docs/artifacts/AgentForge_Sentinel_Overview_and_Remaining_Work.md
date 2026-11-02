@@ -1,9 +1,10 @@
 # AgentForge Sentinel: project overview and remaining work
 
-G3C-B corrections are delivered at **6014680**, a clean direct child of bb5943e.
-R38/R39 await Codex re-review; they are not yet closed or merged. Work is paused at the
-owner's request. API 16b67fd stays accepted; main runtime remains G3B a7c71f5.
-[End-of-day checkpoint and restart steps](AgentForge_Sentinel_Pause_2026-11-01.md).
+November 2: **G3C-B 6014680 is accepted; R38/R39 are closed** after independent
+133 frontend tests, six original probes and type/build review. Combined API/UI 7bc0027
+passes all Windows release checks, but its native full gate has two timing/recovery
+failures. Main runtime stays G3B until those failures are diagnosed and release verified.
+[Today's checkpoint](AgentForge_Sentinel_Session_2026-11-02.md).
 
 Current November 1, 2026 checkpoint: accepted G3B is integrated at a7c71f5 and passes full
 Windows/native Ubuntu backend gates, Windows frontend and browser checks. See the
@@ -70,7 +71,7 @@ Use accepted capabilities and these concrete next deliverables to track progress
 
 | Order | Remaining deliverable | What will demonstrate completion |
 | --- | --- | --- |
-| 1 | G3C trace API and analyst UI | API accepted at 16b67fd; corrected UI delivered at 6014680; R38/R39 re-review and integrated release checks remain |
+| 1 | G3C trace API and analyst UI | API accepted at 16b67fd; UI accepted at 6014680; integration 7bc0027 blocked by two native timing/recovery checks |
 | 2 | G3D measured agent evaluation | Safe runtime-role evaluator; separately authored final synthetic cases; actual one-live vs three-role comparisons under the frozen protocol, human rubric and reported failures/latency/observable usage |
 | 3 | Deeper data-analyst workspace | Curated read-only queries, data quality, financial reconciliation, cohorts/time trends, error slices and exports checked against known answers |
 | 4 | Public demo and operational release | Recorded replay, authorized staging/remote/real CI, measured capacity, secret-safe visitor BYOK if included, session isolation, retention/cleanup and deployment/run instructions; README and short demo video |
@@ -81,8 +82,8 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Tomorrow ask Codex to re-review corrected UI 6014680 and its focused regression evidence. Claude should wait and preserve its clean checkout and reports.
-2. After UI acceptance, Codex combines the accepted API/UI, applies the queued documentation corrections, and verifies the integrated commit. Do not change frozen API bytes or preserved worktrees.
+1. Give Claude the [native integration diagnosis](../prompts/CLAUDE_G3C_NATIVE_INTEGRATION_DIAGNOSIS.md), Opus 5.5 / High, from exact 7bc0027 in its own worktree. Preserve the two failed full-run assertions and all evidence.
+2. Codex reviews the diagnosis/fix and completes release verification before advancing main. Component UI acceptance is complete; do not restart that assignment. Keep frozen API bytes and preserved worktrees unchanged.
 3. Run agent quality evaluations only after implementation/configuration/protocol are frozen
    and safe evaluation connections are prepared. Deterministic fixtures are not evidence
    that three language-model agents improve fraud investigations.
