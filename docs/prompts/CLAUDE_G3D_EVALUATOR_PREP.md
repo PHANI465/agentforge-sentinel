@@ -1,5 +1,10 @@
 # G3D-P1: evaluator operator/runtime separation, deterministic development verification
 
+**Delivered at 5811a29; current task is the
+[R41/R42 correction](CLAUDE_G3DP1_REVIEW_FIXES.md) on the existing branch.** Core authority
+tests pass; error/reporting probes require focused changes before acceptance. Do not
+restart this original worktree-creation assignment. Original instructions follow.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. This is a bounded database-role
 and credential-isolation change with real Postgres negative tests, not an architecture rewrite.
 It selects the coding assistant; Sentinel test investigators stay deterministic.

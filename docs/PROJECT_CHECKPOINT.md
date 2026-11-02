@@ -1,5 +1,32 @@
 # AgentForge Sentinel project checkpoint
 
+## November 2: G3D-P1 delivered; R41/R42 corrections required
+
+Evaluator candidate **5811a29fef9ccc5678ca6aa2f5efe0f2a6a6df78**, direct child of current
+application/documentation main 365d326, separates operator session provisioning from
+runtime authentication/ingestion/investigation. The core split is verified independently:
+11 Windows authority tests pass; native passes those 11 plus the existing live-consent
+control. Exact author full records are verified at **620 passes + one allowed skip** on
+each platform, with same-run structured reports and frozen HTTP/ML checks.
+
+**Changes requested; not accepted or merged.** Seven independent probes on EACH platform
+give five real assertion failures and two controls passing. R41: errors after connection
+open/preflight or outside the investigate try block can escape, print a raw canary-bearing
+server traceback and lose prior results; post-result usage failure also escapes. R42:
+missing usage provenance is omitted from the aggregate, falsely yielding adapter_reported.
+A lower-priority duplicate-name note shows C0,C0 executes twice but reports one attempt.
+[Review](reviews/G3D-P1-5811a29.md).
+
+[Claude correction](prompts/CLAUDE_G3DP1_REVIEW_FIXES.md), **Opus 5.5 / High**, continues
+the same existing branch from 5811a29. Keep the authority split and read-only checks;
+fix only safe failure boundaries, complete/unknown reporting and the small input guard.
+Preserve protocol's attempt definition: setup failure before investigate is not a new
+investigate request. Do not replace raw crashes with silent loss or invented completions.
+No duplicate full 5811a29 gate, browser rerun, live provider, final cases, new spend,
+application merge, push or deployment. G3C remains released at tested f788698; current
+main application/scripts remain unchanged pending P1 acceptance. Cursor edits preserved.
+Older checkpoint entries below are history.
+
 ## November 2: G3C released; R38/R39/R40 closed
 
 **Tested integration f78869834597840934fb449da10c2adfb440145a is accepted for main.** It combines current coordination

@@ -1,5 +1,17 @@
 # Handoff: task/coordination
 
+## G3D-P1 review: R41/R42 changes requested
+
+5811a29 remains clean/unmerged; authority11 Windows/native11+consent pass independently,
+full author621-case reports verified620+one each. Seven probes each platform: five
+assertion failures/two controls (unsafe escaped faults, missing provenance, duplicate
+overwrite). Next is docs/prompts/CLAUDE_G3DP1_REVIEW_FIXES.md, Opus5.5 / High, SAME
+candidate branch. Keep the passing split; no extra original task/full old gate runs.
+Respect protocol attempt definition; no live comparators/final cases. Main application
+stays released G3C, Cursor preserved. Evidence canonical .agent/g3d-p1-review/5811a29/.
+Owner permits Claude guidance for specific uncertainty; independent review still required.
+Older notes below are history.
+
 ## Final G3C release: f788698
 
 R40 and G3C API/UI/clock integration complete. Exact Windows/native strict gates609+one

@@ -1,5 +1,25 @@
 # AgentForge Sentinel: November 2, 2026 checkpoint
 
+## Latest: evaluator privilege split delivered, reporting corrections pending
+
+G3D-P1 5811a29 is clean and unmerged. Core operator/runtime authority passes independently
+(Windows11, native11 plus live-consent control); both exact author full records show
+620+one allowed skip with frozen exports/ML. Final Windows smoke records identify exact
+5811a29 and fifteen dispositions per deterministic comparator on fresh databases.
+
+Seven new probes on EACH platform produce five assertion failures/two controls. R41:
+uncaught preflight/setup/telemetry errors can expose a raw dummy server canary and lose
+partial results. R42: missing usage metadata is omitted and becomes a false reported
+usage label. Duplicate C0 names also run twice but retain only one run in the report.
+No actual credentials/provider calls or system-clock changes are involved.
+
+Give Claude [the focused correction](../prompts/CLAUDE_G3DP1_REVIEW_FIXES.md), Opus5.5 / High,
+on the same branch from 5811a29. Keep authority separation and fix only safe failure /
+truthful reporting boundaries plus duplicate input validation. Setup failures are not
+investigate requests under the frozen protocol. Do not rerun full old-candidate gates.
+G3C remains released at f788698; main application is unchanged. Preserve Cursor and all
+earlier evidence. [Review](../reviews/G3D-P1-5811a29.md). Older sections are history.
+
 ## Final checkpoint: G3C complete and integrated at f788698
 
 R38/R39/R40 are closed. Independent R40 review passes Windows34+six original probes and

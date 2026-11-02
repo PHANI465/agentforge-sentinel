@@ -1,5 +1,11 @@
 # AgentForge Sentinel: project overview and remaining work
 
+Current G3D-P1 update: authority separation is delivered at 5811a29 and its core tests
+pass. R41/R42 safe-failure/provenance corrections and duplicate-name validation remain
+before acceptance. [Current Claude continuation](../prompts/CLAUDE_G3DP1_REVIEW_FIXES.md),
+Opus5.5 / High, uses the existing branch. G3C's released application remains unchanged.
+Earlier G3C release summary follows.
+
 November 2: **G3C is integrated and verified at f788698.** R38/R39/R40 are closed.
 Both complete backend platform gates pass 609+one allowed skip; Windows frontend133 and
 real browsers19 legacy +10 trace pass. Main carries this tested application and updated
@@ -83,8 +89,8 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Give Claude [safe evaluator preparation](../prompts/CLAUDE_G3D_EVALUATOR_PREP.md),
-   Opus5.5 / High, in a new isolated worktree from current main. G3C corrections are complete.
+1. Give Claude [R41/R42 evaluator correction](../prompts/CLAUDE_G3DP1_REVIEW_FIXES.md),
+   Opus5.5 / High, on the existing 5811a29 branch. Keep the passing authority split.
 2. Complete populated-workflow backup and operator convenience follow-ups separately,
    then run the measured G3D comparison under its frozen protocol/common human rubric.
 3. Deepen the analyst workspace and prepare the public demonstration/operations gates.
