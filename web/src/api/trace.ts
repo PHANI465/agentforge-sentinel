@@ -368,7 +368,8 @@ function toolRequest(value: unknown): ToolRequest {
 function note(record: Obj): string | null {
   const value = withDefault(record, "note", null);
   if (value === null) return null;
-  if (typeof value !== "string" || value.length === 0 || value.length > 400) throw new Reject();
+  // maxLength 400 in the frozen DTO counts Unicode code points, not UTF-16 units (R38).
+  if (typeof value !== "string" || value.length === 0 || [...value].length > 400) throw new Reject();
   return value;
 }
 

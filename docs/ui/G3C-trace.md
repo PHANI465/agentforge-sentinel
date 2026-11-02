@@ -61,6 +61,13 @@ recovers, approves or executes. The case pane's existing buttons remain the only
 
 The `useTrace` hook (`web/src/ui/TracePanel.tsx`) handles requests as follows:
 
+- **Ownership (R39).** Every stored state records its owner: token, case, workflow selection
+  and read permission. A render whose context differs never returns it. It is masked during
+  render (loading, or denied without `read_case`), so no committed DOM shows the old trace
+  under a new context, even before effects run. The workflow list kept while another
+  selection loads is admitted only for the same token and case. A selection is owned by
+  its token and case.
+
 - **Fencing.** It aborts the previous request. A response is applied only if its request
   generation is current, and the body's `case_id` (and the selected workflow, when explicit)
   match. Another case, or a sign-out, unmounts or re-keys the state, so an old session's or
@@ -78,6 +85,8 @@ The `useTrace` hook (`web/src/ui/TracePanel.tsx`) handles requests as follows:
   says so, and offers refresh.
 - **Failures.** Errors, non-JSON or empty 5xx, network failures and unusable bodies (strict
   parser `web/src/api/trace.ts`) show a message and Retry. Nothing is fabricated.
+- **Note length (R38).** A note's 1–400 bound counts Unicode code points, as the frozen
+  DTO does, not UTF-16 units: a 400-emoji note is valid and a 401-code-point note is not.
 - **Capabilities.** A session without `read_case` never requests a trace.
 
 ## Real browser coverage (trace run)

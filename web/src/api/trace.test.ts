@@ -101,6 +101,52 @@ describe("DTO-valid variants", () => {
   });
 });
 
+describe("note length counts Unicode code points (R38)", () => {
+  // The frozen DTO's maxLength 400 (Python/JSON Schema) counts code points; JS .length
+  // counts UTF-16 units. The surrounding body is the frozen example; only the note changes.
+  function withNote(note: unknown): Record<string, unknown> {
+    const value = body("trace_untrusted_note");
+    const attempts = (value.selected as Record<string, unknown>).attempts as Array<Record<string, unknown>>;
+    attempts[0].output = { ...(attempts[0].output as object), note };
+    return value;
+  }
+  const emoji = "\u{1F642}"; // supplementary: two UTF-16 units, one code point
+  const accepted: Array<[string, string]> = [
+    ["400 supplementary code points (800 UTF-16 units)", emoji.repeat(400)],
+    ["399 ASCII + 1 supplementary (401 units)", "a".repeat(399) + emoji],
+    ["400 BMP code points", "\u00e9".repeat(400)],
+    ["400 ASCII", "a".repeat(400)],
+    ["1 supplementary code point", emoji],
+  ];
+  const rejected: Array<[string, unknown]> = [
+    ["401 supplementary code points", emoji.repeat(401)],
+    ["400 ASCII + 1 supplementary", "a".repeat(400) + emoji],
+    ["401 BMP code points", "\u00e9".repeat(401)],
+    ["401 ASCII", "a".repeat(401)],
+    ["empty", ""],
+    ["number", 400],
+  ];
+
+  it.each(accepted)("accepts %s, verbatim", (_name, note) => {
+    expect([...note].length).toBeLessThanOrEqual(400);
+    const trace = acceptTrace(withNote(note));
+    expect(trace, "a DTO-valid note must not make the trace unusable").not.toBeNull();
+    expect(trace?.selected?.attempts[0].output?.note).toBe(note);
+  });
+
+  it.each(rejected)("rejects %s", (_name, note) => {
+    expect(acceptTrace(withNote(note))).toBeNull();
+  });
+
+  it("null and an absent note are both no note", () => {
+    expect(acceptTrace(withNote(null))!.selected!.attempts[0].output?.note).toBeNull();
+    const value = withNote(null);
+    const attempts = (value.selected as Record<string, unknown>).attempts as Array<Record<string, unknown>>;
+    delete (attempts[0].output as Record<string, unknown>).note;
+    expect(acceptTrace(value)!.selected!.attempts[0].output?.note).toBeNull();
+  });
+});
+
 describe("unusable bodies are rejected, never filled in", () => {
   const cases: Array<[string, (value: Record<string, unknown>) => void]> = [
     ["missing selected", (value) => delete value.selected],

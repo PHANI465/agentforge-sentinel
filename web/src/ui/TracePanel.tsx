@@ -45,6 +45,11 @@ export interface TraceControl {
   retry: () => void;
 }
 
+/** The context that owns render-visible trace content (R39). */
+function ownerKey(token: string, caseId: string | null, workflowId: string | null, canRead: boolean): string {
+  return JSON.stringify([token, caseId, workflowId, canRead]);
+}
+
 export function useTrace({
   client,
   token,
@@ -58,38 +63,43 @@ export function useTrace({
   canRead: boolean;
   refreshKey: number;
 }): TraceControl {
-  const [state, setState] = useState<TraceState>({ phase: "idle" });
-  const [choice, setChoice] = useState<{ caseId: string | null; workflowId: string | null }>({
+  // Every stored value records its owner. A render whose session, case, selection or read
+  // permission differs never returns it: it is masked here, during render, not only later
+  // by the effect below (which also aborts and generation-fences late results).
+  const [owned, setOwned] = useState<{ key: string; state: TraceState }>({ key: "", state: { phase: "idle" } });
+  const [lastReady, setLastReady] = useState<{ token: string; caseId: string; trace: InvestigationTrace } | null>(null);
+  const [choice, setChoice] = useState<{ token: string; caseId: string | null; workflowId: string | null }>({
+    token: "",
     caseId: null,
     workflowId: null,
   });
   const [retries, setRetries] = useState(0);
   const generation = useRef(0);
-  const last = useRef<{ token: string; caseId: string; trace: InvestigationTrace } | null>(null);
-  // A selection belongs to one case; another case always starts at its newest workflow.
-  const workflowId = choice.caseId === caseId ? choice.workflowId : null;
+  // A selection belongs to one session and case; another starts at its newest workflow.
+  const workflowId = choice.token === token && choice.caseId === caseId ? choice.workflowId : null;
+  const key = ownerKey(token, caseId, workflowId, canRead);
+  // Only this session's list of this case's workflows may stay visible while one loads.
+  const history =
+    canRead && caseId !== null && lastReady !== null && lastReady.token === token && lastReady.caseId === caseId
+      ? lastReady.trace
+      : null;
 
   useEffect(() => {
     const current = ++generation.current;
+    const own = (state: TraceState) => setOwned({ key, state });
     if (!caseId) {
-      setState({ phase: "idle" });
+      own({ phase: "idle" });
       return;
     }
     if (!canRead) {
-      setState({ phase: "denied" });
+      own({ phase: "denied" });
       return;
     }
     if (typeof client.trace !== "function") {
-      setState({ phase: "unavailable" });
+      own({ phase: "unavailable" });
       return;
     }
-    // Old private content is cleared before any new read; only the same session's list of
-    // this case's workflows stays visible while one of them loads.
-    const history = last.current && last.current.token === token && last.current.caseId === caseId
-      ? last.current.trace
-      : null;
-    if (!history) last.current = null;
-    setState({ phase: "loading", history });
+    own({ phase: "loading" });
     const controller = new AbortController();
     void client.trace(token, caseId, workflowId, controller.signal).then((result) => {
       if (controller.signal.aborted || current !== generation.current) return;
@@ -97,18 +107,18 @@ export function useTrace({
         // A body for another case (or another selected workflow) is never shown here.
         const selected = result.data.selected?.workflow.id ?? null;
         if (result.data.case_id !== caseId || (workflowId !== null && selected !== workflowId)) {
-          setState({ phase: "failed", message: "The trace response did not match this case. Try again.", ambiguous: true, selectionMissing: false });
+          own({ phase: "failed", message: "The trace response did not match this case. Try again.", ambiguous: true, selectionMissing: false });
           return;
         }
-        last.current = { token, caseId, trace: result.data };
-        setState({ phase: "ready", trace: result.data });
+        setLastReady({ token, caseId, trace: result.data });
+        own({ phase: "ready", trace: result.data });
         return;
       }
       if (result.status === 405) {
-        setState({ phase: "unavailable" });
+        own({ phase: "unavailable" });
         return;
       }
-      setState({
+      own({
         phase: "failed",
         message: result.status === 404 && workflowId !== null
           ? "That workflow is not available for this case."
@@ -117,18 +127,24 @@ export function useTrace({
             : result.message,
         ambiguous: result.ambiguous,
         selectionMissing: result.status === 404 && workflowId !== null,
-        history,
       });
     });
     return () => {
       controller.abort();
     };
-  }, [client, token, caseId, canRead, workflowId, refreshKey, retries]);
+  }, [client, token, caseId, canRead, workflowId, key, refreshKey, retries]);
+
+  let state: TraceState;
+  if (!caseId) state = { phase: "idle" };
+  else if (!canRead) state = { phase: "denied" };
+  else if (owned.key !== key) state = { phase: "loading", history };
+  else if (owned.state.phase === "loading" || owned.state.phase === "failed") state = { ...owned.state, history };
+  else state = owned.state;
 
   return {
     state,
     workflowId,
-    select: (next) => setChoice({ caseId, workflowId: next }),
+    select: (next) => setChoice({ token, caseId, workflowId: next }),
     retry: () => setRetries((value) => value + 1),
   };
 }
