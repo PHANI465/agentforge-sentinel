@@ -1,5 +1,9 @@
 # G3C-B: analyst investigation trace UI and real browser integration
 
+Delivered at bb5943e; [review R38/R39](../reviews/G3C-B-bb5943e.md) requests focused fixes.
+The current task is [the correction prompt](CLAUDE_G3CB_REVIEW_FIXES.md) on the existing
+UI branch, not another fresh implementation worktree. The original assignment follows.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. Typed nullable data, asynchronous
 case/session switching and real browser/fixture lifecycle boundaries need careful review.
 This selects the coding assistant; Sentinel's test investigators stay deterministic.

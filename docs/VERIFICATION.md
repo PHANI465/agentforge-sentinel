@@ -1,5 +1,27 @@
 # Verification
 
+## November 1: G3C-B reviewed; R38/R39 corrections required
+
+Candidate **bb5943e681708d8fbf3db031f06f5d37a57389c9** delivers the trace UI and separate
+browser suite on accepted API 16b67fd. **G3C-B is changes-requested, not accepted or merged.**
+[Review](reviews/G3C-B-bb5943e.md): 115 independent frontend tests pass, but six added
+probes give four real assertion failures and two controls passing. R38 rejects a Python-
+DTO-valid 400-code-point note by counting UTF-16 units. R39 commits old trace content under
+changed case/session/read-permission props before its clearing effect. The latter is a
+hook/panel commit probe, not an established server-auth bypass or painted-browser leak.
+
+[Claude's focused correction](prompts/CLAUDE_G3CB_REVIEW_FIXES.md), Opus 5.5 / High, resumes
+the existing UI branch from exact bb5943e. Finish any in-flight check through cleanup,
+retain reports, avoid new expensive checks on the known-defective candidate, then fix and
+certify a new clean sole-owner commit. No schema/backend changes or weakened assertions.
+The Windows strict record was observed passed at bb5943e; native/final UI results remain
+uncertified here and do not close these findings. No duplicate full review run was started.
+
+G3C-A stays accepted/frozen at 16b67fd. Main application remains G3B a7c71f5; API/UI integration
+waits for UI acceptance. Original Cursor edits and all accepted worktrees are preserved.
+No model call, paid usage, remote/push/deployment or G3D evaluation. Current project
+artifacts reflect this gate; no trace UI completion is claimed.
+
 ## November 1: G3C-A accepted and v1.2 frozen; G3C-B ready
 
 **Accept/freeze 16b67fd0cd09cdd08bbfa64a159035a7a188bf5b** for the read-only trace API and

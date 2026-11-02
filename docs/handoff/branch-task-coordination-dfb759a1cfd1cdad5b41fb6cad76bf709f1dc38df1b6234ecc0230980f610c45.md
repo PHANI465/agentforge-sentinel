@@ -1,12 +1,12 @@
 # Handoff: task/coordination
 
-- Current task: G3C-A acceptance/freeze and exact-base G3C-B UI dispatch.
-- Tool/worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination; isolated review at exact 16b67fd.
+- Current task: G3C-B bb5943e review; R38/R39 changes requested.
+- Tool/worktree: Codex, E:/PHANI/sentinel-wt/codex-coordination; isolated review task/codex-g3cb-review at exact bb5943e.
 - Updated: November 1, 2026, America/Phoenix.
-- Current state: G3C-A 16b67fd accepted/frozen, not merged. Independent 95 Windows/3 native tests and 3 extra probes each pass; both full owner 580+1 records verified against 581 current cases.
-- Main application: unchanged G3B a7c71f5; current publication is documentation only. No G3C-B implementation, live comparison or main API/UI result is claimed.
-- Next: docs/prompts/CLAUDE_G3C_TRACE_UI.md, Opus 5.5 / High, new worktree from exact accepted 16b67fd. Preserve API bytes and original Cursor checkout; Codex reviews before API/UI integration.
-- Evidence: canonical .agent/g3c-review/16b67fd/ acceptance audit, independent XML/probes and supplied exact-commit reports. Prior failed PATH logs stay in the native report directory.
+- Current state: 115 independent frontend passes; expanded probes 4 fail/2 controls pass. R38 rejects legal Unicode; R39 commits old trace under changed hook context. No auth bypass or browser paint claim.
+- Main application: unchanged G3B a7c71f5. API 16b67fd remains accepted/frozen. UI is not accepted/merged and no G3D/live call is assigned.
+- Next: docs/prompts/CLAUDE_G3CB_REVIEW_FIXES.md, Opus 5.5 / High, same UI branch from bb5943e after in-flight cleanup; new sole-owner commits only.
+- Evidence: canonical .agent/g3cb-review/bb5943e/; candidate/review stay clean, temporary probe test removed, original Cursor files preserved.
 
 The earlier sections below are chronological history, not current task status.
 

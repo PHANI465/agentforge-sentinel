@@ -1,6 +1,36 @@
 # AgentForge Sentinel November 1 checkpoint
 
-## Latest checkpoint: trace API accepted; trace UI is next
+## Latest checkpoint: trace UI delivered; two corrections before acceptance
+
+UI candidate bb5943e681708d8fbf3db031f06f5d37a57389c9 is committed on its own branch,
+from accepted API 16b67fd, but is not accepted or merged. Codex independently ran all 115
+frontend tests successfully. Six extra targeted probes gave 4 assertion failures and 2
+passing controls: a valid 400-code-point Unicode note is rejected, and the hook/panel
+commits old trace content once under new case/session/permission props before clearing.
+A controlled hook consumer demonstrates the commit ordering; normal App sign-out unmounts,
+and no server-auth bypass or painted-browser exposure has been established.
+
+[Review R38/R39](../reviews/G3C-B-bb5943e.md) and
+[Claude correction](../prompts/CLAUDE_G3CB_REVIEW_FIXES.md), Opus 5.5 / High. Continue the
+existing UI branch, preserve backend/contract bytes and existing checks, and write
+meaningful maintained failing-first regressions. Let any in-flight gate finish normal
+cleanup before editing; retain old results rather than starting more full old-candidate
+runs. Return a new tested clean commit for re-review. The Windows strict record was
+observed passed on bb5943e; remaining final evidence is not certified here.
+
+The read-only panel, separate trace browser run, startup readiness and controlled-failure
+artifact work remain delivered work to preserve. Pre-commit 115/19/10/14 are owner reports,
+not independent final gate results. No duplicate full backend or independent browser run
+was launched after finding the targeted defects. Independent probes were removed from
+the review checkout and retained as ignored evidence. Candidate stays untouched/clean.
+
+G3C-A remains accepted; main's runtime is still G3B a7c71f5. Original Cursor seven edits,
+accepted source/contracts/model artifacts, budgets and sole-owner authorship are preserved.
+No trace UI acceptance, live evaluation, push or public deployment is claimed. The
+[overview](AgentForge_Sentinel_Overview_and_Remaining_Work.md) reflects the current gate.
+Earlier entries below are history, not the active task.
+
+## Previous checkpoint: trace API accepted; trace UI dispatched
 
 **G3C-A 16b67fd0cd09cdd08bbfa64a159035a7a188bf5b is accepted and HTTP v1.2 frozen**.
 The independent final review passed 95 Windows tests and three native tests for real HTTP
