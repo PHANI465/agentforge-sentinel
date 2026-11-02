@@ -258,8 +258,24 @@ def test_execute_fault_after_consumption_rolls_back(database_url, clock, monkeyp
 
 # ---- same-account contention ---------------------------------------------------------------
 
-def test_same_account_concurrent_ingestion_counts_exactly_prior_available(database_url):  # [guard]
-    service = Sentinel(database_url, DeterministicInvestigator())
+@pytest.mark.parametrize("coarse_clock", [False, True], ids=["native-clock", "tied-clock"])
+def test_same_account_concurrent_ingestion_counts_exactly_prior_available(
+        database_url, coarse_clock):  # [guard]
+    # The first clock read per ingest happens under the account lock, before audit reads.
+    # Its order identifies earlier committed decisions when timestamps repeat or go back.
+    fixed = datetime.now(timezone.utc)
+    current = threading.local()
+    decisions = []
+
+    def decision_clock():
+        stamp = fixed if coarse_clock else datetime.now(timezone.utc)
+        name = getattr(current, "external_id", None)
+        if name is not None and not getattr(current, "recorded", False):
+            decisions.append(name)
+            current.recorded = True
+        return stamp
+
+    service = Sentinel(database_url, DeterministicInvestigator(), decision_clock)
     token, ctx = service.create_session(ANALYST)
     account = str(uuid.uuid4())
     base = datetime.now(timezone.utc) - timedelta(minutes=30)
@@ -270,18 +286,46 @@ def test_same_account_concurrent_ingestion_counts_exactly_prior_available(databa
     barrier = threading.Barrier(len(inputs))
 
     def ingest(item):
+        current.external_id = item.external_id
+        current.recorded = False
         barrier.wait(10)
         return service.ingest(ctx, item)
 
     with ThreadPoolExecutor(len(inputs)) as pool:
         results = [f.result(timeout=60) for f in [pool.submit(ingest, i) for i in inputs]]
     rows = {r["transaction"]["external_id"]: r for r in results}
+    assert len(decisions) == len(inputs) and set(decisions) == set(rows)
+    decision_order = {name: index for index, name in enumerate(decisions)}
+    if coarse_clock:
+        assert len({row["transaction"]["ingested_at"] for row in results}) == 1
     for name, result in rows.items():
         own = result["transaction"]
-        expected = sum(1 for other in rows.values() if other is not result
+        expected = sum(1 for other_name, other in rows.items()
+                       if decision_order[other_name] < decision_order[name]
                        and other["transaction"]["occurred_at"] < own["occurred_at"]
-                       and other["transaction"]["ingested_at"] < own["ingested_at"])
+                       and other["transaction"]["ingested_at"] <= own["ingested_at"])
         assert result["scoring"]["prior_count_1h"] == expected, name
+
+
+def test_tied_ingestion_times_keep_committed_history_and_exclude_same_event_time(database_url):
+    # An intentional arrival order distinguishes a committed equal-timestamp row from a
+    # row that arrives later. Event time still uses the exclusive upper bound [t-1h, t).
+    fixed = datetime.now(timezone.utc)
+    service = Sentinel(database_url, DeterministicInvestigator(), lambda: fixed)
+    _token, ctx = service.create_session(ANALYST)
+    account = str(uuid.uuid4())
+    inputs = [TransactionInput.model_validate({
+        "external_id": f"tied-{index}", "account_id": account, "direction": "debit",
+        "amount": {"currency": "USD", "minor_units": 1000, "currency_exponent": 2},
+        "occurred_at": (fixed - timedelta(minutes=minutes)).isoformat()})
+        for index, minutes in enumerate([10, 20, 10, 0])]
+    results = [service.ingest(ctx, item) for item in inputs]
+    assert len({row["transaction"]["ingested_at"] for row in results}) == 1
+    assert [row["scoring"]["prior_count_1h"] for row in results] == [0, 0, 1, 3]
+    # Later arrivals cannot change the first saved decision on an idempotent replay.
+    replay = service.ingest(ctx, inputs[0])
+    assert replay["replayed"] is True
+    assert replay["scoring"] == results[0]["scoring"]
 
 
 # ---- overview read consistency (C01 review follow-up) -------------------------------------
