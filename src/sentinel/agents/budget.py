@@ -227,6 +227,27 @@ def _cancel(conn, timeout_s: float) -> None:
         pass
 
 
+POLL_MIN_S, POLL_MAX_S = 0.0002, 0.005
+
+
+def _await(ready: Callable[[], bool], left_s: Callable[[], float]) -> bool:
+    """Wait until ready() or until left_s() reaches 0, on the monotonic clock; True if ready.
+
+    A bound is never a timed threading wait: on CPython builds without sem_clockwait (such as
+    the portable interpreters uv installs on Linux) those expire on CLOCK_REALTIME, which host
+    time sync can step by seconds mid-wait: a backward step overran a COMMIT bound and a
+    forward one cancelled a COMMIT early (docs/agents/G3C-native-clock-diagnosis.md).
+    time.sleep is relative and monotonic; a reply is noticed within POLL_MAX_S."""
+    pause = POLL_MIN_S
+    while not ready():
+        remaining = left_s()
+        if remaining <= 0:
+            return ready()
+        time.sleep(min(pause, remaining))
+        pause = min(pause * 2, POLL_MAX_S)
+    return True
+
+
 def bounded_call(conn, operation: Callable, wait_ms: float,
                  cancel_after_ms: float | None = None):
     """Run `operation` on its own thread and wait at most `wait_ms` for it.
@@ -270,7 +291,7 @@ def bounded_call(conn, operation: Callable, wait_ms: float,
                 state["cancelled_at"] = time.monotonic()
             lease.leave("cancel")
 
-    def wait_left_s() -> float:  # holding the lock
+    def wait_left_s() -> float:  # read under the lease lock
         left = left_s()
         if state["cancelled_at"] is not None:
             left = min(left, COMMIT_CANCEL_REPLY_MS / 1000
@@ -280,18 +301,21 @@ def bounded_call(conn, operation: Callable, wait_ms: float,
     try:
         lease.enter("sql")
         threading.Thread(target=work, name="sentinel-sql", daemon=True).start()
-        if cancel_after_ms is not None and not done.wait(max(cancel_after_ms, 0) / 1000) \
-                and left_s() > 0:
-            lease.enter("cancel")
-            threading.Thread(target=cancel, args=(left_s(),), name="sentinel-sql-cancel",
-                             daemon=True).start()
-        with lease.cond:
-            while not done.is_set() and wait_left_s() > 0:
-                lease.cond.wait(wait_left_s())
-            answered = done.is_set()
-            while answered and lease.users and left_s() > 0:
-                lease.cond.wait(left_s())
-            helpers_left = bool(lease.users)
+        if cancel_after_ms is not None:
+            cancel_at = started + max(cancel_after_ms, 0) / 1000
+            if not _await(done.is_set, lambda: cancel_at - time.monotonic()) and left_s() > 0:
+                lease.enter("cancel")
+                threading.Thread(target=cancel, args=(left_s(),), name="sentinel-sql-cancel",
+                                 daemon=True).start()
+
+        def locked(read):
+            with lease.cond:
+                return read()
+        _await(done.is_set, lambda: locked(wait_left_s))
+        answered = done.is_set()
+        if answered:
+            _await(lambda: not locked(lambda: bool(lease.users)), left_s)
+        helpers_left = locked(lambda: bool(lease.users))
         if not answered:
             lease.retire()
             own.shutdown()

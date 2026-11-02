@@ -565,18 +565,69 @@ def test_lost_connection_in_working_phase_reconnects_and_ends_inconclusive(datab
         "coordinator_error"
 
 
+SLOW_COMMIT_S = 3.0
+SLOW_COMMIT_KEY = 424_203
+
+
+class CommitGate:
+    """Holds each COMMIT of an agent_workflows update for SLOW_COMMIT_S of this process's
+    monotonic time. The deferred trigger waits on an advisory lock that this thread holds and
+    releases SLOW_COMMIT_S after a COMMIT starts waiting. pg_sleep is not used: it measures
+    on the server's CLOCK_REALTIME, which a host time sync steps by seconds
+    (docs/agents/G3C-native-clock-diagnosis.md). The trigger runs with lock_timeout 0, so only
+    the client's own cancel (or a terminated backend) ends the wait early."""
+
+    def __init__(self, url):
+        self.conn = psycopg.connect(url, autocommit=True)
+        self.conn.execute("SELECT pg_advisory_lock(%s)", (SLOW_COMMIT_KEY,))
+        self.stop = threading.Event()
+        self.thread = threading.Thread(target=self._run, name="slow-commit-gate", daemon=True)
+        self.thread.start()
+
+    def _waiting(self) -> bool:
+        return self.conn.execute(
+            "SELECT count(*) AS n FROM pg_locks WHERE locktype = 'advisory' AND objid = %s"
+            " AND NOT granted AND database = (SELECT oid FROM pg_database"
+            " WHERE datname = current_database())", (SLOW_COMMIT_KEY,)).fetchone()[0] > 0
+
+    def _run(self):
+        since = None
+        while not self.stop.is_set():
+            time.sleep(0.01)
+            if not self._waiting():
+                since = None
+            elif since is None:
+                since = time.monotonic()
+            elif time.monotonic() - since >= SLOW_COMMIT_S:
+                self.conn.execute("SELECT pg_advisory_unlock(%s)", (SLOW_COMMIT_KEY,))
+                # Waits only until that COMMIT has finished and released its lock.
+                self.conn.execute("SELECT pg_advisory_lock(%s)", (SLOW_COMMIT_KEY,))
+                since = None
+
+    def close(self):
+        self.stop.set()
+        self.thread.join(SLOW_COMMIT_S + 10)
+        assert not self.thread.is_alive()
+        self.conn.close()
+
+
 @pytest.fixture
 def slow_commit(database_url):
     with psycopg.connect(database_url, autocommit=True) as conn:
-        conn.execute("CREATE FUNCTION g3b_slow_commit() RETURNS trigger LANGUAGE plpgsql AS $$"
-                     " BEGIN PERFORM pg_sleep(3); RETURN NULL; END; $$")
+        conn.execute("CREATE FUNCTION g3b_slow_commit() RETURNS trigger LANGUAGE plpgsql"
+                     " SET lock_timeout = 0 AS $$ BEGIN"
+                     f" PERFORM pg_advisory_xact_lock({SLOW_COMMIT_KEY}); RETURN NULL; END; $$")
         conn.execute("CREATE CONSTRAINT TRIGGER g3b_slow_commit AFTER UPDATE ON agent_workflows"
                      " DEFERRABLE INITIALLY DEFERRED FOR EACH ROW"
                      " EXECUTE FUNCTION g3b_slow_commit()")
-    yield
-    with psycopg.connect(database_url, autocommit=True) as conn:
-        conn.execute("DROP TRIGGER g3b_slow_commit ON agent_workflows")
-        conn.execute("DROP FUNCTION g3b_slow_commit()")
+    gate = CommitGate(database_url)
+    try:
+        yield
+    finally:
+        gate.close()
+        with psycopg.connect(database_url, autocommit=True) as conn:
+            conn.execute("DROP TRIGGER g3b_slow_commit ON agent_workflows")
+            conn.execute("DROP FUNCTION g3b_slow_commit()")
 
 
 def test_uncertain_commit_reports_outcome_unknown(database_url, url, clock, mono, slow_commit):
