@@ -1,5 +1,10 @@
 # Claude G3C-B R38/R39 review corrections
 
+**November 2:** clock/caller correction 0c17bc8 is accepted and R40 closed under
+[the independent review](../reviews/G3C-R40-0c17bc8.md). This assignment is complete;
+do not restart it. Codex owns final combined release verification. Older pending/pause
+banners and original assignments below are historical.
+
 **November 2:** UI 6014680 is accepted and R38/R39 closed under
 [the independent review](../reviews/G3C-B-6014680.md). Do not rerun this completed task.
 The current follow-up is [native integration diagnosis](CLAUDE_G3C_NATIVE_INTEGRATION_DIAGNOSIS.md).

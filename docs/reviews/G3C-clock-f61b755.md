@@ -1,5 +1,11 @@
 # G3C clock fix review: f61b755, R40 changes requested
 
+## R40 closed at accepted child, November 2
+
+Both callers are corrected at 0c17bc8. Independent checks pass Windows 34+six and native
+17+six, and exact full component reports show 609+one skip each. See
+[the acceptance](G3C-R40-0c17bc8.md). Earlier f61b755 findings/evidence below are history.
+
 November 2, 2026, America/Phoenix. Exact candidate
 **f61b7554da532a0f8149f7ac02d0ab7e4cd84337**, direct child of 7bc0027, is clean and has
 PHANI465 <pgavara1@asu.edu> as sole author and committer, no trailers/history rewriting.

@@ -1,5 +1,6 @@
 import { acceptModelResults, acceptScorerInfo } from "./analysis";
 import { messageFor, safeCode, unconfirmedMessage, unreachableMessage } from "./format";
+import { acceptTrace, type InvestigationTrace } from "./trace";
 import type {
   ApiFailure,
   ApiResult,
@@ -46,6 +47,13 @@ export interface SentinelClient {
   ): Promise<ApiResult<ExecuteResponse>>;
   scoring(token: string): Promise<ApiResult<ScorerInfo>>;
   modelResults(token: string, resultsId: string): Promise<ApiResult<ModelResults>>;
+  /** v1.2: read-only stored trace. GET only; it never investigates or recovers. */
+  trace(
+    token: string,
+    caseId: string,
+    workflowId: string | null,
+    signal?: AbortSignal,
+  ): Promise<ApiResult<InvestigationTrace>>;
 }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -187,6 +195,7 @@ export function createClient(fetchImpl: FetchLike = (input, init) => fetch(input
     token: string | null,
     body: unknown,
     accept: (value: unknown) => T | null,
+    signal?: AbortSignal,
   ): Promise<ApiResult<T>> {
     let response: Response;
     try {
@@ -199,6 +208,7 @@ export function createClient(fetchImpl: FetchLike = (input, init) => fetch(input
           ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
         },
         body: body !== undefined ? JSON.stringify(body) : undefined,
+        ...(signal ? { signal } : {}),
       });
     } catch {
       return ambiguous(null, true);
@@ -275,6 +285,17 @@ export function createClient(fetchImpl: FetchLike = (input, init) => fetch(input
         undefined,
         acceptModelResults,
       ),
+    trace: (token, caseId, workflowId, signal) => {
+      const query = workflowId ? `?workflow_id=${encodeURIComponent(workflowId)}` : "";
+      return request(
+        `/v1/cases/${encodeURIComponent(caseId)}/investigation-trace${query}`,
+        "GET",
+        token,
+        undefined,
+        acceptTrace,
+        signal,
+      );
+    },
   };
 }
 

@@ -1,5 +1,13 @@
 # Handoff: task/coordination
 
+## R40 accepted; release integration now verifies
+
+Accepted candidate 0c17bc8 closes R40: independent Windows34+six and native17+six,
+full owner records verified609+one each. No new Claude correction. task/codex-g3c-release
+combines current coordination and accepted source; twelve central doc conflicts retain
+current history/acceptance, no source conflicts. Main advance waits for new exact-commit
+Windows/native gates and Windows frontend/29 browsers. Preserve Cursor/components/failures.
+
 ## November 2 clock review: R40 changes requested
 
 f61b755 is clean/preserved, scoped SQL/fixture checks pass 24 Windows and seven native;

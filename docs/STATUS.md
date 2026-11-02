@@ -1,5 +1,28 @@
 # Project status
 
+## November 2: R40 accepted; final combined release verification underway
+
+**Accept 0c17bc897002ba611451e93337de26fdd98c4b96; R40 closes.** Both role/investigator
+callers now use the shared monotonic readiness helper and nonblocking result collection.
+Independent checks pass: Windows 34 focused + six original probes; native Ubuntu 17 + six.
+Full exact-candidate reports are verified at 609 passes plus one allowed skip per platform.
+[Acceptance](reviews/G3C-R40-0c17bc8.md). API 16b67fd and UI 6014680 remain accepted.
+
+task/codex-g3c-release combines current coordination f93e35e and exact accepted 0c17bc8.
+Application/test/contract/model/dependency bytes match the candidate. Twelve coordination
+document conflicts are resolved using current coordination/history plus this acceptance;
+no production conflict or source fix is introduced. Queued API error-order and active-v1.2
+SETUP corrections from the original integration are included.
+
+Main application is unchanged until the NEW exact combined commit passes release checks:
+full Windows/native strict gates sequentially, same-run structured JUnit validation,
+frozen HTTP export, read-only ML reproduce, Windows frontend and both real browser suites.
+Candidate passes do not certify the new merge. Historical failures/clock observations are
+retained. No provider/new spend, main application merge yet, remote/push or deployment.
+Cursor's seven original edits and accepted worktrees remain preserved. No further Claude
+correction is assigned; evaluator/analytics/public work follows release verification.
+Older dated entries below are history.
+
 ## November 2: SQL clock fix validated; R40 caller-wait correction required
 
 Candidate **f61b7554da532a0f8149f7ac02d0ab7e4cd84337**, direct child of preserved 7bc0027,

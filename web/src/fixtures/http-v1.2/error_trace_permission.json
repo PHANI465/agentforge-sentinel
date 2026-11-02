@@ -1,0 +1,12 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/cases/7c000000-0000-4000-8000-00000000000b/investigation-trace"
+  },
+  "response": {
+    "error": "permission_denied"
+  },
+  "status": 403
+}

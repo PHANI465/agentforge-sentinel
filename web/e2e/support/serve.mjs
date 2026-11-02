@@ -11,6 +11,7 @@ import {
   queryProcess,
   recoveryDocument,
 } from "./process-identity.mjs";
+import { resolveSuite, stackStartArgs } from "./suite.mjs";
 
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const repoRoot = path.resolve(webRoot, "..");
@@ -159,10 +160,7 @@ function shutdown(code) {
 
 function startStack() {
   mkdirSync(path.join(runtimeDir, "stacks"), { recursive: true });
-  const started = runStack(
-    ["start", "--parent-dir", path.join(runtimeDir, "stacks"), "--timeout", "120", "--scorer", "rule", "--model-fixtures"],
-    300_000,
-  );
+  const started = runStack(stackStartArgs(resolveSuite(process.env.SENTINEL_E2E_SUITE), path.join(runtimeDir, "stacks")), 300_000);
   if (started.error || started.status !== 0) {
     writeFileSync(path.join(runtimeDir, "last-command.txt"), redact(`${started.stderr || ""}\n${started.stdout || ""}`));
     throw new Error("browser stack failed to start");

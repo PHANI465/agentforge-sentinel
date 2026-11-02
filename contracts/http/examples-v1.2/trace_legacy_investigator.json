@@ -1,0 +1,19 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/cases/7c000000-0000-4000-8000-0000000000ac/investigation-trace"
+  },
+  "response": {
+    "case_id": "7c000000-0000-4000-8000-0000000000ac",
+    "case_revision": 3,
+    "case_state": "awaiting_approval",
+    "legacy_investigator_runs": 1,
+    "read_at": "2026-10-23T17:03:46Z",
+    "selected": null,
+    "workflow_count": 0,
+    "workflows": []
+  },
+  "status": 200
+}

@@ -104,3 +104,10 @@ The fresh-model browser flow inspects the database immediately before Approve an
 both action_count and approval_count to be zero. Its final exactly-one action and consumed
 approval assertions remain. No production API, contract, scoring, session or fixture change.
 Final exact-commit command results are recorded in the task handoff chat and ignored evidence.
+
+## Investigation trace (G3C-B)
+
+The case file is followed by a read-only **Investigation trace** panel for HTTP v1.2. It
+uses GET only, and approval and execution remain in the case pane. Its states, request
+fencing, fixtures and the separate `npm run test:e2e:trace` browser run are described in
+[G3C-trace.md](G3C-trace.md).

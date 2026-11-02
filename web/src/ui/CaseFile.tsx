@@ -70,6 +70,7 @@ export function CaseFile({
   busy,
   replayed,
   configured = null,
+  workflowCount,
   onInvestigate,
   onDecide,
   onExecute,
@@ -80,6 +81,8 @@ export function CaseFile({
   busy: boolean;
   replayed: boolean;
   configured?: ScorerInfo | null;
+  /** Three-role workflows from the trace: undefined when no trace is used, null while unknown. */
+  workflowCount?: number | null;
   onInvestigate: () => void;
   onDecide: (decision: "approved" | "rejected") => void;
   onExecute: () => void;
@@ -144,7 +147,7 @@ export function CaseFile({
         {detail.evidence.length === 0 ? <p>No evidence is attached.</p> : null}
         <ul>
           {detail.evidence.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} id={`evidence-${item.id}`}>
               <p>
                 {item.source} from {item.source_ref}
               </p>
@@ -159,7 +162,7 @@ export function CaseFile({
       </div>
       <div className="block">
         <h3>Investigation</h3>
-        {detail.agent_runs.length === 0 ? <p>No investigation has been recorded.</p> : null}
+        {detail.agent_runs.length === 0 ? <p>{noRunsText(workflowCount)}</p> : null}
         {detail.agent_runs.map((view) => (
           <div key={view.run.id}>
             <p>Run by {investigatorLabel(view.run.config)}</p>
@@ -252,6 +255,12 @@ export function CaseFile({
       </div>
     </article>
   );
+}
+
+function noRunsText(workflowCount: number | null | undefined): string {
+  if (workflowCount === undefined || workflowCount === 0) return "No investigation has been recorded.";
+  if (workflowCount === null) return "No role run is recorded in this case history.";
+  return "No role run is recorded in this case history. The investigation trace shows the recorded workflow.";
 }
 
 function Proposal({ intent }: { intent: NonNullable<ReturnType<typeof currentIntent>> }) {

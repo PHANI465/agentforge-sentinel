@@ -1,5 +1,10 @@
 # G3C integration: diagnose native COMMIT timing and recovery failures
 
+**November 2:** clock/caller correction 0c17bc8 is accepted and R40 closed under
+[the independent review](../reviews/G3C-R40-0c17bc8.md). This assignment is complete;
+do not restart it. Codex owns final combined release verification. Older pending/pause
+banners and original assignments below are historical.
+
 **Follow-up:** diagnosis/SQL-clock correction is delivered at f61b755 and passes scoped
 review. Do not repeat the original investigation. Current task is
 [R40 caller waits](CLAUDE_G3C_CLOCK_WAIT_FOLLOWUP.md) on the same branch, with explicit

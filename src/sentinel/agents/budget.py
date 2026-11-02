@@ -37,6 +37,7 @@ import psycopg
 from psycopg.conninfo import conninfo_to_dict
 from psycopg.rows import dict_row
 
+from sentinel.clock import wait_until as _await
 from sentinel.contracts.agents import WorkflowLimits
 
 MIN_DB_MS = 100
@@ -270,7 +271,7 @@ def bounded_call(conn, operation: Callable, wait_ms: float,
                 state["cancelled_at"] = time.monotonic()
             lease.leave("cancel")
 
-    def wait_left_s() -> float:  # holding the lock
+    def wait_left_s() -> float:  # read under the lease lock
         left = left_s()
         if state["cancelled_at"] is not None:
             left = min(left, COMMIT_CANCEL_REPLY_MS / 1000
@@ -280,18 +281,21 @@ def bounded_call(conn, operation: Callable, wait_ms: float,
     try:
         lease.enter("sql")
         threading.Thread(target=work, name="sentinel-sql", daemon=True).start()
-        if cancel_after_ms is not None and not done.wait(max(cancel_after_ms, 0) / 1000) \
-                and left_s() > 0:
-            lease.enter("cancel")
-            threading.Thread(target=cancel, args=(left_s(),), name="sentinel-sql-cancel",
-                             daemon=True).start()
-        with lease.cond:
-            while not done.is_set() and wait_left_s() > 0:
-                lease.cond.wait(wait_left_s())
-            answered = done.is_set()
-            while answered and lease.users and left_s() > 0:
-                lease.cond.wait(left_s())
-            helpers_left = bool(lease.users)
+        if cancel_after_ms is not None:
+            cancel_at = started + max(cancel_after_ms, 0) / 1000
+            if not _await(done.is_set, lambda: cancel_at - time.monotonic()) and left_s() > 0:
+                lease.enter("cancel")
+                threading.Thread(target=cancel, args=(left_s(),), name="sentinel-sql-cancel",
+                                 daemon=True).start()
+
+        def locked(read):
+            with lease.cond:
+                return read()
+        _await(done.is_set, lambda: locked(wait_left_s))
+        answered = done.is_set()
+        if answered:
+            _await(lambda: not locked(lambda: bool(lease.users)), left_s)
+        helpers_left = locked(lambda: bool(lease.users))
         if not answered:
             lease.retire()
             own.shutdown()

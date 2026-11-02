@@ -1,5 +1,18 @@
 # AgentForge Sentinel: November 2, 2026 checkpoint
 
+## Latest: R40 accepted, final release verification running
+
+R40 closes at accepted 0c17bc8. Independent Windows 34+six original probes and native
+17+six pass; exact component full records are verified at 609+one allowed skip each.
+The shared monotonic helper fixes both callers without changing SQL budgets, late-worker
+leases, the advisory-lock fixture or frozen contracts/model artifacts.
+
+Codex prepares task/codex-g3c-release from current coordination plus accepted 0c17bc8.
+Only central document conflicts need reconciliation; application bytes match the candidate.
+Main application waits for exact merged-commit Windows/native release gates and Windows
+frontend/legacy19/trace10 coverage. No new Claude correction or provider call is assigned.
+Earlier failed integrations and diagnosed clock observations remain as historical evidence.
+
 ## Latest: clock diagnosis validated, one focused R40 correction remains
 
 Claude delivered f61b755 with monotonic SQL waits and a monotonic advisory-lock slow-COMMIT

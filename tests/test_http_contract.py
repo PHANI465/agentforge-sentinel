@@ -25,9 +25,10 @@ def adapter(name):
 
 
 def test_openapi_snapshot_is_current():
-    # Since C07 the live schema is the active v1.1 revision; openapi.v1.json is the frozen
-    # legacy snapshot, checked by hash and for v1.1 compatibility in test_http_contract_v11.
-    committed = (ROOT / "contracts" / "http" / "openapi.v1.1.json").read_bytes()
+    # Since G3C-A the live schema is the active v1.2 revision; openapi.v1.json and
+    # openapi.v1.1.json are frozen snapshots, checked by hash and for compatibility in
+    # test_http_contract_v11 and test_http_contract_v12.
+    committed = (ROOT / "contracts" / "http" / "openapi.v1.2.json").read_bytes()
     assert committed == exporter.dumps(exporter.openapi()), (
         "run: uv run --locked python scripts/export_http_contract.py")
 

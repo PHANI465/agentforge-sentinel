@@ -25,6 +25,7 @@ from sentinel.agents.budget import (
 from sentinel.agents.capacity import CapacityExhausted, late_worker_event
 from sentinel.agents.claims import Ledger, check_all, policy_problems, render_rationale
 from sentinel.agents.tools import TOOL_PROFILE_DOCUMENT, CaseFacts, denied, run_tool
+from sentinel.clock import wait_future
 from sentinel.contracts.agents import (
     STEP_NAMESPACE, AccountHistoryArgs, CaseEvidenceArgs, Disposition, ScoringOutcomeArgs,
     StepRecord, ToolRequest, Usage, WorkflowConfig, WorkflowLimits, WorkflowRecord,
@@ -411,7 +412,9 @@ class Run:
             future = slot.start(adapter.call, role_input, on_return=on_return)
             try:  # never past the working phase, which the recheck above showed fits call_ms
                 wait_ms = min(call_ms, self.deadline.available_ms("working"))
-                result = future.result(timeout=max(wait_ms, 0) / 1000)
+                if not wait_future(future, max(wait_ms, 0) / 1000):  # monotonic (R40)
+                    raise futures.TimeoutError()
+                result = future.result(timeout=0)  # finished: no timed wait
             except futures.TimeoutError:
                 abandoned["flag"] = True
                 failure, returned = "timeout", False

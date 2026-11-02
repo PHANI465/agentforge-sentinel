@@ -1,5 +1,10 @@
 # G3C R40: finish monotonic waits for investigator and role callers
 
+**November 2:** clock/caller correction 0c17bc8 is accepted and R40 closed under
+[the independent review](../reviews/G3C-R40-0c17bc8.md). This assignment is complete;
+do not restart it. Codex owns final combined release verification. Older pending/pause
+banners and original assignments below are historical.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. This is a focused completion of
 the proven clock fix across two asynchronous callers, preserving deadlines and late-worker
 leases. It selects the coding assistant; all Sentinel test providers remain synthetic.
