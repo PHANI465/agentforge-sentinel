@@ -4,9 +4,10 @@ A local fraud investigation workbench using synthetic financial transactions, ru
 
 The consolidated Windows-local codebase includes the React/TypeScript analyst UI, FastAPI/PostgreSQL API, reproducible scikit-learn baseline and model reports, persisted approval/replay workflow, operator backup/rollback tooling and backend CI configuration. Main carries tested G3C `f788698`: the trace API/UI and monotonic workflow deadlines on the accepted I03 and native Linux backend foundation. See the [current integration](docs/releases/G3C-main-integration-2026-11-02.md) for exact platform verification records. GitHub Actions, macOS, Linux browser and hosted/public access are not verified. Model scores are uncalibrated rankings from a synthetic benchmark.
 
-Development evaluator R41/R42 are accepted at `dddd0b4`; its application integration is
-held for the [R43 model fixture-time correction](docs/reviews/G3D-P1-integration-8b4e4eb.md).
-Main still carries the released G3C application described above.
+Evaluator R41/R42 and [R43](docs/reviews/G3D-R43-6e461c0.md) are accepted on the candidate
+branch. The owner requested a one-day break; final main integration resumes from the
+[saved checkpoint](docs/prompts/RESUME_AFTER_BREAK.md). Main still carries released G3C.
+Study the [complete project guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md).
 
 ## Run locally
 

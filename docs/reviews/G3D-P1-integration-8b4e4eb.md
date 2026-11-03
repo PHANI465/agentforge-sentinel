@@ -1,5 +1,10 @@
 # G3D-P1 integration 8b4e4eb: held for R43
 
+Historical integration failure: R43 is closed by accepted
+[6e461c0](G3D-R43-6e461c0.md). The failed gate below remains preserved evidence.
+Final application integration resumes only after the owner's one-day break; no claim
+is made that8b4e4eb itself passed natively.
+
 November 2, 2026. Evaluator dddd0b4 is accepted; R41/R42 close. This is a separate
 integration finding in an existing fixture, not a regression in agent_eval.py.
 

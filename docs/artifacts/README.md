@@ -1,5 +1,15 @@
 # Project artifacts
 
+## Current complete project study guide
+
+- [Word guide with20 chapters](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.docx)
+- [Matching Markdown guide](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md)
+
+Read this for the full project idea, online and offline pipelines, implementation
+techniques, worked examples, future financial/AI uses and study questions. Reviewed
+November2 snapshot; candidate acceptance differs from application-main integration.
+The older October26 Word guide below remains an historical snapshot.
+
 Owner-facing project documents live here and are versioned with the project. Save future checkpoint documents in this folder.
 
 ## Project explanation with real life examples

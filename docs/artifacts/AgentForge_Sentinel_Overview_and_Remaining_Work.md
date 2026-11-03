@@ -1,14 +1,14 @@
 # AgentForge Sentinel: project overview and remaining work
 
-Current checkpoint: **R41/R42 are accepted at dddd0b4; application integration is held.**
-Windows integration8b4e4eb passes634+one allowed skip. Native has633 passes, one existing
-model-fixture failure and one allowed skip. A controlled relative-clock probe reproduces
-the fixture hitting future-event validation before its intended missing-profile check.
-[Integration finding](../reviews/G3D-P1-integration-8b4e4eb.md).
+Current checkpoint: **R43 is accepted at6e461c0. We are paused for the owner's one-day break.**
+Independent review passes25 checks on each platform; exact author backend records show
+647+one allowed skip on Windows/native. Combined main integration is the first resumed
+task, not a completed application merge. R41/R42 remain closed.
 
-Next: [R43 fixture correction](../prompts/CLAUDE_G3D_MODEL_FIXTURE_CLOCK.md), Claude
-Opus5.5 / High, from exact8b4e4eb. Then re-review/integrate; populated-workflow backup,
-operator convenience and measured agent quality follow. Main application remains G3C.
+**Start studying here:** [Complete20-chapter guide in Word](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.docx) or
+[the same guide in Markdown](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md). It covers the complete pipeline, architecture,
+implementation techniques, ML results, security, agents, examples and future use cases.
+[Resume checkpoint](../prompts/RESUME_AFTER_BREAK.md).
 Earlier G3C release summary follows.
 
 November 2: **G3C is integrated and verified at f788698.** R38/R39/R40 are closed.
@@ -94,8 +94,9 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Give Claude [R43 model-fixture correction](../prompts/CLAUDE_G3D_MODEL_FIXTURE_CLOCK.md),
-   Opus5.5 / High, in a new worktree from exact8b4e4eb. R41/R42 are closed.
+1. Take the requested one-day break and study the complete guide. When you return,
+   invoke [the saved resume instructions](../prompts/RESUME_AFTER_BREAK.md): Codex first
+   integrates accepted6e461c0 and verifies the exact combined merge. R41–R43 are closed.
 2. Complete populated-workflow backup and operator convenience follow-ups separately,
    then run the measured G3D comparison under its frozen protocol/common human rubric.
 3. Deepen the analyst workspace and prepare the public demonstration/operations gates.
@@ -104,7 +105,7 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 The local_stack.py convenience command still needs a tested three-role choice; API configuration already supports it.
 
 The manual-evaluator authority split and safe reporting are accepted but not yet merged
-while R43 holds integration. The populated-workflow backup round-trip remains pending. Earlier intermittent failures are retained, with no unproven root-cause claim.
+while the accepted changes await final integration after the break. The populated-workflow backup round-trip remains pending. Earlier intermittent failures are retained, with no unproven root-cause claim.
 
 ## The stack being exercised
 

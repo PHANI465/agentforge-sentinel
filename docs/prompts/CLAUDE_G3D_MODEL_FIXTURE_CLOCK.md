@@ -1,5 +1,9 @@
 # R43: model browser fixtures must reach their intended checks under modest clock skew
 
+**Completed and accepted at6e461c0; R43 closed. Owner requested a one-day pause.**
+Do not repeat this historical assignment or run another unchanged gate. Leave the
+candidate clean. Read [the resume plan](RESUME_AFTER_BREAK.md) when the owner returns.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. Keep fixture-time causality,
 exact model features and real browser/runtime behavior aligned without changing the API.
 Sentinel investigators stay deterministic; no live provider, paid fallback or --allow-live.

@@ -1,5 +1,35 @@
 # Verification
 
+## November 2 end of day R43 accepted and one day break
+
+**R43 closes at 6e461c0b0be9c2ad730191fab0e93768b1db8117.** The fixture-only correction
+uses events five minutes before seed time and paired profiles exactly400 days before
+those events. Production future-event validation, inputs, scores, pins and IDs remain
+unchanged. Independent focused re-review passes **25/25 on Windows and25/25 natively**,
+including the original relative-clock probe and real model browser-stack tests.
+[Acceptance](reviews/G3D-R43-6e461c0.md).
+
+Exact author gate records are verified: **647 passed + one allowed live-Claude skip**
+on Windows and native Ubuntu, six commands each, clean trees and same-run648-case JUnit,
+with frozen HTTP and ML reproduce. Windows browser logs show19 original +10 trace passes;
+the author also reports frontend133, typecheck and build. Independent review did not
+rerun those browsers. Original failed8b4e4eb evidence remains intact.
+
+**Paused at the owner's request for a one-day break.** Only this review, study guide and
+checkpoint are completed tonight. No feature or combined main gate is started during the
+break; no automatic restart is scheduled. The first resumed task is the final integration
+of accepted evaluator dddd0b4, reference-test correction8b4e4eb and R43 with current
+coordination, followed by exact-merge Windows/native and browser verification.
+[Resume instructions](prompts/RESUME_AFTER_BREAK.md).
+
+The main APPLICATION remains G3C while the accepted candidate waits; this publication is
+documents only and is not a647-test main release claim. Codex remains the designated
+integrator. Then come populated-workflow backup, the separate operator helper, measured
+agent quality, deeper analytics and public operations. No live provider/final cases,
+external push/deployment, GitHub Actions, macOS or Linux-browser result is claimed.
+Cursor's exact seven edits and all tested worktrees are preserved. No test-owned database
+or Sentinel API remains on either platform. Earlier entries below are historical.
+
 ## November 2: R41/R42 accepted; application integration held for R43
 
 Evaluator correction **dddd0b47e5346beed561a7e6216e641394b75348** is accepted for its
