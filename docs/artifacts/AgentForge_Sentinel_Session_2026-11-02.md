@@ -1,5 +1,39 @@
 # AgentForge Sentinel: November 2, 2026 checkpoint
 
+## November 2: R41/R42 accepted; application integration held for R43
+
+Evaluator correction **dddd0b47e5346beed561a7e6216e641394b75348** is accepted for its
+reviewed scope. R41/R42 and duplicate-name accounting close. Independent Windows31+4
+and native31 checks pass; the seven original probes pass unchanged on each platform.
+[Acceptance](../reviews/G3D-P1-dddd0b4.md). The original author records remain separate:
+632 passes + one allowed skip on each platform, including the preserved first Windows
+failure and diagnosed rerun.
+
+Codex prepared integration **8b4e4ebea6cd317812a36f9f7a667452eee0de3a**, merging current
+coordination and the evaluator, plus a test-only tied-timestamp reference correction.
+**Windows passes** six commands, 634+one skip, same-run JUnit, HTTP and ML reproduction.
+**Native is not green:** 633 passed, 1 failed, 1 allowed skip; its other five strict
+commands pass. The failed model missing-profile fixture receives future_event_time
+instead of account_profile_missing. No unchanged full rerun was made.
+
+**R43:** model fixture events use seed-time now. A controlled 3-second relative-clock
+probe against real runtime-role service reproduces the wrong guard; no-skew control
+passes, and neither writes data. This explains a reproducible failure path, not proof
+that a clock jump was captured inside the original failed run. Known WSL clock steps
+are documented separately. [Integration finding](../reviews/G3D-P1-integration-8b4e4eb.md).
+
+**Next:** [Claude fixture correction](../prompts/CLAUDE_G3D_MODEL_FIXTURE_CLOCK.md),
+Opus5.5 / High, in a new worktree from exact 8b4e4eb. Keep production time validation,
+exact model scores/inputs and all frozen contracts unchanged. Then Codex re-reviews and
+resumes integration. Populated-workflow backup and the operator helper remain later
+tasks; live comparison/final cases are not assigned.
+
+Main application remains released G3C; this publication changes coordination documents
+only. Candidate/review/release worktrees and Cursor's seven saved edits are preserved.
+All new commits use PHANI465 as sole author/committer, no trailers/history rewrite. Both
+platforms have no test-owned PostgreSQL or Sentinel API processes left. No live provider,
+remote/push, deployment, GitHub Actions, macOS or Linux browser run. Older entries follow.
+
 ## Latest: evaluator privilege split delivered, reporting corrections pending
 
 G3D-P1 5811a29 is clean and unmerged. Core operator/runtime authority passes independently

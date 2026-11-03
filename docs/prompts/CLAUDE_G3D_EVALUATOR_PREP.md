@@ -1,5 +1,9 @@
 # G3D-P1: evaluator operator/runtime separation, deterministic development verification
 
+**Completed/accepted at dddd0b4; R41/R42 closed.** Application integration is held
+for the separate R43 fixture-time issue. Use [the new isolated fixture assignment](CLAUDE_G3D_MODEL_FIXTURE_CLOCK.md),
+from exact 8b4e4eb; do not repeat the historical evaluator task below.
+
 **Delivered at 5811a29; current task is the
 [R41/R42 correction](CLAUDE_G3DP1_REVIEW_FIXES.md) on the existing branch.** Core authority
 tests pass; error/reporting probes require focused changes before acceptance. Do not

@@ -1,5 +1,9 @@
 # G3D-P1 R41/R42: safe failures and truthful evaluator reporting
 
+**Completed/accepted at dddd0b4; R41/R42 closed.** Application integration is held
+for the separate R43 fixture-time issue. Use [the new isolated fixture assignment](CLAUDE_G3D_MODEL_FIXTURE_CLOCK.md),
+from exact 8b4e4eb; do not repeat the historical evaluator task below.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. Exception/transaction boundaries
 and partial-result provenance require care; this is a focused runner correction, not a
 database-role redesign. Sentinel comparators stay deterministic, no --allow-live.

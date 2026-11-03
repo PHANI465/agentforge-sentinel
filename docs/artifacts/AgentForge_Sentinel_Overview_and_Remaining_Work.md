@@ -1,9 +1,14 @@
 # AgentForge Sentinel: project overview and remaining work
 
-Current G3D-P1 update: authority separation is delivered at 5811a29 and its core tests
-pass. R41/R42 safe-failure/provenance corrections and duplicate-name validation remain
-before acceptance. [Current Claude continuation](../prompts/CLAUDE_G3DP1_REVIEW_FIXES.md),
-Opus5.5 / High, uses the existing branch. G3C's released application remains unchanged.
+Current checkpoint: **R41/R42 are accepted at dddd0b4; application integration is held.**
+Windows integration8b4e4eb passes634+one allowed skip. Native has633 passes, one existing
+model-fixture failure and one allowed skip. A controlled relative-clock probe reproduces
+the fixture hitting future-event validation before its intended missing-profile check.
+[Integration finding](../reviews/G3D-P1-integration-8b4e4eb.md).
+
+Next: [R43 fixture correction](../prompts/CLAUDE_G3D_MODEL_FIXTURE_CLOCK.md), Claude
+Opus5.5 / High, from exact8b4e4eb. Then re-review/integrate; populated-workflow backup,
+operator convenience and measured agent quality follow. Main application remains G3C.
 Earlier G3C release summary follows.
 
 November 2: **G3C is integrated and verified at f788698.** R38/R39/R40 are closed.
@@ -89,8 +94,8 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Give Claude [R41/R42 evaluator correction](../prompts/CLAUDE_G3DP1_REVIEW_FIXES.md),
-   Opus5.5 / High, on the existing 5811a29 branch. Keep the passing authority split.
+1. Give Claude [R43 model-fixture correction](../prompts/CLAUDE_G3D_MODEL_FIXTURE_CLOCK.md),
+   Opus5.5 / High, in a new worktree from exact8b4e4eb. R41/R42 are closed.
 2. Complete populated-workflow backup and operator convenience follow-ups separately,
    then run the measured G3D comparison under its frozen protocol/common human rubric.
 3. Deepen the analyst workspace and prepare the public demonstration/operations gates.
@@ -98,9 +103,8 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 The local_stack.py convenience command still needs a tested three-role choice; API configuration already supports it.
 
-The two previously noted manual-evaluator operator/runtime split and a backup round-trip
-with populated workflow tables remain explicit follow-ups before claiming those paths
-verified. Earlier intermittent failures are retained, with no unproven root-cause claim.
+The manual-evaluator authority split and safe reporting are accepted but not yet merged
+while R43 holds integration. The populated-workflow backup round-trip remains pending. Earlier intermittent failures are retained, with no unproven root-cause claim.
 
 ## The stack being exercised
 
