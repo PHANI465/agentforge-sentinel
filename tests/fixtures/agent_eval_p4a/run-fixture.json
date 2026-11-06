@@ -1,0 +1,54 @@
+{
+  "record": {
+    "artifact_version": "sentinel.agent-eval.run/1",
+    "kind": "FIXTURE: hand-made test record, not a real run and not live evidence",
+    "status": "complete",
+    "stopped": null,
+    "comparators_not_started": [],
+    "planned_comparators": ["C1", "C2"],
+    "planned_cases": ["D01", "D02", "D03", "D04", "D11"],
+    "comparator_config": {
+      "C1": {"pin": {"name": "claude-cli-investigator", "version": "c1", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}, "live": true, "reservation_per_attempt": 1, "model_alias": "sonnet", "model_version": "unknown"},
+      "C2": {"pin": {"name": "three-role-workflow", "version": "w1", "sha256": "2222222222222222222222222222222222222222222222222222222222222222"}, "live": true, "reservation_per_attempt": 5, "model_alias": "sonnet", "model_version": "unknown"}
+    },
+    "quota": "unknown",
+    "manual_annotations": [],
+    "cases": {
+      "D01": {"runtime_sha256": "ab68c098c7c032f46160358181207f8926a4f7a11dfe4f5bea5e719a452b0f76", "faults_not_applied": []},
+      "D02": {"runtime_sha256": "e8d4edd16e869b503b67fa598621e726a2c76c928e9f6c4e7ba935df92ffe98d", "faults_not_applied": []},
+      "D03": {"runtime_sha256": "2763b383aeda8f61ad4348a96e0d248e67a7425e90a9bc6feecce46fa3fd1118", "faults_not_applied": []},
+      "D04": {"runtime_sha256": "0d48957fb10dac8cbb6c9c149108cd680bc1f16fa78214ca7c5285633b58a4b7", "faults_not_applied": []},
+      "D11": {"runtime_sha256": "ec141988cafff74f8e8f1cbe0d67d4c3f04d089045fc22eab1310b03222cd6e9", "faults_not_applied": ["adapter_output"]}
+    }
+  },
+  "comparators": {
+    "C1": {
+      "counts": {"attempts": 5, "dispositions": 3, "inconclusive": 1, "error": 1},
+      "inconclusive_by_code": {"timeout": 1},
+      "tokens": "unknown",
+      "request_latency_s": [1.0, 2.0, 3.0, 4.0, 5.0],
+      "cases_not_attempted": [],
+      "attempts": [
+        {"index": 1, "attempt_id": "C1:1:D01", "case": "D01", "outcome": "disposition", "request_latency_s": 1.0, "workflow_elapsed_ms": null, "usage_sources": ["no_role_steps"], "disposition": {"source": "single_investigator_finding", "kind": null, "operation": "simulated_hold", "reason_code": "velocity_pattern", "basis_run_id": "r1"}, "recorded_role_attempts": 1, "repeats": 0, "reservation": {"reserved_invocations": 1}},
+        {"index": 2, "attempt_id": "C1:2:D02", "case": "D02", "outcome": "disposition", "request_latency_s": 2.0, "workflow_elapsed_ms": null, "usage_sources": ["no_role_steps"], "disposition": {"source": "single_investigator_finding", "kind": null, "operation": "escalate", "reason_code": "velocity_pattern", "basis_run_id": "r2"}, "recorded_role_attempts": 1, "repeats": 0, "reservation": {"reserved_invocations": 1}},
+        {"index": 3, "attempt_id": "C1:3:D03", "case": "D03", "outcome": "disposition", "request_latency_s": 3.0, "workflow_elapsed_ms": null, "usage_sources": ["no_role_steps"], "disposition": {"source": "single_investigator_finding", "kind": null, "operation": "simulated_hold", "reason_code": "unusual_amount", "basis_run_id": "r3"}, "recorded_role_attempts": 1, "repeats": 0, "reservation": {"reserved_invocations": 1}},
+        {"index": 4, "attempt_id": "C1:4:D04", "case": "D04", "outcome": "inconclusive", "failure_codes": ["timeout"], "request_latency_s": 4.0, "workflow_elapsed_ms": null, "usage_sources": ["no_role_steps"], "disposition": null, "recorded_role_attempts": 1, "repeats": 0, "reservation": {"reserved_invocations": 1}},
+        {"index": 5, "attempt_id": "C1:5:D11", "case": "D11", "outcome": "error", "code": "OperationalError", "request_latency_s": 5.0, "workflow_elapsed_ms": null, "usage_sources": ["not_read"], "reservation": {"reserved_invocations": 1}}
+      ]
+    },
+    "C2": {
+      "counts": {"attempts": 5, "dispositions": 4, "refused": 1},
+      "inconclusive_by_code": {},
+      "tokens": "unknown",
+      "request_latency_s": [10.0, 20.0, 30.0, 40.0, 0.5],
+      "cases_not_attempted": [],
+      "attempts": [
+        {"index": 1, "attempt_id": "C2:1:D01", "case": "D01", "outcome": "disposition", "request_latency_s": 10.0, "workflow_elapsed_ms": null, "usage_sources": ["unknown"], "disposition": {"source": "workflow_disposition", "kind": "recommend", "operation": "escalate", "reason_code": "velocity_pattern", "basis_run_id": "w1i", "supported_claims": 4, "unsupported_claims": 0}, "recorded_role_attempts": 3, "repeats": 0, "reservation": {"reserved_invocations": 5}},
+        {"index": 2, "attempt_id": "C2:2:D02", "case": "D02", "outcome": "disposition", "request_latency_s": 20.0, "workflow_elapsed_ms": null, "usage_sources": ["unknown"], "disposition": {"source": "workflow_disposition", "kind": "abstain", "operation": "escalate", "reason_code": "insufficient_evidence", "basis_run_id": "w2i", "supported_claims": 1, "unsupported_claims": 1}, "recorded_role_attempts": 5, "repeats": 1, "reservation": {"reserved_invocations": 5}},
+        {"index": 3, "attempt_id": "C2:3:D03", "case": "D03", "outcome": "disposition", "request_latency_s": 30.0, "workflow_elapsed_ms": null, "usage_sources": ["unknown"], "disposition": {"source": "workflow_disposition", "kind": "abstain", "operation": "escalate", "reason_code": "insufficient_evidence", "basis_run_id": "w3i", "supported_claims": 2, "unsupported_claims": 1}, "recorded_role_attempts": 4, "repeats": 0, "reservation": {"reserved_invocations": 5}},
+        {"index": 4, "attempt_id": "C2:4:D04", "case": "D04", "outcome": "disposition", "request_latency_s": 40.0, "workflow_elapsed_ms": null, "usage_sources": ["unknown"], "disposition": {"source": "workflow_disposition", "kind": "recommend", "operation": "simulated_hold", "reason_code": "unusual_amount", "basis_run_id": "w4i", "supported_claims": 3, "unsupported_claims": 0}, "recorded_role_attempts": 3, "repeats": 0, "reservation": {"reserved_invocations": 5}},
+        {"index": 5, "attempt_id": "C2:5:D11", "case": "D11", "outcome": "refused", "code": "agent_capacity_exhausted", "request_latency_s": 0.5, "workflow_elapsed_ms": null, "usage_sources": ["no_role_steps"], "reservation": {"reserved_invocations": 5}}
+      ]
+    }
+  }
+}
