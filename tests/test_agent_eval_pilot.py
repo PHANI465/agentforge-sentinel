@@ -250,3 +250,40 @@ def test_the_real_preflight_uses_a_fresh_owned_database_and_keeps_it_stopped(tmp
     assert pilot.cleanup(root, drop=True) == [manifest["databases"]["P00-det"]]
     assert local_stack.database_state(stack, data) == "stopped"
     assert local_stack.port_state(manifest["db_port"], None) == "free"
+
+
+@needs_pg
+def test_deterministic_pilot_end_to_end_export_packets_score_and_cleanup(tmp_path):
+    """One real deterministic pass over the five planned cases: no approval or action, no
+    mutation by the export, blank sheets reported as not scored, owned cleanup."""
+    import agent_eval_report as report
+    import agent_eval_score as scoring
+    root = tmp_path / "pilot"
+    pilot.plan(root, 20261106)
+    assert pilot.run_pair(root, "P00-det")["stop_reason"] is None
+    bundle = json.loads(report.export_pair(root, "P00-det").read_text(encoding="utf-8"))
+    proof = bundle["mutation_proof"]
+    assert proof["unchanged"] is True and proof["identity"] == "runtime role"
+    assert proof["after"]["approvals"][0] == 0 and proof["after"]["simulated_actions"][0] == 0
+    assert len(bundle["exports"]) == 10
+    built = report.build_packets(root, 7)
+    assert built["packets"] == 10
+    sheet = (root / "review" / "sheet.csv").read_text(encoding="utf-8")
+    key = json.loads((root / "keys" / "unblinding-key.json").read_text(encoding="utf-8"))
+    assert "C2-det" not in sheet and "C2-det" in json.dumps(key)
+    summary = scoring.score_root(root, None)
+    assert summary["human_rubric"]["status"].startswith("not scored")
+    for name in ("C0", "C2-det"):
+        counts = summary["comparators"][name]["counts"]
+        assert (counts["attempts"], counts["dispositions"]) == (5, 5)
+        assert summary["comparators"][name]["workflow_elapsed"].startswith("not measured")
+    assert len(summary["pilot_pairs_not_attempted"]) == 0 and summary["pilot"]["reserved"] == 0
+    assert (root / "summaries" / "summary.md").is_file()
+    for path in root.rglob("*.json"):
+        assert "postgresql://" not in path.read_text(encoding="utf-8")
+    (root / "runs" / "P00-det.json").unlink()  # a result that ran may never vanish quietly
+    with pytest.raises(scoring.ScoreError, match="artifact is missing"):
+        scoring.score_root(root, None)
+    manifest = pilot.load(root)
+    assert pilot.cleanup(root, drop=True) == [manifest["databases"]["P00-det"]]
+    assert local_stack.port_state(manifest["db_port"], None) == "free"
