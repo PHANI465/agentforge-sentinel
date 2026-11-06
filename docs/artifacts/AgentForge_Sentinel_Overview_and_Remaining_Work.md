@@ -1,9 +1,12 @@
 # AgentForge Sentinel: project overview and remaining work
 
-Current checkpoint: **R43 is accepted at6e461c0. We are paused for the owner's one-day break.**
-Independent review passes25 checks on each platform; exact author backend records show
-647+one allowed skip on Windows/native. Combined main integration is the first resumed
-task, not a completed application merge. R41/R42 remain closed.
+Current checkpoint, November5: **resumed; integration held by the Windows command budget.**
+Native full backend647+one skip, Windows frontend133 and real browsers19+10 pass on
+preparedb246145. Windows full runs timed out after506 then637/648; the11 unreached cases
+pass separately. The proposal to change only the verification-command budget to45
+minutes is unapplied and awaits the owner. Main still runs released G3C.
+[Current checkpoint](AgentForge_Sentinel_Session_2026-11-05.md) and
+[proposal](../proposals/G3D-verification-command-budget.md).
 
 **Start studying here:** [Complete20-chapter guide in Word](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.docx) or
 [the same guide in Markdown](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md). It covers the complete pipeline, architecture,

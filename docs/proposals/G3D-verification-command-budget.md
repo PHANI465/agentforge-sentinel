@@ -1,0 +1,32 @@
+# Draft only: full-suite command budget
+
+This is not applied and is not release acceptance. Both Windows attempts hit the existing limit,
+at506 and637 of648 progress markers; the11 unreached cases pass separately. The saved resume plan forbids timeout
+relaxation, so changing this plan needs the owner's explicit decision.
+
+Concrete proposed diff in scripts/agent_check.py:
+
+```diff
+-CHECK_TIMEOUT_SECONDS = 1800
++CHECK_TIMEOUT_SECONDS = 2700
+```
+
+The value is the maximum lifetime of each verification command, not a transaction,
+agent, HTTP, database, approval or individual-test deadline. All test bodies/assertions,
+skip rules, complete test collection and six check commands remain required. A timeout
+or assertion failure still fails. Existing failed reports remain failed and preserved.
+
+Reason: the complete suite now has648 cases; the current Windows full run exceeded
+1800s after506 completed tests, versus861s for the same prefix in the accepted author's
+report. The controlled rerun reached637 of648 before the same cap, without a reported assertion failure. The other five commands passed, and native Ubuntu's complete647+one-skip gate
+passed on the exact merge. A broader runtime slowdown is observed; its cause is not
+proven. Owner-reported app closure and charging preceded one controlled unchanged rerun.
+Do not use this proposal to claim the slowdown has been fixed or capacity improved.
+
+If approved, record the decision and preserve the finite 45-minute bound. Make a new
+owner-authored clean commit and run both required full backend gates sequentially,
+same-run JUnit/skip validation, HTTP/package/ML and the frontend/browser compatibility
+checks. No release is accepted until complete checks pass. No model, dependency, data,
+contract, live provider, global power setting, remote or deployment change.
+
+Alternative: retain1800s and keep integration held for focused Windows runtime diagnosis.
