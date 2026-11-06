@@ -1,5 +1,21 @@
 # Project status
 
+## November 5: resumed; final G3D-P1 integration verification
+
+The owner resumed Sentinel. Accepted evaluator dddd0b4, timestamp-reference correction
+8b4e4eb and R43 fixture correction6e461c0 are combined with current coordination in
+task/codex-g3d-final-integration. R41-R43 remain closed. The single documentation conflict
+retains acceptance/history with the current R43 closure; no application conflict or new
+implementation fix is introduced. Application, script, test, fixture, contract, model and
+lock bytes match accepted6e461c0.
+
+Final clean-merge Windows then native Ubuntu gates and Windows frontend/browser19+10
+verification are in progress; component passes do not certify this new merge. Main stays
+at the previous publication until these finish. Preserve prior failures, accepted
+worktrees and Cursor's seven saved changes. No live provider, final cases, new spend,
+remote/push or deployment is assigned. After release, dispatch the separate populated-
+workflow backup proof. Older dated entries below remain historical.
+
 ## November 2 end of day R43 accepted and one day break
 
 **R43 closes at 6e461c0b0be9c2ad730191fab0e93768b1db8117.** The fixture-only correction

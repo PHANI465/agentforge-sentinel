@@ -51,7 +51,16 @@ Token hygiene is unchanged from C02: read tokens only from the manifest, never l
 
 All model scenarios belong to the `analyst` session. Account IDs are UUIDv5 values of `acct:<label>`, and external IDs are `i01-<label>`, where the label is the scenario name, or `name-ordinal` for an on-demand `seed`. The seeding service holds the accepted registered scorer. Profiles and disclosures are loaded through the accepted operator methods, one hour before the decision.
 
-Every profile opens exactly 400 days before its transaction's `occurred_at`, and f1 counts whole days. All inputs and scores are therefore identical on every run; only timestamps differ.
+Every model transaction's `occurred_at` is **5 minutes before the seeding clock reading** (`EVENT_MARGIN` in `tests/support/scenarios.py`). Every profile opens exactly 400 days before that `occurred_at`, and f1 counts whole days. All inputs and scores are therefore identical on every run; only timestamps differ.
+
+### Clock tolerance (R43)
+
+The API decides with its own clock, and production refuses an event later than that clock (`422 future_event_time`) before it looks at the profile or an earlier record. The margin makes each `request_body` a past event for the API, so the documented result is reached while the API clock is **at most 5 minutes behind** the clock that seeded it:
+- `model_missing_profile` gives `account_profile_missing` with nothing stored;
+- `model_alert` replays its stored scoring;
+- `model_live_alert` (seeded or `seed --ordinal N`) scores 0.802130558706.
+
+An API clock ahead of the seeder does not affect these results, within the 8-hour session lifetime. Beyond 5 minutes behind, the production guard applies unchanged and the POST is `future_event_time`. This covers small host clock steps between seeding and a test, such as the ~2.5 s WSL2 realtime steps. It does not cover arbitrary clock jumps, and production time semantics are unchanged. The margin is shorter than the one-hour operator lead, so profiles and disclosures are loaded before both the event and the decision. `tests/test_model_fixture_clock.py` checks this with controlled clocks (0 s, 3 s, 5 min behind, and 5 min 1 s as the limit) through the real service as the runtime role.
 
 | Name | Seeded state | Browser path and exact results |
 | --- | --- | --- |

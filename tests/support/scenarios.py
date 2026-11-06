@@ -10,8 +10,11 @@ clock and no seeding route.
 Model fixtures (I01, opt-in) add three scenarios seeded by a service holding the accepted
 registered scorer (`hgb_balanced@p1`). Their account profiles and disclosures go through the
 accepted operator methods (`provision_accounts` / `record_disclosures`), and their expected
-scores come from the actual artifact. Profiles open exactly 400 days before each
-transaction's `occurred_at`, so every f1 input and score is independent of the wall clock.
+scores come from the actual artifact. Each model transaction occurs EVENT_MARGIN (5 minutes)
+before the seeding clock reading, so the API accepts it as a past event while its own clock
+is up to that much behind the seeder's (the production guard refuses occurred_at > now).
+Profiles open exactly 400 days before each transaction's `occurred_at`, so every f1 input and
+score is independent of the wall clock.
 """
 from __future__ import annotations
 
@@ -227,6 +230,11 @@ MODEL_KEY = "hgb_balanced@p1"
 MODEL_MINOR = 250_000
 ACCOUNT_AGE = timedelta(days=400)
 OPERATOR_LEAD = timedelta(hours=1)  # operator data is loaded an hour before the decision
+# Model events occur this long before the seeding clock reading (R43). The API decides with
+# its own clock, so a POST of request_body reaches its intended check while that clock is up
+# to EVENT_MARGIN behind the seeder; further behind, it is future_event_time. Shorter than
+# OPERATOR_LEAD, so operator data stays loaded before the event as well as the decision.
+EVENT_MARGIN = timedelta(minutes=5)
 _scorer = None
 
 
@@ -253,12 +261,15 @@ def _model_body(label: str, now: datetime, currency: str = "USD") -> dict:
     return {"external_id": f"i01-{label}", "account_id": str(_account(label)),
             "direction": "debit",
             "amount": {"currency": currency, "minor_units": MODEL_MINOR, "currency_exponent": 2},
-            "occurred_at": now.isoformat().replace("+00:00", "Z")}
+            "occurred_at": (now - EVENT_MARGIN).isoformat().replace("+00:00", "Z")}
 
 
 def _provision(at, ctx, label, now, home="USD") -> dict:
+    """The account's profile, opened ACCOUNT_AGE before the transaction _model_body builds
+    for the same `now`."""
+    opened = now - EVENT_MARGIN - ACCOUNT_AGE
     profile = {"account_id": str(_account(label)), "home_currency": home,
-               "opened_at": (now - ACCOUNT_AGE).isoformat().replace("+00:00", "Z")}
+               "opened_at": opened.isoformat().replace("+00:00", "Z")}
     at(now - OPERATOR_LEAD).provision_accounts(ctx.scope.tenant_id, ctx.scope.session_id,
                                                [profile])
     return profile

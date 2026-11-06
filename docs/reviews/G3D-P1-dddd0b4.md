@@ -1,9 +1,8 @@
 # G3D-P1 re-review: dddd0b4 accepted
 
-**Component accepted; application integration held.** Windows 8b4e4eb passes634+one skip;
-native integration has633 passed/one failure/one allowed skip. The separate existing model
-fixture issue is [R43](G3D-P1-integration-8b4e4eb.md); it does not reopen R41/R42. Main has
-not received the application merge. The acceptance evidence below is scoped accordingly.
+**Component accepted; R41/R42 closed.** R43 also closes at accepted6e461c0.
+The earlier failed integration is retained as history; final combined verification is
+now in progress. See [R43 acceptance](G3D-R43-6e461c0.md). No new merged pass is claimed yet.
 
 November 2, 2026. Exact candidate **dddd0b47e5346beed561a7e6216e641394b75348**,
 direct child of 5811a29, task/claude-g3d-evaluator-prep. Sole author/committer
