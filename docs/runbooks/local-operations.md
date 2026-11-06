@@ -105,6 +105,45 @@ uv run --locked python scripts/local_stack.py restore FILE --database NAME   # A
 - audit `DELETE` rejected;
 - the restored case is served to the same token.
 
+That scenario uses the legacy single investigator, so its `agent_workflows` and `agent_steps` are empty.
+
+### Populated workflow history (G3D-P2)
+
+`tests/test_workflow_backup_restore.py` proves that stored three-role investigations survive the same `pg_dump --format=custom --no-owner` / `pg_restore --no-owner --exit-on-error` round trip into a new database.
+
+**Authority.**
+- The operator (the schema owner) issues the sessions and loads one profile and one disclosure.
+- Everything else is written by the production service and coordinator, connected as a least-privilege runtime role, with deterministic adapters and the G3B fault harness.
+- After restore, the procedure re-grants **the same runtime role** on the restored database, as `local_stack.py up --database NAME` does. That role still cannot delete steps or cases, or issue sessions.
+
+**What is stored.** 7 workflows, 20 role runs and 128 steps across six cases and two scopes:
+- a completed recommendation;
+- a reviewer challenge, a revision and then abstain;
+- a provider failure followed by a repeat attempt;
+- a crash, an explicit recovery (inconclusive, `terminal_by: recovery`) and a retry, which gives two workflows on one case;
+- a crashed workflow still `running`;
+- another tenant's completed case.
+
+No approval or action exists yet.
+
+**What it checks.**
+- Equal counts in all 16 tables, and **every row of every table equal field for field**: IDs, revisions, pins, ordered step `seq`, dispositions, failures and usage provenance.
+- No pending migrations.
+- Append-only `audit_events` and `agent_steps` reject `DELETE` and `UPDATE`, even for the owner.
+- Each restored trace, read over real HTTP by the production app as the runtime role with the **original session token**, equals the trace read from the source, field for field. `read_at` is compared separately: it is the reading server's clock, not a stored field.
+- Selecting each workflow by `workflow_id` works. Another session of the same tenant, another tenant, and another case's workflow ID all get `404 not_found`. No token gets `401`.
+- Repeated trace reads of the restored `running` workflow at `recovery_due` change no row. Recovery happens only on an explicit investigate request (`investigation_recovered`).
+- The human boundary still holds after restore: one real approval and one idempotency key give exactly one simulated action, and a retry replays it.
+
+**Negative controls,** each on an isolated restored copy; the source is never modified. Each one is detected by the content comparison:
+- one step removed (in that copy's session only, with `session_replication_role = replica`), which changes `agent_steps`;
+- one workflow body altered with every row count unchanged, which changes `agent_workflows`;
+- an archive restored without `agent_steps` data.
+
+The trace of the copy with the missing step also differs.
+
+**Not covered:** a live provider, `local_stack.py backup` and `restore` as processes (the rollback drill covers those), or Linux/macOS clusters other than the native Ubuntu gate.
+
 Backups contain session token **hashes**, operator-provisioned profiles and disclosures, and synthetic data. Treat them as private; `.agent/` is git-ignored.
 
 ## Logs
