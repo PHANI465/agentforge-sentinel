@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import io
 import json
 import random
@@ -39,11 +38,6 @@ SHEET_COLUMNS = ("packet_id", "item", "kind", "text", "supported", "acceptable",
 
 class ExportError(RuntimeError):
     """A refused export: scope, mapping or artifact problem. Never broadened or skipped."""
-
-
-def digest(doc: dict) -> str:
-    return hashlib.sha256(json.dumps(doc, sort_keys=True, separators=(",", ":")).encode()
-                          ).hexdigest()
 
 
 def _scope_clause() -> tuple[str, tuple]:
@@ -159,7 +153,7 @@ def export_run(runtime_url: str, doc: dict) -> dict:
                     raise ExportError(f"{row['attempt_id']}: no recorded IDs (refused)")
                 exports.append({"comparator": name, **export_attempt(conn, row)})
     after = snapshot(runtime_url)
-    return {"version": artifact.BUNDLE_VERSION, "run_artifact_sha256": digest(doc),
+    return {"version": artifact.BUNDLE_VERSION, "run_artifact_sha256": artifact.digest(doc),
             "run": doc, "exports": exports,
             "mutation_proof": {"identity": "runtime role", "before": before, "after": after,
                                "unchanged": before == after}}

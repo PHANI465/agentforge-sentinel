@@ -7,6 +7,8 @@ carried the new measurements. Validation refuses (raises ArtifactError) rather t
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 
 RUN_VERSION = "sentinel.agent-eval.run/1"
@@ -51,6 +53,13 @@ def latency_summary(values: list[float]) -> dict:
             "unit": "seconds (monotonic, around svc.investigate)",
             "p50": nearest_rank(values, 0.5), "p95": nearest_rank(values, 0.95),
             "max": nearest_rank(values, 1.0)}
+
+
+def digest(doc: dict) -> str:
+    """SHA-256 of a document's canonical JSON (sorted keys, compact): ties bundles, keys
+    and summaries to the exact run artifact they came from."""
+    return hashlib.sha256(json.dumps(doc, sort_keys=True, separators=(",", ":")).encode()
+                          ).hexdigest()
 
 
 def _require(condition: bool, reason: str) -> None:

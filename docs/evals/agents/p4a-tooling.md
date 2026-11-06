@@ -130,3 +130,40 @@ uv run --locked python scripts/agent_eval_report.py packets --root <DIR> [--seed
   - in CSV, a text cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with `'`;
   - typed numbers are written unchanged;
   - no HTML, links or executable content is produced.
+
+## 4. Summary (`sentinel.agent-eval.summary/1`)
+
+```powershell
+uv run --locked python scripts/agent_eval_score.py --root <DIR> [--sheet <completed sheet.csv>]   # -> summaries/
+uv run --locked python scripts/agent_eval_score.py --run <run.json> [--run ...]
+```
+
+**Before scoring**, every artifact is validated (§1). Each planned case must be in the frozen catalog with a matching runtime digest. A second attempt of the same comparator on the same case is refused (a rerun is reported separately). Every pilot pair that ran must have its artifact. A record that fails any of these is refused, never dropped. Evaluator expectations are read here only, after execution.
+
+Per comparator, with counts beside every rate:
+
+| Metric | Formula |
+| --- | --- |
+| Counts | attempts, dispositions, inconclusive (by last failure code), refused, pending, error, not attempted |
+| Acceptable recommendation | dispositions whose (operation, reason) is in the case's acceptable list, or an explicit `abstain` the case permits / dispositions. A hold on a case listing no hold is unacceptable |
+| Wrong holds | the attempt IDs of completed holds on D03, D04 or D11 (and any case without hold). Each is kept, counting 0/1 |
+| Useful / unnecessary abstention (workflow comparators) | `abstain` dispositions on `required`/`appropriate` (respectively `acceptable_not_preferred`) cases / dispositions on those cases. **Unobservable for C0/C1**: they have no explicit abstention signal, and an escalate is not an abstention |
+| Machine-supported claims (C2, C2-det) | sum of adopted supported claims / sum of adopted supported + unsupported claims. Plus recommends with any unsupported claim / recommends. Never compared with the human rubric |
+| Calls | reserved invocations; recorded role attempts (total, n, max, unknown); repeats; pre-submission refusals. Provider requests: `unknown` |
+| Request latency | p50, p95 and max by **nearest rank** (the ceil(p·n)-th smallest), with n, over all non-refused attempts. Refusals are reported separately |
+| Workflow elapsed | "not measured (150 s gate not demonstrated)" |
+| Tokens | `adapter_reported` only if every row is; otherwise `unknown` |
+
+**Human rubric.** Scored only from a completed `review/sheet.csv`, with its key. Only packet IDs from the key are accepted, and the key's run digests must be the runs being scored.
+- Rubric-supported statements = statements marked `supported` / statements marked `supported` or `unsupported`. `not_checkable` and unmarked statements are reported apart.
+- Human correction = packets with `would_correct = yes` / packets scored.
+- A sheet with no marks is "not scored".
+
+**Always shown:** the faults not applied per case, and the hard gates, each "not demonstrated", "not exercised" or `0/0 (not exercised)`.
+
+The summary also states plainly that:
+- C2-det and C0 are plumbing and reference only;
+- a D11 result alone establishes neither injection success nor resistance;
+- no p-value, significance or promotion claim is made.
+
+`summary.md` contains counts and labels only, never role-originated text.
