@@ -58,3 +58,35 @@ Example (abridged, from a real C2-det attempt on D01):
  "capacity": {"workflows": 0, "calls": 0, "peak_calls": 0, "scope": "this attempt's service instance in this process"},
  "reservation": {"reserved_invocations": 0, "provider_reach": "not_applicable"}}
 ```
+
+## 2. Pilot supervisor (`scripts/agent_eval_pilot.py`, manifest `sentinel.agent-eval.pilot/1`)
+
+```powershell
+uv run --locked python scripts/agent_eval_pilot.py plan --root <NEW DIR> [--seed N]
+uv run --locked python scripts/agent_eval_pilot.py run --root <DIR> --pair P00-det           # deterministic preflight
+uv run --locked python scripts/agent_eval_pilot.py status --root <DIR>
+uv run --locked python scripts/agent_eval_pilot.py cleanup --root <DIR> [--drop]
+# later, only with the owner's written go-ahead (not run by P4a):
+uv run --locked python scripts/agent_eval_pilot.py run --root <DIR> --pair L01-C2-D03 --allow-live
+```
+
+- **Root.** `plan` refuses an existing non-empty directory. Old state, including `.agent/devdb`, is never adopted. The root holds:
+  - a random-owner marker;
+  - the private `pilot.json` manifest;
+  - `stack/`, a database-only cluster owned through `local_stack.Stack` and its identity-checked `start_database`/`stop_database` (no API process; no second PID or port discovery);
+  - `runs/<pair>.json` (the runner's output, kept as written) and `runs/<pair>.stderr.txt`.
+- **Schedule.** The deterministic preflight `P00-det` (C0 and C2-det on D01–D04 and D11, one fresh database) runs first. Then come 10 live pairs, one per (comparator, case), in a seeded case order with a seeded coin flip for which live comparator goes first. Pairs run strictly in order. A pair runs once; a rerun is not offered.
+- **Live boundary.**
+  - A live pair needs `--allow-live`, the completed preflight, and its full reservation (C1 1, C2 5, of 30), which is reserved before anything starts and never returned.
+  - Nothing chains the preflight into live calls, and the runner's own consent check stays in force, with no fallback.
+  - P4a's tests intercept the runner for live pairs; no Claude executable, auth command or provider is reached.
+- **Authority.** The operator (the cluster owner) creates one fresh, uniquely named database per pair, migrates it, grants `sentinel_eval_rt`, and issues sessions through the runner. All case work runs as the runtime role. The connection strings go to the runner through its environment, never argv, the console or files.
+- **Outcomes.** After each run the supervisor validates the artifact (version, integrity, `record.status`, `record.authorities.runtime_verified`, preflight `comparators.*.counts.dispositions`). It then stops the pass, as **incomplete** with the remaining pairs listed in `not_attempted`, on any of:
+  - an exit code other than 0 or 3, or a refusal;
+  - a setup failure (exit 3);
+  - a typed request failure (`refused`, `pending` or `error`);
+  - a preflight short of all dispositions;
+  - a **wrong hold**: a completed hold on a case whose acceptable list has no hold (D03, D04, D11), which is kept and scored unacceptable.
+
+  The run file is never rewritten.
+- **Retention and cleanup.** The cluster is stopped after every run and kept, with its databases, for private scoring. `cleanup` stops it. `cleanup --drop` starts it through the owned lifecycle, drops only the databases recorded in the manifest that carry this pilot's owner prefix (anything else is refused), and stops it again. Nothing is deleted from disk. After cleanup, removing the root directory is a manual step. It is not a production retention promise.
