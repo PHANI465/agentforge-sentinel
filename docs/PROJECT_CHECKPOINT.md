@@ -1,5 +1,34 @@
 # AgentForge Sentinel project checkpoint
 
+## November 6: G3D-P2 independently accepted and locally integrated
+
+**Tested integration 5a1776be20a85124705a893c81b142384e31d67b.** Accepted candidate
+61cc4b44d0b6dcdf15664be96ecf2cfd96048c4c is merged from published main d3b6aff.
+Production code is unchanged. The new populated-workflow backup proof preserves seven
+workflows, 20 runs and 128 steps through real pg_dump/pg_restore, with full content
+equality across all 16 tables, runtime-role authority, scoped/read-only traces and the
+human approval/idempotency boundary. Independent review: **92 focused tests plus four
+authority/baseline/corruption controls pass**. [Review](reviews/G3D-P2-61cc4b4.md).
+
+Independent exact-clean-commit Windows then native Ubuntu full gates pass
+**649 tests + one allowed skip**, all six commands on each platform, 650-case same-run JUnit/skip
+validation, frozen HTTP, packaged install and read-only ML reproduction. These are
+integration checks, separate from Claude's inspected candidate results.
+[Release evidence](releases/G3D-P2-main-integration-2026-11-06.md).
+
+Main carries that tested integration plus documentation publication. The publication's
+protected application/test bytes equal the tested commit; no additional full strict
+run on its documentation-only HEAD is claimed. Browser/frontend checks were not rerun
+for tests/docs alone; P1's Windows UI133 and browser19+10 are prior dated evidence.
+The 2700-second verification-command cap, individual deadlines and skip rules remain.
+Prior failures, accepted worktrees and Cursor's seven edits are preserved.
+
+**Next:** the separate three-role operator helper, in a future assigned task; measured
+agent evaluation, deeper analytics and public operations follow. No live evaluation is
+assigned. Same-cluster restore is proven; fresh-cluster role provisioning, Linux browser,
+macOS, real CI, hosting and capacity remain unverified. No live provider, final cases,
+paid usage, remote/push or deployment. Earlier entries below are historical.
+
 ## November 5: G3D-P1 integrated and verified
 
 **Accepted tested integration aa5ee1e124c4163c124d33a9cb036fadf510b397.** The evaluator dddd0b4, tied-time reference tests

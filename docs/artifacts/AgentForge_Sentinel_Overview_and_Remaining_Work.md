@@ -1,13 +1,16 @@
 # AgentForge Sentinel: project overview and remaining work
 
-Current checkpoint, November5: **G3D-P1 integrated at testedaa5ee1e.** Both backend
-platform gates pass647+one skip; Windows UI133 and real browser19+10 pass. The approved
-45-minute verification-command cap is implemented; individual deadlines are unchanged.
-Earlier timeouts remain failed and preserved. [Current checkpoint](AgentForge_Sentinel_Session_2026-11-05.md).
+Current checkpoint, November 6: **G3D-P2 accepted and integrated at tested 5a1776b.**
+Independent Windows/native backend gates pass 649+one skip each, six commands and same-run
+JUnit/HTTP/package/ML. Populated workflow history survives backup/restore with full content,
+authority/scope and approval/replay checks. Production code is unchanged. Frontend/browser
+checks were not rerun; P1's UI133/browser19+10 remain prior evidence.
+[Current checkpoint](AgentForge_Sentinel_Session_2026-11-06.md).
 
-Next: [populated-workflow backup proof](../prompts/CLAUDE_G3D_WORKFLOW_BACKUP.md), followed
-by the operator helper, measured agent evaluation, deeper analytics and public operations.
-The guide below is a dated November2 snapshot, superseded here for release status.
+Next: the separate three-role operator helper in a future task, then measured agent
+evaluation, deeper analytics and public operations. No live evaluation is assigned.
+The approved 2700-second verification-command cap and individual deadlines are unchanged.
+Older dated release descriptions below remain historical context.
 
 **Start studying here:** [Complete20-chapter guide in Word](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.docx) or
 [the same guide in Markdown](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md). It covers the complete pipeline, architecture,
@@ -98,18 +101,18 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Take the requested one-day break and study the complete guide. When you return,
-   invoke [the saved resume instructions](../prompts/RESUME_AFTER_BREAK.md): Codex first
-   integrates accepted6e461c0 and verifies the exact combined merge. R41–R43 are closed.
-2. Complete populated-workflow backup and operator convenience follow-ups separately,
-   then run the measured G3D comparison under its frozen protocol/common human rubric.
-3. Deepen the analyst workspace and prepare the public demonstration/operations gates.
-   Preserve frozen API/model/evaluation bytes and all accepted/Cursor worktrees.
+1. Assign the separate three-role local operator helper from current main, using a new
+   isolated worktree and preserving the accepted defaults, authority and recovery checks.
+2. After that task, explicitly scope measured G3D comparisons under the frozen protocol
+   and human rubric; no live or final-case evaluation is assigned by this checkpoint.
+3. Deepen the analyst workspace and prepare public demonstration/operations gates.
+   Preserve frozen contracts/model/evaluation bytes and accepted/Cursor worktrees.
 
-The local_stack.py convenience command still needs a tested three-role choice; API configuration already supports it.
-
-The manual-evaluator authority split and safe reporting are accepted but not yet merged
-while the accepted changes await final integration after the break. The populated-workflow backup round-trip remains pending. Earlier intermittent failures are retained, with no unproven root-cause claim.
+The local_stack.py convenience command still needs a tested three-role choice; API
+configuration already supports it. The evaluator authority split and populated-workflow
+backup proof are now integrated and independently verified. Earlier intermittent failures
+remain preserved, with no unproven root-cause claim. This does not establish live quality,
+fresh-cluster role provisioning or production capacity.
 
 ## The stack being exercised
 

@@ -1,41 +1,39 @@
 # Handoff: task/codex-g3d-p2-integration
 
-- Task: independent G3D-P2 review and authorized local integration.
+- Task: independent review and authorized local integration of G3D-P2.
 - Tool/worktree: Codex, E:/PHANI/sentinel-wt/codex-g3d-p2-integration.
 - Updated: November 6, 2026, America/Phoenix.
-- State: candidate accepted; local integration prepared for exact-commit verification.
-- Code reference tested before this note: 61cc4b44d0b6dcdf15664be96ecf2cfd96048c4c,
-  independent review worktree; 92 focused tests and four independent controls pass.
-- Final check evidence: run after the containing integration commit; ignored local
-  .agent/g3d-p2-integration/windows and native records, release publication/final chat.
-- Changed paths: accepted candidate's test/runbook/handoff; independent review and this
-  integration note. No production, script, contract, migration, UI or lock change.
+- State: candidate accepted; exact integration gates passed; documentation publication.
+- Code reference tested before this note: 5a1776be20a85124705a893c81b142384e31d67b.
+- Final check evidence: .agent/g3d-p2-integration/windows and native; publication document,
+  source-equality, metadata and clean-tree checks follow the containing commit. Full
+  strict evidence remains attached to the tested integration, not the publication HEAD.
+- Changed paths: accepted candidate's test/runbook/handoff, independent review, this note
+  and current coordination/release/artifact documentation. No production/script/contract/
+  migration/UI/model/data/evaluation/lock change.
 
-## Implemented
+## Implemented and verified
 
-Merge accepted 61cc4b4 from canonical main d3b6aff without conflict; preserve its exact
-test bytes. Review details: ../reviews/G3D-P2-61cc4b4.md. Owner sole author and committer,
-no trailers; accepted component history and Cursor's seven saved edits preserved.
-
-## Verified
-
-Candidate: independent 92 focused tests and four runtime/baseline/corruption probes;
-author full-candidate 649+one skip Windows/native records inspected separately.
-Final integration full Windows then native gates, same-run JUnit, HTTP and ML follow
-this commit. Do not interpret candidate checks as integration or main-checkout evidence.
+Candidate 61cc4b4 merged conflict-free from canonical d3b6aff. Independent 92 focused tests
+and four controls pass; runtime identity and damaged count/content assertions verified.
+Windows then native Ubuntu full gates pass 649+one allowed skip each, six commands,
+650-case same-run JUnit, frozen HTTP, packaged inference and read-only ML reproduction.
+See ../reviews/G3D-P2-61cc4b4.md and ../releases/G3D-P2-main-integration-2026-11-06.md.
+Author-provided candidate gates were inspected separately, never substituted.
 
 ## Not verified / gaps
 
-No fresh-cluster role provisioning, browser rerun, macOS, remote CI, hosting or live
-quality result. No provider, final cases, spending, remote/push or deployment.
+No frontend/browser rerun, fresh-cluster role provisioning, macOS, remote CI, hosting,
+capacity or live quality result. No provider, final cases, spending, remote/push/deployment.
 
 ## Next action
 
-Complete sequential exact-integration gates, publish their concrete results and promote
-locally only on success; then the separate operator helper remains future work.
+Assign the separate three-role operator helper only after publication verification and
+local main/coordination fast-forward complete; those final outcomes are reported in chat
+and ignored publication checks. No feature or live evaluation is assigned here.
 
 ## Coordination and provenance
 
-Reuse accepted repository test helpers without modification; all candidate provenance
-retained in its handoff. Main/coordination/checkpoints updated in release publication.
-No credentials or raw private reports are tracked. Preserve old failure evidence.
+Owner sole author/committer; no trailers or rewritten history. Accepted helpers reused
+unchanged; candidate provenance retained. Previous failures, accepted checkouts, unrelated
+services and Cursor's seven exact file bytes/HEAD preserved. No tracked credentials/raw logs.
