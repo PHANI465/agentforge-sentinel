@@ -44,12 +44,21 @@ def investigate(http: httpx.Client) -> None:
     print(f"alert score={body['rule_score']} case={case['id']} state={case['state']}")
     view = expect(http.post(f"/v1/cases/{case['id']}/investigations",
                             json={"expected_revision": case["revision"]}), 200)
-    run_body = view["agent_runs"][-1]
+    # The single investigator records one run; the three-role workflow one per role attempt,
+    # with the reviewer last. Report the run that produced the finding, not the last one.
+    runs = view["agent_runs"]
+    print("runs=" + ",".join(f"{r['run']['role']}:{r['run']['status']}" for r in runs))
+    run_body = next((r for r in reversed(runs) if r["finding"]), runs[-1])
     print(f"investigator={run_body['run']['config']['name']} status={run_body['run']['status']}"
           f" failure={run_body['run']['failure_code']}")
     if run_body["finding"]:
         finding = run_body["finding"]
         print(f"finding operation={finding['operation']} reason={finding['reason_code']}")
+    trace = expect(http.get(f"/v1/cases/{case['id']}/investigation-trace"), 200)
+    selected = (trace["selected"] or {}).get("workflow") or {}
+    print(f"trace workflows={trace['workflow_count']} legacy_runs="
+          f"{trace['legacy_investigator_runs']} status={selected.get('status')}"
+          f" disposition={(selected.get('disposition') or {}).get('kind')}")
     print(f"case state={view['case']['state']} revision={view['case']['revision']}")
     print(f"CASE_ID={case['id']}")
 
@@ -89,6 +98,9 @@ def model(http: httpx.Client, account: str) -> None:
 
 def execute(http: httpx.Client, case_id: str) -> None:
     view = expect(http.get(f"/v1/cases/{case_id}"), 200)
+    print(f"before approval runs={len(view['agent_runs'])} approvals="
+          f"{sum(i['approval'] is not None for i in view['action_intents'])} actions="
+          f"{sum(i['action'] is not None for i in view['action_intents'])}")
     intent = view["action_intents"][-1]["intent"]
     approval = expect(http.post("/v1/approvals", json={"action_intent_id": intent["id"],
                                                        "decision": "approved"}), 201)
