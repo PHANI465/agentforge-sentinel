@@ -1,25 +1,22 @@
 # Handoff: task/coordination
 
-- Updated: November5 2026 America/Phoenix.
-- State: resumed; prepared G3D-P1 integration held by Windows verification-command cap.
-- Code reference tested before this note: b246145410229ce6192f969b100bfec93a628503.
-- Final check evidence: native647+one skip, six commands, same-run JUnit/HTTP/package/ML;
-  Windows frontend133 and browser19+10 pass. Windows full gates timed out at506 then637
-  of648; other five commands pass. The11 unreached Windows cases pass separately.
-- Main APPLICATION: G3C; current publication changes documents only.
+- Updated: November 5 2026 America/Phoenix.
+- State: G3D-P1 integrated and verified; R41-R43 closed; owner budget decision implemented.
+- Code reference tested before this note: aa5ee1e124c4163c124d33a9cb036fadf510b397.
+- Evidence:647+one allowed skip on Windows/native, six commands each, same-run JUnit,
+  HTTP/package/ML; Windows UI 133, typecheck/build and real browser 19+10 pass.
+- Publication changes documents only beyond the tested commit, not another full-head pass.
 
 ## Next action
 
-Await owner decision on docs/proposals/G3D-verification-command-budget.md: keep1800 and
-diagnose, or approve2700s verification-command budget and certify a new clean commit.
-Do not silently change timeouts, start another unchanged full run, promote the prepared
-application, or start the queued workflow-backup task before release acceptance.
+Claude starts docs/prompts/CLAUDE_G3D_WORKFLOW_BACKUP.md in a new isolated worktree from
+current main containing aa5ee1e124c4163c124d33a9cb036fadf510b397; Opus 5.5 / High. Codex reviews before integration.
 
 ## Preserved and limits
 
-R41-R43 remain closed. Both failed reports, old native failures, passing native/UI
-evidence and verified cleanup are retained. Hardware cause is unproven. Accepted
-worktrees and Cursor's seven saved edits are untouched. No provider, final-case data,
-paid use, remote/push, deployment, macOS, real CI or Linux-browser result. The study guide
-and current checkpoint are under docs/artifacts/. No owner pause is active; a required
-policy decision is pending. The current1800 cap remains unchanged.
+2700s verification-command cap was explicitly approved; individual/application deadlines,
+assertions and skip rules unchanged. Earlier timeouts remain failed and archived; cause
+unproven. No owned test databases/APIs or browser secrets/recovery remain. Accepted
+worktrees, unrelated services and Cursor's seven changes are preserved. No live provider,
+final cases, paid usage, remote/push/deployment, Linux browser, macOS, real CI or hosting.
+Current checkpoint and study guide are in docs/artifacts/.

@@ -1,5 +1,34 @@
 # Verification
 
+## November 5: G3D-P1 integrated and verified
+
+**Accepted tested integration aa5ee1e124c4163c124d33a9cb036fadf510b397.** The evaluator dddd0b4, tied-time reference tests
+8b4e4eb and R43 fixtures 6e461c0 are integrated with current coordination. Runtime, tests,
+fixtures, contracts, UI, models/data and locks match accepted 6e461c0. The only script
+exception is the owner-approved verification-command cap of2700 seconds and its comments.
+Individual test assertions, application/agent/SQL/HTTP deadlines and skip rules are unchanged.
+
+Both complete exact-commit backend gates pass **647 tests + one allowed skip**, six commands
+each, with 648-case same-run JUnit/skip validation, frozen HTTP exports, package checks and
+read-only ML reproduction. Full Windows then native Ubuntu runs were sequential, followed
+by Windows frontend **133 tests**, typecheck/build and real browser **19 legacy +10 trace**.
+[Release evidence](releases/G3D-P1-main-integration-2026-11-05.md).
+
+The earlier1800-second attempts at b246145 remain failed and preserved:506 then637 of648
+progress markers, no reported assertion failure before cutoff. The 11 unreached cases passed
+separately. The owner explicitly approved the bounded command-cap change; it does not prove
+the slowdown's cause or improve production capacity. Decision0009 records this exception.
+
+Main carries the tested application plus documentation publication. This publication does
+not claim another full strict run on its documentation-only HEAD. No owned database/API
+or browser recovery/secrets state remains; unrelated services, accepted worktrees and
+Cursor's seven edits are preserved. No live provider/final cases, paid usage, remote/push
+or deployment. Linux browser, macOS, real CI, hosting and capacity remain unverified.
+
+**Next:** [populated-workflow backup proof](prompts/CLAUDE_G3D_WORKFLOW_BACKUP.md),
+Claude Opus 5.5 / High. Then the separate operator helper, measured agent evaluation,
+deeper financial analytics and public operations. Earlier entries below are historical.
+
 ## November 5: owner approved the 45-minute verification-command cap
 
 The owner explicitly approved changing CHECK_TIMEOUT_SECONDS from1800 to2700 seconds.

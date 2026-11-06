@@ -1,5 +1,10 @@
 # Draft only: full-suite command budget
 
+**Completed November 5:** the approved 2700-second verification-command budget and
+combined integration pass all required final gates at aa5ee1e. See the
+[release record](../releases/G3D-P1-main-integration-2026-11-05.md). Earlier pending/held
+instructions below are history. The next separate task is the workflow-backup proof.
+
 **Owner approved November5:** the verification-command cap may change to2700 seconds.
 Decision0009 governs this exception. Earlier pending/protected wording below is historical.
 Final certification is still required; no old timeout becomes a pass.

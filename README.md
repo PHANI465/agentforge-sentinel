@@ -2,13 +2,13 @@
 
 A local fraud investigation workbench using synthetic financial transactions, rule or trained-model scoring, evidence review, bounded investigation, human approval, simulated actions and an audit trail.
 
-The consolidated Windows-local codebase includes the React/TypeScript analyst UI, FastAPI/PostgreSQL API, reproducible scikit-learn baseline and model reports, persisted approval/replay workflow, operator backup/rollback tooling and backend CI configuration. Main carries tested G3C `f788698`: the trace API/UI and monotonic workflow deadlines on the accepted I03 and native Linux backend foundation. See the [current integration](docs/releases/G3C-main-integration-2026-11-02.md) for exact platform verification records. GitHub Actions, macOS, Linux browser and hosted/public access are not verified. Model scores are uncalibrated rankings from a synthetic benchmark.
+The consolidated Windows-local codebase includes the React/TypeScript analyst UI, FastAPI/PostgreSQL API, reproducible scikit-learn baseline and model reports, persisted approval/replay workflow, operator backup/rollback tooling and backend CI configuration. The tested G3C foundation (`f788698`) includes: the trace API/UI and monotonic workflow deadlines on the accepted I03 and native Linux backend foundation. See the [G3C foundation](docs/releases/G3C-main-integration-2026-11-02.md) for exact platform verification records. GitHub Actions, macOS, Linux browser and hosted/public access are not verified. Model scores are uncalibrated rankings from a synthetic benchmark.
 
-The owner resumed November5. Evaluator/R43 integration b246145 is prepared, with a green
-native backend and Windows UI/browser checks. The Windows full command timed out before
-finishing; main application remains G3C. See the
+G3D-P1 evaluator/R43 integration is verified at `aa5ee1e`: both backend platform gates
+pass647+one allowed skip, Windows UI133 and real browsers19+10 pass. The owner-approved
+45-minute limit applies only to verification commands. See the
 [current checkpoint](docs/artifacts/AgentForge_Sentinel_Session_2026-11-05.md) and
-[unapplied budget proposal](docs/proposals/G3D-verification-command-budget.md).
+[release record](docs/releases/G3D-P1-main-integration-2026-11-05.md).
 Study the [complete project guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md).
 
 ## Run locally

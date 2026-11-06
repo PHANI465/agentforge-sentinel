@@ -1,5 +1,9 @@
 # G3D-P1 integration verification: held November 5
 
+**Historical hold, resolved:** the owner approved the verification budget and final
+integration passed at aa5ee1e. See [the final release](G3D-P1-main-integration-2026-11-05.md).
+The failed runs below remain failures; their evidence is preserved.
+
 ## November 5: resumed; integration held by Windows verification command budget
 
 Prepared candidate **b246145410229ce6192f969b100bfec93a628503** merges current coordination and accepted 6e461c0.

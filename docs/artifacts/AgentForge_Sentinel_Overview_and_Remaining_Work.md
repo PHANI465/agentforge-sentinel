@@ -1,12 +1,13 @@
 # AgentForge Sentinel: project overview and remaining work
 
-Current checkpoint, November5: **resumed; integration held by the Windows command budget.**
-Native full backend647+one skip, Windows frontend133 and real browsers19+10 pass on
-preparedb246145. Windows full runs timed out after506 then637/648; the11 unreached cases
-pass separately. The proposal to change only the verification-command budget to45
-minutes is unapplied and awaits the owner. Main still runs released G3C.
-[Current checkpoint](AgentForge_Sentinel_Session_2026-11-05.md) and
-[proposal](../proposals/G3D-verification-command-budget.md).
+Current checkpoint, November5: **G3D-P1 integrated at testedaa5ee1e.** Both backend
+platform gates pass647+one skip; Windows UI133 and real browser19+10 pass. The approved
+45-minute verification-command cap is implemented; individual deadlines are unchanged.
+Earlier timeouts remain failed and preserved. [Current checkpoint](AgentForge_Sentinel_Session_2026-11-05.md).
+
+Next: [populated-workflow backup proof](../prompts/CLAUDE_G3D_WORKFLOW_BACKUP.md), followed
+by the operator helper, measured agent evaluation, deeper analytics and public operations.
+The guide below is a dated November2 snapshot, superseded here for release status.
 
 **Start studying here:** [Complete20-chapter guide in Word](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.docx) or
 [the same guide in Markdown](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md). It covers the complete pipeline, architecture,

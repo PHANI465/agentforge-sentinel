@@ -1,5 +1,9 @@
 # G3D-P1 re-review: dddd0b4 accepted
 
+**Integrated November 5 at tested aa5ee1e.** R41-R43 remain closed. Read the
+[final release record](../releases/G3D-P1-main-integration-2026-11-05.md) for the approved
+command budget and exact final evidence. Candidate-era pending/pause statements are history.
+
 **Component accepted; R41/R42 closed.** R43 also closes at accepted6e461c0.
 The earlier failed integration is retained as history; final combined verification is
 now in progress. See [R43 acceptance](G3D-R43-6e461c0.md). No new merged pass is claimed yet.

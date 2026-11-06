@@ -1,5 +1,9 @@
 # R43: model browser fixtures must reach their intended checks under modest clock skew
 
+**R43 completed and integrated at aa5ee1e.** Read the final release and current queue.
+The [workflow-backup proof](CLAUDE_G3D_WORKFLOW_BACKUP.md) is next; do not repeat this
+historical correction or its old pause instructions.
+
 **Completed and accepted at6e461c0; R43 closed. Owner requested a one-day pause.**
 Do not repeat this historical assignment or run another unchanged gate. Leave the
 candidate clean. Read [the resume plan](RESUME_AFTER_BREAK.md) when the owner returns.

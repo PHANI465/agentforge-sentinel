@@ -1,18 +1,18 @@
 # Handoff: task/codex-g3d-final-integration
 
-- Updated: November5 2026 America/Phoenix.
-- State: owner approved2700s verification-command cap; new final gates follow this commit.
-- Dependencies: accepted6e461c0, prepared integration b246145, coordination f294c44.
-- Previous evidence: b246145 native647+one skip, UI133/browser19+10 pass; Windows timed
-  out at506 then637/648, with11 unreached cases passing separately. Not a Windows full pass.
+- State: accepted after exact final certification; current publication is documents only.
+- Updated: November 5 2026 America/Phoenix.
+- Code reference tested before this note: aa5ee1e124c4163c124d33a9cb036fadf510b397.
+- Verified: Windows/native 647+one allowed skip each, six commands, same-run JUnit/HTTP/
+  package/ML; Windows frontend 133, typecheck/build and browser 19+10. Sequential full runs.
 
-Merge conflicts in four coordination documents retain latest main history and approval.
-Only scripts/agent_check.py comments and CHECK_TIMEOUT_SECONDS1800->2700 change outside
-documents. All production/test/fixture/UI/model/contract/dependency bytes remain accepted.
-Decision0009 records explicit owner approval; no individual deadlines or skips change.
+Owner approved the2700-second verification-command cap; decision0009 records its narrow
+scope. Individual/application deadlines, test assertions and skips are unchanged. Runtime,
+fixtures, contracts, models and dependencies still match accepted 6e461c0. Earlier1800s
+timeouts at b246145 remain failed and preserved. Cause of slowdown is not established.
 
-Next: exact clean Windows then native backend gates, same-run JUnit validation, HTTP/
-package/ML, frontend and both real browser suites. Promote only after acceptance.
-Preserve original evidence, accepted component worktrees and Cursor's seven edits.
-New commits are owner-only author/committer, no trailers/history rewrite. No live provider,
-final cases, new spend, remote/push or deployment. Workflow-backup proof follows release.
+Next: Claude starts the separate populated-workflow backup proof from current main
+containing this tested commit. See docs/prompts/CLAUDE_G3D_WORKFLOW_BACKUP.md, Opus 5.5 /
+High. No live provider, final-case use, paid usage, remote/push or deployment. Accepted
+components, Cursor edits and unrelated services remain untouched; no owned test processes
+or browser recovery/secrets state remains. Current release evidence is under docs/releases/.
