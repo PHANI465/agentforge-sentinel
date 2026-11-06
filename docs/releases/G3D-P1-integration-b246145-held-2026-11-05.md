@@ -2,28 +2,28 @@
 
 ## November 5: resumed; integration held by Windows verification command budget
 
-Prepared candidate **b246145410229ce6192f969b100bfec93a628503** merges current coordination and accepted6e461c0.
+Prepared candidate **b246145410229ce6192f969b100bfec93a628503** merges current coordination and accepted 6e461c0.
 Application, scripts, tests, fixtures, contracts, model/data and lock bytes match the
 accepted candidate exactly. R41-R43 remain closed. One documentation conflict only.
 
-**Native Ubuntu is fully green:**647 passed + one allowed live-Claude skip, six strict
+**Native Ubuntu is fully green:** 647 passed + one allowed live-Claude skip, six strict
 commands, same-run648-case JUnit validation, frozen HTTP export, packaged install and
-read-only ML reproduction. **Windows UI is green:**133 tests, typecheck/build and real
-browser19 legacy +10 trace cases, with secret scanning and verified cleanup.
+read-only ML reproduction. **Windows UI is green:** 133 tests, typecheck/build and real
+browser 19 legacy +10 trace cases, with secret scanning and verified cleanup.
 
 **The required Windows full strict gate is not green.** The first run hit its unchanged
-1800-second pytest-command cap after506/648 progress markers. After the owner reported
-closing unused apps and connecting power, one controlled rerun reached637/648 and hit
+1800-second pytest-command cap after 506/648 progress markers. After the owner reported
+closing unused apps and connecting power, one controlled rerun reached 637/648 and hit
 the same cap. Neither reported an assertion failure before cutoff, but neither has a
-complete JUnit report. The other five strict commands passed on both attempts. The11
+complete JUnit report. The other five strict commands passed on both attempts. The 11
 unreached cases pass separately; this does not replace the required full run. Both
 failures are preserved. A broad runtime slowdown is observed; its cause is not proven.
 
 **Awaiting the owner's decision:** [one-line proposal](../proposals/G3D-verification-command-budget.md)
-to change only the verification-command cap1800 ->2700 seconds (45 minutes), keeping
+to change only the verification-command cap 1800 ->2700 seconds (45 minutes), keeping
 individual tests, assertions, agent/database/HTTP deadlines and skip policy unchanged.
 The saved resume plan protects timeout changes. The proposal is unapplied; no third
-unchanged full Windows run is authorized by this checkpoint. Alternative: keep1800 and
+unchanged full Windows run is authorized by this checkpoint. Alternative: keep 1800 and
 perform focused Windows runtime diagnosis.
 
 Main APPLICATION stays released G3C; this publication changes documents only. The
@@ -41,15 +41,15 @@ orphan cluster was stopped through pg_ctl only after rechecking its PID, creatio
 and exact test-owned data directory; files remain for investigation. The current native
 clone is clean and the browser runtime directory contains no recovery/secrets state.
 
-The same first506 cases took861 seconds in the accepted author's older Windows report,
-versus reaching the1800-second cutoff here. Other helper/package commands slowed too.
-Initially the laptop reported1.7 GiB free memory. The owner closed apps and confirmed
+The same first506 cases took 861 seconds in the accepted author's older Windows report,
+versus reaching the 1800-second cutoff here. Other helper/package commands slowed too.
+Initially the laptop reported 1.7 GiB free memory. The owner closed apps and confirmed
 taskbar charging; programmatic power readings disagreed. These observations do not prove
 a hardware cause or a production-code defect. No assertion or individual deadline was
 weakened to obtain a green result. The two full Windows attempts remain failed.
 
-The proposed2700s value is a maximum lifetime for each verification command, not an
-application latency target or a change to the agent150s workflow/45s role limits.
+The proposed 2700s value is a maximum lifetime for each verification command, not an
+application latency target or a change to the agent 150s workflow/45s role limits.
 If approved, it requires a new clean owner-authored commit and complete required gates;
 the old timeouts cannot be relabeled as passes. If not approved, retain1800 and diagnose.
 
