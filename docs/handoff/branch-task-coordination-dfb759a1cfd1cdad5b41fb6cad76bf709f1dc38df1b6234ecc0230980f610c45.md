@@ -10,15 +10,12 @@
 
 ## Next action
 
-G3D-P4 plan3366edf needs R44/R45 correction before P4a tooling is assigned. Read
-[review](../reviews/G3D-P4-3366edf.md) and [Claude correction](../prompts/CLAUDE_G3DP4_PLAN_REVIEW_FIXES.md).
-Document-only review: no new application check, provider, auth or case run.
-
-Plan measured agent/security evaluation under the frozen protocol, with development
-pilots kept separate from protected final cases. No live/final-case execution is assigned.
-Then deepen financial analyst capabilities and public demonstration/operations.
-See [release](../releases/G3D-P3-main-integration-2026-11-06.md) and
-[checkpoint](../artifacts/AgentForge_Sentinel_Session_2026-11-06.md).
+Corrected P4 plan cee83f9 is accepted; R44/R45 close. The owner requests a substantial
+Claude batch before review: [P4a tooling then independent AN01 design](../prompts/CLAUDE_TODAY_BATCH_2026-11-06.md).
+One P4a branch owns runner/orchestration/export/scoring and its final gates; the design
+branch consumes accepted main only and can proceed without P4a acceptance. No live
+P4b, auth probe, final cases, runtime main merge, external push or spending is assigned.
+This publication merges documents only; accepted application/test bytes remain495c7d3.
 
 ## Preserved
 

@@ -1,5 +1,22 @@
 # Shared implementation queue
 
+## November6: corrected P4 plan accepted; substantial Claude batch assigned
+
+Plan cee83f9 is accepted for development planning; R44/R45 close under
+[the re-review](reviews/G3D-P4-cee83f9.md). It is integrated unchanged as documentation.
+The owner asked to finish Claude work before review. [Today's batch](prompts/CLAUDE_TODAY_BATCH_2026-11-06.md)
+assigns P4a's complete evaluator tooling in one branch (artifacts, owned deterministic
+pilot, scoped export/blinding, offline scoring, tests), then independent AN01 analyst
+workspace design in another branch. Both use Opus5.5 / High and current accepted main.
+Internal P4a milestones need no extra review hop; final candidates still need Codex
+acceptance before runtime integration. AN01 consumes no unaccepted P4a code.
+
+No implementation or new gate result is claimed yet. Main application remains tested
+G3D-P3 at495c7d3 (666+one skip/platform); this publication changes docs only. The150s
+workflow metric stays unmeasured in the pilot; bad results stay counted. No live P4b,
+auth/account call, final cases, new spending, external push or deployment is assigned.
+Preserve accepted branches, prior evidence and Cursor's seven edits. Older entries are history.
+
 ## November6: G3D-P4 development-plan review requests R44/R45 corrections
 
 Proposal3366edf is documentation only and not accepted/merged. [Review](reviews/G3D-P4-3366edf.md)

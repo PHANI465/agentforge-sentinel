@@ -20,6 +20,13 @@ Owner-facing project documents live here and are versioned with the project. Sav
 
 Ten pages explaining the verified application, fictional fraud examples, architecture, ML, security, the technology stack and planned extensions. Includes the end-of-day checkpoint and tomorrow's starting point. Application baseline: c8b9477; this guide is a documentation snapshot.
 
+## Development evaluation plan
+
+- [Accepted G3D-P4 development pilot plan](AgentForge_Sentinel_G3D-P4_Development_Evaluation_Plan_2026-11-06.md)
+- [Claude work batch: evaluator tooling and analyst design](../prompts/CLAUDE_TODAY_BATCH_2026-11-06.md)
+
+Planning acceptance is not live-run permission. P4a code still needs implementation/review.
+
 ## Current session
 
 - [November 6 G3D-P3 operator integration, with G3D-P2 backup proof retained](AgentForge_Sentinel_Session_2026-11-06.md) — current checkpoint.

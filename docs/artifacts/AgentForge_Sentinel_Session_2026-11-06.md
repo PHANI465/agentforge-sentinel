@@ -1,13 +1,14 @@
 # Sentinel checkpoint: November 6, 2026
 
-## Current next task: correct the G3D-P4 planning document
+## Current Claude batch: P4a tooling, then independent analyst design
 
-The development-only proposal3366edf needs [R44/R45 corrections](../reviews/G3D-P4-3366edf.md):
-request timing is not exact workflow elapsed, step markers are cumulative, and a wrong
-hold remains an unacceptable disposition even if the pass stops. Claude follows
-[the document-only correction prompt](../prompts/CLAUDE_G3DP4_PLAN_REVIEW_FIXES.md)
-on its existing branch (Opus5.5 / High). P4a code and live/final-case runs are not assigned.
-G3D-P3 application/test certification below remains current; this review adds no runtime change.
+The corrected [development evaluation plan](AgentForge_Sentinel_G3D-P4_Development_Evaluation_Plan_2026-11-06.md)
+is accepted at cee83f9; R44/R45 are closed. [Re-review](../reviews/G3D-P4-cee83f9.md).
+Give Claude [the batch prompt](../prompts/CLAUDE_TODAY_BATCH_2026-11-06.md), Opus5.5 / High.
+It assigns complete no-provider evaluation tooling (five milestones, one final review)
+and an independent analyst-workspace design package on a second branch. No new code
+is accepted yet, no live P4b/final-case work is assigned, and no new runtime gate result
+is claimed by this documentation publication. The application certification below remains current.
 
 **G3D-P3 accepted and locally integrated at tested 495c7d33424054d27d68d08004191d4be37adaf9.**
 The operator helper now offers explicit three-role/adapter selection and consistent

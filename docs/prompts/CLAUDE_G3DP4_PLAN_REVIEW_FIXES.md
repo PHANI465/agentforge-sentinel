@@ -1,5 +1,9 @@
 # G3D-P4 plan correction: R44/R45
 
+Completed and accepted at cee83f9; R44/R45 are closed.
+[Re-review](../reviews/G3D-P4-cee83f9.md); next is [the assigned work batch](CLAUDE_TODAY_BATCH_2026-11-06.md).
+The correction instructions below are historical; do not repeat them.
+
 Recommended assistant: **Claude Opus5.5 / High**. This is a bounded document revision
 about measurement validity, outcome accounting and safe pilot operation. It is not
 permission to run a provider or implement evaluator tooling.
