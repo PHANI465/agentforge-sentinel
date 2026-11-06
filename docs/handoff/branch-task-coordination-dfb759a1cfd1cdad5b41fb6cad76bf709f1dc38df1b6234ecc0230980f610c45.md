@@ -15,8 +15,11 @@
 
 ## Next action
 
-Assign the separate three-role local operator helper in its own worktree from current
-main. No live provider/final-case evaluation is assigned. See
+G3D-P3 is dispatched via [the scoped Claude prompt](../prompts/CLAUDE_G3D_THREE_ROLE_OPERATOR.md)
+from current published main, in its own worktree. Implementation has not started.
+This publication edits coordination/prompt/checkpoint docs only; source/tests/scripts
+remain byte-identical to bd91ca5 and tested 5a1776b. No new strict pass is claimed.
+Codex reviews the delivered helper; no live provider/final-case evaluation is assigned. See
 ../releases/G3D-P2-main-integration-2026-11-06.md and ../artifacts/AgentForge_Sentinel_Session_2026-11-06.md.
 
 ## Preserved and limits

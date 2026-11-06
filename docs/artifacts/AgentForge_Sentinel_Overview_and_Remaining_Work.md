@@ -7,8 +7,10 @@ authority/scope and approval/replay checks. Production code is unchanged. Fronte
 checks were not rerun; P1's UI133/browser19+10 remain prior evidence.
 [Current checkpoint](AgentForge_Sentinel_Session_2026-11-06.md).
 
-Next: the separate three-role operator helper in a future task, then measured agent
-evaluation, deeper analytics and public operations. No live evaluation is assigned.
+Next: [G3D-P3 three-role operator helper](../prompts/CLAUDE_G3D_THREE_ROLE_OPERATOR.md),
+now assigned to Claude in a new isolated worktree, with Opus 5.5 / High. Implementation
+has not started. Then measured agent evaluation, deeper analytics and public operations.
+No live evaluation is assigned.
 The approved 2700-second verification-command cap and individual deadlines are unchanged.
 Older dated release descriptions below remain historical context.
 

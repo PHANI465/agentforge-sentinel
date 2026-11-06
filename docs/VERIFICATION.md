@@ -1,5 +1,15 @@
 # Verification
 
+## November 6: G3D-P2 current evidence; G3D-P3 assigned
+
+G3D-P2 tested integration 5a1776be20a85124705a893c81b142384e31d67b passes independent
+Windows then native Ubuntu gates: 649 passed plus one allowed skip each, all six
+commands, same-run JUnit/skip validation, frozen HTTP, package and read-only ML checks.
+[Release record](releases/G3D-P2-main-integration-2026-11-06.md). Browsers were not rerun
+for that tests/docs change. Main's later publication is documentation only; no extra
+full strict pass on its HEAD is claimed. The new G3D-P3 operator assignment is also
+documentation only, with implementation and verification pending. Earlier entries are history.
+
 ## November 5: G3D-P1 integrated and verified
 
 **Accepted tested integration aa5ee1e124c4163c124d33a9cb036fadf510b397.** The evaluator dddd0b4, tied-time reference tests

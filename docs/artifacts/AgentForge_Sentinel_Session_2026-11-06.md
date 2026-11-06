@@ -21,9 +21,13 @@ individual deadlines/skips are unchanged. Previous failures remain preserved.
 
 ## Next task
 
-The separate three-role local operator helper is the next feature, to be assigned in
-its own worktree. Then measured agent/security evaluation, deeper analyst capabilities
-and public operations. No live evaluation is assigned by this review or integration.
+G3D-P3 is now assigned through [the three-role operator prompt](../prompts/CLAUDE_G3D_THREE_ROLE_OPERATOR.md),
+using Claude Opus 5.5 / High in a new isolated task/worktree. Add explicit mode/adapter
+selection, deterministic defaults and recorded restart settings; prove the real
+runtime-role workflow and approval/replay path. Implementation has not started.
+This dispatch changes documents only; no new application certification is claimed.
+Codex reviews before integration. Measured agent/security evaluation, deeper analyst
+capabilities and public operations follow; no live/final-case evaluation is assigned.
 
 All financial data is synthetic and actions simulated. No provider call, final cases,
 new spending, remote/push or deployment. Accepted worktrees and Cursor's exact seven

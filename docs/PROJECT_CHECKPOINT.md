@@ -1,5 +1,16 @@
 # AgentForge Sentinel project checkpoint
 
+## November 6: G3D-P3 operator-helper assignment dispatched
+
+The owner asked to start the next milestone. [Claude's scoped assignment](prompts/CLAUDE_G3D_THREE_ROLE_OPERATOR.md)
+adds explicit three-role/adapter selection to local_stack.py, preserves deterministic
+defaults, persists restart settings and proves the real synthetic approval/replay path.
+Recommended assistant: Claude Opus 5.5 / High. New isolated task/worktree:
+task/claude-g3d-three-role-operator. Implementation has not started and no new runtime
+or gate result is claimed. G3D-P2 remains accepted at tested 5a1776b; this dispatch is
+documentation only. No live provider, final cases, paid usage, remote/push or deployment.
+Codex reviews before integration; accepted worktrees and Cursor edits stay preserved.
+
 ## November 6: G3D-P2 independently accepted and locally integrated
 
 **Tested integration 5a1776be20a85124705a893c81b142384e31d67b.** Accepted candidate
