@@ -90,3 +90,43 @@ uv run --locked python scripts/agent_eval_pilot.py run --root <DIR> --pair L01-C
 
   The run file is never rewritten.
 - **Retention and cleanup.** The cluster is stopped after every run and kept, with its databases, for private scoring. `cleanup` stops it. `cleanup --drop` starts it through the owned lifecycle, drops only the databases recorded in the manifest that carry this pilot's owner prefix (anything else is refused), and stops it again. Nothing is deleted from disk. After cleanup, removing the root directory is a manual step. It is not a production retention promise.
+
+## 3. Export bundle (`sentinel.agent-eval.bundle/1`) and review packets (`sentinel.agent-eval.review-packets/1`)
+
+```powershell
+uv run --locked python scripts/agent_eval_report.py export --root <DIR> --pair P00-det   # -> exports/<pair>.bundle.json
+uv run --locked python scripts/agent_eval_report.py packets --root <DIR> [--seed N]      # -> review/, keys/
+```
+
+**Export** (`exports/<pair>.bundle.json`, private):
+- **Authority and isolation.** The export runs as the **runtime role** (never the operator), in one `REPEATABLE READ, READ ONLY` transaction, against the pair's own database only. The supervisor starts the owned cluster for it and stops it afterwards.
+- **Scope.** Each query selects by the IDs that the attempt's artifact row names, plus that row's tenant and session. Every returned row is then re-checked against that scope. So a foreign or tampered mapping, or a broken scope filter, is refused with nothing written; the export never widens a query.
+- **Workflows.** The stored workflow IDs must equal the artifact's. The adopted run is the artifact's `basis_run_id`, and it must be stored in the same scope.
+- **What it records** per attempt:
+  - case state and revision, and pins;
+  - transaction amount, direction and time, and scoring;
+  - evidence facts;
+  - workflows (status as stored: a running workflow stays running, and nothing is recovered);
+  - runs (role, status, failure code, attempt, config name);
+  - validated role outputs, tool results and claim checks;
+  - the adopted finding.
+- **No-mutation proof.** `mutation_proof` holds a row count and content digest of `cases`, `agent_workflows`, `agent_runs`, `agent_steps`, `action_intents`, `approvals`, `simulated_actions` and `audit_events`, taken before and after the export as the runtime role.
+- **Never in a bundle:** tokens, URLs, auth output, or raw CLI stdout.
+
+**Review packets:**
+- **One packet per disposition.** Inconclusive and failed attempts have nothing to score.
+- **Order and IDs.** Packets come in a seeded random order with opaque IDs (`PK-…`).
+- **Content.** Each packet has three parts:
+  - the evidence shown: the transaction, the case's evidence facts and, for C2, the tool values;
+  - the recommendation (operation and reason);
+  - free-text statements: the adopted rationale, then the role notes, without role labels.
+- **What is removed:** comparator, config and role names, pins, case and catalog IDs, and expected answers.
+- **Blinding is partial and is disclosed in the file:**
+  - C2's server-rendered rationale (for example "Reviewer: accept.") and the presence of tool values reveal the system;
+  - nothing claims an independent human scored anything.
+- **Files.** The packets go in `review/packets.json` and `review/sheet.csv`, with blank scoring columns: `supported`, `acceptable`, `reason_code`, `would_correct` and `correction`. The unblinding key (packet → attempt, comparator, case, run digest) is written separately to `keys/unblinding-key.json`.
+- **Inert text.** Text stays data:
+  - JSON escapes it;
+  - in CSV, a text cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with `'`;
+  - typed numbers are written unchanged;
+  - no HTML, links or executable content is produced.

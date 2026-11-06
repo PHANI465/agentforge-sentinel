@@ -5,7 +5,10 @@ Real-database tests run the accepted runner and service as a least-privilege run
 on disposable PostgreSQL with deterministic comparators only. The fixture record under
 tests/fixtures/agent_eval_p4a is hand-made test data, never live evidence.
 """
+import copy
+import csv
 import importlib.util
+import io
 import json
 import logging
 import sys
@@ -202,3 +205,124 @@ def test_annotations_need_a_source_and_time(tmp_path):
         module.load_annotations(bad)
     assert refusal.value.code == "annotations_invalid"
 
+
+
+# ---- C: scoped read-only export and partially blinded review packets -----------------------
+
+def report():
+    return load(ROOT / "scripts" / "agent_eval_report.py")
+
+
+def real_run(database_url, cases="D01,D11"):
+    """A real C0 + C2-det run artifact (every attempt has its own fresh session, so the
+    database also holds other sessions' data) and the runtime URL that wrote it."""
+    _role, rt = runtime_role(database_url)
+    code, output = runner("--comparators", "C0,C2-det", "--cases", cases,
+                          operator=database_url, runtime=rt)
+    assert code == 0, output
+    return artifact.validate_run(json.loads(output)), rt
+
+
+def test_export_is_scoped_read_only_and_matches_storage(database_url):
+    doc, rt = real_run(database_url)
+    bundle = report().export_run(rt, doc)
+    assert bundle["version"] == artifact.BUNDLE_VERSION
+    assert bundle["mutation_proof"]["unchanged"] is True
+    before = bundle["mutation_proof"]["before"]
+    assert before["approvals"][0] == 0 and before["simulated_actions"][0] == 0
+    exports = {e["attempt_id"]: e for e in bundle["exports"]}
+    assert set(exports) == {r["attempt_id"] for res in doc["comparators"].values()
+                            for r in res["attempts"]}
+    for result in doc["comparators"].values():
+        for row in result["attempts"]:
+            export = exports[row["attempt_id"]]
+            assert export["ids"] == row["ids"]
+            assert export["adopted"]["agent_run_id"] == row["disposition"]["basis_run_id"]
+            assert [r["id"] for r in export["runs"] if r["has_finding"]] == [
+                row["disposition"]["basis_run_id"]]
+    assert "postgresql://" not in json.dumps(bundle)
+
+
+def test_a_foreign_or_tampered_mapping_is_refused_even_with_a_broken_scope_filter(
+        database_url, monkeypatch):
+    module = report()
+    doc, rt = real_run(database_url)
+    rows = doc["comparators"]["C0"]["attempts"]
+    tampered = copy.deepcopy(doc)  # attempt 1 now points at attempt 2's case (another session)
+    tampered["comparators"]["C0"]["attempts"][0]["ids"]["case_id"] = rows[1]["ids"]["case_id"]
+    with pytest.raises(module.ExportError, match="not found in the attempt's scope"):
+        module.export_run(rt, tampered)
+    monkeypatch.setattr(module, "_scope_clause", lambda: ("", ()))  # a broken filter
+    with pytest.raises(module.ExportError, match="outside the attempt's tenant/session"):
+        module.export_run(rt, tampered)
+    monkeypatch.undo()
+    module = report()
+    swapped = copy.deepcopy(doc)
+    swapped["comparators"]["C2-det"]["attempts"][0]["workflow_ids"] = \
+        doc["comparators"]["C2-det"]["attempts"][1]["workflow_ids"]
+    with pytest.raises(module.ExportError, match="do not match the run artifact"):
+        module.export_run(rt, swapped)
+    old = copy.deepcopy(doc)
+    del old["record"]["artifact_version"]
+    with pytest.raises(artifact.ArtifactError):
+        module.export_run(rt, old)
+
+
+def test_the_export_identity_cannot_write(database_url):
+    _role, rt = runtime_role(database_url)
+    with psycopg.connect(rt) as conn, conn.transaction():
+        conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+        with pytest.raises(psycopg.errors.ReadOnlySqlTransaction):
+            conn.execute("UPDATE cases SET revision = revision")
+    with psycopg.connect(rt) as conn, pytest.raises(psycopg.errors.InsufficientPrivilege):
+        conn.execute("DELETE FROM agent_steps")
+
+
+def test_review_packets_are_partially_blinded_with_a_separate_key(database_url):
+    module = report()
+    doc, rt = real_run(database_url, "D01,D02,D11")
+    bundle = module.export_run(rt, doc)
+    packets, key = module.review_packets([bundle], seed=5)
+    text = json.dumps(packets)
+    assert len(packets["packets"]) == 6 and set(key["packets"]) == {
+        p["packet_id"] for p in packets["packets"]}
+    for revealing in ("C0", "C2-det", "three-role-workflow", "deterministic-investigator",
+                      "evidence_analyst", "reviewer", "D01", "D02", "D11", "acceptable_not",
+                      "sha256", "tenant_id", "agent_run_id"):
+        assert revealing not in text, revealing
+    for row in doc["comparators"]["C2-det"]["attempts"]:
+        assert row["ids"]["case_id"] not in text
+    for packet in packets["packets"]:
+        assert set(packet) == {"packet_id", "evidence", "recommendation", "statements"}
+        facts = packet["evidence"]["facts"]  # the case's stored evidence facts, by name
+        assert set(facts) == {"amount_minor", "transaction_count_1h"} and None not in             facts.values()
+    again, _ = module.review_packets([bundle], seed=5)
+    other, _ = module.review_packets([bundle], seed=6)
+    order = [key["packets"][p["packet_id"]]["attempt_id"] for p in packets["packets"]]
+    assert order == [key["packets"][p["packet_id"]]["attempt_id"] for p in again["packets"]]
+    assert sorted(order) == sorted(e["attempt_id"] for e in bundle["exports"])
+    assert other["packets"] != packets["packets"]
+    assert "comparator" not in json.dumps(packets["packets"])
+
+
+def test_hostile_text_stays_inert_and_formulas_are_escaped():
+    module = report()
+    hostile = ['=HYPERLINK("http://example.invalid","x")', "+1+1", "-2", "@SUM(A1)",
+               "\tTAB", "Ünïcødé \u202edlrow <script>alert(1)</script>", "ordinary"]
+    export = {"attempt_id": "C1:1:D01", "comparator": "C1", "case": "D01",
+              "outcome": "disposition", "transaction": {"amount": {"minor_units": 250000}},
+              "evidence": [{"name": "transaction_count_1h", "value": -1, "source": "s"}],
+              "tool_results": [], "role_outputs": [{"output": {"note": t}} for t in hostile],
+              "adopted": {"operation": "escalate", "reason_code": "unusual_amount",
+                          "finding": {"rationale": "=1+1 rationale"}}}
+    packets, _key = module.review_packets([{"run_artifact_sha256": "x", "exports": [export]}],
+                                          seed=1)
+    texts = [s["text"] for s in packets["packets"][0]["statements"]]
+    assert texts == ["=1+1 rationale", *hostile]  # data, unchanged, in JSON
+    rows = list(csv.reader(io.StringIO(module.sheet_csv(packets))))
+    assert rows[0] == list(module.SHEET_COLUMNS)
+    by_text = {r[3] for r in rows[1:]}
+    for text in ["=1+1 rationale", *hostile[:5]]:
+        assert "'" + text in by_text and text not in by_text
+    assert hostile[5] in by_text and "ordinary" in by_text
+    assert "-1" in by_text  # a typed numeric evidence value is not rewritten
