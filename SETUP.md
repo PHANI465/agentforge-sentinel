@@ -44,7 +44,7 @@ uv run --locked python scripts/export_http_contract.py --check
 uv run --locked python -m ml test --reproduce
 ```
 
-The strict helper has an 1800-second bound per command and records ignored evidence in `.agent/last-check.json`. An old report or one from another checkout does not certify current HEAD. HTTP checks cover frozen v1/v1.1 and active v1.2/examples. ML reproduction is the accepted read-only comparison; do not rerun model selection or tune against frozen p1 test data.
+The strict helper has a 2700-second bound per command and records ignored evidence in `.agent/last-check.json`. An old report or one from another checkout does not certify current HEAD. HTTP checks cover frozen v1/v1.1 and active v1.2/examples. ML reproduction is the accepted read-only comparison; do not rerun model selection or tune against frozen p1 test data.
 
 For CI-equivalent structured test validation, `uv run --locked python scripts/ci_test_gate.py --junit .agent/pytest-results.xml` runs the full suite and permits exactly the opt-in live-Claude skip. During final integration, use a JUnit report from the strict gate's same pytest run and `--validate-only PATH` to avoid a duplicate full run. Current CI setup and package details are in [docs/ci](docs/ci/README.md).
 

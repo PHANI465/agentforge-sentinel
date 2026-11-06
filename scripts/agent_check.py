@@ -29,10 +29,10 @@ CHECKS: list[list[str]] = [
     ["node", "scripts/check_contract_examples.mjs"],
     [sys.executable, "scripts/check_package.py"],
 ]
-# Per command. The full pytest run (real-process browser-fixture stacks in rule and model mode,
-# C07 model serving and the installed-wheel check included) takes about 15 minutes on the
-# reference laptop (886 s at I01); 1800 s leaves margin without hiding a hang.
-CHECK_TIMEOUT_SECONDS = 1800
+# Per verification command, not an application or individual-test deadline.
+# Owner approved 2700s on November 5 after the 648-case Windows suite hit 1800s;
+# see docs/decisions/0009-verification-command-budget.md. All six checks remain required.
+CHECK_TIMEOUT_SECONDS = 2700
 
 
 def valid_checks(checks: object, timeout: object) -> bool:

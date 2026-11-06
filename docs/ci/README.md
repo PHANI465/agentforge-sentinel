@@ -52,7 +52,7 @@ Third-party actions are pinned to full commit SHAs, resolved from their tags on 
 - **Forbidden content.** Caches, `.env`/key files, `.agent/` and generated data are forbidden everywhere. Tests and `evals/` are forbidden in the wheel.
 - **Installed check** (the online package check; `tests/test_installed_wheel.py` repeats it fully offline from the lock-exact `pylock.toml`, see LINUX.md N7). The wheel is installed into a fresh virtual environment with the lock's ml pins (`uv export --locked --extra ml`, `--no-deps`) and run with `python -I` from a neutral directory. There, `sentinel`, `ml` and `data_pipeline` must import from that environment, discover exactly the source migrations, bind the registered `hgb_balanced@p1` scorer, and load the frozen results with the accepted artifact hash.
 
-It is the sixth configured command in `scripts/agent_check.py`, which keeps I01's 1800-second per-command limit. A local strict PASS therefore covers it.
+It is the sixth configured command in `scripts/agent_check.py`, which uses the owner-approved 2700-second per-command limit (decision0009). A local strict PASS therefore covers it.
 
 ## Reproduce locally
 

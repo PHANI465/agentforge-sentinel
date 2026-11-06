@@ -1,5 +1,15 @@
 # Resume Sentinel after the one day break
 
+**Owner approved November5:** the verification-command cap may change to2700 seconds.
+Decision0009 governs this exception. Earlier pending/protected wording below is historical.
+Final certification is still required; no old timeout becomes a pass.
+
+**Resumed November5.** Integration b246145 is prepared; native and UI/browser checks
+pass, but the Windows full command timed out twice. See [current status](../STATUS.md)
+and [the unapplied budget proposal](../proposals/G3D-verification-command-budget.md).
+The owner must decide before changing the protected command cap. Do not restart the
+old resume sequence or another unchanged full Windows run. Original instructions follow.
+
 Owner request November2 2026 America/Phoenix: stop after the review/document wrap-up,
 take a one-day break, then resume. No automatic restart has been scheduled. Begin only
 when the owner returns or explicitly invokes this saved prompt. The dated guide is a

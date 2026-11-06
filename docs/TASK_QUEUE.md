@@ -1,20 +1,50 @@
 # Shared implementation queue
 
-## November 5: resumed; final G3D-P1 integration verification
+## November 5: owner approved the 45-minute verification-command cap
 
-The owner resumed Sentinel. Accepted evaluator dddd0b4, timestamp-reference correction
-8b4e4eb and R43 fixture correction6e461c0 are combined with current coordination in
-task/codex-g3d-final-integration. R41-R43 remain closed. The single documentation conflict
-retains acceptance/history with the current R43 closure; no application conflict or new
-implementation fix is introduced. Application, script, test, fixture, contract, model and
-lock bytes match accepted6e461c0.
+The owner explicitly approved changing CHECK_TIMEOUT_SECONDS from1800 to2700 seconds.
+This supersedes the earlier pending proposal and the resume plan's protection only for
+this verification-command budget. Individual tests/assertions, application/agent/SQL/HTTP
+deadlines, skip policy and all six commands are unchanged. Decision0009 records the
+limited scope. Both earlier Windows timeouts remain failed and preserved.
 
-Final clean-merge Windows then native Ubuntu gates and Windows frontend/browser19+10
-verification are in progress; component passes do not certify this new merge. Main stays
-at the previous publication until these finish. Preserve prior failures, accepted
-worktrees and Cursor's seven saved changes. No live provider, final cases, new spend,
-remote/push or deployment is assigned. After release, dispatch the separate populated-
-workflow backup proof. Older dated entries below remain historical.
+Current coordination is combined with prepared integration b246145. Final exact-clean-
+commit Windows then native Ubuntu gates, same-run JUnit/skip validation, HTTP/package/ML
+and Windows UI/browser checks follow. No new pass is claimed yet; main application is
+still G3C until acceptance. No provider/final cases, paid usage, push or deployment.
+
+## November 5: resumed; integration held by Windows verification command budget
+
+Prepared candidate **b246145410229ce6192f969b100bfec93a628503** merges current coordination and accepted6e461c0.
+Application, scripts, tests, fixtures, contracts, model/data and lock bytes match the
+accepted candidate exactly. R41-R43 remain closed. One documentation conflict only.
+
+**Native Ubuntu is fully green:**647 passed + one allowed live-Claude skip, six strict
+commands, same-run648-case JUnit validation, frozen HTTP export, packaged install and
+read-only ML reproduction. **Windows UI is green:**133 tests, typecheck/build and real
+browser19 legacy +10 trace cases, with secret scanning and verified cleanup.
+
+**The required Windows full strict gate is not green.** The first run hit its unchanged
+1800-second pytest-command cap after506/648 progress markers. After the owner reported
+closing unused apps and connecting power, one controlled rerun reached637/648 and hit
+the same cap. Neither reported an assertion failure before cutoff, but neither has a
+complete JUnit report. The other five strict commands passed on both attempts. The11
+unreached cases pass separately; this does not replace the required full run. Both
+failures are preserved. A broad runtime slowdown is observed; its cause is not proven.
+
+**Awaiting the owner's decision:** [one-line proposal](proposals/G3D-verification-command-budget.md)
+to change only the verification-command cap1800 ->2700 seconds (45 minutes), keeping
+individual tests, assertions, agent/database/HTTP deadlines and skip policy unchanged.
+The saved resume plan protects timeout changes. The proposal is unapplied; no third
+unchanged full Windows run is authorized by this checkpoint. Alternative: keep1800 and
+perform focused Windows runtime diagnosis.
+
+Main APPLICATION stays released G3C; this publication changes documents only. The
+prepared evaluator integration is not promoted. Populated-workflow backup remains the
+next feature task after release. Accepted worktrees, Cursor's seven saved edits and old
+failure evidence are preserved. No test-owned database/API remains on either platform;
+the unrelated PostgreSQL service and idle Ubuntu shell were left alone. No provider,
+final-case evaluation, paid use, remote/push or deployment. Older entries are history.
 
 ## November 2 end of day R43 accepted and one day break
 
