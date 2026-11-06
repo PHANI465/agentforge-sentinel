@@ -14,6 +14,9 @@ These shared instructions apply to the adopted Sentinel project. The current use
   six commands and same-run JUnit/HTTP/package/ML. See docs/releases/G3D-P3-main-integration-2026-11-06.md.
   Explicit operator mode/adapter selection and recorded restart settings are verified;
   live configurations were not executed. Next is measured agent/security evaluation planning.
+  G3D-P4 proposal3366edf requests R44/R45 corrections under docs/reviews/G3D-P4-3366edf.md;
+  Claude follows docs/prompts/CLAUDE_G3DP4_PLAN_REVIEW_FIXES.md on its existing plan branch.
+  No P4a implementation or live/final-case execution is assigned.
   Publication adds documentation only; no live/final-case evaluation is assigned. No live evaluation is assigned; preserve accepted worktrees and Cursor edits. The complete study guide is in docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md and .docx. Preserve accepted components, Cursor edits and prior failed evidence. Read docs/artifacts/AgentForge_Sentinel_Session_2026-11-02.md. No live evaluation is assigned. G3A remains accepted. Read current coordination. GitHub Actions/macOS/hosting and Linux browser execution remain unverified.
 - Install: `uv sync --locked --extra dev --extra ml`. Run the six-command strict gate, HTTP export check, structured JUnit validation and read-only ML reproduction as described in SETUP.md. No new dependency resolution or model calls are required.
 - Verify: `uv run --locked python -m ruff check .`, `uv run --locked python -m pytest -q`, `uv run --locked python -m unittest discover -s tests_handoff -v`, `uv run --locked python scripts/export_contracts.py --check`, and `node scripts/check_contract_examples.mjs`.

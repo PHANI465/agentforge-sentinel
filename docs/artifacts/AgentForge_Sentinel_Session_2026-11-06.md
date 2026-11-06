@@ -1,5 +1,14 @@
 # Sentinel checkpoint: November 6, 2026
 
+## Current next task: correct the G3D-P4 planning document
+
+The development-only proposal3366edf needs [R44/R45 corrections](../reviews/G3D-P4-3366edf.md):
+request timing is not exact workflow elapsed, step markers are cumulative, and a wrong
+hold remains an unacceptable disposition even if the pass stops. Claude follows
+[the document-only correction prompt](../prompts/CLAUDE_G3DP4_PLAN_REVIEW_FIXES.md)
+on its existing branch (Opus5.5 / High). P4a code and live/final-case runs are not assigned.
+G3D-P3 application/test certification below remains current; this review adds no runtime change.
+
 **G3D-P3 accepted and locally integrated at tested 495c7d33424054d27d68d08004191d4be37adaf9.**
 The operator helper now offers explicit three-role/adapter selection and consistent
 restart settings, while keeping deterministic single/rule defaults. [Review](../reviews/G3D-P3-2cdb3b7.md)

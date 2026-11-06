@@ -1,5 +1,18 @@
 # Shared implementation queue
 
+## November6: G3D-P4 development-plan review requests R44/R45 corrections
+
+Proposal3366edf is documentation only and not accepted/merged. [Review](reviews/G3D-P4-3366edf.md)
+finds misleading workflow/per-role timing definitions and ambiguous scoring of a bad
+recommendation after stopping. Claude revises only its existing plan/handoff under
+[the correction prompt](prompts/CLAUDE_G3DP4_PLAN_REVIEW_FIXES.md), Opus5.5 / High.
+The protocol/cases remain frozen. P4a tooling is not assigned and no live/final-case
+run is authorized. The pilot cap must describe application invocation reservations,
+not proven provider requests or billing. Exact workflow elapsed remains unmeasured.
+Main application remains tested G3D-P3 at495c7d3; this review publication changes docs
+only. No backend/browser gates, provider/auth calls, data setup, spending, push or
+deployment. Preserve the candidate, accepted worktrees, prior evidence and Cursor edits.
+
 ## November 6: G3D-P3 accepted and locally integrated
 
 **Tested integration 495c7d33424054d27d68d08004191d4be37adaf9.** The explicit three-role operator helper at candidate

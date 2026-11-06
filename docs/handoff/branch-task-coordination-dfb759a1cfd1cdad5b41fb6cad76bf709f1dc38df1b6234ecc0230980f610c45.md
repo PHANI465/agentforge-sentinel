@@ -10,6 +10,10 @@
 
 ## Next action
 
+G3D-P4 plan3366edf needs R44/R45 correction before P4a tooling is assigned. Read
+[review](../reviews/G3D-P4-3366edf.md) and [Claude correction](../prompts/CLAUDE_G3DP4_PLAN_REVIEW_FIXES.md).
+Document-only review: no new application check, provider, auth or case run.
+
 Plan measured agent/security evaluation under the frozen protocol, with development
 pilots kept separate from protected final cases. No live/final-case execution is assigned.
 Then deepen financial analyst capabilities and public demonstration/operations.

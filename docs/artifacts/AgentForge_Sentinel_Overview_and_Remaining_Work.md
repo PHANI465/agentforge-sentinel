@@ -1,5 +1,9 @@
 # AgentForge Sentinel: project overview and remaining work
 
+G3D-P4 proposal3366edf is [changes requested, R44/R45](../reviews/G3D-P4-3366edf.md).
+Revise timing definitions and preserve unacceptable outcomes before assigning tooling.
+No live or final-case evaluation is authorized; the G3D-P3 application below is unchanged.
+
 Current checkpoint, November6: **G3D-P3 accepted and integrated at tested495c7d3.**
 Independent Windows/native backend gates pass666+one skip each, six commands and same-run
 JUnit/HTTP/package/ML. The local helper supports explicit three-role/adapter selection,
