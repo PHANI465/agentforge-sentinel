@@ -1,5 +1,30 @@
 # AgentForge Sentinel project checkpoint
 
+## November 6: G3D-P3 accepted and locally integrated
+
+**Tested integration 495c7d33424054d27d68d08004191d4be37adaf9.** The explicit three-role operator helper at candidate
+2cdb3b73975511da4bd4551ee828505953c621f0 is independently accepted. Defaults stay single deterministic/rule; the
+three-role adapter defaults deterministic regardless of inherited settings. Effective
+adapter/live-model settings are recorded for restart; ambiguous restart records and
+different running configurations are refused. Human approval/replay and process
+ownership protections remain. [Independent review](reviews/G3D-P3-2cdb3b7.md).
+
+Independent review passes32 helper/startup/rollback tests plus nine configuration probes.
+Exact-clean integration Windows then native Ubuntu gates pass **666 tests plus one
+allowed skip each**, six commands, same-run667-case JUnit/skip validation, frozen HTTP,
+package/inference and read-only ML. [Release evidence](releases/G3D-P3-main-integration-2026-11-06.md).
+No browser/frontend rerun for helper/tests/docs alone; prior UI133/browser19+10 remain
+dated P1 evidence. Publication adds documents only beyond this tested integration;
+no extra full strict publication-HEAD pass is claimed. The2700-second command cap,
+individual deadlines, skip policy and frozen assets are unchanged.
+
+**Next:** measured agent/security evaluation planning under the frozen protocol, then
+deeper financial analytics and public demonstration/operations. No live or final-case
+evaluation is assigned by this integration. Live helper modes are configuration-tested
+only. Normal Ubuntu operator start/smoke/restart/down is exercised; POSIX orphan and
+PID-check-to-signal limits remain. No new spending, remote/push or deployment. Preserve
+accepted worktrees, original failures and Cursor's seven edits. Earlier entries are history.
+
 ## November 6: G3D-P3 operator-helper assignment dispatched
 
 The owner asked to start the next milestone. [Claude's scoped assignment](prompts/CLAUDE_G3D_THREE_ROLE_OPERATOR.md)

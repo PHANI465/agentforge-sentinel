@@ -22,7 +22,7 @@ Ten pages explaining the verified application, fictional fraud examples, archite
 
 ## Current session
 
-- [November 6 G3D-P2 accepted, independently verified and locally integrated](AgentForge_Sentinel_Session_2026-11-06.md) — current checkpoint.
+- [November 6 G3D-P3 operator integration, with G3D-P2 backup proof retained](AgentForge_Sentinel_Session_2026-11-06.md) — current checkpoint.
 
 - [November5 verified G3D-P1 integration and next workflow-backup task](AgentForge_Sentinel_Session_2026-11-05.md) — historical checkpoint.
 

@@ -1,5 +1,9 @@
 # G3D-P3: explicit three-role selection in the local operator helper
 
+Delivered at2cdb3b7, independently accepted and integrated at tested495c7d3.
+[Acceptance](../reviews/G3D-P3-2cdb3b7.md); [release](../releases/G3D-P3-main-integration-2026-11-06.md).
+The original assignment below is historical; do not start another implementation.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. This small configuration slice
 crosses subprocess environment, persisted restart settings, case pins and process ownership.
 These settings select the coding assistant; all Sentinel verification stays deterministic.

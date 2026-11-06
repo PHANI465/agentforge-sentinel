@@ -4,13 +4,15 @@ A local fraud investigation workbench using synthetic financial transactions, ru
 
 The consolidated Windows-local codebase includes the React/TypeScript analyst UI, FastAPI/PostgreSQL API, reproducible scikit-learn baseline and model reports, persisted approval/replay workflow, operator backup/rollback tooling and backend CI configuration. The tested G3C foundation (`f788698`) includes: the trace API/UI and monotonic workflow deadlines on the accepted I03 and native Linux backend foundation. See the [G3C foundation](docs/releases/G3C-main-integration-2026-11-02.md) for exact platform verification records. GitHub Actions, macOS, Linux browser and hosted/public access are not verified. Model scores are uncalibrated rankings from a synthetic benchmark.
 
-G3D-P2 populated-workflow backup proof is independently accepted and integrated at
-`5a1776b`: Windows then native Ubuntu backend gates pass 649+one allowed skip, six commands,
-same-run JUnit/HTTP/package/ML. Production code is unchanged. Browser/frontend checks were
-not rerun; P1's UI133/browser19+10 are prior results. The approved 45-minute cap applies
-only to verification commands; individual deadlines/skips remain unchanged. See the
+G3D-P3 three-role operator selection is independently accepted and integrated at
+`495c7d3`: Windows then native Ubuntu backend gates pass666+one allowed skip, six commands,
+same-run JUnit/HTTP/package/ML. The helper preserves explicit adapter/model settings across
+restart, with deterministic defaults and human approval/replay boundaries. G3D-P2's
+populated workflow backup proof remains integrated. No frontend/browser rerun for this
+helper/tests/docs change; prior UI133/browser19+10 stay dated. The45-minute cap applies
+only to verification commands, not application deadlines. See the
 [current checkpoint](docs/artifacts/AgentForge_Sentinel_Session_2026-11-06.md) and
-[release record](docs/releases/G3D-P2-main-integration-2026-11-06.md).
+[release record](docs/releases/G3D-P3-main-integration-2026-11-06.md).
 Study the [complete project guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md).
 
 ## Run locally
@@ -38,7 +40,7 @@ Model mode is explicit (`up --scorer model`) and requires operator-provisioned a
 
 ## Verify and understand the project
 
-- [Current local release](docs/releases/G3C-main-integration-2026-11-02.md): integrated references, verification commands and limits.
+- [Current local release](docs/releases/G3D-P3-main-integration-2026-11-06.md): integrated references, verification commands and limits.
 - [Current status](docs/STATUS.md), [task queue](docs/TASK_QUEUE.md) and [roadmap](docs/PROJECT_PLAN.md): accepted scope and remaining milestones.
 - [Project artifacts](docs/artifacts/README.md): saved HTML, Word and Markdown checkpoints.
 - [Setup and checks](SETUP.md): locked dev+ml, strict/package/contract checks and real browser/API/Postgres tests.

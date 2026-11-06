@@ -1,18 +1,17 @@
 # AgentForge Sentinel: project overview and remaining work
 
-Current checkpoint, November 6: **G3D-P2 accepted and integrated at tested 5a1776b.**
-Independent Windows/native backend gates pass 649+one skip each, six commands and same-run
-JUnit/HTTP/package/ML. Populated workflow history survives backup/restore with full content,
-authority/scope and approval/replay checks. Production code is unchanged. Frontend/browser
-checks were not rerun; P1's UI133/browser19+10 remain prior evidence.
+Current checkpoint, November6: **G3D-P3 accepted and integrated at tested495c7d3.**
+Independent Windows/native backend gates pass666+one skip each, six commands and same-run
+JUnit/HTTP/package/ML. The local helper supports explicit three-role/adapter selection,
+recorded restart settings and safe defaults. Live configuration is not live execution.
+G3D-P2 populated workflow backup/restore remains proven; production engine/model/UI bytes
+are unchanged by P3. No frontend/browser rerun; prior P1 UI133/browser19+10 stay dated.
 [Current checkpoint](AgentForge_Sentinel_Session_2026-11-06.md).
 
-Next: [G3D-P3 three-role operator helper](../prompts/CLAUDE_G3D_THREE_ROLE_OPERATOR.md),
-now assigned to Claude in a new isolated worktree, with Opus 5.5 / High. Implementation
-has not started. Then measured agent evaluation, deeper analytics and public operations.
-No live evaluation is assigned.
-The approved 2700-second verification-command cap and individual deadlines are unchanged.
-Older dated release descriptions below remain historical context.
+Next: measured agent/security evaluation planning, then deeper financial analytics and
+public demonstration/operations. No live or final-case evaluation is assigned. Keep the
+approved2700-second verification cap and every individual deadline/skip. Earlier dated
+summaries below are historical; the current checkpoint governs completion status.
 
 **Start studying here:** [Complete20-chapter guide in Word](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.docx) or
 [the same guide in Markdown](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md). It covers the complete pipeline, architecture,
@@ -103,16 +102,15 @@ case workflow. No public personal-subscription bridge or owner-key fallback is p
 
 ## What you should do next
 
-1. Assign the separate three-role local operator helper from current main, using a new
-   isolated worktree and preserving the accepted defaults, authority and recovery checks.
-2. After that task, explicitly scope measured G3D comparisons under the frozen protocol
-   and human rubric; no live or final-case evaluation is assigned by this checkpoint.
+1. Scope measured G3D comparisons under the frozen protocol and human rubric. The
+   three-role operator helper is now integrated; do not reassign it.
+2. Distinguish development pilots from protected final-case evaluation, and retain
+   honest attempt/failure/usage accounting. No live run is assigned by this checkpoint.
 3. Deepen the analyst workspace and prepare public demonstration/operations gates.
    Preserve frozen contracts/model/evaluation bytes and accepted/Cursor worktrees.
 
-The local_stack.py convenience command still needs a tested three-role choice; API
-configuration already supports it. The evaluator authority split and populated-workflow
-backup proof are now integrated and independently verified. Earlier intermittent failures
+The local_stack.py three-role choice, recorded restart settings, evaluator authority
+split and populated-workflow backup proof are now integrated and independently verified. Earlier intermittent failures
 remain preserved, with no unproven root-cause claim. This does not establish live quality,
 fresh-cluster role provisioning or production capacity.
 

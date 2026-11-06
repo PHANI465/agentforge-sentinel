@@ -1,31 +1,25 @@
 # Handoff: task/coordination
 
-- Updated: November 6, 2026, America/Phoenix.
-- State: G3D-P2 accepted and locally integrated; R41-R43 remain closed.
-- Code reference tested before this note: 5a1776be20a85124705a893c81b142384e31d67b.
-- Evidence: independent Windows then native full gates 649+one allowed skip each,
-  six commands, same-run 650-case JUnit, HTTP/package/ML. Candidate focused 92 and four
-  independent controls pass; Claude's candidate results are attributed separately.
-- Publication changes documents only beyond the tested integration; final publication
-  document/source/identity/clean-tree checks follow the containing commit. No additional
-  full strict publication-HEAD or main-checkout pass is claimed.
-- Changed: review/release, current instructions, STATUS/TASK_QUEUE/PROJECT_CHECKPOINT,
-  README, session artifact/index/overview and integration note. Runtime/tests unchanged
-  beyond accepted candidate 61cc4b4.
+- Updated: November6,2026, America/Phoenix.
+- State: G3D-P3 accepted and locally integrated; R41-R43 remain closed.
+- Tested integration: 495c7d33424054d27d68d08004191d4be37adaf9; candidate 2cdb3b73975511da4bd4551ee828505953c621f0.
+- Independent review:32 focused plus nine config probes; Ruff. Independent integrated
+  Windows then native gates666+one skip each, six commands/same-run JUnit/HTTP/package/ML.
+- Publication edits docs only beyond the tested integration; no extra exact-HEAD strict
+  pass. No new frontend/browser run for helper/tests/docs. Author evidence stays separate.
 
 ## Next action
 
-G3D-P3 is dispatched via [the scoped Claude prompt](../prompts/CLAUDE_G3D_THREE_ROLE_OPERATOR.md)
-from current published main, in its own worktree. Implementation has not started.
-This publication edits coordination/prompt/checkpoint docs only; source/tests/scripts
-remain byte-identical to bd91ca5 and tested 5a1776b. No new strict pass is claimed.
-Codex reviews the delivered helper; no live provider/final-case evaluation is assigned. See
-../releases/G3D-P2-main-integration-2026-11-06.md and ../artifacts/AgentForge_Sentinel_Session_2026-11-06.md.
+Plan measured agent/security evaluation under the frozen protocol, with development
+pilots kept separate from protected final cases. No live/final-case execution is assigned.
+Then deepen financial analyst capabilities and public demonstration/operations.
+See [release](../releases/G3D-P3-main-integration-2026-11-06.md) and
+[checkpoint](../artifacts/AgentForge_Sentinel_Session_2026-11-06.md).
 
-## Preserved and limits
+## Preserved
 
-2700-second verification-command cap; individual deadlines/assertions/skips unchanged.
-Old failures, accepted components and Cursor's seven exact edits preserved. No owned
-test database/API process remains on Windows/native; unrelated services remain. No browser rerun,
-fresh-cluster role provisioning, macOS, real CI, hosting or capacity result. No live
-provider, final cases, paid usage, remote/push or deployment.
+2700-second checker cap, all individual deadlines/skips, frozen contracts/models,
+accepted worktrees, old failure reports and Cursor's seven exact edits. No test-owned
+PG/API remains; unrelated services left alone. Ordinary Ubuntu operator lifecycle is
+tested; POSIX orphan/check-to-signal limits persist. No live provider/final cases,
+paid usage, remote/push/deployment. Linux browsers/macOS/real CI/hosting/capacity unverified.
