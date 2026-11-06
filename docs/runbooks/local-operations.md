@@ -12,6 +12,7 @@ Audience: the owner or an operator running Sentinel on a laptop. Everything here
 
 ```powershell
 uv run --locked python scripts/local_stack.py up [--scorer rule|model] [--database NAME]
+    [--investigator deterministic|claude-cli|three-role] [--agent-adapter deterministic|claude-cli]
 uv run --locked python scripts/local_stack.py status   # exit 0 only if our DB and our API are both up
 uv run --locked python scripts/local_stack.py down     # stop our API, then our DB; data is kept
 ```
@@ -20,7 +21,7 @@ Global options go before the subcommand: `--port` (default 8000), `--db-port` (d
 
 - **State.** Everything lives in one owned directory, git-ignored by default:
   - an ownership marker (`.sentinel-local-stack`, with a random owner value);
-  - `state.json`, holding the recorded process identities, ports, scorer and database name, but no secrets or connection strings;
+  - `state.json`, holding the recorded process identities, ports, scorer, database name and the effective investigator configuration (investigator, three-role adapter, and the Claude model name for a live configuration), but no secrets or connection strings;
   - `pg/data`, `api.log`, and `session.json` (an 8-hour dev bearer token, never printed, restricted to the user where the OS supports it).
 
   A directory without a matching marker is never adopted; `down` and `status` refuse it. Delete the directory to start from scratch, which destroys local data.
@@ -29,7 +30,19 @@ Global options go before the subcommand: `--port` (default 8000), `--db-port` (d
 - **Scorer.** It is explicit: `rule` by default; `--scorer model` serves the registered `hgb_balanced@p1`. Model mode needs account profiles (`python -m sentinel.cli provision-accounts`, as the owner); otherwise ingestion returns 422 `account_profile_missing`. `smoke` runs only in rule mode.
 - **Code served.** The API process runs this checkout's code (`PYTHONPATH` = this checkout's `src` and root), not some other installed copy.
 - **Auth.** The local cluster uses trust authentication on loopback. It is a development convenience and never a deployment configuration.
-- **Investigator.** `up --investigator claude-cli` uses the owner's local Claude login (decision 0005 preflight). Never use it for staging or shared environments.
+- **Investigator.** The deterministic single investigator is the default.
+  - `up --investigator claude-cli` uses the owner's local Claude login (decision 0005 preflight). Never use it for staging or shared environments.
+  - `up --investigator three-role` runs the G3B coordinator: evidence analyst, then investigator, then reviewer.
+    - Its role adapter is **deterministic** unless you pass `--agent-adapter claude-cli` (the local subscription; never paid, no fallback).
+    - Inherited `SENTINEL_AGENT_ADAPTER` and `SENTINEL_INVESTIGATOR` do not select a mode. Deterministic modes also ignore `SENTINEL_CLAUDE_MODEL`.
+    - For an explicitly selected live mode, the helper reads `SENTINEL_CLAUDE_MODEL` once (default `sonnet`), records that effective model and passes it explicitly. Restart uses the record rather than a later environment value.
+    - `--agent-adapter` with a single investigator is refused before any state, database or API is created.
+  - Launch and `status` output name the effective investigator, adapter and live model.
+- **Restart consistency (G3D-P3).**
+  - `smoke --restart-api` restarts with the **recorded** configuration, never the environment, so new cases pin the same agent and tool config as earlier ones.
+  - A record that does not state its configuration is refused for restart before any work. That covers a three-role record without an adapter, and a pre-P3 claude-cli record without its model.
+  - A pre-P3 deterministic record is still accepted. `status` and `down` never need the new fields to show or stop an owned process.
+- **Repeating `up`.** Against our running API, an identical request is idempotent ("already running"). A different investigator, adapter, scorer, database or port is refused with the process and its record untouched. Change modes with `down`, then `up`.
 
 ## Ownership and failure behavior (R24)
 
@@ -47,7 +60,7 @@ Global options go before the subcommand: `--port` (default 8000), `--db-port` (d
   - *Unverifiable launch.* If the identity cannot be established (the inspection fails, or the launcher is already gone), `up` exits 1 and keeps an **unresolved launch** record, killing nothing. While it is unresolved, `down` and `restore` refuse and the database is not stopped. It resolves only when that PID is gone, no descendant survives (Windows keeps an orphan's parent PID) and its port is free. Stop a surviving process yourself, then rerun `down`.
   - *Readiness.* Success requires an actual healthy `/healthz` response, within 60 s, from our own process tree serving the port. A bound port alone is not readiness. On timeout or early exit, `up` stops only the verified API it started, confirms that, clears the record and exits 1. If that cleanup cannot be confirmed, it keeps the recovery record and asks for `down`.
   - *Launcher exited.* A verified launcher that exited while a descendant survives is reported as `gone-but-child-alive`, and `down` refuses.
-- **Platforms.** Windows is implemented and tested. The POSIX path (`/proc`, `killpg`) is implemented to fail closed but **untested**.
+- **Platforms.** Windows is tested. Native Ubuntu G3D-P3 tests exercise ordinary startup, status, deterministic smoke, API restart and shutdown using `/proc` and `killpg`. This does not prove every POSIX failure path; the surviving-orphan and PID-check-to-signal limitations remain. macOS is not tested.
 
 ## Smoke test (synthetic data, rule mode)
 
@@ -57,6 +70,23 @@ uv run --locked python scripts/local_stack.py smoke --restart-api   # verified s
 ```
 
 Expected: `simulated_hold` or `escalate`, case `awaiting_approval` (revision 3); then action `succeeded`, mode `simulated`, `retry_replayed=True`, `same_action=True`, six audit events, case `closed` (revision 4).
+
+The smoke output lists every role run (`runs=role:status,...`), names the run that produced the finding (not simply the last run), and summarizes the trace (`trace workflows=... legacy_runs=... status=... disposition=...`). Before approving, it prints the case's run, approval and action counts (`before approval runs=N approvals=0 actions=0`).
+
+With `up --investigator three-role`, a deterministic run shows:
+- `runs=evidence_analyst:completed,investigator:completed,reviewer:completed`;
+- `trace workflows=1 legacy_runs=0 status=completed disposition=recommend`;
+- `before approval runs=3 approvals=0 actions=0`.
+
+The approval and execution are an automated operator smoke through the real API's human-authorization routes, not a person clicking the UI.
+
+`tests/test_local_stack_three_role.py` proves this with real stacks on free ports. The inherited environment selects claude-cli and another model on purpose, and the Claude executable points at a nonexistent path, so no provider can be reached. The test checks:
+- the persisted workflow, roles, ordered steps and pins;
+- that the intent is server-built;
+- that the trace is unchanged across `smoke --restart-api`;
+- that the first case executes once without reinvestigation;
+- that a case created after the restart pins the same config;
+- that `up` is idempotent, or refused on a mismatch.
 
 ## Upgrade (new migrations)
 

@@ -141,7 +141,8 @@ def launch_as(monkeypatch, process, after=None):
 
 
 def start(stack, port):
-    return local_stack.start_api(stack, stack.load(), port, "rule", "deterministic", "sentinel")
+    return local_stack.start_api(stack, stack.load(), port, "rule",
+                                 local_stack.requested_config("deterministic", None), "sentinel")
 
 
 def down(stack):

@@ -5,6 +5,7 @@ marker, a private state.json with the recorded process identities, the cluster d
 API log and the private dev session token. Tokens and connection strings are never printed.
 
     uv run --locked python scripts/local_stack.py up [--scorer rule|model] [--database NAME]
+        [--investigator deterministic|claude-cli|three-role] [--agent-adapter deterministic|claude-cli]
     uv run --locked python scripts/local_stack.py status
     uv run --locked python scripts/local_stack.py smoke [--restart-api]       # rule mode
     uv run --locked python scripts/local_stack.py backup [--out FILE]
@@ -20,6 +21,11 @@ reported only after the process is gone and the port is closed.
 Authority: migrations, runtime grants, sessions, profiles and backups use the cluster
 owner; the API connects as the least-privilege runtime role `sentinel_local_runtime`. The
 scorer is explicit (`rule` by default). The deterministic investigator is the default.
+
+Investigator (G3D-P3): `three-role` runs the coordinator with deterministic role adapters
+unless `--agent-adapter claude-cli` is given; an inherited SENTINEL_AGENT_ADAPTER is never
+used. The effective configuration is recorded and passed explicitly to the API, and a
+restart reuses the record (never the ambient environment), so case pins stay valid.
 """
 from __future__ import annotations
 
@@ -47,6 +53,11 @@ SCORERS = {"rule": "rule", "model": "model:hgb_balanced@p1"}
 # Deliberate local analyst capabilities: read_case also covers GET /v1/scoring and
 # /v1/model-results/{id}; there is no admin capability.
 CAPABILITIES = ("ingest_transaction", "read_case", "approve_action", "execute_simulated_action")
+INVESTIGATORS = ("deterministic", "claude-cli", "three-role")
+AGENT_ADAPTERS = ("deterministic", "claude-cli")
+# Ambient settings that would otherwise reach the API and select a configuration the operator
+# did not choose; the helper sets each one explicitly instead.
+CONFIG_ENV = ("SENTINEL_INVESTIGATOR", "SENTINEL_AGENT_ADAPTER", "SENTINEL_CLAUDE_MODEL")
 READY_SECONDS = 60
 STOP_SECONDS = 20
 
@@ -382,6 +393,72 @@ def stop_database(stack: Stack, data: dict) -> None:
         raise StackError("database stop could not be verified; state kept, retry down")
 
 
+# ---- investigator configuration -------------------------------------------------------------
+
+def requested_config(investigator: str, adapter: str | None) -> dict:
+    """The effective investigator configuration of an `up` request. The adapter applies only
+    to three-role (deterministic unless chosen explicitly). A live configuration keeps the
+    model the API would otherwise read (SENTINEL_CLAUDE_MODEL, default sonnet) so a restart
+    pins the same config."""
+    if investigator not in INVESTIGATORS:
+        raise StackError(f"unknown investigator {investigator}")
+    if investigator != "three-role":
+        if adapter is not None:
+            raise StackError("--agent-adapter applies only to --investigator three-role")
+    else:
+        adapter = adapter or "deterministic"
+        if adapter not in AGENT_ADAPTERS:
+            raise StackError(f"unknown agent adapter {adapter}")
+    live = investigator == "claude-cli" or adapter == "claude-cli"
+    model = (os.environ.get("SENTINEL_CLAUDE_MODEL") or "sonnet") if live else None
+    return {"investigator": investigator, "adapter": adapter, "claude_model": model}
+
+
+def recorded_config(record: dict) -> dict:
+    """The configuration a restart must reproduce, from the API record only. A record from
+    before G3D-P3 is accepted for deterministic; one that leaves a three-role adapter or a
+    live model unstated is refused rather than guessed."""
+    investigator, adapter = record.get("investigator"), record.get("adapter")
+    model = record.get("claude_model")
+    if investigator not in INVESTIGATORS:
+        raise StackError("the API record has no usable investigator; restart refused "
+                         "(down, then up)")
+    if investigator == "three-role" and adapter not in AGENT_ADAPTERS:
+        raise StackError("the three-role API record does not state its agent adapter; restart "
+                         "refused (down, then up --agent-adapter ...)")
+    if investigator != "three-role" and adapter is not None:
+        raise StackError("the API record is inconsistent (adapter without three-role); "
+                         "restart refused (down, then up)")
+    live = investigator == "claude-cli" or adapter == "claude-cli"
+    if live != bool(model):
+        raise StackError("the API record does not state the live model it was started with; "
+                         "restart refused (down, then up)")
+    return {"investigator": investigator, "adapter": adapter, "claude_model": model}
+
+
+def describe(config: dict) -> str:
+    text = config["investigator"]
+    if config["adapter"]:
+        text += f" (adapter {config['adapter']})"
+    if config["claude_model"]:
+        text += f" (model {config['claude_model']})"
+    return text
+
+
+def child_environment(url: str, scorer: str, config: dict) -> dict:
+    env = {k: v for k, v in os.environ.items()
+           if k not in CONFIG_ENV and k != "SENTINEL_TEST_DATABASE_URL"}
+    env.update({"SENTINEL_DATABASE_URL": url, "SENTINEL_SCORER": SCORERS[scorer],
+                "SENTINEL_INVESTIGATOR": config["investigator"], "SENTINEL_MODE": "local",
+                # Serve this checkout's code, never another installed copy.
+                "PYTHONPATH": os.pathsep.join([str(ROOT / "src"), str(ROOT)])})
+    if config["adapter"]:
+        env["SENTINEL_AGENT_ADAPTER"] = config["adapter"]
+    if config["claude_model"]:
+        env["SENTINEL_CLAUDE_MODEL"] = config["claude_model"]
+    return env
+
+
 # ---- API -----------------------------------------------------------------------------------
 
 def tree_alive(pid: int) -> bool:
@@ -448,7 +525,7 @@ def stop_api(stack: Stack, data: dict) -> str:
     return "api stopped"
 
 
-def start_api(stack: Stack, data: dict, port: int, scorer: str, investigator: str,
+def start_api(stack: Stack, data: dict, port: int, scorer: str, config: dict,
               database: str) -> str:
     current = api_state(data)
     if current == "owned":
@@ -458,19 +535,14 @@ def start_api(stack: Stack, data: dict, port: int, scorer: str, investigator: st
     if port_state(port, None) != "free":
         raise StackError(f"port {port} is in use by another process; refused")
     from psycopg.conninfo import make_conninfo
-    env = {**os.environ, "SENTINEL_DATABASE_URL": make_conninfo(
-               owner_url(stack, data, database), user=RUNTIME_ROLE),
-           "SENTINEL_SCORER": SCORERS[scorer], "SENTINEL_INVESTIGATOR": investigator,
-           "SENTINEL_MODE": "local",
-           # Serve this checkout's code, never another installed copy.
-           "PYTHONPATH": os.pathsep.join([str(ROOT / "src"), str(ROOT)])}
-    env.pop("SENTINEL_TEST_DATABASE_URL", None)
+    env = child_environment(make_conninfo(owner_url(stack, data, database), user=RUNTIME_ROLE),
+                            scorer, config)
     flags = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" \
         else {"start_new_session": True}
     # Recovery authority exists before the launch and before any inspection that can fail
     # (R28A): an unresolved launch blocks `down` from stopping the database.
     data["api"] = {"pending": True, "pid": None, "port": port, "scorer": scorer,
-                   "investigator": investigator, "database": database}
+                   **config, "database": database}
     stack.save(data)
     try:
         with open(stack.dir / "api.log", "ab") as log:
@@ -508,7 +580,8 @@ def start_api(stack: Stack, data: dict, port: int, scorer: str, investigator: st
         except StackError:
             data["api"]["listener"] = None
         stack.save(data)
-        return f"API up on port {port} (scorer {scorer}, database {database})"
+        return (f"API up on port {port} (scorer {scorer}, investigator {describe(config)}, "
+                f"database {database})")
     try:
         outcome = stop_api(stack, data)
     except StackError as error:
@@ -549,10 +622,13 @@ def up(stack: Stack, args) -> str:
 
     from sentinel import db
     from sentinel.db import roles
+    config = requested_config(args.investigator, args.agent_adapter)  # before any state
     data = stack.load(create=True)
     current = api_state(data)
     if current not in ("down", "owned"):
         raise StackError(f"recorded API is {current}; refused")
+    if current == "owned":
+        running_matches(data, args, config)
     if current == "down" and port_state(args.port, None) != "free":
         raise StackError(f"port {args.port} is in use by another process; refused")
     start_database(stack, data, args.db_port)
@@ -572,9 +648,28 @@ def up(stack: Stack, args) -> str:
         raise StackError(f"runtime role not granted: {error}") from None
     ensure_session(stack, url)
     lines = [f"migrations applied: {', '.join(applied) or 'none pending'}"]
-    lines.append(start_api(stack, data, args.port, args.scorer, args.investigator, database))
+    lines.append(start_api(stack, data, args.port, args.scorer, config, database))
     lines.append(f"token in {stack.dir / 'session.json'} (not printed)")
     return "\n".join(lines)
+
+
+def running_matches(data: dict, args, config: dict) -> None:
+    """`up` against the running owned API changes nothing: an equal request is idempotent,
+    any difference is refused with the process and its record left alone."""
+    record = data["api"]
+    try:
+        running = describe(recorded_config(record))
+    except StackError:
+        running = "unstated"
+    wanted = {"port": args.port, "database port": args.db_port, "scorer": args.scorer,
+              "database": args.database, "investigator": describe(config)}
+    have = {"port": record.get("port"), "database port": data["database"].get("port"),
+            "scorer": record.get("scorer"), "database": record.get("database"),
+            "investigator": running}
+    changed = [f"{k} {have[k]} -> {wanted[k]}" for k in wanted if wanted[k] != have[k]]
+    if changed:
+        raise StackError("the API is already running with a different configuration ("
+                         + "; ".join(changed) + "); nothing was changed (down, then up)")
 
 
 def down(stack: Stack, args) -> str:
@@ -599,9 +694,13 @@ def status(stack: Stack, args) -> str:
     data = stack.load()
     api, database = api_state(data), database_state(stack, data)
     record = data.get("api") or {}
+    try:
+        investigator = describe(recorded_config(record))
+    except StackError:
+        investigator = f"{record.get('investigator')} (configuration unstated)"
     text = (f"database: {database}; api: {api}"
-            + (f" (port {record['port']}, scorer {record['scorer']}, database "
-               f"{record['database']})" if api == "owned" else ""))
+            + (f" (port {record['port']}, scorer {record['scorer']}, investigator "
+               f"{investigator}, database {record['database']})" if api == "owned" else ""))
     if api != "owned" or database != "owned":
         raise StackError(text)
     return text
@@ -612,6 +711,7 @@ def smoke(stack: Stack, args) -> str:
     record = data.get("api") or {}
     if api_state(data) != "owned" or record.get("scorer") != "rule":
         raise StackError("smoke needs an owned API in rule mode (up --scorer rule)")
+    config = recorded_config(record) if args.restart_api else None  # refuse before any work
     token = json.loads((stack.dir / "session.json").read_text())["token"]
     base = f"http://127.0.0.1:{record['port']}"
     env = {**os.environ, "SENTINEL_TOKEN": token}
@@ -622,8 +722,8 @@ def smoke(stack: Stack, args) -> str:
     lines = [first.strip()]
     if args.restart_api:
         lines.append(stop_api(stack, data))
-        lines.append(start_api(stack, data, record["port"], record["scorer"],
-                               record["investigator"], record["database"]))
+        lines.append(start_api(stack, data, record["port"], record["scorer"], config,
+                               record["database"]))
     lines.append(subprocess.run([*script, "execute", case_id], env=env, capture_output=True,
                                 text=True, check=True).stdout.strip())
     return "\n".join(lines)
@@ -690,8 +790,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
     sub = parser.add_subparsers(dest="command", required=True)
     up_cmd = sub.add_parser("up")
-    up_cmd.add_argument("--investigator", choices=("deterministic", "claude-cli"),
-                        default="deterministic")
+    up_cmd.add_argument("--investigator", choices=INVESTIGATORS, default="deterministic")
+    up_cmd.add_argument("--agent-adapter", choices=AGENT_ADAPTERS, default=None,
+                        help="three-role only; deterministic unless given (never inherited)")
     up_cmd.add_argument("--scorer", choices=sorted(SCORERS), default="rule")
     up_cmd.add_argument("--database", default=DEFAULT_DATABASE)
     sub.add_parser("down")
