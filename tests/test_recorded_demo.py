@@ -59,13 +59,173 @@ def test_tracked_fixture_provenance_is_honest(tracked):
     assert re.fullmatch(r"[0-9a-f]{40}", prov["generator_commit"])
 
 
-def test_generator_unchanged_since_the_capture_commit(tracked):
-    commit = tracked[0]["provenance"]["generator_commit"]
-    if shutil.which("git") is None or demo._git("cat-file", "-e", commit).returncode != 0:
-        pytest.skip("capture commit not available in this checkout")
-    changed = demo._git("diff", "--name-only", commit, "HEAD", "--", "src",
-                        "scripts/build_recorded_demo.py").stdout.split()
-    assert changed == [], "re-run the capture: generator or application changed"
+# ---- capture freshness: recorded content identity vs the actual checkout bytes ------------
+# History-independent (R48): no Git call, no capture-commit lookup and no skip. The recorded
+# generator_commit stays as provenance only; freshness is the bytes of this checkout.
+
+def _no_git(monkeypatch):
+    """Simulate a checkout without Git, or without the capture commit's history."""
+    def missing(*args):
+        return subprocess.CompletedProcess(["git", *args], 128, "", "fatal: bad object")
+    real_run = subprocess.run
+
+    def no_git_run(cmd, *a, **k):
+        if cmd and Path(str(cmd[0])).name.lower().startswith("git"):
+            raise FileNotFoundError("git is not available in this simulated checkout")
+        return real_run(cmd, *a, **k)
+    monkeypatch.setattr(demo, "_git", missing)
+    monkeypatch.setattr(demo.subprocess, "run", no_git_run)
+    monkeypatch.setattr(demo.shutil, "which", lambda *a, **k: None)
+
+
+def test_capture_content_identity_matches_this_checkout(tracked):
+    identity = tracked[0]["provenance"]["content_identity"]
+    assert identity["scope"] == list(demo.CONTENT_SCOPE)
+    assert identity["canonicalization"] == demo.CANONICALIZATION
+    assert "scripts/build_recorded_demo.py" in identity["files"]
+    assert any(name.startswith("src/sentinel/") for name in identity["files"])
+    assert demo.freshness_problems(tracked[0]) == [], \
+        "re-run the capture: generator or application content changed"
+
+
+def test_freshness_needs_no_git_history(tracked, monkeypatch):
+    _no_git(monkeypatch)
+    assert demo.freshness_problems(tracked[0]) == []
+    assert demo.content_identity() == tracked[0]["provenance"]["content_identity"]
+
+
+def _copy_inputs(dest: Path) -> Path:
+    (dest / "scripts").mkdir(parents=True)
+    shutil.copy2(demo.ROOT / "scripts" / "build_recorded_demo.py", dest / "scripts")
+    shutil.copytree(demo.ROOT / "src", dest / "src",
+                    ignore=shutil.ignore_patterns("__pycache__", "*.egg-info", "*.pyc"))
+    return dest
+
+
+def test_tracked_identity_detects_changed_bytes_in_a_copied_checkout(tracked, tmp_path,
+                                                                     monkeypatch):
+    _no_git(monkeypatch)
+    root = _copy_inputs(tmp_path / "checkout")
+    assert demo.freshness_problems(tracked[0], root=root) == []
+    # a CRLF checkout of the same content (Windows autocrlf) has the same identity
+    api = root / "src" / "sentinel" / "api.py"
+    original = api.read_bytes()
+    api.write_bytes(original.replace(b"\n", b"\r\n"))
+    assert demo.freshness_problems(tracked[0], root=root) == []
+    # changed application input
+    api.write_bytes(original + b"# changed\n")
+    problems = demo.freshness_problems(tracked[0], root=root)
+    assert any("src/sentinel/api.py" in p and "changed" in p for p in problems), problems
+    api.write_bytes(original)
+    assert demo.freshness_problems(tracked[0], root=root) == []
+    # changed generator
+    gen = root / "scripts" / "build_recorded_demo.py"
+    gen.write_bytes(gen.read_bytes().replace(b"TESTED_APPLICATION", b"TESTED_APPLICATIOM", 1))
+    problems = demo.freshness_problems(tracked[0], root=root)
+    assert any("scripts/build_recorded_demo.py" in p for p in problems), problems
+
+
+def _mini_root(tmp_path: Path) -> Path:
+    root = tmp_path / "mini"
+    (root / "scripts").mkdir(parents=True)
+    (root / "src" / "pkg" / "__pycache__").mkdir(parents=True)
+    (root / "src" / "pkg.egg-info").mkdir(parents=True)
+    (root / "scripts" / "build_recorded_demo.py").write_bytes(b"GEN = 1\n")
+    (root / "src" / "pkg" / "a.py").write_bytes(b"A = 1\n")
+    (root / "src" / "pkg" / "schema.sql").write_bytes(b"select 1;\n")
+    (root / "src" / "pkg" / "__pycache__" / "a.cpython-312.pyc").write_bytes(b"\0junk")
+    (root / "src" / "pkg.egg-info" / "PKG-INFO").write_bytes(b"Name: pkg\n")
+    return root
+
+
+def _fixture_for(root: Path) -> dict:
+    return {"provenance": {"generator_commit": "0" * 40,
+                           "content_identity": demo.content_identity(root)}}
+
+
+def test_unchanged_content_passes_and_build_artifacts_are_ignored(tmp_path, monkeypatch):
+    _no_git(monkeypatch)
+    root = _mini_root(tmp_path)
+    fx = _fixture_for(root)
+    assert sorted(fx["provenance"]["content_identity"]["files"]) == [
+        "scripts/build_recorded_demo.py", "src/pkg/a.py", "src/pkg/schema.sql"]
+    assert demo.freshness_problems(fx, root=root) == []
+    (root / "src" / "pkg" / "__pycache__" / "a.cpython-312.pyc").write_bytes(b"other")
+    (root / "src" / "pkg.egg-info" / "PKG-INFO").write_bytes(b"Name: other\n")
+    assert demo.freshness_problems(fx, root=root) == []
+
+
+def test_changed_added_and_removed_inputs_fail(tmp_path, monkeypatch):
+    _no_git(monkeypatch)
+    root = _mini_root(tmp_path)
+    fx = _fixture_for(root)
+    gen, a = root / "scripts" / "build_recorded_demo.py", root / "src" / "pkg" / "a.py"
+    gen.write_bytes(b"GEN = 2\n")
+    assert any("scripts/build_recorded_demo.py" in p and "changed" in p
+               for p in demo.freshness_problems(fx, root=root))
+    gen.write_bytes(b"GEN = 1\n")
+    a.write_bytes(b"A = 2\n")
+    assert any("src/pkg/a.py" in p and "changed" in p
+               for p in demo.freshness_problems(fx, root=root))
+    a.write_bytes(b"A = 1\n")
+    (root / "src" / "pkg" / "b.py").write_bytes(b"B = 1\n")
+    assert any("src/pkg/b.py" in p and "added" in p
+               for p in demo.freshness_problems(fx, root=root))
+    (root / "src" / "pkg" / "b.py").unlink()
+    (root / "src" / "pkg" / "schema.sql").unlink()
+    assert any("src/pkg/schema.sql" in p and "missing" in p
+               for p in demo.freshness_problems(fx, root=root))
+    shutil.rmtree(root / "src")
+    assert demo.freshness_problems(fx, root=root)
+    gen.unlink()
+    assert demo.freshness_problems(fx, root=root)
+
+
+def test_missing_provenance_fails_with_a_useful_message(tracked, tmp_path):
+    root = _mini_root(tmp_path)
+    for fx in ({}, {"provenance": {}}, {"provenance": {"generator_commit": "0" * 40}},
+               {"provenance": None}, []):
+        problems = demo.freshness_problems(fx, root=root)
+        assert problems and "content_identity" in problems[0] and "capture" in problems[0]
+    stripped = copy.deepcopy(tracked[0])
+    del stripped["provenance"]["content_identity"]
+    assert any("content_identity" in p for p in demo.validate(stripped))
+    assert any("content_identity" in p for p in demo.freshness_problems(stripped))
+
+
+@pytest.mark.parametrize("corrupt", [
+    lambda c: c.update(files=["scripts/build_recorded_demo.py"]),
+    lambda c: c.update(files={}),
+    lambda c: c["files"].update({"src/pkg/a.py": "not-a-digest"}),
+    lambda c: c["files"].update({"../outside.py": "0" * 64}),
+    lambda c: c["files"].update({"src\\pkg\\a.py": "0" * 64}),
+    lambda c: c.update(sha256="0" * 64),
+    lambda c: c.pop("sha256"),
+    lambda c: c.update(scope=["src"]),
+    lambda c: c.update(canonicalization="raw bytes"),
+    lambda c: c.clear(),
+], ids=["files-list", "files-empty", "bad-digest", "escaping-path", "backslash-path",
+        "aggregate-mismatch", "no-aggregate", "wrong-scope", "wrong-canonicalization",
+        "empty"])
+def test_malformed_content_identity_fails_without_crashing(tmp_path, corrupt):
+    root = _mini_root(tmp_path)
+    fx = _fixture_for(root)
+    corrupt(fx["provenance"]["content_identity"])
+    problems = demo.freshness_problems(fx, root=root)
+    assert problems and all(isinstance(p, str) for p in problems)
+    assert any("content_identity" in p for p in problems)
+    assert any("content_identity" in p for p in demo.identity_shape_problems(
+        fx["provenance"]["content_identity"]))
+
+
+def test_validator_cli_reports_stale_content(tmp_path, monkeypatch, capsys):
+    root = _copy_inputs(tmp_path / "checkout")
+    api = root / "src" / "sentinel" / "api.py"
+    api.write_bytes(api.read_bytes() + b"# changed\n")
+    monkeypatch.setattr(demo, "ROOT", root)
+    assert demo.main(["validate"]) == 1
+    out = capsys.readouterr().out
+    assert "FAIL" in out and "src/sentinel/api.py" in out and "re-run the capture" in out
 
 
 def test_tracked_fixture_has_no_forbidden_keys_or_local_paths(tracked):
