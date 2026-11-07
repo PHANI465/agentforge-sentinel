@@ -70,7 +70,7 @@ Use a fresh database for each run record, then drop it. Do not point the runner 
   - the authority split;
   - per case, the runtime SHA-256 and the faults not applied.
 
-  Workflow elapsed (protocol-v1's C2 gate) is not printed. It is in the stored steps of the disposable database. The pin digests and rubric sheet ID required by protocol-v1 §6 are added by the operator in the owner-reviewed summary.
+  Workflow elapsed (protocol-v1's C2 gate) is **not measured**: the stored step markers are cumulative and the terminal marker is zero, so the 150 s gate is not demonstrated (accepted G3D-P4 plan, R44). Since G3D-P4a the JSON is a versioned run artifact (`sentinel.agent-eval.run/1`). It records comparator pins, scoped IDs, the adopted disposition, recorded role intervals, a capacity snapshot, observed late returns and reservation accounting; see [p4a-tooling.md](p4a-tooling.md). The rubric sheet ID required by protocol-v1 §6 is added by the operator in the owner-reviewed summary.
 
 ## 4. Failure and partial-output policy
 
@@ -96,3 +96,12 @@ The policy also covers these cases:
 - The runtime checks cover the current database's relations, columns and schemas and the cluster's databases, as `roles.py` documents. They do not make storage tamper-proof against the owner.
 - Evidence for §4 is in `tests/test_agent_eval_failures.py`. It uses test-owned failing triggers and narrow query faults, and checks that canary messages never appear in output.
 - Evidence for the authority split is in `tests/test_agent_eval_privileges.py`. A test-owned SECURITY DEFINER trigger records the login of every insert into the session, case and workflow tables, which proves that sessions are inserted by the operator and everything else by the runtime role.
+
+## 6. Pilot, export and scoring tools (G3D-P4a)
+
+The development pilot planned in the accepted G3D-P4 plan uses three tools on top of this runner:
+- `scripts/agent_eval_pilot.py`: an owned database-only cluster, a fresh database per pair, a seeded schedule and the live reservation and consent boundary;
+- `scripts/agent_eval_report.py`: the scoped read-only export as the runtime role, and partially blinded review packets with a separate key;
+- `scripts/agent_eval_score.py`: offline scoring and a descriptive summary.
+
+Formats, statuses and commands are in [p4a-tooling.md](p4a-tooling.md). P4a ran only the deterministic preflight (C0, C2-det). A live pair (P4b) still needs the owner's written go-ahead, `--allow-live` and the full reservation, and nothing here grants it.

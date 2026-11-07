@@ -1,0 +1,1714 @@
+{
+ "frames": [
+  {
+   "id": "ingest",
+   "index": 1,
+   "observation": "after_ingest",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/v1/transactions",
+     "status": 201
+    },
+    {
+     "method": "POST",
+     "path": "/v1/transactions",
+     "status": 201
+    },
+    {
+     "method": "POST",
+     "path": "/v1/transactions",
+     "status": 201
+    },
+    {
+     "method": "POST",
+     "path": "/v1/transactions",
+     "status": 201
+    },
+    {
+     "method": "POST",
+     "path": "/v1/transactions",
+     "status": 201
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/audit",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/overview",
+     "status": 200
+    }
+   ],
+   "stage": "ingest",
+   "title": "Synthetic transactions ingested and rule-scored"
+  },
+  {
+   "id": "case_opened",
+   "index": 2,
+   "observation": "case_opened",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/audit",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/overview",
+     "status": 200
+    }
+   ],
+   "stage": "case_opened",
+   "title": "Alert raised: case opened with pinned evidence"
+  },
+  {
+   "id": "analyst",
+   "index": 3,
+   "observation": "after_investigation",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/investigations",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/investigation-trace",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/audit",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/overview",
+     "status": 200
+    }
+   ],
+   "stage": "analyst",
+   "title": "Evidence analyst and server-run read tools"
+  },
+  {
+   "id": "investigator",
+   "index": 4,
+   "observation": "after_investigation",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/investigation-trace",
+     "status": 200
+    }
+   ],
+   "stage": "investigator",
+   "title": "Investigator proposal and server claim checks"
+  },
+  {
+   "id": "reviewer",
+   "index": 5,
+   "observation": "after_investigation",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/investigation-trace",
+     "status": 200
+    }
+   ],
+   "stage": "reviewer",
+   "title": "Reviewer verdict and workflow disposition"
+  },
+  {
+   "id": "proposal",
+   "index": 6,
+   "observation": "after_investigation",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/audit",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/overview",
+     "status": 200
+    }
+   ],
+   "stage": "proposal",
+   "title": "Exact action intent built by the server"
+  },
+  {
+   "id": "approval",
+   "index": 7,
+   "observation": "after_approval",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/v1/approvals",
+     "status": 201
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/audit",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/overview",
+     "status": 200
+    }
+   ],
+   "stage": "approval",
+   "title": "Scripted analyst approval recorded"
+  },
+  {
+   "id": "execution",
+   "index": 8,
+   "observation": "after_execution",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/v1/actions",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/audit",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/overview",
+     "status": 200
+    }
+   ],
+   "stage": "execution",
+   "title": "One simulated action executed"
+  },
+  {
+   "id": "replay",
+   "index": 9,
+   "observation": "after_replay",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/v1/actions",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/audit",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/overview",
+     "status": 200
+    }
+   ],
+   "stage": "replay",
+   "title": "Retry with the same idempotency key"
+  },
+  {
+   "id": "audit",
+   "index": 10,
+   "observation": "final",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/investigation-trace",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/cases/7cd8d475-67e4-4384-9bfd-eaea6699cba7/audit",
+     "status": 200
+    },
+    {
+     "method": "GET",
+     "path": "/v1/overview",
+     "status": 200
+    }
+   ],
+   "stage": "audit",
+   "title": "Audit trail for the whole case"
+  }
+ ],
+ "labels": [
+  "recorded",
+  "synthetic",
+  "rule baseline",
+  "deterministic roles",
+  "scripted approval",
+  "simulated action"
+ ],
+ "notice": "Recorded synthetic replay. Not live inference: no backend, model or provider is contacted. The rule score is a heuristic, not a fraud probability. Approval was scripted by the capture program; the action is simulated.",
+ "observations": {
+  "after_approval": {
+   "action_intents": 1,
+   "alerts": 1,
+   "approvals": 1,
+   "audit_events": 5,
+   "case_revision": 3,
+   "case_state": "awaiting_approval",
+   "cases_by_state": {
+    "awaiting_approval": 1,
+    "closed": 0,
+    "inconclusive": 0,
+    "investigating": 0,
+    "open": 0
+   },
+   "observed_at": "2026-11-07T15:30:13.131722+00:00",
+   "simulated_actions": 0,
+   "transactions": 5
+  },
+  "after_execution": {
+   "action_intents": 1,
+   "alerts": 1,
+   "approvals": 1,
+   "audit_events": 6,
+   "case_revision": 4,
+   "case_state": "closed",
+   "cases_by_state": {
+    "awaiting_approval": 0,
+    "closed": 1,
+    "inconclusive": 0,
+    "investigating": 0,
+    "open": 0
+   },
+   "observed_at": "2026-11-07T15:30:13.637073+00:00",
+   "simulated_actions": 1,
+   "transactions": 5
+  },
+  "after_ingest": {
+   "action_intents": 0,
+   "alerts": 1,
+   "approvals": 0,
+   "audit_events": 2,
+   "case_revision": 1,
+   "case_state": "open",
+   "cases_by_state": {
+    "awaiting_approval": 0,
+    "closed": 0,
+    "inconclusive": 0,
+    "investigating": 0,
+    "open": 1
+   },
+   "observed_at": "2026-11-07T15:30:11.422845+00:00",
+   "simulated_actions": 0,
+   "transactions": 5
+  },
+  "after_investigation": {
+   "action_intents": 1,
+   "alerts": 1,
+   "approvals": 0,
+   "audit_events": 4,
+   "case_revision": 3,
+   "case_state": "awaiting_approval",
+   "cases_by_state": {
+    "awaiting_approval": 1,
+    "closed": 0,
+    "inconclusive": 0,
+    "investigating": 0,
+    "open": 0
+   },
+   "observed_at": "2026-11-07T15:30:12.641925+00:00",
+   "simulated_actions": 0,
+   "transactions": 5
+  },
+  "after_replay": {
+   "action_intents": 1,
+   "alerts": 1,
+   "approvals": 1,
+   "audit_events": 6,
+   "case_revision": 4,
+   "case_state": "closed",
+   "cases_by_state": {
+    "awaiting_approval": 0,
+    "closed": 1,
+    "inconclusive": 0,
+    "investigating": 0,
+    "open": 0
+   },
+   "observed_at": "2026-11-07T15:30:14.133582+00:00",
+   "simulated_actions": 1,
+   "transactions": 5
+  },
+  "case_opened": {
+   "action_intents": 0,
+   "alerts": 1,
+   "approvals": 0,
+   "audit_events": 2,
+   "case_revision": 1,
+   "case_state": "open",
+   "cases_by_state": {
+    "awaiting_approval": 0,
+    "closed": 0,
+    "inconclusive": 0,
+    "investigating": 0,
+    "open": 1
+   },
+   "observed_at": "2026-11-07T15:30:11.760152+00:00",
+   "simulated_actions": 0,
+   "transactions": 5
+  },
+  "final": {
+   "action_intents": 1,
+   "alerts": 1,
+   "approvals": 1,
+   "audit_events": 6,
+   "case_revision": 4,
+   "case_state": "closed",
+   "cases_by_state": {
+    "awaiting_approval": 0,
+    "closed": 1,
+    "inconclusive": 0,
+    "investigating": 0,
+    "open": 0
+   },
+   "observed_at": "2026-11-07T15:30:14.618479+00:00",
+   "simulated_actions": 1,
+   "transactions": 5
+  }
+ },
+ "provenance": {
+  "api_version": "1.2.0",
+  "capture_finished_at": "2026-11-07T15:30:14.618479+00:00",
+  "capture_started_at": "2026-11-07T15:30:10.426025+00:00",
+  "content_identity": {
+   "canonicalization": "sha256 of file bytes with CRLF replaced by LF",
+   "files": {
+    "scripts/build_recorded_demo.py": "67a8a671dbe894684913ae78c3af2b9744bc057fb3903eb675952fd697872744",
+    "src/sentinel/__init__.py": "d96bc39c7234a2aad9e8dd9ac30fa7a9429f86fe216e3ec57216876e76c78351",
+    "src/sentinel/agents/__init__.py": "4075d618fa9c10793c01bab9b224f28a7a48b632e8677b771501f5e810787cae",
+    "src/sentinel/agents/adapters.py": "eac0af1fe52937059f9e61c6ab982834aa7b80ec519d3ded9550d85dd57f3217",
+    "src/sentinel/agents/budget.py": "4b5c7dd6aa9b2eca3376d5648e03f8dc0230e5bfffea36eee51a84bd58226e69",
+    "src/sentinel/agents/capacity.py": "cdfdea7d25bb23e82a3c956d892d1c12194931d37d71d978ab92d56425a6dcc6",
+    "src/sentinel/agents/claims.py": "f9943cf5340a25b61f99bbae9d125389f3c6d66d068dda7742eb2591c2137a3f",
+    "src/sentinel/agents/coordinator.py": "bd389ec8f259b0f7e3841c641bc3879fa49cc74aca3b5e022762f274471d0fd8",
+    "src/sentinel/agents/tools.py": "84b868d8d4be8314376a6ea960cca7678eba46f4dcdbf0b8de74eb2bd71d7a99",
+    "src/sentinel/api.py": "c83a61a6103e933d4640efbfe5a422313ec0937e542defaa1c4e17877e6fcaea",
+    "src/sentinel/cli.py": "dc5d761fa8e49c9e93df8fcd2b37b79dccf6ac72bc03d89d61b5dec4e51729ce",
+    "src/sentinel/clock.py": "47d728d01e4bf6cf4f05d68f70e1bed171d57c3519d0a170f8b3d1146a377796",
+    "src/sentinel/contracts/__init__.py": "728c1f4cc0593fc039b875490c8103b645f9217802bcd8f2bdf84f9e6374529e",
+    "src/sentinel/contracts/agents.py": "e2deab55de14999220e86c8eab83ec61b2986d537c3f1ad627547a546666e7cc",
+    "src/sentinel/contracts/guards.py": "6d0c476d4cc50306e588ffe8bf9263a087f0cbccf1e9f860988956ebdb48a5e7",
+    "src/sentinel/contracts/http_v1.py": "c8bf9ba0f89b923ad5accc248fe492562a2a05c6f0b7f49b63f79be981ad2cb9",
+    "src/sentinel/contracts/http_v12.py": "2072a08fa54c0d4eae32e316fc65ab3daf0abe95e7cff6fc58abcf5a050b8832",
+    "src/sentinel/contracts/v1.py": "dcf3696e991b77e10a0213a55883c4046873005d2a05fa231d143bbfe1c0b267",
+    "src/sentinel/db/__init__.py": "0992a513557abd55a7ff313036f16cec714f672cd7ac41334a45616699ed2611",
+    "src/sentinel/db/migrations/0001_thin_path.sql": "b47c467e6274dc9edf7b7c427148447371f9f9f8ec9972cfed03cd941feac087",
+    "src/sentinel/db/migrations/0002_scoring_outcomes.sql": "059b6c305bf9b470c7d629e8f6f50548d99e15f34e1423b6926ba5fd667c9450",
+    "src/sentinel/db/migrations/0003_case_listing.sql": "20edf4c861d3abebeb0396b385ba638951d07190d9e6edfefb4d1faa081257f4",
+    "src/sentinel/db/migrations/0004_scoring_profiles.sql": "b36b45f968e04e64864c1aa50ac39ec7834569bf21fddd1c0e2fba0c63da35a0",
+    "src/sentinel/db/migrations/0005_agent_workflows.sql": "b3bab262c3a241523710a817bf3b5cf33b848cca7c67491b0cac8dc37135e8ec",
+    "src/sentinel/db/roles.py": "3f958f4161cc1ba3f69e9be5f67e2485b99816ed0feb5d34d30c8741cfaac848",
+    "src/sentinel/devdb.py": "33c52d6104be89f11997786f116c436a150fa3fd4ad47da8bcba288800256c6e",
+    "src/sentinel/investigators.py": "6ec9695686ab24864d79df2f6c7caf00c6d48f6924a78a4755d8343ced85219f",
+    "src/sentinel/model_results.py": "12dc9583cce2bac2e0ddfb7e033ce317fe22b3be0edf7838e0b3cf32bbbcbe40",
+    "src/sentinel/observability.py": "eb6653df2b4aa755b5c3673be5545d65bc8854a3e855ef5d06c65709237a8ce8",
+    "src/sentinel/scorers.py": "f4b2b4e205b90377c484f3ee3eb023a181cdecc1d50aaba611995c00f605463a",
+    "src/sentinel/scoring.py": "6b52b272e4bb6522396bc6d8dc945e21ef31b394a369b55c3b4101f73e70c9dc",
+    "src/sentinel/service.py": "5fd553df8a0bbd11cbffedbb669a13b492f9b4e2c5202f51f3cce4edafe46c5b",
+    "src/sentinel/trace.py": "e00c9e1c68fb038467cdee0ab7582ddac678f8af6158350697ecf2578cc181fb"
+   },
+   "inputs": [
+    "scripts/build_recorded_demo.py",
+    "src"
+   ],
+   "sha256": "c7b2a5897b75371bc026caa5fce47ef4a5e4e6678c083e534f8734463099bfd1"
+  },
+  "database": "disposable local PostgreSQL cluster owned by the capture, stopped after",
+  "exercised": [
+   "POST /v1/transactions (5 synthetic debits, rule scorer)",
+   "POST /v1/cases/{id}/investigations (deterministic three-role workflow)",
+   "GET /v1/cases/{id}/investigation-trace (twice)",
+   "POST /v1/approvals",
+   "POST /v1/actions (execute and retry)",
+   "GET /v1/cases/{id}, /v1/cases/{id}/audit, /v1/overview per frame"
+  ],
+  "generator": "scripts/build_recorded_demo.py",
+  "generator_commit": "af4890afb3b6f0af9e85d3841428b10d4ddb25b6",
+  "generator_tree_clean": true,
+  "http_path": "production FastAPI app (sentinel.api.create_app) driven in process by the FastAPI TestClient; no network port",
+  "limitations": [
+   "One recorded synthetic case; nothing is re-run when the page is viewed.",
+   "Rule baseline only: the score is a heuristic, not a fraud probability; the trained model path was not exercised.",
+   "Deterministic role adapters: plumbing control, not evidence of model investigation quality; no LLM or provider was called; token usage is not applicable.",
+   "The approval decision was scripted by the capture program, not a human review.",
+   "The action is a simulated record; no external system was contacted.",
+   "HTTP ran in process (TestClient); uvicorn, browser auth and the product web UI were not exercised by the capture.",
+   "No account profile was provisioned, so the profile tool is recorded as unavailable."
+  ],
+  "operator_actions": [
+   "created and migrated a disposable database",
+   "granted the restricted runtime role",
+   "issued one analyst session (token kept in memory only)"
+  ],
+  "runtime_role": {
+   "connected_as_runtime_role": true,
+   "createdb": false,
+   "createrole": false,
+   "postgres_server_version": "14.17",
+   "session_issuance_refused": true,
+   "superuser": false
+  },
+  "scorer": {
+   "artifact": {
+    "name": "velocity-amount-rules",
+    "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+    "version": "r1"
+   },
+   "mode": "rule",
+   "rule_config": {
+    "large_amount_minor": {
+     "GBP": 100000,
+     "INR": 8000000,
+     "JPY": 150000,
+     "USD": 100000
+    },
+    "large_amount_points": 0.6,
+    "velocity_points_cap": 0.6,
+    "velocity_points_per_prior": 0.2
+   },
+   "threshold": 0.5
+  },
+  "scripted_steps": [
+   "the capture program sent decision 'approved' via POST /v1/approvals",
+   "the capture program executed once and retried once with the same idempotency key via POST /v1/actions"
+  ],
+  "src_identical_to_tested_application": true,
+  "tested_application_reference": "495c7d33424054d27d68d08004191d4be37adaf9",
+  "workflow": {
+   "adapters": "deterministic (no provider; usage not applicable)",
+   "config": {
+    "name": "three-role-workflow",
+    "sha256": "8dcd8935fa3642f2cdd4c4f0a782575346d6054401efb2304180badb4a79ac4f",
+    "version": "w1"
+   },
+   "kind": "three-role",
+   "live": false,
+   "roles": {
+    "evidence_analyst": {
+     "name": "analyst-deterministic",
+     "sha256": "81ce0ae8f15e71f7708f030d64a6e03d5c8488d7f27ee3382d6b1e811430ebcc",
+     "version": "a1"
+    },
+    "investigator": {
+     "name": "investigator-deterministic",
+     "sha256": "9ad42e4b3cdff7b3f1b45ee9ec178fc80389c4ec726f2b5b5bf58a0941fa009e",
+     "version": "i2"
+    },
+    "reviewer": {
+     "name": "reviewer-deterministic",
+     "sha256": "dda496036657b5b26a6484383875c82c6368340ccb130a9cf1280e5831509dd1",
+     "version": "r1"
+    }
+   },
+   "tool_profile": {
+    "name": "agent-read-tools",
+    "sha256": "7065ef0fb0dd83a4b7c639f5e84ed7bc14b5b9d0bdbe144cfa9db956bbdc4aba",
+    "version": "t1"
+   }
+  }
+ },
+ "records": {
+  "alert": {
+   "created_at": "2026-11-07T15:30:11.070771Z",
+   "id": "3fdd0f41-5245-4aed-8812-3e719f5ecf75",
+   "score": 1.0,
+   "score_semantics": "heuristic",
+   "scoring_kind": "rule",
+   "threshold": 0.5,
+   "transaction_id": "366c9d57-0e80-4a58-a57f-6c6aea9e247a"
+  },
+  "approval": {
+   "actor": "scripted-analyst",
+   "actor_kind": "human",
+   "consumed_at": null,
+   "consumed_at_final": "2026-11-07T15:30:13.261379Z",
+   "decided_at": "2026-11-07T15:30:12.730258Z",
+   "decision": "approved",
+   "expires_at": "2026-11-07T15:35:12.730258Z",
+   "id": "f5375260-e000-40ed-a69a-b0c7b9fdbc91",
+   "intent_id": "e444f720-c6a3-454c-b33b-395c7a352d6a",
+   "intent_sha256": "cc6912b4c8b24f99aff299efb34ec509fbf8858e24a2e207e56ee4a06c8c2a0e"
+  },
+  "attempts": [
+   {
+    "agent_run_id": "7736b397-3826-42a0-aa17-26571d6be018",
+    "attempt": 1,
+    "basis": false,
+    "claim_checks": null,
+    "config": {
+     "name": "analyst-deterministic",
+     "sha256": "81ce0ae8f15e71f7708f030d64a6e03d5c8488d7f27ee3382d6b1e811430ebcc",
+     "version": "a1"
+    },
+    "elapsed_ms": 16,
+    "failure_code": null,
+    "finding": null,
+    "finished_at": "2026-11-07T15:30:11.973729Z",
+    "output": {
+     "claims": [
+      {
+       "cite": {
+        "id": "cc4c067b-2cd5-40ac-8c91-28539952b03d",
+        "kind": "evidence",
+        "schema_version": "1.0"
+       },
+       "fact": "amount_minor",
+       "kind": "fact",
+       "relation": "eq",
+       "schema_version": "1.0",
+       "value": 245000
+      },
+      {
+       "cite": {
+        "id": "e03e4766-c386-482d-b4f4-a8a4ff2ba469",
+        "kind": "evidence",
+        "schema_version": "1.0"
+       },
+       "fact": "transaction_count_1h",
+       "kind": "fact",
+       "relation": "eq",
+       "schema_version": "1.0",
+       "value": 2
+      },
+      {
+       "cite": {
+        "id": "d5b469c3-7445-4b82-a5a8-d55452689b87",
+        "kind": "tool_result",
+        "schema_version": "1.0"
+       },
+       "fact": "large_amount_rule_hit",
+       "kind": "fact",
+       "relation": "eq",
+       "schema_version": "1.0",
+       "value": true
+      }
+     ],
+     "missing": [
+      "account_age_days"
+     ],
+     "note": null,
+     "role": "evidence_analyst",
+     "schema_version": "1.0",
+     "tool_requests": [
+      {
+       "schema_version": "1.0",
+       "tool": "account_history",
+       "window": "30d"
+      },
+      {
+       "schema_version": "1.0",
+       "tool": "account_profile"
+      }
+     ]
+    },
+    "output_sha256": "9254e987a2b000b8a6fea19f450c3ef219b866fac339ee4d9fa7ac531202ad8f",
+    "role": "evidence_analyst",
+    "started_at": "2026-11-07T15:30:11.957157Z",
+    "status": "completed",
+    "usage": {
+     "input_tokens": null,
+     "measured": false,
+     "output_tokens": null,
+     "schema_version": "1.0",
+     "source": "not_applicable"
+    }
+   },
+   {
+    "agent_run_id": "b2007854-ca96-43ea-a0f6-960f0d04152b",
+    "attempt": 1,
+    "basis": true,
+    "claim_checks": [
+     {
+      "index": 0,
+      "reason": "verified",
+      "schema_version": "1.0",
+      "status": "supported"
+     },
+     {
+      "index": 1,
+      "reason": "verified",
+      "schema_version": "1.0",
+      "status": "supported"
+     },
+     {
+      "index": 2,
+      "reason": "verified",
+      "schema_version": "1.0",
+      "status": "supported"
+     },
+     {
+      "index": 3,
+      "reason": "verified",
+      "schema_version": "1.0",
+      "status": "supported"
+     }
+    ],
+    "config": {
+     "name": "investigator-deterministic",
+     "sha256": "9ad42e4b3cdff7b3f1b45ee9ec178fc80389c4ec726f2b5b5bf58a0941fa009e",
+     "version": "i2"
+    },
+    "elapsed_ms": 16,
+    "failure_code": null,
+    "finding": {
+     "operation": "simulated_hold",
+     "rationale": "simulated_hold (velocity_pattern). Supported: amount 2,450.00 USD [evidence …b03d]; 2 transactions in the prior hour [evidence …a469]; large-amount rule hit [tool_result …9b87]; 30-day maximum same-currency payment 120.00 USD [tool_result …8615]. Reviewer: accept.",
+     "reason_code": "velocity_pattern",
+     "schema_version": "1.0"
+    },
+    "finished_at": "2026-11-07T15:30:12.038408Z",
+    "output": {
+     "claims": [
+      {
+       "cite": {
+        "id": "cc4c067b-2cd5-40ac-8c91-28539952b03d",
+        "kind": "evidence",
+        "schema_version": "1.0"
+       },
+       "fact": "amount_minor",
+       "kind": "fact",
+       "relation": "eq",
+       "schema_version": "1.0",
+       "value": 245000
+      },
+      {
+       "cite": {
+        "id": "e03e4766-c386-482d-b4f4-a8a4ff2ba469",
+        "kind": "evidence",
+        "schema_version": "1.0"
+       },
+       "fact": "transaction_count_1h",
+       "kind": "fact",
+       "relation": "eq",
+       "schema_version": "1.0",
+       "value": 2
+      },
+      {
+       "cite": {
+        "id": "d5b469c3-7445-4b82-a5a8-d55452689b87",
+        "kind": "tool_result",
+        "schema_version": "1.0"
+       },
+       "fact": "large_amount_rule_hit",
+       "kind": "fact",
+       "relation": "eq",
+       "schema_version": "1.0",
+       "value": true
+      },
+      {
+       "cite": {
+        "id": "7747c2a0-bcdc-47af-901c-e943a5ff8615",
+        "kind": "tool_result",
+        "schema_version": "1.0"
+       },
+       "fact": "history_max_amount_minor_30d",
+       "kind": "fact",
+       "relation": "eq",
+       "schema_version": "1.0",
+       "value": 12000
+      }
+     ],
+     "note": null,
+     "operation": "simulated_hold",
+     "reason_code": "velocity_pattern",
+     "role": "investigator",
+     "schema_version": "1.0",
+     "tool_requests": []
+    },
+    "output_sha256": "77e103fc7f74587f7d1aaea4c03c60ad41c093b1aa8b61ffd661dfde5a418c5c",
+    "role": "investigator",
+    "started_at": "2026-11-07T15:30:12.025503Z",
+    "status": "completed",
+    "usage": {
+     "input_tokens": null,
+     "measured": false,
+     "output_tokens": null,
+     "schema_version": "1.0",
+     "source": "not_applicable"
+    }
+   },
+   {
+    "agent_run_id": "d5428c87-224c-4fd8-9cab-249372bc6894",
+    "attempt": 1,
+    "basis": false,
+    "claim_checks": null,
+    "config": {
+     "name": "reviewer-deterministic",
+     "sha256": "dda496036657b5b26a6484383875c82c6368340ccb130a9cf1280e5831509dd1",
+     "version": "r1"
+    },
+    "elapsed_ms": 16,
+    "failure_code": null,
+    "finding": null,
+    "finished_at": "2026-11-07T15:30:12.078429Z",
+    "output": {
+     "challenged_claims": [],
+     "note": null,
+     "reasons": [],
+     "role": "reviewer",
+     "schema_version": "1.0",
+     "verdict": "accept"
+    },
+    "output_sha256": "b9177f65626c0f1e269b28e9a400ce793ccb7010ca04acc28ac13e6e293a0c13",
+    "role": "reviewer",
+    "started_at": "2026-11-07T15:30:12.068711Z",
+    "status": "completed",
+    "usage": {
+     "input_tokens": null,
+     "measured": false,
+     "output_tokens": null,
+     "schema_version": "1.0",
+     "source": "not_applicable"
+    }
+   }
+  ],
+  "audit": [
+   {
+    "actor": "system",
+    "actor_kind": "system",
+    "case_revision": 1,
+    "correlation_id": "f68ff169-dd90-4fc2-9153-947145cf4a54",
+    "event_type": "transaction_received",
+    "id": "9d6e9995-1c01-43fe-a7bb-b267fe4491a5",
+    "occurred_at": "2026-11-07T15:30:11.070771Z",
+    "outcome": "success",
+    "recorded_at": "2026-11-07T15:30:11.090290Z"
+   },
+   {
+    "actor": "system",
+    "actor_kind": "system",
+    "case_revision": 1,
+    "correlation_id": "f68ff169-dd90-4fc2-9153-947145cf4a54",
+    "event_type": "alert_raised",
+    "id": "fa466989-e2d0-46ef-842d-e2ad2bda17b9",
+    "occurred_at": "2026-11-07T15:30:11.070771Z",
+    "outcome": "success",
+    "recorded_at": "2026-11-07T15:30:11.093437Z"
+   },
+   {
+    "actor": "scripted-analyst",
+    "actor_kind": "human",
+    "case_revision": 2,
+    "correlation_id": "d0638769-97ac-4133-8ecd-30b9a63ea1ff",
+    "event_type": "investigation_started",
+    "id": "b1809a49-81f5-4750-a6a5-cdfb91a92530",
+    "occurred_at": "2026-11-07T15:30:11.856652Z",
+    "outcome": "success",
+    "recorded_at": "2026-11-07T15:30:11.888538Z"
+   },
+   {
+    "actor": "three-role-workflow",
+    "actor_kind": "agent",
+    "case_revision": 3,
+    "correlation_id": "848a14fb-5c64-4ec4-9a1f-fa31e72625de",
+    "event_type": "investigation_completed",
+    "id": "6ebad559-397e-43b7-815a-78cc7f439bd1",
+    "occurred_at": "2026-11-07T15:30:12.095403Z",
+    "outcome": "success",
+    "recorded_at": "2026-11-07T15:30:12.130206Z"
+   },
+   {
+    "actor": "scripted-analyst",
+    "actor_kind": "human",
+    "case_revision": 3,
+    "correlation_id": "be8ec459-0e01-44a8-bb39-10994307742d",
+    "event_type": "approval_recorded",
+    "id": "78f47c0e-f3b7-4837-99ef-b146630a2768",
+    "occurred_at": "2026-11-07T15:30:12.730258Z",
+    "outcome": "success",
+    "recorded_at": "2026-11-07T15:30:12.730258Z"
+   },
+   {
+    "actor": "scripted-analyst",
+    "actor_kind": "human",
+    "case_revision": 4,
+    "correlation_id": "8fb7bbe8-2a9b-4feb-a8ab-932d832b1015",
+    "event_type": "action_succeeded",
+    "id": "5a118f7e-a7a7-4b55-af34-1ee123d89ce5",
+    "occurred_at": "2026-11-07T15:30:13.261379Z",
+    "outcome": "success",
+    "recorded_at": "2026-11-07T15:30:13.268495Z"
+   }
+  ],
+  "case_after_investigation": {
+   "alert_id": "3fdd0f41-5245-4aed-8812-3e719f5ecf75",
+   "created_at": "2026-11-07T15:30:11.070771Z",
+   "evidence_ids": [
+    "cc4c067b-2cd5-40ac-8c91-28539952b03d",
+    "e03e4766-c386-482d-b4f4-a8a4ff2ba469"
+   ],
+   "id": "7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+   "pins": {
+    "agent_config": {
+     "name": "three-role-workflow",
+     "sha256": "8dcd8935fa3642f2cdd4c4f0a782575346d6054401efb2304180badb4a79ac4f",
+     "version": "w1"
+    },
+    "dataset": {
+     "name": "api-synthetic-ingest",
+     "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+     "version": "d1"
+    },
+    "evidence_snapshot_sha256": "055ec0b7f1b774fa3770cbae58ea00204e5e7a7e58cb80905fd6cfc69af6616a",
+    "policy": {
+     "name": "simulated-action-policy",
+     "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+     "version": "p1"
+    },
+    "scorer": {
+     "name": "velocity-amount-rules",
+     "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+     "version": "r1"
+    },
+    "threshold_policy": {
+     "name": "alert-threshold",
+     "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+     "version": "t1"
+    },
+    "tool_config": {
+     "name": "agent-read-tools",
+     "sha256": "7065ef0fb0dd83a4b7c639f5e84ed7bc14b5b9d0bdbe144cfa9db956bbdc4aba",
+     "version": "t1"
+    }
+   },
+   "revision": 3,
+   "state": "awaiting_approval",
+   "updated_at": "2026-11-07T15:30:12.095403Z"
+  },
+  "case_final": {
+   "alert_id": "3fdd0f41-5245-4aed-8812-3e719f5ecf75",
+   "created_at": "2026-11-07T15:30:11.070771Z",
+   "evidence_ids": [
+    "cc4c067b-2cd5-40ac-8c91-28539952b03d",
+    "e03e4766-c386-482d-b4f4-a8a4ff2ba469"
+   ],
+   "id": "7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+   "pins": {
+    "agent_config": {
+     "name": "three-role-workflow",
+     "sha256": "8dcd8935fa3642f2cdd4c4f0a782575346d6054401efb2304180badb4a79ac4f",
+     "version": "w1"
+    },
+    "dataset": {
+     "name": "api-synthetic-ingest",
+     "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+     "version": "d1"
+    },
+    "evidence_snapshot_sha256": "055ec0b7f1b774fa3770cbae58ea00204e5e7a7e58cb80905fd6cfc69af6616a",
+    "policy": {
+     "name": "simulated-action-policy",
+     "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+     "version": "p1"
+    },
+    "scorer": {
+     "name": "velocity-amount-rules",
+     "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+     "version": "r1"
+    },
+    "threshold_policy": {
+     "name": "alert-threshold",
+     "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+     "version": "t1"
+    },
+    "tool_config": {
+     "name": "agent-read-tools",
+     "sha256": "7065ef0fb0dd83a4b7c639f5e84ed7bc14b5b9d0bdbe144cfa9db956bbdc4aba",
+     "version": "t1"
+    }
+   },
+   "revision": 4,
+   "state": "closed",
+   "updated_at": "2026-11-07T15:30:13.261379Z"
+  },
+  "case_opened": {
+   "alert_id": "3fdd0f41-5245-4aed-8812-3e719f5ecf75",
+   "created_at": "2026-11-07T15:30:11.070771Z",
+   "evidence_ids": [
+    "cc4c067b-2cd5-40ac-8c91-28539952b03d",
+    "e03e4766-c386-482d-b4f4-a8a4ff2ba469"
+   ],
+   "id": "7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+   "pins": {
+    "agent_config": {
+     "name": "three-role-workflow",
+     "sha256": "8dcd8935fa3642f2cdd4c4f0a782575346d6054401efb2304180badb4a79ac4f",
+     "version": "w1"
+    },
+    "dataset": {
+     "name": "api-synthetic-ingest",
+     "sha256": "216a0369d1fc2c9c1d66998c2f6a78e60e53992eac3d0d51c9e21f4845636700",
+     "version": "d1"
+    },
+    "evidence_snapshot_sha256": "055ec0b7f1b774fa3770cbae58ea00204e5e7a7e58cb80905fd6cfc69af6616a",
+    "policy": {
+     "name": "simulated-action-policy",
+     "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+     "version": "p1"
+    },
+    "scorer": {
+     "name": "velocity-amount-rules",
+     "sha256": "0cde1cff00442ddf454d1bbe0e006cfdb54fea78c005ca1379c869d8e8c06bcd",
+     "version": "r1"
+    },
+    "threshold_policy": {
+     "name": "alert-threshold",
+     "sha256": "343a9bf7cdc9e1e6535f7a4a5516a17d0912f0f692f0940cc919e0d742f6e325",
+     "version": "t1"
+    },
+    "tool_config": {
+     "name": "agent-read-tools",
+     "sha256": "7065ef0fb0dd83a4b7c639f5e84ed7bc14b5b9d0bdbe144cfa9db956bbdc4aba",
+     "version": "t1"
+    }
+   },
+   "revision": 1,
+   "state": "open",
+   "updated_at": "2026-11-07T15:30:11.070771Z"
+  },
+  "evidence": [
+   {
+    "available_at": "2026-11-07T15:30:11.070771Z",
+    "case_id": "7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+    "content_sha256": "12c2f02d5d0eb89b0cb0dbcca1b2005372c7bece880ea9f9ca133140e4a26da8",
+    "facts": [
+     {
+      "name": "amount_minor",
+      "schema_version": "1.0",
+      "value": 245000
+     }
+    ],
+    "id": "cc4c067b-2cd5-40ac-8c91-28539952b03d",
+    "observed_at": "2026-11-07T15:28:10.426025Z",
+    "source": "synthetic_transaction",
+    "source_ref": "transactions:366c9d57-0e80-4a58-a57f-6c6aea9e247a"
+   },
+   {
+    "available_at": "2026-11-07T15:30:11.070771Z",
+    "case_id": "7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+    "content_sha256": "b06bfb395e45f53b40797aabc9baa1fde4cfd7c92cb12aa4ad4332acca94bd5a",
+    "facts": [
+     {
+      "name": "transaction_count_1h",
+      "schema_version": "1.0",
+      "value": 2
+     }
+    ],
+    "id": "e03e4766-c386-482d-b4f4-a8a4ff2ba469",
+    "observed_at": "2026-11-07T15:28:10.426025Z",
+    "source": "historical_aggregate",
+    "source_ref": "velocity-1h:366c9d57-0e80-4a58-a57f-6c6aea9e247a"
+   }
+  ],
+  "execution": {
+   "action": {
+    "approval_id": "f5375260-e000-40ed-a69a-b0c7b9fdbc91",
+    "completed_at": "2026-11-07T15:30:13.261379Z",
+    "created_at": "2026-11-07T15:30:13.261379Z",
+    "id": "d440e4c4-29d0-4d6c-8398-45bc261b092f",
+    "idempotency_key": "e7f6aeaf-8dd3-4d1c-9295-cbf7bed5b0f8",
+    "intent_id": "e444f720-c6a3-454c-b33b-395c7a352d6a",
+    "intent_sha256": "cc6912b4c8b24f99aff299efb34ec509fbf8858e24a2e207e56ee4a06c8c2a0e",
+    "mode": "simulated",
+    "state": "succeeded"
+   },
+   "replayed": false
+  },
+  "final_trace_read": {
+   "case_revision": 4,
+   "case_state": "closed",
+   "read_at": "2026-11-07T15:30:14.220240Z",
+   "steps": 19,
+   "workflow_count": 1,
+   "workflow_id": "5d9eda14-abe8-4826-89d0-26e085dc53f9"
+  },
+  "ingests": [
+   {
+    "alert_id": null,
+    "case_id": null,
+    "replayed": false,
+    "scoring": {
+     "alerted": false,
+     "features_as_of": "2026-11-07T15:30:10.573138Z",
+     "prior_count_1h": 0,
+     "score": 0.0,
+     "score_semantics": "heuristic",
+     "scored_at": "2026-11-07T15:30:10.573138Z",
+     "scoring_kind": "rule",
+     "threshold": 0.5,
+     "transaction_id": "1de1f927-9b36-4896-a411-e03cb71f754c"
+    },
+    "transaction": {
+     "account_id": "225195aa-85d6-4ad0-886c-8a82ed536d15",
+     "amount": {
+      "currency": "USD",
+      "currency_exponent": 2,
+      "minor_units": 8800,
+      "schema_version": "1.0"
+     },
+     "direction": "debit",
+     "external_id": "demo01-ca42f0-h0",
+     "id": "1de1f927-9b36-4896-a411-e03cb71f754c",
+     "ingested_at": "2026-11-07T15:30:10.573138Z",
+     "occurred_at": "2026-10-29T15:30:10.426025Z"
+    }
+   },
+   {
+    "alert_id": null,
+    "case_id": null,
+    "replayed": false,
+    "scoring": {
+     "alerted": false,
+     "features_as_of": "2026-11-07T15:30:10.714577Z",
+     "prior_count_1h": 0,
+     "score": 0.0,
+     "score_semantics": "heuristic",
+     "scored_at": "2026-11-07T15:30:10.714577Z",
+     "scoring_kind": "rule",
+     "threshold": 0.5,
+     "transaction_id": "1ab40976-fd6c-4de3-b57c-830489d6238c"
+    },
+    "transaction": {
+     "account_id": "225195aa-85d6-4ad0-886c-8a82ed536d15",
+     "amount": {
+      "currency": "USD",
+      "currency_exponent": 2,
+      "minor_units": 12000,
+      "schema_version": "1.0"
+     },
+     "direction": "debit",
+     "external_id": "demo01-ca42f0-h1",
+     "id": "1ab40976-fd6c-4de3-b57c-830489d6238c",
+     "ingested_at": "2026-11-07T15:30:10.714577Z",
+     "occurred_at": "2026-11-05T15:30:10.426025Z"
+    }
+   },
+   {
+    "alert_id": null,
+    "case_id": null,
+    "replayed": false,
+    "scoring": {
+     "alerted": false,
+     "features_as_of": "2026-11-07T15:30:10.832697Z",
+     "prior_count_1h": 0,
+     "score": 0.0,
+     "score_semantics": "heuristic",
+     "scored_at": "2026-11-07T15:30:10.832697Z",
+     "scoring_kind": "rule",
+     "threshold": 0.5,
+     "transaction_id": "7e86c13f-8e83-4716-a379-93fee69fd02a"
+    },
+    "transaction": {
+     "account_id": "225195aa-85d6-4ad0-886c-8a82ed536d15",
+     "amount": {
+      "currency": "USD",
+      "currency_exponent": 2,
+      "minor_units": 2750,
+      "schema_version": "1.0"
+     },
+     "direction": "debit",
+     "external_id": "demo01-ca42f0-h2",
+     "id": "7e86c13f-8e83-4716-a379-93fee69fd02a",
+     "ingested_at": "2026-11-07T15:30:10.832697Z",
+     "occurred_at": "2026-11-07T14:50:10.426025Z"
+    }
+   },
+   {
+    "alert_id": null,
+    "case_id": null,
+    "replayed": false,
+    "scoring": {
+     "alerted": false,
+     "features_as_of": "2026-11-07T15:30:10.930396Z",
+     "prior_count_1h": 1,
+     "score": 0.2,
+     "score_semantics": "heuristic",
+     "scored_at": "2026-11-07T15:30:10.930396Z",
+     "scoring_kind": "rule",
+     "threshold": 0.5,
+     "transaction_id": "058e9830-b2e2-4ca3-9bcf-6fed1a09eda4"
+    },
+    "transaction": {
+     "account_id": "225195aa-85d6-4ad0-886c-8a82ed536d15",
+     "amount": {
+      "currency": "USD",
+      "currency_exponent": 2,
+      "minor_units": 3200,
+      "schema_version": "1.0"
+     },
+     "direction": "debit",
+     "external_id": "demo01-ca42f0-h3",
+     "id": "058e9830-b2e2-4ca3-9bcf-6fed1a09eda4",
+     "ingested_at": "2026-11-07T15:30:10.930396Z",
+     "occurred_at": "2026-11-07T15:10:10.426025Z"
+    }
+   },
+   {
+    "alert_id": "3fdd0f41-5245-4aed-8812-3e719f5ecf75",
+    "case_id": "7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+    "replayed": false,
+    "scoring": {
+     "alerted": true,
+     "features_as_of": "2026-11-07T15:30:11.070771Z",
+     "prior_count_1h": 2,
+     "score": 1.0,
+     "score_semantics": "heuristic",
+     "scored_at": "2026-11-07T15:30:11.070771Z",
+     "scoring_kind": "rule",
+     "threshold": 0.5,
+     "transaction_id": "366c9d57-0e80-4a58-a57f-6c6aea9e247a"
+    },
+    "transaction": {
+     "account_id": "225195aa-85d6-4ad0-886c-8a82ed536d15",
+     "amount": {
+      "currency": "USD",
+      "currency_exponent": 2,
+      "minor_units": 245000,
+      "schema_version": "1.0"
+     },
+     "direction": "debit",
+     "external_id": "demo01-ca42f0-alert",
+     "id": "366c9d57-0e80-4a58-a57f-6c6aea9e247a",
+     "ingested_at": "2026-11-07T15:30:11.070771Z",
+     "occurred_at": "2026-11-07T15:28:10.426025Z"
+    }
+   }
+  ],
+  "intent": {
+   "agent_runs_in_case_detail": 3,
+   "case_id": "7cd8d475-67e4-4384-9bfd-eaea6699cba7",
+   "case_revision": 3,
+   "evidence_snapshot_sha256": "055ec0b7f1b774fa3770cbae58ea00204e5e7a7e58cb80905fd6cfc69af6616a",
+   "id": "e444f720-c6a3-454c-b33b-395c7a352d6a",
+   "intent_sha256": "cc6912b4c8b24f99aff299efb34ec509fbf8858e24a2e207e56ee4a06c8c2a0e",
+   "parameters": {
+    "amount": {
+     "currency": "USD",
+     "currency_exponent": 2,
+     "minor_units": 245000,
+     "schema_version": "1.0"
+    },
+    "operation": "simulated_hold",
+    "schema_version": "1.0",
+    "transaction_id": "366c9d57-0e80-4a58-a57f-6c6aea9e247a"
+   },
+   "policy": {
+    "name": "simulated-action-policy",
+    "sha256": "b2e7115472f558dda1a7d2428a3818af9ca69a590b1691d804d43b4739ea788c",
+    "version": "p1"
+   }
+  },
+  "limits": {
+   "db_wait_seconds": 5,
+   "max_followup_tool_calls": 3,
+   "max_investigator_revisions": 1,
+   "max_live_workflows_per_process": 1,
+   "max_outstanding_calls_per_process": 2,
+   "max_repeats": 1,
+   "max_role_invocations": 5,
+   "max_transitions": 12,
+   "role_grace_seconds": 2,
+   "role_timeout_seconds": 45,
+   "schema_version": "1.0",
+   "terminal_reserve_seconds": 5,
+   "tool_statement_timeout_ms": 2000,
+   "workflow_deadline_seconds": 150
+  },
+  "replay": {
+   "action": {
+    "approval_id": "f5375260-e000-40ed-a69a-b0c7b9fdbc91",
+    "completed_at": "2026-11-07T15:30:13.261379Z",
+    "created_at": "2026-11-07T15:30:13.261379Z",
+    "id": "d440e4c4-29d0-4d6c-8398-45bc261b092f",
+    "idempotency_key": "e7f6aeaf-8dd3-4d1c-9295-cbf7bed5b0f8",
+    "intent_id": "e444f720-c6a3-454c-b33b-395c7a352d6a",
+    "intent_sha256": "cc6912b4c8b24f99aff299efb34ec509fbf8858e24a2e207e56ee4a06c8c2a0e",
+    "mode": "simulated",
+    "state": "succeeded"
+   },
+   "replayed": true
+  },
+  "steps": [
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:11.899328Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 93,
+    "failure_code": null,
+    "kind": "transition",
+    "output_sha256": null,
+    "role": null,
+    "seq": 1,
+    "state": "gathering",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:11.916371Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 109,
+    "failure_code": null,
+    "kind": "tool_executed",
+    "output_sha256": null,
+    "role": null,
+    "seq": 2,
+    "state": "gathering",
+    "tool": "case_evidence",
+    "tool_result_id": "bf883b03-f967-48f1-a5e9-340764c0389c"
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:11.926577Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 125,
+    "failure_code": null,
+    "kind": "tool_executed",
+    "output_sha256": null,
+    "role": null,
+    "seq": 3,
+    "state": "gathering",
+    "tool": "scoring_outcome",
+    "tool_result_id": "d5b469c3-7445-4b82-a5a8-d55452689b87"
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:11.938470Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 140,
+    "failure_code": null,
+    "kind": "tool_executed",
+    "output_sha256": null,
+    "role": null,
+    "seq": 4,
+    "state": "gathering",
+    "tool": "account_history",
+    "tool_result_id": "48a6840d-e876-48e9-8cbc-38820dced93a"
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:11.947381Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 140,
+    "failure_code": null,
+    "kind": "transition",
+    "output_sha256": null,
+    "role": null,
+    "seq": 5,
+    "state": "analyst",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": "7736b397-3826-42a0-aa17-26571d6be018",
+    "at": "2026-11-07T15:30:11.963504Z",
+    "attempt": 1,
+    "checks": [],
+    "elapsed_ms": 156,
+    "failure_code": null,
+    "kind": "role_started",
+    "output_sha256": null,
+    "role": "evidence_analyst",
+    "seq": 6,
+    "state": "analyst",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": "7736b397-3826-42a0-aa17-26571d6be018",
+    "at": "2026-11-07T15:30:11.978475Z",
+    "attempt": 1,
+    "checks": [],
+    "elapsed_ms": 172,
+    "failure_code": null,
+    "kind": "role_completed",
+    "output_sha256": "9254e987a2b000b8a6fea19f450c3ef219b866fac339ee4d9fa7ac531202ad8f",
+    "role": "evidence_analyst",
+    "seq": 7,
+    "state": "analyst",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:11.987374Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 187,
+    "failure_code": null,
+    "kind": "transition",
+    "output_sha256": null,
+    "role": null,
+    "seq": 8,
+    "state": "analyst_tools",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:11.996844Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 187,
+    "failure_code": null,
+    "kind": "tool_executed",
+    "output_sha256": null,
+    "role": null,
+    "seq": 9,
+    "state": "analyst_tools",
+    "tool": "account_history",
+    "tool_result_id": "7747c2a0-bcdc-47af-901c-e943a5ff8615"
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:12.009408Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 203,
+    "failure_code": null,
+    "kind": "tool_executed",
+    "output_sha256": null,
+    "role": null,
+    "seq": 10,
+    "state": "analyst_tools",
+    "tool": "account_profile",
+    "tool_result_id": "c1da149a-c627-40c7-8645-a30342fb7708"
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:12.018680Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 218,
+    "failure_code": null,
+    "kind": "transition",
+    "output_sha256": null,
+    "role": null,
+    "seq": 11,
+    "state": "investigator",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": "b2007854-ca96-43ea-a0f6-960f0d04152b",
+    "at": "2026-11-07T15:30:12.029100Z",
+    "attempt": 1,
+    "checks": [],
+    "elapsed_ms": 218,
+    "failure_code": null,
+    "kind": "role_started",
+    "output_sha256": null,
+    "role": "investigator",
+    "seq": 12,
+    "state": "investigator",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": "b2007854-ca96-43ea-a0f6-960f0d04152b",
+    "at": "2026-11-07T15:30:12.040812Z",
+    "attempt": 1,
+    "checks": [],
+    "elapsed_ms": 234,
+    "failure_code": null,
+    "kind": "role_completed",
+    "output_sha256": "77e103fc7f74587f7d1aaea4c03c60ad41c093b1aa8b61ffd661dfde5a418c5c",
+    "role": "investigator",
+    "seq": 13,
+    "state": "investigator",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:12.048920Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 250,
+    "failure_code": null,
+    "kind": "transition",
+    "output_sha256": null,
+    "role": null,
+    "seq": 14,
+    "state": "verifying",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:12.055384Z",
+    "attempt": null,
+    "checks": [
+     {
+      "index": 0,
+      "reason": "verified",
+      "schema_version": "1.0",
+      "status": "supported"
+     },
+     {
+      "index": 1,
+      "reason": "verified",
+      "schema_version": "1.0",
+      "status": "supported"
+     },
+     {
+      "index": 2,
+      "reason": "verified",
+      "schema_version": "1.0",
+      "status": "supported"
+     },
+     {
+      "index": 3,
+      "reason": "verified",
+      "schema_version": "1.0",
+      "status": "supported"
+     }
+    ],
+    "elapsed_ms": 250,
+    "failure_code": null,
+    "kind": "claims_checked",
+    "output_sha256": null,
+    "role": null,
+    "seq": 15,
+    "state": "verifying",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:12.061172Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 250,
+    "failure_code": null,
+    "kind": "transition",
+    "output_sha256": null,
+    "role": null,
+    "seq": 16,
+    "state": "reviewer",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": "d5428c87-224c-4fd8-9cab-249372bc6894",
+    "at": "2026-11-07T15:30:12.071143Z",
+    "attempt": 1,
+    "checks": [],
+    "elapsed_ms": 265,
+    "failure_code": null,
+    "kind": "role_started",
+    "output_sha256": null,
+    "role": "reviewer",
+    "seq": 17,
+    "state": "reviewer",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": "d5428c87-224c-4fd8-9cab-249372bc6894",
+    "at": "2026-11-07T15:30:12.082996Z",
+    "attempt": 1,
+    "checks": [],
+    "elapsed_ms": 281,
+    "failure_code": null,
+    "kind": "role_completed",
+    "output_sha256": "b9177f65626c0f1e269b28e9a400ce793ccb7010ca04acc28ac13e6e293a0c13",
+    "role": "reviewer",
+    "seq": 18,
+    "state": "reviewer",
+    "tool": null,
+    "tool_result_id": null
+   },
+   {
+    "agent_run_id": null,
+    "at": "2026-11-07T15:30:12.095403Z",
+    "attempt": null,
+    "checks": [],
+    "elapsed_ms": 0,
+    "failure_code": null,
+    "kind": "workflow_terminated",
+    "output_sha256": null,
+    "role": null,
+    "seq": 19,
+    "state": "done",
+    "tool": null,
+    "tool_result_id": null
+   }
+  ],
+  "tool_results": [
+   {
+    "as_of": "2026-11-07T15:30:11.070771Z",
+    "content_sha256": "ed154eefe0cfdc95fa0861b01edd96668d9f88d8e04dacdb581b3cf577693c7f",
+    "denial": null,
+    "evidence_ids": [
+     "cc4c067b-2cd5-40ac-8c91-28539952b03d",
+     "e03e4766-c386-482d-b4f4-a8a4ff2ba469"
+    ],
+    "id": "bf883b03-f967-48f1-a5e9-340764c0389c",
+    "status": "ok",
+    "tool": "case_evidence",
+    "values": {
+     "amount_minor": 245000,
+     "transaction_count_1h": 2
+    },
+    "window": null
+   },
+   {
+    "as_of": "2026-11-07T15:30:11.070771Z",
+    "content_sha256": "20116c3daf0e9e5ff69257f8f6029ee908a76fd0a597bd215620b96f8592f9d1",
+    "denial": null,
+    "evidence_ids": [],
+    "id": "d5b469c3-7445-4b82-a5a8-d55452689b87",
+    "status": "ok",
+    "tool": "scoring_outcome",
+    "values": {
+     "large_amount_rule_hit": true
+    },
+    "window": null
+   },
+   {
+    "as_of": "2026-11-07T15:30:11.070771Z",
+    "content_sha256": "da9e5a58a2e91dd2b8cb8b622df0f23536ccb9d1611f9bfdd3d55e6f0ed490b6",
+    "denial": null,
+    "evidence_ids": [],
+    "id": "48a6840d-e876-48e9-8cbc-38820dced93a",
+    "status": "ok",
+    "tool": "account_history",
+    "values": {
+     "history_count_24h": 2
+    },
+    "window": "24h"
+   },
+   {
+    "as_of": "2026-11-07T15:30:11.070771Z",
+    "content_sha256": "2bd574288672ce8826e5145852953281ecda8a602dccffd3d77fc29ee6a2f4b8",
+    "denial": null,
+    "evidence_ids": [],
+    "id": "7747c2a0-bcdc-47af-901c-e943a5ff8615",
+    "status": "ok",
+    "tool": "account_history",
+    "values": {
+     "history_max_amount_minor_30d": 12000,
+     "history_median_amount_minor_30d": 6000
+    },
+    "window": "30d"
+   },
+   {
+    "as_of": "2026-11-07T15:30:11.070771Z",
+    "content_sha256": "b4bc6e4c972113e0d8abdee2c760004f3086a8c16156d5c27eea61d97898b111",
+    "denial": null,
+    "evidence_ids": [],
+    "id": "c1da149a-c627-40c7-8645-a30342fb7708",
+    "status": "unavailable",
+    "tool": "account_profile",
+    "values": {},
+    "window": null
+   }
+  ],
+  "trace_read": {
+   "case_revision": 3,
+   "case_state": "awaiting_approval",
+   "legacy_investigator_runs": 0,
+   "read_at": "2026-11-07T15:30:12.273405Z",
+   "workflow_count": 1
+  },
+  "usage_summary": {
+   "input_tokens": null,
+   "not_applicable_attempts": 3,
+   "output_tokens": null,
+   "reported_attempts": 0,
+   "unknown_attempts": 0
+  },
+  "workflow": {
+   "case_revision": 2,
+   "config": {
+    "name": "three-role-workflow",
+    "sha256": "8dcd8935fa3642f2cdd4c4f0a782575346d6054401efb2304180badb4a79ac4f",
+    "version": "w1"
+   },
+   "deadline_at": "2026-11-07T15:32:41.856652Z",
+   "deadline_status": null,
+   "disposition": {
+    "basis_run_id": "b2007854-ca96-43ea-a0f6-960f0d04152b",
+    "inconclusive_code": null,
+    "kind": "recommend",
+    "operation": "simulated_hold",
+    "reason_code": "velocity_pattern",
+    "schema_version": "1.0",
+    "supported_claims": 4,
+    "unsupported_claims": 0
+   },
+   "finished_at": "2026-11-07T15:30:12.095403Z",
+   "id": "5d9eda14-abe8-4826-89d0-26e085dc53f9",
+   "input_snapshot_sha256": "055ec0b7f1b774fa3770cbae58ea00204e5e7a7e58cb80905fd6cfc69af6616a",
+   "recorded_role_invocations": 3,
+   "recorded_tool_calls": 5,
+   "started_at": "2026-11-07T15:30:11.856652Z",
+   "status": "completed",
+   "terminal_by": "coordinator",
+   "tool_profile": {
+    "name": "agent-read-tools",
+    "sha256": "7065ef0fb0dd83a4b7c639f5e84ed7bc14b5b9d0bdbe144cfa9db956bbdc4aba",
+    "version": "t1"
+   }
+  }
+ },
+ "scenario": {
+  "currency": "USD",
+  "description": "One synthetic account: four small earlier debits (two in the hour before) followed by one large debit that crosses the rule threshold.",
+  "id": "demo01-velocity-large-debit",
+  "synthetic": true
+ },
+ "schema": "sentinel.demo01.recorded-replay.v1"
+}
