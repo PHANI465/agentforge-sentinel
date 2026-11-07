@@ -1,5 +1,53 @@
 # Handoff: task/claude-g3d-p4a-tooling
 
+- **Task and acceptance criteria:** P4a review corrections R46, R47 and R49 ([CLAUDE_P4A_REVIEW_FIXES.md](../prompts/CLAUDE_P4A_REVIEW_FIXES.md), findings in docs/reviews/G3D-P4a-96293da.md on task/coordination), under the batch dispatch CLAUDE_BATCH_REVIEW_CORRECTIONS_2026-11-06.md. The original P4a delivery (A–E, 96293da) is described below this section.
+- **Tool and worktree:** Claude Code (Opus 5.5 / High), Worker A, the only editor of E:/PHANI/sentinel-wt/claude-g3d-p4a-tooling.
+- **Base:** 96293da1a3403bb1d9bf9eb7c669354b2089c5be (no reset, amend or rebase; earlier commits kept).
+- **Updated:** 2026-11-07, local time (-07:00).
+- **State:** ready for Codex re-review. Not accepted or integrated.
+- **Code reference tested before this note:** the fix commit 4b9118d647d5215d7ff593395e5f49be1899b172, and the identical working tree before it. The final exact-HEAD focused run (after this note's commit) is reported in chat; a note cannot name its own commit.
+- **Owned and changed paths:** scripts/agent_eval_support/artifact.py, scripts/agent_eval_score.py, scripts/agent_eval_report.py, tests/test_agent_eval_corrections.py (new), tests/test_agent_eval_scoring.py, tests/test_agent_eval_reporting.py, tests/test_agent_eval_pilot.py (make_run test data only), docs/evals/agents/p4a-tooling.md, this note. No production src, frozen protocol/cases, contracts, UI, locks, CI or timeouts changed.
+
+## Implemented (corrections)
+
+- **R46** (`artifact.validate_run`):
+  - Each row's outcome, code, case state, disposition and telemetry status must agree (refused: code `agent_capacity_exhausted`, no state or disposition, 0 role attempts; pending: a pending code; error: a non-typed code and no disposition; inconclusive: no disposition, not awaiting_approval; disposition: no code, a disposition unless telemetry was unavailable). Disposition kind and source must fit the comparator.
+  - `status` must be complete/incomplete. A complete record may have nothing not attempted. An incomplete record's `stopped` must match the boundary (last comparator that ran and its first not-attempted case, or the first comparator not started). Comparators must be in planned order.
+  - Scoring keeps unknown recommendations (telemetry unavailable) apart (`recommendation_unknown`, excluded from the acceptable denominator, with a note), and lists pending attempts with a stored hold as `wrong_holds.pending_with_stored_hold` without inferring a disposition. First outcomes, wrong-hold 0/1 and the R41/R42 attempt rules are unchanged.
+- **R47** (`agent_eval_score.read_sheet`/`human_metrics`, `agent_eval_report.review_packets`):
+  - The unblinding key now binds every generated sheet row (item, kind, text SHA-256 as a CSV reader reads it back). A sheet is refused for: wrong columns, an unknown packet or item, a duplicate item, a missing generated item, changed text or kind, an invalid choice (`banana`), an answer in a column that does not apply, a correction without `would_correct = yes`, or a key without binding.
+  - Blank is unanswered, never "no". Every metric reports its answered and unanswered counts, and `review_status` is complete, partial or not scored. The rubric-supported denominator is supported + unsupported + not_checkable (protocol-v1 §3), so 1 supported + 1 not_checkable = 1/2. The earlier maintained test that expected 1/2 for supported/unsupported/not_checkable now expects 1/3.
+- **R49** (`agent_eval_report`):
+  - The export rebuilds the adopted disposition from storage (the runner's rule) and refuses any disagreement in source, kind, operation, reason_code, basis_run_id, workflow_id or claim counts. It also refuses a basis that is not a finding run of the adopted workflow, and a stored adoption contradicting a recorded inconclusive/refused outcome. Exported fields come from storage, labelled `verification`. For a disposition whose telemetry was unavailable, the export is stored-only and labelled; the recorded outcome is unchanged.
+  - Owner/admin/switched export logins are refused before any read. `review_packets` re-validates each bundle's run digest and its adopted-vs-run agreement before building any packet.
+  - Two aggregate cross-checks that I tried briefly (latency list, inconclusive_by_code) were dropped: the scorer recomputes both from rows. The two parametrized cases for them failed on 96293da in the first failing-first file, but they are not in the final tests.
+
+## Verified (corrections)
+
+- **Failing-first on unchanged 96293da source** (new tests written before any source edit). Evidence is private and ignored, under `.agent/p4a-fix/`:
+  - `failing-first-unit-96293da.xml`: 38 failed / 0 passed. That covers every R46/R47 unit test and the bundle check, including both review mutations, banana, duplicate, partial, correction-only and supported+not_checkable.
+  - `failing-first-db-96293da.xml`: 5/5 R49 real-DB tests failed. The escalate→simulated_hold/hold export was accepted, revision basis and owner identity were not refused, and telemetry-unavailable gave adopted None.
+  - `failing-first-db-fields-96293da.xml`: the reordered field test failed at its first mutation ("C0 reason" accepted).
+- **After the fix** (working tree = 4b9118d content, plus the one-line test fix below):
+  - `focused-fixed-worktree.xml` / `.log`: 93 passed, 1 failed, 209.8 s, across six modules (corrections, reporting, scoring, pilot including the real deterministic end-to-end, privileges, failures).
+  - The failure was a test bug. The "C2 operation" mutation set `simulated_hold`, which is already C2-det's stored D01 operation, so nothing changed. It was diagnosed, fixed to always change the value, and passed: `focused-r49-fields-fixed.xml`, 1 passed, 19.1 s.
+  - One intermediate rerun used unchanged code (the edit had not applied) and failed identically; that is recorded honestly. Ruff is clean.
+- **Test databases:** a disposable initdb cluster owned by the pytest session (conftest `pg_cluster`), stopped and removed by pytest; there is no external database. Every DB run held the shared heavy-slot lock (log entries "A acquire/release").
+
+## Not verified / gaps (corrections)
+
+- No full six-command Windows/native gate. Per the batch, the coordinator certifies once on the combined preview, and this branch SHA does not inherit that result. No browser, frontend, live, auth or provider work.
+- These are consistency checks of unsigned, editable files, not tamper-proofing. A fully coherent rewrite of a run file is detectable only by the storage-backed export, and an edited bundle with both copies changed coherently is not detectable offline.
+- Keys generated before this change have no sheet binding and are refused; the packets must be regenerated. Workflow elapsed remains not measured.
+
+## Next action
+
+Codex independently re-reviews R46/R47/R49 at the final corrected SHA reported in chat.
+
+---
+
+# Original P4a delivery (96293da), kept as history
+
 - **Task and acceptance criteria:** G3D-P4a evaluation tooling, milestones A–E ([CLAUDE_G3D_P4A_EVALUATION_TOOLING.md](../prompts/CLAUDE_G3D_P4A_EVALUATION_TOOLING.md), batch [CLAUDE_TODAY_BATCH_2026-11-06.md](../prompts/CLAUDE_TODAY_BATCH_2026-11-06.md)).
 - **Tool and worktree:** Claude Code (Opus 5.5 / High), in E:/PHANI/sentinel-wt/claude-g3d-p4a-tooling.
 - **Base:** published main d8443a199200157afa2131ddf8f22c1d20b89a26, which contains accepted plan cee83f9 and tested G3D-P3 integration 495c7d3.
