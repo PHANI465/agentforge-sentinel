@@ -308,6 +308,8 @@ Unsupported until data exists: reversals, refunds, fees and chargebacks.
 
 ## 13. Open questions for review
 
+Proposed resolutions of all six, and the AN01-M1 report-query measurement plan, are in [AN01-decisions-r3.md](AN01-decisions-r3.md). That is a proposal for review, not accepted, and the r2 text below is unchanged.
+
 1. Is the five-zone allow-list acceptable for S1, and how should zone data be pinned on Linux, where `tzdata` is not locked and `zoneinfo` prefers the system database?
 2. How should the new contract version widen `Capability` for `read_report`, and how should v1.x clients that validate the enum treat a session that carries it?
 3. Should the drilldown cursor be signed (an HMAC with a server key)? r2 argues it need not be, because it carries no authority (contract §2).
