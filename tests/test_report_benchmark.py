@@ -1133,3 +1133,21 @@ def test_phase_e_shadow_index_follows_the_common_variant():
     assert rb.SHADOW_WINDOW_INDEX not in rb.shadow_ddl("A")
     assert rb.shadow_ddl("B")[-1] == rb.SHADOW_WINDOW_INDEX
     assert rb.shadow_ddl("C")[-1] == rb.SHADOW_WINDOW_INDEX
+
+
+def test_cleanup_deletes_only_owned_cluster_data_and_is_repeatable(tmp_path):
+    """Regression (first S9 cleanup: a second cleanup crashed on already-deleted data).
+    Only the marked cluster's own pg directory is removed; everything else is kept."""
+    run = br.Run.create(tmp_path / "run", br.PROFILES["tiny"])
+    stack, _ = run.cluster("D2", create=True)
+    (stack.dir / "pg").mkdir()
+    (stack.dir / "pg" / "placeholder").write_text("x")
+    (run.dir / "public" / "keep.json").write_text("{}")
+    args = argparse.Namespace(run_dir=str(run.dir), delete_owned_data=True)
+    assert br.cleanup_command(args) == 0
+    assert not (stack.dir / "pg").exists() and (stack.dir / br.local_stack.MARKER).exists()
+    assert (run.dir / "public" / "keep.json").exists()
+    assert br.cleanup_command(args) == 0           # repeatable, no traceback
+    run.acquire_lock({"pid": os.getpid()})
+    with pytest.raises(br.RunError, match="run lock"):
+        br.cleanup_command(args)

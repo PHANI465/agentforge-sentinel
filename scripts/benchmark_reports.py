@@ -1377,7 +1377,9 @@ def cleanup_command(args) -> int:
         result = stop_cluster(stack, data, until)
         report[name] = result
         if args.delete_owned_data and result in ("stopped", "already-stopped"):
-            if local_stack.database_state(stack, data) in ("stopped", "absent"):
+            if not (stack.dir / "pg").exists():
+                report[name] += "; no owned data directory (already deleted)"
+            elif local_stack.database_state(stack, data) in ("stopped", "absent"):
                 stack.load()   # re-verifies the cluster's own ownership marker
                 shutil.rmtree(stack.dir / "pg")
                 report[name] += "; owned data directory deleted"
