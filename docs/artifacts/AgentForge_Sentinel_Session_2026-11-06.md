@@ -1,5 +1,28 @@
 # Sentinel checkpoint: November 6, 2026
 
+## Current review result: corrected deliveries still need focused fixes
+
+The final author preview is830f018 (full Windows/native722+one skip each, author evidence).
+It contains AN01-r2a8c164a, PERF0159b0b54 and DEMO0147b7cf1; P4a96293da is separate.
+The earlier follow-up prompt was not needed after that delivery.
+
+Independent review passes53 P4a-focused tests,56 benchmark/demo tests,34 AN01 arithmetic
+checks and30/30 standalone replay Chromium checks. Additional probes found four blockers
+to the affected acceptance scopes: R46 artifact accounting, R47 incomplete human scoring,
+R48 history-dependent demo skip and R49 recommendation export/storage mismatch.
+[P4a review](../reviews/G3D-P4a-96293da.md) · [batch review](../reviews/Parallel-batch-830f018.md).
+
+**Next:** give Claude [the current two-worker correction batch](../prompts/CLAUDE_BATCH_REVIEW_CORRECTIONS_2026-11-06.md),
+Opus5.5 / High. Work stays on isolated branches; all heavy jobs share one slot. A new
+task preview can combine corrected P4a+DEMO with the delivered batch and certify Windows
+then Ubuntu once. Codex re-reviews before main application integration. AN01's reporting
+contract remains draft; no analytics implementation, live pilot, final cases or spending.
+
+The accepted application remains tested495c7d3 with666+one-skip Windows/native backend
+evidence. This review publication changes documentation only. Original captures/failures,
+accepted branches and Cursor's seven saved files remain preserved. Earlier sections below
+are dated history and are superseded by this review status.
+
 ## Current Claude parallel batch
 
 P4a96293da evaluator tooling and AN01dd6518d analyst design are delivered, not yet

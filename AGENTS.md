@@ -42,6 +42,19 @@ Current I02 quota exception: the owner reports Cursor's allowance is exhausted. 
 6. Document decisions and source provenance, including reused repository/path/commit and applicable licenses. Preserve required notices and genuine contributor credit.
 7. Use current main as the accepted application and instructions base unless a task explicitly names another exact dependency. Preserve all reviewed component branches and genuine source provenance. Read docs/STATUS.md, docs/TASK_QUEUE.md and docs/releases/MAIN-local-release.md for current acceptance; old prompts and dated snapshots are history. Git commits, frozen contracts and branch handoffs carry context between tools; there is no automatic shared runtime memory or messaging.
 
+## November6 delivery review update
+
+P4a96293da and final task-preview830f018 are independently reviewed, not accepted or
+integrated. Read docs/reviews/G3D-P4a-96293da.md (R46/R47/R49) and
+docs/reviews/Parallel-batch-830f018.md (R48). PERF01 has no blocking scoped finding;
+AN01-r2 remains a draft with open decisions. The current dispatch is
+docs/prompts/CLAUDE_BATCH_REVIEW_CORRECTIONS_2026-11-06.md, superseding the delivered batch
+and obsolete repair follow-up. Two owned correction branches may run in parallel; all
+DB/browser/load/full-gate work is serial. One new combined preview includes corrected
+P4a and DEMO01 for exact-clean Windows then native verification. No main code merge,
+analytics implementation, live/auth/account/final-case work, new spending or remote
+operation is assigned. Preserve old preview/candidates, failures and Cursor's edits.
+
 ## Commit authorship (owner instruction, October 26)
 
 - All new project commits must list **PHANI465 <pgavara1@asu.edu>** as the sole author and use that same committer identity. This includes merge commits. Do not add Co-Authored-By trailers or AI attribution/session trailers to new commit messages.

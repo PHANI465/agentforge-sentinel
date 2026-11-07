@@ -1,5 +1,30 @@
 # Shared implementation queue
 
+## November6: delivered batch independently reviewed; corrections assigned
+
+Claude delivered clean preview830f018 (AN01-r2a8c164a, PERF0159b0b54, DEMO0147b7cf1)
+and the separate P4a96293da. The previous repair/recapture follow-up is obsolete.
+[Independent P4a review](reviews/G3D-P4a-96293da.md) requests R46/R47/R49: contradictory
+artifact accounting, partial human-sheet metrics, and exported recommendations that can
+disagree with storage. [Batch review](reviews/Parallel-batch-830f018.md) requests R48:
+history-dependent demo freshness adds an unexpected skip. PERF01 has no blocking finding
+within the reviewed local deterministic scope. AN01's seven intake clarifications are
+reviewed, but its six contract decisions remain open; no reporting API/UI is assigned.
+
+Independent Windows evidence:53 evaluator-focused tests and56 benchmark/demo tests pass;
+standalone replay Chromium QA30/30; AN01 checker34 checks/zero failures. Separate probes
+reproduce the review defects, including one intentionally failing real-database export
+refusal assertion. Claude's722+one-skip full Windows/native preview results remain author
+certification, distinct from this independent targeted review.
+
+[Current Claude correction batch](prompts/CLAUDE_BATCH_REVIEW_CORRECTIONS_2026-11-06.md)
+assigns two isolated workers, one heavy execution slot, then one NEW combined task-only
+preview including corrected P4a+DEMO01, with sequential exact-clean Windows/native gates.
+No candidate code is accepted/integrated by this publication. Main application remains
+tested495c7d3 plus documentation. Preserve all delivered candidates, failed evidence,
+accepted worktrees and Cursor's seven edits. No live P4b/auth/account/final cases, paid
+overage, external push, CI execution, hosting or deployment is assigned.
+
 ## November6: new parallel Claude batch assigned; deliveries remain review-pending
 
 P4a96293da and AN01dd6518d are delivered on clean author branches, not accepted or

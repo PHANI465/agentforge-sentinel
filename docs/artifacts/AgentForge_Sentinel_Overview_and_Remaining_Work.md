@@ -1,5 +1,16 @@
 # AgentForge Sentinel: project overview and remaining work
 
+## Latest checkpoint: November6 review
+
+Delivery830f018 and separate P4a96293da have been independently reviewed. Corrections
+R46-R49 remain before the affected packages are accepted. PERF01 has no blocking finding
+for its local deterministic scope; AN01 remains a contract draft. No application code
+from this batch has been merged. [Current checkpoint](AgentForge_Sentinel_Session_2026-11-06.md)
+and [Claude correction assignment](../prompts/CLAUDE_BATCH_REVIEW_CORRECTIONS_2026-11-06.md)
+supersede older pending-work descriptions below. The complete study guide remains a dated
+explanation of the implemented project; live quality, real CI/hosting and analytics are
+separate future gates.
+
 **Current work intake:** P4a96293da and AN01dd6518d are delivered but review-pending.
 [Next parallel batch](../prompts/CLAUDE_PARALLEL_BATCH_2026-11-06.md): refine AN01,
 measure bounded deterministic local capacity, and build a key-free recorded replay.
