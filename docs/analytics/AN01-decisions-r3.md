@@ -1,20 +1,22 @@
 # AN01 r3: proposed resolutions of the six open decisions, and a report-query measurement plan
 
-Audience: Codex, as the reviewer who decides whether the AN01 S1 contract can be frozen; then
-the backend and frontend implementers.
+Audience: Codex, who decides whether the AN01 S1 contract can be frozen; then the backend and frontend implementers.
 
-- **Status:** proposal for review. Nothing here is accepted, implemented or exposed. No
-  route, migration, capability, contract document or lockfile changes in this branch.
-- **Base:** main `c2140ce`, which contains tested integration `871e31d` and the AN01-r2
-  documents unchanged (`a8c164a`).
-- **Answers:** the six questions in [design §13](AN01-workspace-design.md#13-open-questions-for-review),
-  plus the review note to separate a PostgreSQL statement/cancel budget from a guaranteed
-  request deadline ([Parallel-batch review](../reviews/Parallel-batch-830f018.md), "AN01
-  decisions still needed").
+- **Status: revision r3.1.** It answers the review `task/coordination:docs/reviews/AN01-r3-b436c5e.md` (R50–R52) on the same branch, after `b436c5e`. It is a proposal: nothing is accepted, implemented or exposed. No route, migration, capability, contract document, script, lockfile, UI or CI change. AN01-M1 is not run.
+- **Base:** main `c2140ce`, with the AN01-r2 documents (`a8c164a`). The review's supported policy decisions are applied as stated in §1.
 - **Companion files:**
-  - [AN01-zone-table.json](AN01-zone-table.json): the proposed pinned zone table;
+  - [AN01-zone-table.json](AN01-zone-table.json): the pinned zone table, now padded per R50;
   - [derive_an01_zones.py](derive_an01_zones.py): derives that table under review;
   - [check_an01_r3.py](check_an01_r3.py): recomputes every *derived* number below.
+
+## 0. What r3.1 changes
+
+| Finding | Change | Section |
+| --- | --- | --- |
+| R50 | The public UTC request domain is now kept apart from the padded local-date lookup range. The table covers every containing date and next-midnight sentinel. Lookups are strict, and date mode is validated after conversion. Both edges get known answers in all five zones, and the checker covers the whole domain. New digest | §2 |
+| R51 | The measured unit is a complete report operation under one budget, and every SQL and control statement is enumerated and hashed. The plan is staged commands, each inside the unchanged 2,700 s cap, with an honest total bound. One index configuration is chosen jointly for both platforms. Phase E becomes a matched design comparison at N\*. Missing evidence means "not demonstrated" | §8 |
+| R52 | Connection acquisition gets its own disclosed policy, outside the budget. The report budget starts after acquisition, with a report-specific ROLLBACK reserve. Admission and quarantine are finite and separate from the workflow registry. Refusal controls are separated from submitted-statement controls, with feasible budgets and proof of submission | §5, §8.3 |
+| Policy | Opt-in v1.3 with explicit legacy-client incompatibility. Selectable CLI choices are separated from the unchanged default grants. Cursor counts must be coherent. The nudge now reads "Received {n} minutes ago". The cutoff applies to ingestion timestamps | §3, §4, §7 |
 
 ## How each number is labelled
 
@@ -22,290 +24,423 @@ the backend and frontend implementers.
 | --- | --- |
 | **derived** | Follows from the encoding, schema or committed data. `check_an01_r3.py` recomputes it, and it needs no performance measurement |
 | **measured once** | Observed on this laptop by the command given; a fact about that environment only |
-| **provisional** | A design number that no measurement supports yet. It stays provisional until the AN01-M1 plan (§8) runs and Codex accepts its result |
-| **policy** | A product choice. It is not a performance claim |
+| **provisional** | A design number that no measurement supports. It stays provisional until AN01-M1 (§8) runs completely and Codex accepts the result |
+| **policy** | A product choice, not a performance claim |
 
 ## 1. Summary of the proposed decisions
 
 | # | Question | Proposed resolution | Label |
 | --- | --- | --- | --- |
-| 1 | Zone data pinning | Runtime uses a **committed five-zone midnight table** (IANA 2026e, sha256 `dd1b19c9…`), never host `zoneinfo`. Deriving it under review on both platforms gives identical bytes. No lockfile change | derived + measured once |
-| 2 | Capability and version compatibility | **Additive HTTP contract v1.3** widens `Capability` by `read_report`, and v1.2 freezes. Clients must ignore capability values they do not know; Sentinel's web client already does. The server keeps closed validation. `/v1/session` is not filtered | policy |
-| 3 | Cursor integrity | **Unsigned**, with strict member validation, a **derived 256-character limit** (worst case 228), and a UI that only uses cursors from its own last response | derived + policy |
-| 4 | Query limits | Separate **database budget** (statement/lock timeout plus the client stopping its wait) from any response deadline. Reuse the accepted `BoundedTransaction` pattern and end with ROLLBACK. The 200,000-row cap and the 5,000 ms budget stay provisional until AN01-M1 | provisional |
-| 5 | Index strategy | One draft migration: `transactions (tenant_id, session_id, occurred_at, id)`, plus a candidate `simulated_actions (tenant_id, session_id)` that AN01-M1 decides. **No generated columns** in S1 | proposal, measurement-gated |
-| 6 | UI staleness wording | Two separate signals. An earlier `as_of` is a **chosen cutoff**, never "old". Result age is measured on the **browser's monotonic clock since receipt**, never as browser wall clock minus `read_at`. A 5-minute nudge is policy | policy |
+| 1 | Zone data | Runtime uses a committed five-zone midnight table, never host `zoneinfo`. Lookup dates are padded to 1999-12-31 .. 2038-01-02 for the UTC domain `[2000-01-01, 2038-01-01)`. IANA 2026e, sha256 `24e41cec…`. Lookups are strict | derived + measured once |
+| 2 | Capability and version | **Opt-in** v1.3 adds `read_report` and freezes v1.2. This is **conditional compatibility**: strict legacy clients are incompatible with sessions that carry the new value. The CLI separates supported choices (five values) from the default grant (the unchanged four) | policy |
+| 3 | Cursor | Unsigned, at most 256 characters (worst case 228). Canonical UUID and timestamp, exact integers (not bool), filter binding, and `0 <= with_outcome <= matching <= cap` | derived + policy |
+| 4 | Limits and budget | A disclosed connection policy outside the budget. One monotonic report budget starts after acquisition, with a report ROLLBACK reserve. Admission and quarantine are finite and report-specific. The cap of 200,000 and budget of 5,000 ms stay **provisional** | provisional |
+| 5 | Indexes | `transactions (tenant_id, session_id, occurred_at, id)`, plus a candidate `simulated_actions (tenant_id, session_id)`. Both are chosen by one joint cross-platform rule in AN01-M1. No generated columns | measurement-gated |
+| 6 | Staleness wording | The cutoff filters **ingestion timestamps**. "Received {n} minutes ago" is timed from receipt with a 5-minute nudge, and is kept separate from the server's `read_at` | policy |
 
-## 2. Decision 1: time-zone data pinning
+## 2. Decision 1: zone data, request domain and lookup range (R50)
 
-**Facts:**
-- **The lock:** `tzdata` 2026.5 is locked only with the marker `sys_platform == 'win32'` (`uv.lock`, as a dependency of `psycopg`).
-- **Native Ubuntu** (WSL, Python 3.11.14): `import tzdata` fails, and `zoneinfo.TZPATH` starts with `/usr/share/zoneinfo`, which is Ubuntu package `tzdata 2026e-0ubuntu0.24.04.1`.
-- **Windows** (Python 3.11.3): `TZPATH` is empty, and `zoneinfo` uses the locked wheel, IANA 2026e.
-- So the two platforms reach the same IANA release today by different routes, and a host update can change Linux at any time.
+### 2.1 Facts
 
-**Proposal:**
-1. **Pin the table.** Commit the derived table [AN01-zone-table.json](AN01-zone-table.json): 3 KB, the five allow-listed zones, local dates 2000-01-01 to 2038-01-01. Each row is `[first local date, UTC offset at local midnight in seconds]`, and the digest is `dd1b19c9c191d33f94758cf81bab82ac5d29c68b9717e5f58897ac2e024749a5`, with domain `sentinel.report-zones.an01-s1\n`.
-2. **Use only the table at runtime.** The server computes the start of local date D as `D 00:00 UTC − offset(D)` from the table, and passes those instants to SQL, as r2 §6 already requires. Host zone data, the `tzdata` wheel and PostgreSQL's `TimeZone` are never consulted at runtime, so no platform or host update can change a report.
-3. **Report provenance.** `tz_data` becomes `"an01-zones IANA 2026e sha256:dd1b19c9…"` instead of the host's version.
-4. **Changing the table** (a future tz release, or a wider allow-list) is a reviewed change:
-   - run `derive_an01_zones.py --check` on Windows and on native Linux;
-   - on a difference, regenerate the table, bump `report_version`, and get it reviewed.
+- **The lock.** `tzdata` 2026.5 is locked only for `sys_platform == 'win32'` (`uv.lock`, as a dependency of `psycopg`).
+- **Native Ubuntu** (WSL, Python 3.11.14): there is no `tzdata` module, and `zoneinfo` uses `/usr/share/zoneinfo` (Ubuntu `tzdata 2026e-0ubuntu0.24.04.1`).
+- **Windows** (Python 3.11.3): `zoneinfo` uses the locked wheel, IANA 2026e.
+- So the two platforms reach the same release today by different routes, and a host update can change Linux.
 
-   This is a manual review command, **not** a gate test. A host whose zone database is missing or newer must neither fail nor skip the strict gate (the skip policy allows exactly one skip).
-5. **Gate tests stay platform-independent.** The implementation's unit test loads the table, recomputes its digest, and asserts its invariants: ordered ranges, and day lengths only 82,800, 86,400 or 90,000 s. `check_an01_r3.py` already performs those checks here.
-6. **Keep the window bound** `[2000-01-01T00:00:00Z, 2038-01-01T00:00:00Z)`, because it is exactly the range the table covers.
-7. **No lockfile change.** It is not needed, which avoids new dependency resolution.
+### 2.2 Two ranges, kept apart
 
-**Evidence:**
-- **Measured once:** `derive_an01_zones.py --check` reports "matches the committed table" on both Windows (tzdata wheel 2026e) and native Ubuntu (system zoneinfo 2026e), with the same digest.
-- **Derived** (`check_an01_r3.py`, from the table alone):
-  - every local midnight in the five zones exists, and is unambiguous by construction of the derivation;
-  - London and New York have 38 days of 82,800 s and 38 of 90,000 s;
-  - the r2 known answers hold: New York 2026-03-08 and 2026-11-01, London 2026-03-29 and 2026-10-25, and Kolkata 2026-10-01 starting at 09-30T18:30Z;
-  - **an exhaustive check over 2000–2037** shows a 92-day instant window touches at most 93 local dates in UTC, Kolkata and Tokyo, and 94 in London and New York, so the r2 bound of 376 daily rows holds. r2 had checked only 2026.
+| Range | Value | Role |
+| --- | --- | --- |
+| **Public request domain** | UTC instants `[2000-01-01T00:00:00Z, 2038-01-01T00:00:00Z)` | The only thing a request is validated against |
+| **Lookup range** | Local dates `[1999-12-31, 2038-01-02]`, inclusive, in every zone | The dates the server may need to look up while serving a valid request. It is padding, not a request bound |
+
+**Why the padding is needed** (derived; `derive_an01_zones.py` computes this from zoneinfo, and the checker from the table):
+- **New York:** the lower edge 2000-01-01T00:00Z is local 1999-12-31 19:00. Its first bucket is local date **1999-12-31**, which starts at 1999-12-31T05:00Z.
+- **Kolkata and Tokyo:** the last valid instant, 2037-12-31T23:59:59.999999Z, is local **2038-01-01**. Its bucket ends at the **2038-01-02** midnight: 2038-01-01T18:30Z in Kolkata and 2038-01-01T15:00Z in Tokyo.
+- **UTC and London:** need 2000-01-01 through the 2038-01-01 sentinel. New York's upper sentinel is 2038-01-01T05:00Z.
+
+The r3 table covered only 2000-01-01 .. 2038-01-01, so it missed New York's lower date and the Kolkata/Tokyo upper sentinel. Its checker extended the last offset by one day without proof. One shared padded range covers every zone.
+
+### 2.3 Proposal
+
+1. **Pin the table.** The committed table [AN01-zone-table.json](AN01-zone-table.json) has:
+   - `lookup_dates` `[1999-12-31, 2038-01-02]`;
+   - `request_domain_utc` recorded separately;
+   - for each zone, ranges of `[first local date, UTC offset at local midnight, seconds]`;
+   - sha256 `24e41cecb475453bb35e166abfc250610670593fd6ff0f324e0095eae274e165`, under domain `sentinel.report-zones.an01-s1.v2\n` over `{lookup_dates, ranges}`.
+2. **Strict lookups.** The start of local date D is `D 00:00 UTC − offset(D)`, but only for D inside `lookup_dates`.
+   - Outside that range the lookup is an error, and the request gets 422 `invalid_request`. It is never clamped, extrapolated from the last offset, or indexed below 0.
+   - Host zone data, the `tzdata` wheel and PostgreSQL's `TimeZone` are never consulted at runtime.
+3. **Validation order.** Validate after conversion. **Instant mode:**
+   - parse `from` and `to`;
+   - require `LOWER <= from < to <= UPPER` and the length limit.
+   - Bucket lookups then always fall inside the table. The checker proves this for every window start in the domain.
+4. **Date mode:**
+   - require 1 to 92 local dates;
+   - convert `date_from` and `date_to` by strict lookup, so a date outside the table is refused;
+   - then require the *converted* instants to satisfy `LOWER <= from` and `to <= UPPER`.
+   - Known answers:
+     - New York `[1999-12-31, 2000-01-01)` is refused, because it converts to 1999-12-31T05:00Z, before `LOWER`;
+     - New York `[2000-01-01, 2000-01-02)` is accepted;
+     - Tokyo `[2037-12-31, 2038-01-01)` is accepted;
+     - Tokyo `[2038-01-01, 2038-01-02)` is refused, because its converted end 2038-01-01T15:00Z is after `UPPER`;
+     - Tokyo `[2038-01-02, 2038-01-03)` is refused at lookup, with no extrapolation.
+5. **Edge buckets.** A bucket's `day_seconds` is its full local day, from the table. For New York's 1999-12-31 bucket that is 86,400 s, with `covered_seconds` 18,000, clipped to the domain. The day may extend outside the request domain, which is exactly why the table is padded.
+6. **Provenance:** `tz_data = "an01-zones IANA 2026e sha256:24e41cec…"`.
+7. **Changing the table** (a new tz release, or a wider allow-list) is a reviewed change:
+   - run `derive_an01_zones.py --check` on Windows and native Linux;
+   - on a difference, regenerate with `--write`, bump `report_version`, and get it reviewed.
+
+   This is a manual command, **not** a gate test: a host with different zone data must neither fail nor skip the strict gate.
+8. **Platform-independent gate test.** The implementation's unit test loads the table, recomputes its digest, and asserts the invariants and edge answers that `check_an01_r3.py` asserts here.
+9. **No lockfile change.**
+
+### 2.4 Evidence
+
+**Measured once:**
+- `derive_an01_zones.py --check` reports "matches the committed table" on Windows (tzdata wheel 2026e) and native Ubuntu (system zoneinfo 2026e).
+- Both report the same digest `24e41cec…`, and both platforms' zoneinfo give the same required dates per zone.
+
+**Derived** (`check_an01_r3.py`, 59 PASS, table only):
+- **Edge answers.** Every zone's lower and upper edge known answers hold (the four edge rows in §2.2).
+- **Whole domain.** All whole-hour window starts in the whole UTC domain, plus 1 µs before every local midnight and both edges, were checked. That is about 333,000 starts per zone, with windows `[t, min(t + 92 days, UPPER))`. There were zero uncovered lookups.
+  - At most 93 local dates are touched in UTC, Kolkata and Tokyo, and 94 in London and New York, so the 376-row daily bound holds over the whole domain.
+  - The r3 checker's sample stopped at 2037-09-01.
+- **Strictness.** Lookups of 1999-12-30 and 2038-01-03 are refused, and an instant before the table has no containing date: there is no negative index.
+- **Date mode.** The known answers above hold. Every accepted 1-date and 92-date request, from every start date, converts with in-table lookups.
+- **r2 known answers are unchanged:** New York 2026-03-08 and 2026-11-01, London 2026-03-29 and 2026-10-25, and Kolkata 2026-10-01 starting at 09-30T18:30Z.
+
+**Failing first.** `check_an01_r3.py --coverage-only --table <b436c5e table>` fails exactly seven explicit checks, with no import or exception failures:
+- New York's lower edge (2 checks);
+- the Kolkata and Tokyo upper sentinels (2 checks each);
+- the whole-domain coverage check, with 4,621 uncovered window starts.
+
+The unchanged b436c5e checker still passes the b436c5e table (23/23), which shows the gap it missed. The evidence is in the branch's ignored `.agent/an01-r3-fix/`.
 
 **Rejected:**
-- Locking `tzdata` for all platforms: a lockfile change and new resolution, and it still yields a version that drifts with every lock refresh.
-- Using PostgreSQL's zone data: a second rule source, with r2 §6's nonexistent and ambiguous-time issue.
+- Locking `tzdata` on all platforms: a lockfile change, and the version drifts with lock refreshes.
+- PostgreSQL zone data: a second rule source.
+- Shrinking the request domain to fit the old table: it would still need padding in some zone at one edge.
 
 ## 3. Decision 2: capability and version compatibility
 
 **Facts:**
-- **Server types.** `Capability` (`src/sentinel/contracts/http_v1.py:21`) and `TrustedContext.capabilities` (`src/sentinel/contracts/v1.py:71`) are closed `Literal` sets of the four current values.
-- **Validation happens at authentication.** `Sentinel.authenticate` (`src/sentinel/service.py:172`) builds `TrustedContext` from `api_sessions.capabilities`. That column is `text[]` with **no** CHECK, so an unknown stored value fails validation there and is never treated as a grant.
-- **There is one `/v1/session` route and no version negotiation** (no header or media type selects v1.1 or v1.2). `scripts/export_http_contract.py` keeps v1 and v1.1 frozen by SHA, with v1.2 as the active revision.
-- **The web client** (`web/src/api/client.ts:121`, `acceptSession`) accepts any capability strings, and checks only that each is a string. It already tolerates an unknown value.
+- `Capability` (`src/sentinel/contracts/http_v1.py:21`) and `TrustedContext.capabilities` (`src/sentinel/contracts/v1.py:71`) are closed sets of four values.
+- `Sentinel.authenticate` (`src/sentinel/service.py:172`) validates `api_sessions.capabilities` (`text[]`, no CHECK) into `TrustedContext`. An unknown stored value fails validation and is never a grant.
+- There is one `/v1/session` route and no version negotiation. `scripts/export_http_contract.py` freezes v1 and v1.1 by SHA, and v1.2 is active.
+- `web/src/api/client.ts:121` (`acceptSession`) accepts any capability strings.
+- **CLI:** `ALL_CAPABILITIES` (`src/sentinel/cli.py:14`) is used for **both** the argparse `choices` (`:24`) and the default grant (`:76`).
 
 **Proposal:**
-1. **A new additive contract version, v1.3.** It contains:
+1. **Opt-in v1.3.** It adds:
    - `Capability` widened by `read_report`;
-   - the S1 route `GET /v1/reports/{report_id}`;
-   - the new errors 413 `report_too_large` and 503 `report_timeout`;
+   - `GET /v1/reports/{report_id}`;
+   - the errors 413 `report_too_large`, 503 `report_timeout` and 409 `report_capacity_exhausted` (§5.3);
    - the reused 422 `invalid_cursor`.
 
-   v1.2 then freezes by SHA, following the existing v1.1 pattern. The v1, v1.1 and v1.2 documents are never edited.
-2. **Compatibility rule, stated in v1.3** (the documents are prose plus OpenAPI):
-   - The server emits only values in its own version's enum.
-   - Clients must treat `capabilities` as a set and **ignore values they do not recognize**. An unknown value grants nothing to the client; authority is enforced by the server per route.
-   - A v1.0–v1.2 client that validates the enum strictly is incompatible with a session issued `read_report`. Operators must not issue `read_report` to sessions such clients use, and the `create-session --help` text says so.
-3. **Issuance is unchanged from r2:**
-   - only the operator CLI issues `read_report`;
-   - it is not in `ALL_CAPABILITIES`;
-   - repeated `--capability` flags give exactly the listed set;
-   - no backfill, and no HTTP issuance.
+   v1.2 freezes by SHA, following the v1.1 pattern. v1, v1.1 and v1.2 are never edited.
+2. **Conditional compatibility, stated plainly.** This is **not** an unconditionally backwards-compatible enum addition.
+   - A default session is unchanged, so every v1.x client keeps working with it.
+   - A session issued `read_report` returns a value outside the v1.0–v1.2 enum, so **strict legacy clients are incompatible with such sessions**.
+   - v1.3 says clients should ignore capability values they do not recognize. Sentinel's web client already does. An unknown client-side string never authorizes anything: the server enforces authority per route.
+   - Operators issue `read_report` only to clients that follow v1.3, and the `create-session --help` text says so.
+3. **CLI: choices and defaults separated.**
+   - `SUPPORTED_CAPABILITIES` holds the five values, including `read_report`, and drives argparse `choices`.
+   - `DEFAULT_CAPABILITIES` holds exactly today's four values and is used when no `--capability` is given.
+   - Repeated `--capability` flags give exactly the listed set, for example `--capability read_case --capability read_report`.
 
-   The runtime role still has only SELECT on `api_sessions`.
-4. **The server keeps closed validation.** `TrustedContext` is widened by exactly `read_report` in the same change, so an unknown stored value still never authorizes.
-   - Turning today's validation failure on an unknown stored value into a typed 401 is a separate hardening item. It is not part of S1, and it changes no current behaviour.
+   Removing `read_report` from a single shared constant would make it unselectable, so the two constants are required. There is no backfill and no HTTP issuance, and the runtime role keeps only SELECT on `api_sessions`.
+4. **The server keeps closed validation.** `TrustedContext` is widened by exactly `read_report` in the same change.
+   - Turning today's failure on an unknown stored value into a typed 401 is a separate hardening item. It is not in S1, and current behaviour is unchanged.
 
 **Rejected:**
-- Filtering `read_report` out of `/v1/session` for old clients: there is no negotiation to know which client is asking, and filtering would hide the permission from the UI that needs it.
-- A separate "report access" route that keeps the enum frozen: it splits one authority view in two, for no safety gain.
-- A major version bump: the change is additive.
+- Filtering `/v1/session` per client: no negotiation exists.
+- A separate report-access route: it splits one authority view.
+- A major version: the change is opt-in and additive for default sessions.
 
-**Acceptance cases added** (to r2's A9):
-- a v1.3 `/v1/session` example containing `read_report` validates against v1.3 and is not added to the frozen v1.2 examples;
-- a web-client unit test shows an unknown capability string is ignored rather than rejected (this behaviour exists today; the test pins it).
+**Acceptance cases** (added to r2 A9):
+- a plain `create-session` grants exactly the four defaults;
+- `--capability read_report` is accepted, and its session has exactly the listed set;
+- a v1.3 `/v1/session` example with `read_report` validates against v1.3 and is not added to the frozen v1.2 examples;
+- a web-client unit test pins that an unknown capability is ignored.
 
 ## 4. Decision 3: cursor integrity
 
-**Proposal: keep cursors unsigned (r2 §2), tightened in four ways:**
+Cursors stay unsigned, as in r2 §2.
 
-1. **Length limit 256 characters (derived, not provisional).**
-   - The encoding is fixed: the report ID, a 64-hex digest, a 27-character timestamp, a 36-character UUID and two counts.
-   - The worst case is 228 characters at the 200,000 cap, and 231 for any count up to 9,999,999. So 256 holds even if AN01-M1 raises the cap by 50×.
-   - Page-1 counts never exceed the cap, because a larger set is refused with 413 before any page is produced.
-   - This replaces r2's provisional 400. `check_an01_r3.py` recomputes it.
-2. **Strict members.** Each member must match exactly or the request gets 422 `invalid_cursor`:
-   - `last_occurred_at` must match the normalized `YYYY-MM-DDTHH:MM:SS.ffffffZ` form, and lie inside the request window;
-   - `last_id` must be a lowercase canonical UUID;
-   - the counts must be integers in `0..cap`;
-   - the digest must equal the request's recomputed `filter_digest`.
-3. **The UI never takes a cursor from navigation.** No URL, history state or storage. It uses only the `next_cursor` of the response it is displaying, so a crafted link cannot hand an analyst a cursor that suppresses `row_set_changed`.
-4. **The server documents** that a cursor's counts only feed the caller's own change flag, and that scope always comes from the token.
+1. **At most 256 characters (derived).** The worst case is 228 at the 200,000 cap, and 231 for any count up to 9,999,999. Over-long input gets 422 `invalid_cursor` before any decoding.
+2. **Strict, coherent members.** Every rule below must hold, or the request gets 422 `invalid_cursor`:
+   - exactly six members;
+   - the report ID is `"rows.transactions"`;
+   - the digest is 64 lowercase hex characters and equals the request's recomputed `filter_digest`;
+   - `last_occurred_at` matches `YYYY-MM-DDTHH:MM:SS.ffffffZ` exactly and lies inside `[from, to)`;
+   - `last_id` is a canonical lowercase UUID;
+   - both counts are **exact integers** (`type(v) is int`; JSON `true` and `false` are refused);
+   - the counts satisfy **`0 <= with_outcome <= matching <= cap`**.
+3. **The UI never takes a cursor from navigation.** It uses only the `next_cursor` of the response it is showing.
+4. **Scope comes only from authentication.** A forged cursor only selects a different page of the caller's own rows, or makes the caller's own change flag wrong.
 
-**Why not an HMAC:**
-- The cursor carries no authority (r2 §2 tampering analysis): a forged one only selects a different page of the caller's own scoped rows.
-- Signing would add a server secret. That brings storage, rotation, sharing across API processes and restarts, and a leak-handling story. Sentinel has none of that infrastructure, and adding it is not worth a protection with nothing to protect.
+**No HMAC.** It would add a server secret, with storage, rotation, sharing across processes and leak handling, to protect a value with no authority.
 
-**Revisit trigger:** if a cursor ever references stored state, such as the deferred held snapshot (r2 §5), the server must check that state's session ownership. That ownership check, not a signature, is the control.
+**Revisit trigger:** a cursor that references stored state, such as the deferred held snapshot. The control is then a server-side ownership check, not a signature.
 
-## 5. Decision 4: limits, and what the budget does and does not bound
+## 5. Decision 4: connection, budget, admission and cleanup (R52)
 
-### 5.1 Budget semantics (the review's requested distinction)
+### 5.1 Facts about the existing helpers (`src/sentinel/agents/budget.py`)
 
-- **The S1 report budget is a database budget on this server process's monotonic clock.** It is not a promise about when the client receives a response.
-- **It reuses the accepted pattern** in `src/sentinel/agents/budget.py`, `BoundedTransaction` (G3A design §3.2, R34 and R37):
-  - one deadline is read after authentication, before the report connection is opened;
-  - `connect_timeout` is derived from the remaining budget (whole seconds, at least 2, per the existing rule);
-  - before every statement, `statement_timeout` and `lock_timeout` are set by `SET LOCAL` to `floor(end − now)` ms;
-  - below the minimum, the request is refused and never armed with 0, which PostgreSQL would read as "no timeout";
-  - the process stops waiting for a reply at the budget (`bounded_call`). A connection whose statement went unanswered is quarantined and never reused.
-- **The report transaction ends with ROLLBACK, never COMMIT.**
-  - It is `READ ONLY`, so there is nothing to commit.
-  - This removes the CommitUncertain case entirely: `budget.py` notes that PostgreSQL disables `statement_timeout` before commit processing.
-- **What 503 `report_timeout` means:** "this server stopped working on and waiting for the report's database work within its budget".
-- **What the budget does not bound:**
-  - the authentication query on its own connection;
-  - request parsing;
-  - JSON serialization;
-  - network transfer;
-  - the browser;
-  - how quickly the PostgreSQL server notices a cancel;
-  - when a quarantined connection is finally closed.
+- **Connecting is synchronous.** `open_connection` (`:357`) calls `psycopg.connect` synchronously, with `connect_timeout` in whole seconds and at least `LIBPQ_MIN_EFFECTIVE_S` = 2. It refuses outright when that does not fit the remaining budget.
+  - `bounded_call` wraps only operations on an **already-open** connection.
+  - So the existing pattern gives connection acquisition **no** absolute monotonic deadline. The review's fault-injected connector returned after 2,344 ms against a 2,100 ms deadline.
+- **Statement minimum.** `MIN_DB_MS` = 100: a statement budget below 100 ms is refused, never armed.
+- **ROLLBACK waits only to the end of its own phase.** `BoundedTransaction.rollback` (`:463`) waits at most `min(cap, available(phase))`, so a working-phase transaction gets no reserve for it.
+- **The quarantine is shared with workflows.** `QUARANTINE` (`:76`, `:103`) is one process-wide registry, filled by `_Lease.retire` inside `bounded_call`. The coordinator refuses new workflows while `QUARANTINE.count() >= max_live_workflows_per_process` (default 1; `coordinator.py:745`).
+  - Reusing `bounded_call` unchanged would let one abandoned report connection block investigations.
+- **Ordinary connections.** `db.connect` uses `CONNECT_TIMEOUT_SECONDS = 10` (`src/sentinel/db/__init__.py:13`).
 
-  Neither the API nor the UI says "results within 5 s".
-- **The response DTO adds no timing field.** Measured elapsed time belongs to the AN01-M1 record, not to the contract.
+### 5.2 Proposal
 
-### 5.2 The limits, with labels
+The review's preferred option: a separate connection policy, then one report budget starting after acquisition. No production change is made now. Items marked *(implementation)* are code changes for the later, separately reviewed S1 implementation.
 
-| Limit | Value | Label | Basis |
-| --- | --- | --- | --- |
-| Window length | 92 × 86,400 s, or 92 local dates | policy | Product scope; it bounds output shape, not work |
-| Output rows | totals ≤ 4; daily ≤ 94 buckets and ≤ 376 rows; quality 7; workload 1; drilldown ≤ 100 per page | derived | `check_an01_r3.py` (exhaustive over 2000–2037 for the daily bounds) |
-| Cursor length | 256 characters | derived | §4 |
-| Matching-row cap | 200,000 (413 above it) | **provisional** | Unmeasured. PERF01 measured the existing API, not report SQL, and cannot support it |
-| Database budget | 5,000 ms per request | **provisional** | Unmeasured. The semantics of §5.1 are the proposal; the number is not |
-| Per-process quarantine | the existing coordinator limit pattern | proposal | It is reused, not re-specified; AN01-M1 records how many connections cancel tests retire |
-| Memory and temp files | not bounded by S1 | stated gap | `work_mem` applies per sort node; `temp_file_limit` is a superuser setting. AN01-M1 measures spills |
+1. **Connection acquisition is outside the report budget, and disclosed as such.**
+   - The report connection uses `psycopg.connect(url, connect_timeout=2, …)`, and single-host URLs only (`single_host`).
+   - Its duration is measured and logged, but it is **not** counted in the report budget, and **no absolute bound on acquisition is claimed**.
+   - libpq applies `connect_timeout` per connection attempt. DNS resolution and multiple addresses for one host name are not bounded by it.
+   - Connection waits are bounded in number, not duration, by admission: the slot is taken before connecting (point 4).
+   - **Rejected:** a separately bounded connect, such as a connect thread with an abandonment registry. It would need its own late-operation capacity design and proof, which S1 does not need for a loopback local database.
+2. **One report deadline per request, started immediately after the connection returns.** It is monotonic, with total `B` (provisional 5,000 ms) and a **report ROLLBACK reserve `R`** (provisional 250 ms). `R` is report-specific: the workflow's 5 s terminal reserve is not inherited.
+   - **Work phase:** ends at `B − R`. Each statement, including the first, is armed by `SET LOCAL statement_timeout/lock_timeout = floor(work_end − now)`. Below `MIN_DB_MS`, that statement is **not submitted** (refused before submission).
+   - **Statement waits:** each statement's reply is awaited at most until `work_end` (`bounded_call`).
+   - **ROLLBACK:** sent after the last statement, or on any error. It is awaited until `B`, the reserve end. *(implementation: the existing `rollback` waits only to its own phase end, so the report path must measure ROLLBACK against `B`.)*
+3. **The transaction.**
+   - The connection attributes `isolation_level = REPEATABLE READ` and `read_only = True` make psycopg's implicit `BEGIN` carry both.
+   - `read_at` is read from the application clock just before the first armed statement, which establishes the snapshot.
+   - The transaction always ends with **ROLLBACK, never COMMIT**.
+4. **Finite admission, per process.**
+   - At most `M` report operations may be active at once (provisional 2), counted from **before** the connection attempt.
+   - At most `Q` connections may sit in the **report quarantine** (provisional 2).
+   - A request arriving at either limit is refused with 409 `report_capacity_exhausted` (new, draft). Nothing is connected or submitted, and no wait is taken. This follows the existing `agent_capacity_exhausted` convention.
+5. **A separate quarantine registry.** Retired report connections go into a report-specific registry, so workflow admission never counts them and report admission never counts workflow connections. *(implementation: `bounded_call`/`_Lease` would take the registry as a parameter, defaulting to today's `QUARANTINE`. That is a reviewed change to `budget.py`, with workflow behaviour unchanged.)*
+6. **Cleanup ownership.**
+   - **Normal path:** the request code owns the connection and closes it after ROLLBACK, including after an answered error.
+   - **Retired connections:** a connection retired by a no-reply is owned by its lease. The last user to leave, whether the SQL worker or the cancel helper, closes it once and releases it from the report registry. This is the existing R37 mechanism, and the socket is shut down at retirement.
+   - **Process exit** closes all remaining sockets. The server cleans up its backends independently.
+
+### 5.3 What each outcome means
+
+| Outcome | When | Statement submitted? | Connection | HTTP |
+| --- | --- | --- | --- | --- |
+| Admission refused | `M` active or `Q` quarantined | none, and no connection attempt | none | 409 `report_capacity_exhausted` |
+| Connection failed | connect error, or libpq timeout | none | none | the existing database-error path; **not** `report_timeout` |
+| Refused before submission | work budget below 100 ms before any statement | **no** (that statement) | ROLLBACK, closed | 503 `report_timeout` |
+| Server cancelled | `statement_timeout` fired, and the server answered | yes | ROLLBACK, closed | 503 `report_timeout` |
+| Lock timeout | `lock_timeout` fired, and the server answered | yes | ROLLBACK, closed | 503 `report_timeout` |
+| No reply | no reply by `work_end` | yes, or uncertain | retired to the report quarantine | 503 `report_timeout` |
+| ROLLBACK unanswered | every statement answered; no ROLLBACK reply by `B` | — | retired | 200 with the report, because every read was answered in its snapshot |
+
+- The server log records which row applied. The DTO does not, and it adds no timing field.
+- **What the budget bounds:** this process's database work and its waiting, from acquisition to ROLLBACK.
+- **What it does not bound:** connection acquisition, authentication, parsing, serialization, network transfer, the browser, server-side cancel latency, or when a quarantined connection finally closes. Neither the API nor the UI promises a response time.
+
+### 5.4 Limits, with labels
+
+| Limit | Value | Label |
+| --- | --- | --- |
+| Window length | 92 × 86,400 s, or 92 local dates | policy |
+| Output rows | totals ≤ 4; daily ≤ 94 buckets and ≤ 376 rows; quality 7; workload 1; drilldown ≤ 100 per page | derived (whole domain) |
+| Cursor length | 256 characters | derived |
+| Connection timeout | 2 s per libpq attempt, outside the budget | policy, measured in M1 |
+| Matching-row cap | 200,000 (413 above it) | **provisional** |
+| Report budget `B` | 5,000 ms | **provisional** |
+| ROLLBACK reserve `R` | 250 ms | **provisional** |
+| Admission `M` and quarantine `Q` | 2 and 2 per process | **provisional** |
+| Memory and temp files | not bounded by S1 | stated gap; M1 measures spills |
+| Workload rows | not covered by the transaction cap; bounded only by `B` | stated gap; M1 measures it |
 
 ## 6. Decision 5: index strategy
 
-**Query paths against the existing schema** (`src/sentinel/db/migrations/0001`–`0005`):
+**Query paths against the existing schema** (migrations 0001–0005):
 
 | Report part | Existing support | Gap |
 | --- | --- | --- |
-| Event-time window, keyset `(occurred_at, id)` | `transactions_velocity (tenant, session, account, occurred_at)` does not lead on `occurred_at` | **needs an index** |
-| Outcome and alert joins | `scoring_outcomes` PK `transaction_id`; `alerts.transaction_id UNIQUE`; `cases.alert_id UNIQUE` | none |
-| Cases created in window | `cases_session_listing (tenant, session, created_at DESC, id DESC)` | none (backward range scan) |
-| Open now by state | `cases_session_state (tenant, session, state, created_at DESC, id DESC)` | none |
-| Actions completed in window | only `UNIQUE (tenant_id, idempotency_key)`, and `completed_at` is in JSONB | **tenant-wide scan**; candidate index |
+| Event-time window, keyset `(occurred_at, id)` | `transactions_velocity` does not lead on `occurred_at` | **index needed** |
+| Outcome and alert joins | `scoring_outcomes` PK, `alerts.transaction_id UNIQUE`, `cases.alert_id UNIQUE` | none |
+| Cases created in window | `cases_session_listing (tenant, session, created_at DESC, id DESC)` | none |
+| Open now by state | `cases_session_state` | none |
+| Actions completed in window | only `UNIQUE (tenant_id, idempotency_key)`, and `completed_at` is in JSONB | tenant-wide scan; candidate index |
 
 **Proposal: one draft migration, `0006`.**
-- **`CREATE INDEX transactions_session_time ON transactions (tenant_id, session_id, occurred_at, id)`.**
-  - It serves the window range and the drilldown order directly.
-  - `ingested_at`, amount and direction stay heap filters. No covering columns, because every report reads `body` anyway.
-- **Candidate `CREATE INDEX simulated_actions_session ON simulated_actions (tenant_id, session_id)`.**
-  - It is included only if AN01-M1 shows the tenant-wide path costs more than 10% of the budget at the measured cap.
-  - An expression index on `(body->>'completed_at')::timestamptz` is not possible, because that cast is not `IMMUTABLE`.
-- **No generated amount or direction columns in S1.**
-  - Adding a stored generated column rewrites the table under `ACCESS EXCLUSIVE`.
-  - The benefit, avoiding JSONB extraction, is unmeasured.
-  - AN01-M1 includes an extraction-cost probe. Only if extraction exceeds half of the report time at the cap is a separate generated-column decision opened.
-- **Plain `CREATE INDEX` inside the migration's transaction**, matching 0003. It blocks writes while it builds, which is acceptable for the local synthetic product. AN01-M1 records build time at 1,000,000 rows.
+- **`transactions_session_time (tenant_id, session_id, occurred_at, id)`.**
+- **Candidate `simulated_actions_session (tenant_id, session_id)`.** An expression index on `(body->>'completed_at')::timestamptz` is impossible, because that cast is not `IMMUTABLE`.
+- **Both are chosen by the joint rule in §8.4**, one configuration for both platforms.
+- **No generated amount columns.** Adding one rewrites the table under `ACCESS EXCLUSIVE`. The §8 phase E design comparison can only *open a separate review*.
+- **Plain `CREATE INDEX` in the migration transaction,** as in 0003. M1 records build time.
 
-## 7. Decision 6: UI staleness wording
+## 7. Decision 6: UI wording
 
-There are two different situations, and r2's single "old as_of" state conflated them.
+1. **The cutoff is a filter on ingestion timestamps.** When `as_of` is earlier than `read_at`, the header shows:
+   - **"Cutoff: includes rows stamped ingested at or before {as_of}. Rows stamped earlier can still commit later, so a later read may show more. Server read at {read_at}."**
+   - There is no "old" label.
+   - The workload section adds: **"Case states are as of the server read time, not the cutoff."**
+2. **Receipt age.** The client stores `performance.now()` when the response arrives, and never computes browser wall clock minus `read_at`.
+   - The header always shows **"Server read at {read_at}"**.
+   - After **5 minutes** (policy, a reversible UI constant, not a freshness guarantee) it adds **"Received {n} minutes ago. Data may have changed since. Refresh."**
+   - It never says "live", "current", "real time" or "up to date".
+3. **Detected change overrides both,** with no timer. This happens when two displayed responses for the same filters carry different consistency pairs, or when a page reports `row_set_changed`.
 
-**1. An earlier cutoff is a filter, not staleness.**
-- When the request's `as_of` is earlier than `read_at`, the header shows: **"Availability cutoff: {as_of}. Rows stored after this are excluded. Read at {read_at} (server time)."**
-- There is no age threshold and no "old" or "out of date" label: the analyst chose it.
-- The workload section keeps: **"Case states are as of the read time, not the cutoff."**
+These are vocabulary decisions for the later UI slice. No UI is changed or assigned.
 
-**2. Result age uses the browser's monotonic clock since the response arrived.**
-- The client records `performance.now()` on receipt. It never compares the browser's wall clock with the server's `read_at`; clock skew is the lesson of G3C/R40.
-- After **5 minutes (policy, a UI constant, not a data guarantee)** the header adds: **"Read {n} minutes ago. Data may have changed since. Refresh."**
-- Before that it shows only "Read at {read_at} (server time)".
-- The text never says "live", "current", "real time" or "up to date".
+## 8. AN01-M1: bounded report-query measurement plan (R51)
 
-**3. Detected change overrides both.**
-- When two displayed responses for the same filters carry different consistency pairs, or a page reports `row_set_changed`, the r2 "changed" text is shown immediately, with no timer.
+**Purpose:** measure the draft S1 report operations on synthetic data so that the cap, `B`, `R`, `M`/`Q` and the index choice can become *measured on one laptop*. It is not a capacity claim, and **this plan is not run**.
 
-These strings replace r2 §10's "Old as_of" row. Making them accessible (live region, not colour alone) follows r2 §10.
+### 8.1 The measured unit: one complete report operation
 
-## 8. AN01-M1: bounded report-query measurement plan
+One **operation** is everything one request does after admission. The connection is timed separately and is outside `B`. The operation's elapsed time runs from the implicit `BEGIN` to the ROLLBACK reply, under one budget `B`.
 
-**Purpose:** measure the *draft S1 report SQL* on synthetic data, so that the matching-row cap, the database budget and the index choice of §5–§6 can move from provisional to measured. It is one local measurement, like PERF01: not a capacity claim, not production hardware, and not tuning. **This plan is not run by this branch.**
+**Control statements** (fixed text, hashed):
+- `K0` is psycopg's `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY`, sent before the first statement.
+- `Ka` is `SELECT set_config('statement_timeout', $1, true), set_config('lock_timeout', $1, true)`, sent before **every** SQL statement.
+- `Kr` is `ROLLBACK`.
 
-### 8.1 What is measured
+**The seven operations and their ordered sequences** (each `S` is preceded by its `Ka`):
 
-1. **The exact statements.**
-   - The candidate SQL for each S1 report (`currency_totals`, `daily` UTC and New York, `workload`, `quality`, the drilldown's first page and a mid-set cursor page), plus the guard count and consistency pair.
-   - They live in one measurement module, and each statement's SHA-256 is recorded.
-   - The later S1 implementation must use byte-identical statements, which a unit test compares against the recorded digests, or AN01-M1 is repeated. This keeps the measurement bound to what ships.
-2. **How it runs.** As the runtime role, in `REPEATABLE READ, READ ONLY`, through the §5.1 bounded-transaction path ending in ROLLBACK. That is a measurement-only copy that changes no `src/` code.
-3. **The metrics:**
-   - client elapsed time (`time.perf_counter`, including connect);
-   - per statement, `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` in a separate pass: execution time, plan shape (index or seq scan), shared hits and reads, and sort method, including any external merge;
-   - the `pg_stat_database.temp_bytes` delta per cell;
-   - the server version and `work_mem`, `shared_buffers`, `jit` and `max_parallel_workers_per_gather`, all recorded and left at their defaults.
+| Operation | Sequence | SQL statements |
+| --- | --- | --- |
+| `totals` | K0, G guard, P consistency pair, Q currency totals, Kr | 3 |
+| `daily_utc` | K0, G, P, Q daily (boundary instants as parameters), Kr | 3 |
+| `daily_ny` | as `daily_utc`, with New York boundaries (DST-length days) | 3 |
+| `workload` | K0, Q1 created in window by state, Q2 actions completed, Q3 open now by state and age, Kr | 3 (no guard: there is no transaction set) |
+| `quality` | K0, G, P, Q1 the four count checks, Q2 lag quantiles (`percentile_disc`), Kr | 4 |
+| `drill_first` | K0, G, P, Q page (`LIMIT limit+1`, joins), Kr | 3 |
+| `drill_cursor` | K0, G, P, Q page after a mid-set cursor, Kr | 3 |
+
+That is 22 SQL statements and 3 control texts.
+
+**Hashes.**
+- Each statement's SHA-256 is taken over its exact UTF-8 text with placeholders. Each operation has a digest over its ordered statement digests.
+- The later implementation must reproduce identical digests, checked by a unit test, or M1 is repeated.
+- Every statement carries a constant tag comment, `/* an01-m1:<op>:<S> */`, so a server-side observer can prove submission (§8.3 phase C).
+
+**Measurement budget.** Phases A, B, D and E run every operation under a measurement budget of `B` = 10,000 ms, with `R` = 250 ms, so that slow operations are observed rather than cut off at the provisional 5,000 ms. The decision rules compare the results against the provisional `B`. Phase C sets its own budgets.
+
+**Repetitions per cell:** one warm-up (recorded, not used), then **5 timed operations**, then **one separate EXPLAIN pass**.
+- The EXPLAIN pass runs `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` for each SQL statement of the operation, in its own read-only transaction, after the timed runs.
+- It is never part of a timed run, but its time is counted in the stage's command budget.
+- Per-statement EXPLAIN times are **diagnostics only**. Every decision uses complete-operation times.
 
 ### 8.2 Data (synthetic, deterministic)
 
-- **Owner and storage.** Generated from a fixed seed and loaded by `COPY` as the schema owner into a **disposable, test-owned cluster**, using the same ownership and cleanup discipline as the test `database_url` cluster.
-- **It is labelled an operator fixture**, like r2's R14. It does not go through the API: 10^6 API requests would measure ingestion, which PERF01 covers, instead of report SQL.
-- **Every body is contract-valid:**
-  - USD 40%, INR 25%, GBP 20% and JPY 15%;
-  - correct exponents, and `0 < minor_units ≤ MAX_MINOR_UNITS`, including a tail at the maximum;
-  - 70% debit and 30% credit;
-  - `occurred_at` uniform over the 92 days from 2026-07-01;
-  - lag 1–60 s, with 0.5% over 1 h;
-  - outcomes present for 99.9% (the rest score-unknown);
-  - 2% alerted, each with an alert and a case in a mix of states;
-  - 0.5% with succeeded simulated actions and a `completed_at`.
-- **Sizes:**
-  - the measured session holds N ∈ {10,000, 50,000, 100,000, 200,000}, plus 200,001 for the 413 guard path;
-  - background rows in other sessions and tenants number B ∈ {0, 800,000}, so the total is at most 1,000,001.
-- **Preflight refuses to start** with less than 5 GB of free disk, or if the generated cluster would exceed 3 GB.
+- **Generation and loading.** Generated from a fixed seed, and loaded by `COPY` as the schema owner into test-owned clusters.
+  - It is labelled an operator fixture, like r2's R14, and does not go through the API.
+  - Every body is contract-valid, with the distribution of r3 §8.2: currencies 40/25/20/15, a tail at `MAX_MINOR_UNITS`, 70% debit, 92 days from 2026-07-01, lag 1–60 s with 0.5% over 1 h, 99.9% with an outcome, 2% alerted with cases, and 0.5% with actions.
+- **Two datasets per platform, each in its own owned cluster:**
+  - **D1:** one tenant with five measured sessions of 10,000, 50,000, 100,000, 200,000 and 200,001 rows, 560,001 in total. Each session is the others' background, and the report says so.
+  - **D2:** D1 plus 800,000 rows in eight other tenants, 1,360,001 in total.
+- **Preflight** refuses to start with less than 8 GB free, or if the clusters would exceed 4 GB together.
 
-### 8.3 Phases, in order, with hard caps
+### 8.3 Phases
 
-| Phase | Cells | Executions |
+| Phase | On | Cells | Operation runs |
+| --- | --- | --- | --- |
+| **A, index** | D2, 200k session, variants A (existing), B (+transactions), C (B + simulated_actions) | 3 × 7 operations | 3 × 7 × 6 = 126, plus 21 EXPLAIN passes |
+| **B, cap curve** | The **common** variant; D1 and D2; sessions 10k, 50k, 100k and 200k. Filters for the six transaction operations: base, `as_of` excluding about 90%, single currency. Workload has base only | 2 × 4 × (6 × 3 + 1) = 152 cells | 912, plus 152 EXPLAIN passes |
+| **B-guard** | D2, 200,001 session, six transaction operations | 6 cells | 6 × 5 = 30, each expected to return 413 |
+| **C, controls** | D2, 200k, common variant | see below | 37, plus 1 drain check and 1 admission-refusal request |
+| **D, two clients** | D2, 200k: `quality` and `drill_first`, 2 concurrent clients | 1 cell | 20 |
+| **E, design comparison** | D2, the selected **N\*** session: `totals` and `daily_utc` under the JSON design, and under a measurement-only **shadow table** with real `currency`, `direction` and `minor_units` columns (same rows, filters, index and statements otherwise) | 2 × 2 | 24, plus 4 EXPLAIN passes |
+
+**Phase C keeps refusal controls separate from submitted controls.** The connection is acquired before the budget starts, so the 2 s connect minimum does not apply to these budgets.
+
+| Control | Budget | Expected | Proof |
+| --- | --- | --- | --- |
+| C1, refusal before submission | `B` = 300 and 349 ms, so the work budget (`B − R`) is 50 and 99 ms (×5 each) | Refused at the first `Ka`, because the work budget is below `MIN_DB_MS` 100. 503, no statement sent | The client's statement counter is 0, and an owner observer sees no tagged statement |
+| C2, submitted and cancelled by the server | `B` = 400, 700 and 1,250 ms (`R` = 250, so a work budget of at least 150 ms) | The tagged control statement `SELECT pg_sleep(5) /* an01-m1:C2 */` runs inside the report transaction, and `statement_timeout` → QueryCanceled is answered. The connection is closed normally, not quarantined. ×5 each | The observer sees the tagged statement `active` before the deadline. Measured: deadline-to-error latency |
+| C3, submitted and lock timeout | The same three budgets (×3 each) | The owner holds `ACCESS EXCLUSIVE` on `transactions`, and `totals` is submitted: LockNotAvailable or QueryCanceled, recorded as whichever fired | The observer sees the tagged statement waiting on the lock |
+| C4, submitted with the reply withheld | `B` = 1,250 ms (×3) | An owned loopback relay between client and server stops forwarding server-to-client bytes after the tagged statement. NoReply at `work_end`; the connection is retired into the **report** registry | The relay logs that it forwarded the statement. After the third run, `Q` = 2 is full, and the **next request is refused with 409 before connecting**. After the relay closes, the registry drains to 0 |
+
+Phase C totals 10 + 15 + 9 + 3 = 37 operation runs, plus 1 drain check and 1 admission-refusal request. These test the measurement harness's copy of the §5.2 design. Equivalence with production code is an implementation-review item.
+
+### 8.4 Schedule, joint selection and pre-registered rules
+
+**Staged commands.** Each stage is a separate command inside the **unchanged 2,700 s command cap**. Existing verification and application timeouts are not changed.
+- **Inside each stage**, on one monotonic clock from the command's start:
+  - setup (cluster start, generation, COPY, ANALYZE and index builds) is capped at 900 s, and counts toward the same clock;
+  - **no new operation or EXPLAIN pass starts after 2,300 s**;
+  - one operation runs at most about 12.3 s (a 2 s connect, plus 10 s of work, plus a 0.25 s reserve);
+  - a 300 s cleanup reserve follows.
+
+  So 2,300 + 13 + 300 = 2,613 s is less than 2,700 s.
+- **Checkpoint:** a checkpoint file records completed cells and every digest.
+- **Owned recovery:** `recover --run-dir` stops only clusters carrying this run's ownership marker, and prints what it kept.
+- **No automatic resume, and no retries.** An unstarted cell is listed as **not run**, never estimated. Failed cells are kept.
+
+| Step | Where | What |
 | --- | --- | --- |
-| A, index choice | N 200,000, B 800,000. Variants: (A) existing indexes, (B) plus `transactions_session_time`, (C) B plus `simulated_actions_session`. All reports, base filters | 3 variants × 7 statements × (1 warm-up + 5) = 126 |
-| B, cap curve | The chosen variant; N in {10k, 50k, 100k, 200k} × B in {0, 800k}. Filters: base; `as_of` excluding about 90% (index-scanned rows discarded in the heap); a single currency; New York `tz` (daily only) | at most 8 × 7 × 4 × 6 = 1,344, with inapplicable filters skipped and counted |
-| C, refusal and cancellation | 413 at 200,001 (×5). A forced budget of 50, 100 and 250 ms on `quality` and `daily` at 200k (×5 each): time from deadline to error, whether the connection was quarantined, and that the next request on a fresh connection succeeds. A lock-wait case, where the owner holds `ACCESS EXCLUSIVE` on `transactions` in another connection (×3): `lock_timeout` → 503 | 5 + 30 + 3 = 38 |
-| D, two clients | 2 concurrent closed-loop clients at N 200k, B 800k (quality + drilldown), 10 requests each | 20 |
-| E, extraction probe | `currency_totals` against an id-only aggregate over the same rows at 200k (×5) | 10 |
+| S1 | Windows, then native Ubuntu | Prepare D2 (variant A) |
+| S2 | Windows, then native Ubuntu | Phase A, including index build times |
+| S3 | offline | Select the **one common** configuration from both phase A records (rule 1) |
+| S4 | Windows, then native Ubuntu | Prepare D1, and apply the common configuration to D1 and D2 |
+| S5a | Windows, then native Ubuntu | Phase B on D1 |
+| S5b | Windows, then native Ubuntu | Phase B on D2, and B-guard |
+| S6 | Windows, then native Ubuntu | Phases C and D |
+| S7 | offline | Select **N\*** from both phase B records (rule 2) |
+| S8 | Windows, then native Ubuntu | Phase E at N\* |
+| S9 | offline | Final report, then `cleanup` on each platform |
 
-- **Caps:**
-  - every execution has a measurement budget of 10,000 ms, so slow cells are observed beyond the provisional 5,000;
-  - **2,400 s of active measurement per platform**, inside the 2,700 s command cap, after which no new cell starts;
-  - unstarted cells are listed as not run, never estimated;
-  - setup (generation, COPY, index builds, with each index's build time recorded) is timed separately and capped at 900 s.
-- **No retries.** A failed cell is kept as failed.
-- **Platforms:** Windows, then native Ubuntu, **sequentially in the one heavy slot**, with the same seed and statement digests. Each platform's record names its exact commit and clean-tree state.
-- **Cleanup:** the cluster is stopped and removed. On failure the state is kept and a recovery command printed, following PERF01.
-- **Out of bounds:** no network, provider, auth, account, browser, final cases, ML holdout or agent-evaluation data, and no paid usage.
+- **Heavy slot.** All platform stages run one at a time in the one heavy slot, never on both platforms together.
+- **Worst-case total.** Each platform has seven stages (S1, S2, S4, S5a, S5b, S6 and S8). Seven stages × 2 platforms × 2,700 s = 37,800 s, plus about 600 s for the offline steps and cleanup. That is **at most about 10.7 hours**, and is expected to be far less. A stage that runs out of time leaves its unstarted cells not run; it is not silently extended.
 
-### 8.4 Pre-registered decision rules
+**Pre-registered rules.** These are fixed before any run, and are applied to complete operations.
+1. **Common index configuration (S3).**
+   - Variant B is adopted if, on **at least one** platform, it turns the transaction-window plan from a sequential scan into an index scan or halves a transaction operation's median, **and** on the other platform no operation's median is more than 10% slower than under A.
+   - C's extra index is added only if, under the same two-platform condition, it improves the `workload` median by at least 10% of `B` (500 ms).
+   - Otherwise the variant is A or B.
+   - One configuration is then used everywhere. An unmeasured variant can never be chosen, and there is no per-platform tuning.
+2. **Matching-row cap (S7).** N\* is the largest measured session size for which, **on both platforms**, in **both** datasets, for **every** operation cell:
+   - all 5 timed **complete-operation** times are at most 40% of `B` (2,000 ms);
+   - no run timed out.
 
-These are written before any run, so the result cannot choose its own rule.
+   In addition, every B-guard cell must return 413 within `B`.
+   - If N\* is below 200,000, propose N\*.
+   - If 10,000 fails, propose a design change instead of a cap.
+   - Per-statement times never qualify a size.
+3. **Budget, reserve and admission.**
+   - `B` stays 5,000 ms unless the C2 or C3 median deadline-to-error latency exceeds 10% of that cell's budget, or the D maximum exceeds `B − R`.
+   - `R` stays 250 ms unless any C2 or C3 ROLLBACK exceeds 50% of `R`.
+   - `M` and `Q` stay 2 unless C4's admission or drain checks fail.
+   - Any trigger opens a re-review and never quietly changes a number.
+4. **Spills.** Any temp-file spill at N\* is reported, and S1 acceptance then needs an explicit `work_mem` statement.
+5. **The phase E design comparison.** It compares the JSON design with a columns design on matched rows, filters, index and statements, at **N\***.
+   - Only if the columns design's median operation time is at most 50% of the JSON design's on **both** platforms does it open a separate review of generated columns.
+   - It is reported as the difference between two designs. It assigns **no causal percentage** to JSON extraction, which also differs in row width and pages.
+   - No generated column is assigned by M1.
+6. **Mandatory evidence, or "not demonstrated."**
+   - Mandatory: all phase A cells on both platforms, every phase B cell at every size up to a candidate N\*, the B-guard cells, and C1–C4 on both platforms.
+   - A limit whose mandatory evidence is missing, failed or not run is **not demonstrated** and stays provisional. A size with any missing cell cannot be N\*.
+   - D and E are mandatory for their own rules only.
+7. **What the result is called.** "Measured on one laptop, warm cache, synthetic distribution": an input to Codex's contract decision, never a guarantee.
 
-1. **Index.** Adopt variant B if, at N 200k and B 800k, it changes the transaction window plan from a sequential scan to an index scan, or halves the median time of any transaction report. Add variant C's index only by the 10% rule in §6.
-2. **Matching-row cap.** N\* is the largest measured N for which, on the slower platform, with background 800k and the chosen indexes, **every** report and filter cell's maximum database time is at most 40% of the provisional budget (2,000 ms).
-   - If N\* is less than 200,000, propose N\*.
-   - If 10,000 fails, report it and propose a design change (the curated reporting role or pre-aggregation) instead of any cap.
-   - The 200,001 guard cell must refuse with 413 within the budget.
-3. **Budget.** The 5,000 ms ceiling stays unless the median deadline-to-error latency of phase C exceeds 10% of the budget, or phase D's maximum exceeds the budget. Either outcome opens a re-review; it does not quietly change the number.
-4. **Spills.** Any temp-file spill at N\* is reported with its report and size, and S1 acceptance then needs an explicit `work_mem` statement.
-5. **Generated columns.** These are considered only if phase E shows JSONB extraction is more than half of `currency_totals` time at N\*.
-6. **What the result is called.** The limits become **"measured on one laptop, warm cache, synthetic distribution"** and stay labelled that way. They are inputs to Codex's contract decision, not guarantees.
+### 8.5 Not measured by AN01-M1
 
-### 8.5 Not measured by AN01-M1 (stated in its report)
-
-- cold-cache behaviour (OS caches are not dropped, and a single after-restart sample is labelled);
-- concurrent ingestion load;
-- more than two report clients;
-- production or other hardware;
-- the network beyond loopback, and the browser rendering of 376 rows;
-- Linux browser execution;
-- data distributions unlike the generator's.
+- cold-cache behaviour, beyond a single labelled after-restart sample;
+- concurrent ingestion;
+- more than two clients;
+- other hardware;
+- the network beyond loopback;
+- browser rendering;
+- Linux browsers;
+- distributions unlike the generator's;
+- production equivalence of the harness's copy of the §5.2 controls.
 
 ### 8.6 Proposed ownership when assigned
 
-- **Owned:** `scripts/benchmark_reports.py`, `tests/test_report_benchmark.py` (generator determinism and contract validity, caps, statement digests, cleanup, using a small N) and `docs/benchmarks/AN01-M1.md`.
-- **Unchanged:** `src/`, contracts, migrations, lockfiles, CI and the existing benchmark.
-- **Effort.** Recommended assistant: Claude Opus 5.5 / High. It needs careful cleanup, cap and honesty handling, not maximum effort.
+- **Owned:** `scripts/benchmark_reports.py`, `tests/test_report_benchmark.py` (generator validity and determinism, caps, statement digests, stage and checkpoint behaviour, ownership and cleanup, using a small N) and `docs/benchmarks/AN01-M1.md`.
+- **Unchanged:** `src/`, contracts, migrations, locks, CI and the existing benchmark.
+- **Effort.** Recommended assistant: Claude Opus 5.5 / High.
 
-## 9. What this branch changes, and what review should check
+## 9. Scope of this branch
 
-- **New files:** `AN01-decisions-r3.md`, `AN01-zone-table.json`, `derive_an01_zones.py` and `check_an01_r3.py`.
-- **Pointer lines** in the two r2 documents' open-question sections. The r2 text is otherwise unchanged.
-- **No production endpoint, migration, contract, capability, lockfile, CI or UI change.**
-- **For review:**
-  - whether v1.3 additive versioning and the "ignore unknown capabilities" rule are acceptable;
-  - whether the AN01-M1 grid, caps and decision rules are the right ones before it is assigned;
-  - whether a 5-minute UI nudge is wanted at all.
+- **Files:** `AN01-decisions-r3.md`, `AN01-zone-table.json`, `derive_an01_zones.py`, `check_an01_r3.py`, one pointer line in each r2 document, and the branch handoff.
+- **No production endpoint, migration, contract, capability, script, lockfile, CI or UI change.**
+- **Still provisional:** the cap of 200,000, `B` 5,000 ms, `R` 250 ms, and `M`/`Q` of 2/2.
+- **Policy:** the 5-minute nudge, the 2 s connect timeout, and the 92-day window.
