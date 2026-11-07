@@ -764,6 +764,7 @@ class ReportConnection:
         self.retired = self.closed = False
         self.close_calls = 0
         self.events: list[str] = []
+        self.reply_at: float | None = None
 
     def enter(self, user: str) -> None:
         with self.cond:
@@ -822,11 +823,16 @@ class ReportConnection:
         self.admission.release_reservation(why)
 
 
-def bounded_call(rc: ReportConnection, operation: Callable, wait_ms: float):
+def bounded_call(rc: ReportConnection, operation: Callable, wait_ms: float,
+                 clock: Callable[[], float] = monotonic_ms):
     """Run `operation` on its own thread and wait at most `wait_ms`. Unanswered: retire,
     shut the own socket down, raise NoReply. The SQL thread leaving last closes the
     retired connection exactly once (as accepted budget.bounded_call, without COMMIT's
-    cancel helper)."""
+    cancel helper).
+
+    The SQL thread records when its reply (result or server error) arrived in
+    `rc.reply_at` on `clock`; the waiter may notice it later (polling every <= 5 ms, plus
+    sleep overshoot), so latencies use the arrival time, not the moment it was noticed."""
     from sentinel.clock import wait_until
     own = _OwnSocket(rc.conn)
     box: dict = {}
@@ -839,6 +845,7 @@ def bounded_call(rc: ReportConnection, operation: Callable, wait_ms: float):
         except BaseException as error:
             box["error"] = error
         finally:
+            box["at"] = clock()
             done.set()
             rc.leave("sql")
 
@@ -852,6 +859,7 @@ def bounded_call(rc: ReportConnection, operation: Callable, wait_ms: float):
             raise NoReply()
     finally:
         own.release()
+    rc.reply_at = box.get("at")
     if "error" in box:
         raise box["error"]
     return box.get("value")
@@ -906,7 +914,8 @@ class Outcome:
     elapsed_ms: float | None = None  # BEGIN..ROLLBACK reply (or abandonment), on B's clock
     connect_ms: float | None = None  # outside B
     work_end_ms: float | None = None
-    error_at_ms: float | None = None  # when a server error reply arrived (relative to t0)
+    error_at_ms: float | None = None  # when a server error reply ARRIVED (relative to t0)
+    error_noticed_ms: float | None = None  # when the waiting thread noticed it
     armed_deadline_ms: float | None = None  # client-clock time the last armed timeout fires
     rollback: str = "not_needed"
     error_class: str | None = None
@@ -927,7 +936,10 @@ class Outcome:
                 "retired": self.retired,
                 "deadline_to_error_ms": None if self.error_at_ms is None
                 or self.armed_deadline_ms is None
-                else _r(self.error_at_ms - self.armed_deadline_ms)}
+                else _r(self.error_at_ms - self.armed_deadline_ms),
+                "error_at_ms": _r(self.error_at_ms),
+                "error_noticed_ms": _r(self.error_noticed_ms),
+                "work_end_ms": _r(self.work_end_ms)}
 
 
 def _r(value):
@@ -1008,24 +1020,23 @@ def _run_admitted(rt, admission, sequence, guard) -> Outcome:
             out.armed_deadline_ms = rt.clock() - budget.t0 + armed
             out.submitted += 1
             bounded_call(rc, lambda: raw.execute(CONTROLS["Ka"]["template"], (value, value)),
-                         max(budget.work_end - rt.clock(), 0))
+                         max(budget.work_end - rt.clock(), 0), rt.clock)
             began = True
             out.submitted += 1
             out.sql_submitted += 1
             p = params
             rows = bounded_call(rc, lambda: raw.execute(text, p).fetchall(),
-                                max(budget.work_end - rt.clock(), 0))
+                                max(budget.work_end - rt.clock(), 0), rt.clock)
             out.results[key] = rows
             if guard is not None and guard(key, rows):
                 out.kind = "too_large"
                 break
     except NoReply:
         out.kind, out.retired = "no_reply", True
-    except psycopg.errors.LockNotAvailable as error:
-        out.kind, out.error_at_ms = "lock_timeout", rt.clock() - budget.t0
-        out.error_class, out.sqlstate = type(error).__name__, error.sqlstate
-    except psycopg.errors.QueryCanceled as error:
-        out.kind, out.error_at_ms = "server_cancelled", rt.clock() - budget.t0
+    except (psycopg.errors.LockNotAvailable, psycopg.errors.QueryCanceled) as error:
+        out.kind = "lock_timeout" if isinstance(error, psycopg.errors.LockNotAvailable)             else "server_cancelled"
+        out.error_noticed_ms = rt.clock() - budget.t0
+        out.error_at_ms = None if rc.reply_at is None else rc.reply_at - budget.t0
         out.error_class, out.sqlstate = type(error).__name__, error.sqlstate
     except psycopg.Error as error:
         out.kind, out.error_class, out.sqlstate = "error", type(error).__name__, error.sqlstate

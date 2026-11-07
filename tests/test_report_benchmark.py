@@ -770,6 +770,27 @@ def test_c1_refusal_before_submission(r2db, zones, total):
     assert seen == [] and out.rollback == "not_needed" and not out.retired
 
 
+def assert_submitted_control_outcome(out, rt, answered_kinds, sqlstates):
+    """A submitted, timed-out statement ends in exactly one of two design outcomes:
+    answered by the server (an error reply, ROLLBACK answered, closed normally, not
+    quarantined), or no reply by work_end (retired, then drained to zero reservations).
+    Which one occurs is the R-M1-1 timing race; phase C measures it and a miss fails that
+    cell. This test asserts the mechanism under either outcome, never the race result.
+    (Gate run 2 at cd3517d failed the earlier assertion that the reply is always noticed
+    before work_end: it was noticed at 151.27 ms against 150 ms.)"""
+    assert out.kind in (*answered_kinds, "no_reply"), out.public()
+    if out.kind == "no_reply":
+        assert out.retired and out.rollback == "not_needed" and out.sqlstate is None
+        assert _until(lambda: rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0)
+        assert out.connection.events == ["retired", "final_close"]
+    else:
+        assert out.sqlstate in sqlstates and out.rollback == "answered"
+        assert not out.retired and rt.quarantine.count() == 0
+        assert out.error_at_ms is not None and out.error_at_ms <= out.error_noticed_ms
+        assert out.connection.close_calls == 1
+        assert rt.resources.counts() == (0, 0)
+
+
 @pytest.mark.parametrize("total", [400, 700, 1250])
 def test_c2_submitted_and_cancelled_by_the_server(r2db, zones, total):
     owner, url = r2db
@@ -777,28 +798,43 @@ def test_c2_submitted_and_cancelled_by_the_server(r2db, zones, total):
     rt = control_runtime(url, total, observer)
     out = rb.run_statements(rt, [("C2", rb.CONTROL_SQL["C2"], {})])
     seen = observer.stop()
-    assert out.kind == "server_cancelled" and out.sqlstate == "57014", out.public()
-    assert out.rollback == "answered" and not out.retired and rt.quarantine.count() == 0
     assert any(s["tag"] == "an01-m1:C2:S" and s["state"] == "active" for s in seen)
-    assert out.error_at_ms <= total - rt.reserve_ms        # answered inside the work phase
-    assert rt.resources.counts() == (0, 0)
+    assert out.sql_submitted == 1
+    assert_submitted_control_outcome(out, rt, ("server_cancelled",), ("57014",))
 
 
 @pytest.mark.parametrize("total", [400, 700, 1250])
 def test_c3_submitted_and_lock_timeout(r2db, zones, total):
     owner, url = r2db
     observer = rb.Observer(owner)
+    rt = control_runtime(url, total, observer)
     with psycopg.connect(owner) as holder:
         holder.execute("LOCK TABLE transactions IN ACCESS EXCLUSIVE MODE")
         try:
-            out = rb.run_statements(control_runtime(url, total, observer),
-                                    totals_sequence(zones))
+            out = rb.run_statements(rt, totals_sequence(zones))
         finally:
             holder.rollback()
     seen = observer.stop()
-    assert out.kind in ("lock_timeout", "server_cancelled"), out.public()
-    assert out.sqlstate in ("55P03", "57014") and out.rollback == "answered"
     assert any(s["tag"] == "an01-m1:totals:G" and s["wait"] == "Lock" for s in seen)
+    assert_submitted_control_outcome(out, rt, ("lock_timeout", "server_cancelled"),
+                                     ("55P03", "57014"))
+
+
+def test_reply_arrival_is_recorded_separately_from_when_it_is_noticed():
+    """Deadline-to-error latency uses the reply's arrival time on the report clock."""
+    clock = {"now": 0.0}
+    conn = FakeConn()
+
+    def cancel_on_g(text, params=None):        # each reply arrives 40 ms into its call
+        clock["now"] += 40.0
+        if "totals:G" in text:
+            raise psycopg.errors.QueryCanceled("synthetic")
+        return FakeCursor([{"n": 1}])
+    conn.execute = cancel_on_g
+    rt, _ = fake_runtime([conn], clock=lambda: clock["now"])
+    out = rb.run_statements(rt, SEQ)
+    assert out.kind == "server_cancelled"
+    assert out.error_at_ms == 80.0 and out.error_noticed_ms >= out.error_at_ms
 
 
 def relay_url(url, relay):

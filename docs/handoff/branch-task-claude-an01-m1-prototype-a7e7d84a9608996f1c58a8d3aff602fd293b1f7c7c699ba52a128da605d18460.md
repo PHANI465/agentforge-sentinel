@@ -6,7 +6,7 @@
 - **State:** ready for Codex review of the controller and resource evidence. Not accepted and not merged.
 - **Code reference tested before this note:**
   - The tiny smoke ran at `f00df8c960ad6e277c4d7d48be9c9d625119389e` on both platforms.
-  - The later commit changes only `cleanup_command` and adds its test. The registry and statement digests are unchanged.
+  - Later commits change `cleanup_command` and record reply arrival time for latency (`error_at_ms`). They also correct the C2/C3 gate tests after Windows gate run 2 at `cd3517d` failed (AN01-M1.md §5a). The registry and statement digests are unchanged.
 - **Final check evidence:** the six-command gates and the JUnit, HTTP, package and ML checks were rerun on the final commit, Windows then native. Results are reported in chat.
 - **Owned/changed paths:**
   - `scripts/benchmark_reports.py`
@@ -44,6 +44,9 @@ See [docs/benchmarks/AN01-M1.md](../benchmarks/AN01-M1.md).
   - S9 says "not demonstrated";
   - cleanup was verified on both platforms.
 - **Failing-first evidence is preserved:** quantized Windows timings, the `BG:drill_cursor` InvalidCursor failure, the phase E index mismatch and the repeat-cleanup traceback.
+- **Two Windows gate runs at `cd3517d` did not certify,** with evidence in `.agent/gate-failed-1/` and `-2/`:
+  - run 1 was my backslash JUnit path (six checks passed, 875 + 1 allowed skip);
+  - run 2 failed `test_c2...[400]`: a reply was noticed 1.27 ms after the work end, with its arrival time not recorded.
 
 ## Not verified / gaps
 
