@@ -709,18 +709,32 @@ def manifest_for(data: bytes, provenance: dict) -> dict:
             "generator_commit": provenance["generator_commit"]}
 
 
-def path_variants() -> list[str]:
-    """Local filesystem/user strings that must not appear in public files."""
-    values = set()
-    for base in (ROOT, Path.home()):
-        text = str(base)
-        values |= {text, text.replace("\\", "/"), text.replace("\\", "\\\\")}
+def _current_user() -> str | None:
     try:
-        user = getpass.getuser()
-        if len(user) >= 4:
-            values.add(user)
+        return getpass.getuser() or None
     except (OSError, KeyError):
-        pass
+        return None
+
+
+def path_variants(*, root: str | Path | None = None, home: str | Path | None = None,
+                  user: str | None = None) -> list[str]:
+    """Local filesystem/user strings that must not appear in public files.
+
+    The checkout and home paths are matched in every separator form (native, forward slash,
+    JSON-escaped backslash). The account name is matched only where it identifies a local
+    account in a path (`/home/<u>`, `Users/<u>`, `Users\\<u>` and its JSON-escaped form,
+    `/root` for root): a bare name would also match ordinary words, for example an account
+    named "sentinel" against the product name (native Ubuntu preview gate, 82316a5)."""
+    values = set()
+    for base in (ROOT if root is None else root, Path.home() if home is None else home):
+        text = str(base)
+        values |= {text, text.replace("\\", "/"), text.replace("\\", "\\\\"),
+                   text.replace("/", "\\"), text.replace("/", "\\\\")}
+    name = _current_user() if user is None else user
+    if name:
+        values |= {f"/home/{name}", f"Users/{name}", f"Users\\{name}", f"Users\\\\{name}"}
+        if name == "root":
+            values.add("/root/")
     return sorted(v for v in values if len(v) >= 4)
 
 
@@ -850,7 +864,7 @@ def cmd_validate(args) -> int:
             problems.append("tracked fixture was captured from an unclean tree")
     hits = scan([data_path], path_variants())
     if hits:
-        problems.append("local path or user name in the data file")
+        problems.append("local path or user path in the data file")
     for problem in problems:
         print(f"FAIL {problem}")
     if problems:
