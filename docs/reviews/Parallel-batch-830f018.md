@@ -1,5 +1,9 @@
 # Parallel delivery review: 830f018
 
+Historical review: R46–R49 are now closed on the corrected batch under
+[the November7 re-review](Batch-r2-10a65ee.md). The findings and evidence below describe
+the preserved original candidate; they are not current blockers.
+
 Reviewed preview: `830f01864aec3ff94679cf068b598157c7ee4263`, independently checked out
 at `E:/PHANI/sentinel-wt/codex-parallel-batch-review` with its own locked dev/ml environment.
 P4a is absent from this preview and is reviewed separately at 96293da.

@@ -1,5 +1,10 @@
 # AgentForge Sentinel: project overview and remaining work
 
+Latest status: [the November7 checkpoint](AgentForge_Sentinel_Session_2026-11-07.md)
+supersedes the pending-correction status below. R46–R49 are closed; evaluator/demo/local
+benchmark tooling is accepted and integrated. AN01 remains a draft and live evaluation
+has not run. Older entries and the complete study guide are dated historical references.
+
 ## Latest checkpoint: November6 review
 
 Delivery830f018 and separate P4a96293da have been independently reviewed. Corrections

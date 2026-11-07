@@ -1,5 +1,8 @@
 # DEMO01 correction: R48, history-independent freshness
 
+Completed and accepted under [the November7 re-review](../reviews/Batch-r2-10a65ee.md).
+This is a historical assignment; do not restart it or rerun delivered work automatically.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. Preserve provenance and
 privacy checks while making freshness reliable in a clean/shallow checkout.
 

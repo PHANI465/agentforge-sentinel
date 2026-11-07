@@ -1,5 +1,10 @@
 # Sentinel checkpoint: November 6, 2026
 
+Latest status: [the November7 checkpoint](AgentForge_Sentinel_Session_2026-11-07.md)
+supersedes the pending-correction status below. R46–R49 are closed; evaluator/demo/local
+benchmark tooling is accepted and integrated. AN01 remains a draft and live evaluation
+has not run. Older entries and the complete study guide are dated historical references.
+
 ## Current review result: corrected deliveries still need focused fixes
 
 The final author preview is830f018 (full Windows/native722+one skip each, author evidence).

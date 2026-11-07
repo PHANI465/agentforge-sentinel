@@ -1,5 +1,27 @@
 # Project status
 
+## November7: corrected tooling/demo batch accepted and locally integrated
+
+R46–R49 close under [the independent re-review](reviews/Batch-r2-10a65ee.md). P4ab32f45c,
+DEMO011289b42 and PERF0159b0b54 are accepted for their scoped deterministic/local tooling;
+AN01-r2a8c164a remains an unaccepted contract draft included as documentation only.
+Tested integration871e31d40e93306cfde6617e814c2cb78ae67c9e merges main6303236 with
+preview10a65ee cleanly. [Release evidence](releases/Batch-r2-main-integration-2026-11-07.md).
+
+Independent candidate review:167 focused tests,11 additional probes, replay Chromium31/31,
+AN01 checker34/34, plus a real local shallow-clone freshness/mutation check. Exact-clean
+integration Windows then native gates each pass810 tests plus one allowed skip, all six
+commands, same-run811-case JUnit/skip validation, HTTP/package and read-only ML.
+Product UI/browser suites were not rerun; production src/web/contracts/locks are unchanged.
+This later publication adds documentation only; no full strict PASS is claimed for its
+own new HEAD. Owner-only author/committer, original failures, candidates, accepted branches
+and Cursor's seven edits are preserved. No provider/auth/account/final-case run or spending.
+
+Next gates: explicitly authorized P4b development evaluation, or resolution of AN01's six
+contract decisions before reporting implementation. Neither is assigned by this acceptance.
+Real CI, Linux browser, macOS, hosting and BYOK remain open. Historical entries below are
+superseded for acceptance status, not rewritten as if their evidence never happened.
+
 ## November6: delivered batch independently reviewed; corrections assigned
 
 Claude delivered clean preview830f018 (AN01-r2a8c164a, PERF0159b0b54, DEMO0147b7cf1)

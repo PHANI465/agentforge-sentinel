@@ -1,5 +1,8 @@
 # Continue the delivered batch: focused review corrections
 
+Completed and accepted under [the November7 re-review](../reviews/Batch-r2-10a65ee.md).
+This is a historical assignment; do not restart it or rerun delivered work automatically.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. This batch needs evidence
 integrity and denominator checks, plus portable demo provenance. It does not need max
 effort as a blanket setting. Sentinel's investigators stay deterministic.

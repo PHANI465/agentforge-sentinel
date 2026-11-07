@@ -1,5 +1,8 @@
 # P4a review corrections: R46, R47, R49
 
+Completed and accepted under [the November7 re-review](../reviews/Batch-r2-10a65ee.md).
+This is a historical assignment; do not restart it or rerun delivered work automatically.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. These changes affect evidence,
 human-review denominators and stored-versus-reported recommendations; careful invariant
 and real-database testing matters. Sentinel investigators remain deterministic.
