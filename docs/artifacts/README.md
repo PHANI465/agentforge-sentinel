@@ -27,6 +27,13 @@ Ten pages explaining the verified application, fictional fraud examples, archite
 
 Planning acceptance is not live-run permission. P4a code still needs implementation/review.
 
+## Current parallel development batch
+
+- [Claude: AN01 refinement, local capacity benchmark and recorded demo](../prompts/CLAUDE_PARALLEL_BATCH_2026-11-06.md)
+- [P4a/AN01 delivery intake and exact pending candidate SHAs](../handoff/P4a-AN01-delivery-intake-2026-11-06.md)
+
+Delivered and author-tested does not mean independently accepted or integrated.
+
 ## Current session
 
 - [November 6 G3D-P3 operator integration, with G3D-P2 backup proof retained](AgentForge_Sentinel_Session_2026-11-06.md) — current checkpoint.

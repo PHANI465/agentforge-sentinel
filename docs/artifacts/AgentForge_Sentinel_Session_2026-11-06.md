@@ -1,14 +1,16 @@
 # Sentinel checkpoint: November 6, 2026
 
-## Current Claude batch: P4a tooling, then independent analyst design
+## Current Claude parallel batch
 
-The corrected [development evaluation plan](AgentForge_Sentinel_G3D-P4_Development_Evaluation_Plan_2026-11-06.md)
-is accepted at cee83f9; R44/R45 are closed. [Re-review](../reviews/G3D-P4-cee83f9.md).
-Give Claude [the batch prompt](../prompts/CLAUDE_TODAY_BATCH_2026-11-06.md), Opus5.5 / High.
-It assigns complete no-provider evaluation tooling (five milestones, one final review)
-and an independent analyst-workspace design package on a second branch. No new code
-is accepted yet, no live P4b/final-case work is assigned, and no new runtime gate result
-is claimed by this documentation publication. The application certification below remains current.
+P4a96293da evaluator tooling and AN01dd6518d analyst design are delivered, not yet
+independently accepted. [Intake](../handoff/P4a-AN01-delivery-intake-2026-11-06.md).
+The owner requested simultaneous agents for more work. [Give Claude the new batch](../prompts/CLAUDE_PARALLEL_BATCH_2026-11-06.md):
+AN01-r2 design refinement, bounded local performance measurement, and a portable
+recorded synthetic replay. Each owns a separate worktree; real DB/load/browser/gates
+are serialized. One combined task-branch preview may be tested, never merged into main
+by Claude. Original candidates and Cursor's seven edits remain untouched. No live P4b,
+auth/account call, final cases, new spending, external push or deployment is assigned.
+This dispatch changes documentation only; application certification below is unchanged.
 
 **G3D-P3 accepted and locally integrated at tested 495c7d33424054d27d68d08004191d4be37adaf9.**
 The operator helper now offers explicit three-role/adapter selection and consistent

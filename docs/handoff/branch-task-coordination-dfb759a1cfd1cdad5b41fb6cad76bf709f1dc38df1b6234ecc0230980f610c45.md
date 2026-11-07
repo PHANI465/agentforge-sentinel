@@ -10,12 +10,14 @@
 
 ## Next action
 
-Corrected P4 plan cee83f9 is accepted; R44/R45 close. The owner requests a substantial
-Claude batch before review: [P4a tooling then independent AN01 design](../prompts/CLAUDE_TODAY_BATCH_2026-11-06.md).
-One P4a branch owns runner/orchestration/export/scoring and its final gates; the design
-branch consumes accepted main only and can proceed without P4a acceptance. No live
-P4b, auth probe, final cases, runtime main merge, external push or spending is assigned.
-This publication merges documents only; accepted application/test bytes remain495c7d3.
+P4a96293da and AN01dd6518d are received, clean and review-pending, with author results
+not counted as independent Codex verification. [Delivery intake](P4a-AN01-delivery-intake-2026-11-06.md).
+The owner explicitly requested agents in parallel. [New batch](../prompts/CLAUDE_PARALLEL_BATCH_2026-11-06.md)
+assigns AN01-r2, PERF01 and DEMO01, disjoint worktrees and a single heavy-execution slot.
+A Claude task-only preview may combine just those tasks for one final certification;
+no main merge, live/auth/final cases, paid overage or external push/deployment is allowed.
+Codex reviews the delivered candidates and later preview before application integration.
+This dispatch changes documents only; application/test bytes remain tested495c7d3.
 
 ## Preserved
 

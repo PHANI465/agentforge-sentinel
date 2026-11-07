@@ -1,5 +1,23 @@
 # Project status
 
+## November6: new parallel Claude batch assigned; deliveries remain review-pending
+
+P4a96293da and AN01dd6518d are delivered on clean author branches, not accepted or
+merged. [Intake](handoff/P4a-AN01-delivery-intake-2026-11-06.md) separates author claims
+from Codex evidence. The owner requested simultaneous agents. [New batch](prompts/CLAUDE_PARALLEL_BATCH_2026-11-06.md)
+assigns AN01-r2 design clarification, PERF01 bounded deterministic capacity measurement,
+and DEMO01 a key-free recorded synthetic replay. Coding/spec work may run in parallel
+in disjoint worktrees; all DB/load/browser/full-gate jobs share one heavy execution slot.
+
+Claude may build a combined task-branch preview from those three owned tasks and certify
+it once, with Windows/native gates sequential. This is not main integration or Codex
+acceptance. Original P4a/AN01 and Cursor checkouts stay preserved. Analytics backend/UI
+is blocked on contract acceptance; live P4b/final cases, accounts/auth, paid overage,
+external push/deployment and new model/dependency downloads are not assigned.
+
+No new code or gate result is claimed by this documentation dispatch. Main application
+remains tested G3D-P3 at495c7d3 plus documentation. Older entries are historical.
+
 ## November6: corrected P4 plan accepted; substantial Claude batch assigned
 
 Plan cee83f9 is accepted for development planning; R44/R45 close under

@@ -1,5 +1,9 @@
 # Claude work batch: November6,2026
 
+Delivered: P4a96293da and AN01dd6518d, both review-pending. Do not repeat or modify their
+frozen checkouts. The owner requested [the next parallel batch](CLAUDE_PARALLEL_BATCH_2026-11-06.md).
+The original completed assignment follows as history; it grants no acceptance.
+
 The owner explicitly asked to complete substantial Claude tasks first, then review
 the delivered packages. Work autonomously within these two assignments; do not pause
 between internal P4a milestones merely for approval. Preserve original failures and

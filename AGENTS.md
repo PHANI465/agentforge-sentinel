@@ -19,6 +19,10 @@ These shared instructions apply to the adopted Sentinel project. The current use
   evaluation tooling in one isolated branch, then independent AN01 analyst-workspace design.
   Internal P4a milestones may proceed without repeated acceptance hops; final code still
   waits for Codex review/integration. No live P4b or final-case work is assigned.
+  P4a96293da/AN01dd6518d are now delivered but review-pending. Owner-authorized parallel
+  next work is docs/prompts/CLAUDE_PARALLEL_BATCH_2026-11-06.md: separate AN01-r2,
+  PERF01 and DEMO01 agents/worktrees, one heavy execution slot, and a combined task-only
+  preview for final certification. No Claude main merge or acceptance of drafts.
   Publication adds documentation only; no live/final-case evaluation is assigned. No live evaluation is assigned; preserve accepted worktrees and Cursor edits. The complete study guide is in docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md and .docx. Preserve accepted components, Cursor edits and prior failed evidence. Read docs/artifacts/AgentForge_Sentinel_Session_2026-11-02.md. No live evaluation is assigned. G3A remains accepted. Read current coordination. GitHub Actions/macOS/hosting and Linux browser execution remain unverified.
 - Install: `uv sync --locked --extra dev --extra ml`. Run the six-command strict gate, HTTP export check, structured JUnit validation and read-only ML reproduction as described in SETUP.md. No new dependency resolution or model calls are required.
 - Verify: `uv run --locked python -m ruff check .`, `uv run --locked python -m pytest -q`, `uv run --locked python -m unittest discover -s tests_handoff -v`, `uv run --locked python scripts/export_contracts.py --check`, and `node scripts/check_contract_examples.mjs`.

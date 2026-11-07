@@ -1,5 +1,12 @@
 # AgentForge Sentinel: project overview and remaining work
 
+**Current work intake:** P4a96293da and AN01dd6518d are delivered but review-pending.
+[Next parallel batch](../prompts/CLAUDE_PARALLEL_BATCH_2026-11-06.md): refine AN01,
+measure bounded deterministic local capacity, and build a key-free recorded replay.
+No analytics API is accepted or implemented by receiving its draft. Resource-heavy
+jobs are serialized; original candidates stay frozen. Earlier assignment paragraphs
+below are history; no live/final-case or deployment work is authorized.
+
 Corrected G3D-P4 plan cee83f9 is accepted; R44/R45 are closed.
 [Current Claude batch](../prompts/CLAUDE_TODAY_BATCH_2026-11-06.md): implement the full
 P4a evaluation tooling, then complete independent AN01 analyst design. Both stay on
