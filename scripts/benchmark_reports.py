@@ -683,7 +683,8 @@ def _publish_stage(run: Run, state: dict, stage: str, t0: float) -> None:
               "identities": run.checkpoint()["identities"], "record": rec,
               "datasets": {k: {x: v[x] for x in ("status", "rows", "digest", "bytes",
                                                  "load_s", "postgres", "variant",
-                                                 "index_build_s", "tuple_bytes") if x in v}
+                                                 "index_build_s", "tuple_bytes", "phase_e_indexes")
+                                 if x in v}
                            for k, v in run.datasets().items()},
               "selection": state.get("selection"), "cells": cells,
               "environment": {"os": platform.system(), "python": platform.python_version(),
@@ -847,7 +848,7 @@ class Worker:
                                ).fetchone()
             conn.rollback()
         cursor = rb.encode_cursor(request, mid["occurred_at"], mid["id"],
-                                  (counts["matching"], counts["with_outcome"]))
+                                  issued_pair(counts["matching"], counts["with_outcome"], cap))
         return rb.normalize(self.zones, "rows.transactions", cap=cap, cursor=cursor, **kwargs)
 
     def runtime(self, url: str, total_ms: int = rb.MEASUREMENT_B_MS, **kw) -> rb.Runtime:
@@ -1087,8 +1088,9 @@ class Worker:
         with psycopg.connect(owner, autocommit=True, connect_timeout=10) as conn:
             exists = conn.execute("SELECT to_regclass(%s)",
                                   (f"{rb.SHADOW_SCHEMA}.transactions",)).fetchone()[0]
+            variant = self.run.datasets()["D2"]["variant"]
             if not exists:
-                for ddl in rb.SHADOW_DDL:
+                for ddl in rb.shadow_ddl(variant):
                     conn.execute(ddl)
                 from psycopg import sql
                 conn.execute(sql.SQL("CREATE ROLE {} LOGIN NOINHERIT PASSWORD {}").format(
@@ -1097,6 +1099,13 @@ class Worker:
                 conn.execute(f"GRANT SELECT ON {rb.SHADOW_SCHEMA}.transactions,"
                              f" public.scoring_outcomes TO {SHADOW_ROLE}")
                 conn.execute("ANALYZE")
+            indexes = {schema: sorted(r[0] for r in conn.execute(
+                "SELECT indexdef FROM pg_indexes WHERE schemaname = %s"
+                " AND tablename = 'transactions'", (schema,)))
+                for schema in ("public", rb.SHADOW_SCHEMA)}
+        datasets = self.run.datasets()
+        datasets["D2"]["phase_e_indexes"] = {"variant": variant, **indexes}
+        self.run.save_datasets(datasets)
         json_url, cols_url = self.runtime_url(owner), self.runtime_url(owner, SHADOW_ROLE)
         scope = self.scope("D2", n_star)
         for cell in grid(self.profile, n_star):
@@ -1114,6 +1123,15 @@ class Worker:
                 stop_cluster(stack, data, time.monotonic() + 60)
         cells = _stage_cells(self.run, self.run.load(), self.stage)
         return 0 if all(v["status"] == "complete" for v in cells.values()) else 3
+
+
+def issued_pair(matching: int, with_outcome: int, cap: int) -> tuple[int, int]:
+    """The consistency pair a cursor can legitimately carry: one issued by a page 1 that was
+    served, so at most the cap. A B-guard set (cap + 1 rows) is reached by drill_cursor only
+    through such an earlier cursor; a cursor claiming more than the cap is invalid_cursor
+    (first tiny smoke: BG:drill_cursor failed with InvalidCursor; the rule is kept)."""
+    first = min(matching, cap)
+    return first, min(with_outcome, first)
 
 
 def summarize_plan(plan) -> dict | None:

@@ -1111,3 +1111,25 @@ def test_full_grid_preflight_refuses_s4_under_the_design_bound(tmp_path):
     assert s4["cluster_data_estimate"] > full.max_cluster_bytes
     assert "estimated clusters exceed the profile maximum" in s4["problems"]
     assert s4["ok"] is False
+
+
+def test_guard_cursor_carries_an_issued_pair_and_strict_rule_is_kept(zones):
+    """Regression for the first tiny smoke (BG:drill_cursor InvalidCursor): the harness now
+    builds the guard cursor from a pair a served page 1 could have issued (<= cap)."""
+    assert br.issued_pair(81, 80, 80) == (80, 80)
+    assert br.issued_pair(81, 81, 80) == (80, 80)
+    assert br.issued_pair(40, 39, 80) == (40, 39)
+    request = rb.normalize(zones, "rows.transactions", read_at=READ_AT, from_=WINDOW[0],
+                           to=WINDOW[1], limit=4)
+    over = rb.encode_cursor(request, t("10-01 10:00:00"), uid("a016"), (81, 80))
+    with pytest.raises(rb.InvalidCursor):
+        rb.decode_cursor(over, request, cap=80)
+    issued = rb.encode_cursor(request, t("10-01 10:00:00"), uid("a016"),
+                              br.issued_pair(81, 80, 80))
+    assert rb.decode_cursor(issued, request, cap=80)[2:] == (80, 80)
+
+
+def test_phase_e_shadow_index_follows_the_common_variant():
+    assert rb.SHADOW_WINDOW_INDEX not in rb.shadow_ddl("A")
+    assert rb.shadow_ddl("B")[-1] == rb.SHADOW_WINDOW_INDEX
+    assert rb.shadow_ddl("C")[-1] == rb.SHADOW_WINDOW_INDEX

@@ -1448,9 +1448,16 @@ SHADOW_DDL = (
     " body ->> 'direction' AS direction,"
     " (body -> 'amount' ->> 'minor_units')::numeric AS minor_units FROM public.transactions",
     f"ALTER TABLE {SHADOW_SCHEMA}.transactions ADD PRIMARY KEY (id)",
-    f"CREATE INDEX an01_m1_shadow_session_time ON {SHADOW_SCHEMA}.transactions"
-    " (tenant_id, session_id, occurred_at, id)",
 )
+# Created only when the selected common variant has the transactions window index (B or C),
+# so both designs are compared with the same window index (first tiny dry run: the shadow
+# had it unconditionally while variant A's JSON table did not).
+SHADOW_WINDOW_INDEX = (f"CREATE INDEX an01_m1_shadow_session_time ON {SHADOW_SCHEMA}.transactions"
+                       " (tenant_id, session_id, occurred_at, id)")
+
+
+def shadow_ddl(variant: str) -> tuple[str, ...]:
+    return SHADOW_DDL + ((SHADOW_WINDOW_INDEX,) if "B" in VARIANT_INDEXES[variant] else ())
 
 
 def apply_variant(owner_url: str, variant: str) -> dict:
@@ -1476,4 +1483,5 @@ def apply_variant(owner_url: str, variant: str) -> dict:
 def setup_registry() -> dict:
     texts = {f"index:{k}": v[0] for k, v in INDEX_DDL.items()}
     texts.update({f"shadow:{i}": t for i, t in enumerate(SHADOW_DDL)})
+    texts["shadow:window_index"] = SHADOW_WINDOW_INDEX
     return {k: {"text": v, "sha256": sha(v)} for k, v in texts.items()}
