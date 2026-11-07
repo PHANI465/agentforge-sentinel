@@ -152,9 +152,16 @@ async function main() {
     record("rail button opens frame 7 and marks it current",
       (await d.page.textContent("#frame-no")) === "Frame 7 of 10" &&
       (await d.page.getAttribute(".rail-btn[data-index='6']", "aria-current")) === "step");
-    record("no Approve/Execute control on the scripted approval frame",
-      await d.page.evaluate(() => [...document.querySelectorAll("button, input, form")]
-        .every((b) => !/approve|execute|reject/i.test(b.textContent + (b.value || "")))));
+    // Frame titles in the rail name recorded steps ("... executed"); every control must be
+    // frame navigation, and nothing in the frame itself may be a button, input or form.
+    const controls = await d.page.evaluate(() => ({
+      other: [...document.querySelectorAll("button")].filter((b) =>
+        !b.classList.contains("rail-btn") && b.id !== "prev" && b.id !== "next")
+        .map((b) => b.textContent),
+      inFrame: document.querySelectorAll("#frame button, #frame input, form, input").length,
+    }));
+    record("no Approve/Execute control: only frame navigation buttons exist",
+      controls.other.length === 0 && controls.inFrame === 0, controls);
     await d.page.screenshot({ path: join(OUT, "desktop-frame07-approval.png"), fullPage: true });
 
     // ---- every in-page link targets an existing record ---------------------------------
@@ -192,14 +199,18 @@ async function main() {
       (await d.page.textContent("#frame-no")) === "Frame 2 of 10");
 
     // ---- keyboard focus order and visibility ---------------------------------------------
-    await d.page.goto(origin + "/#frame-1");
-    await ready(d.page);
-    await d.page.keyboard.press("Tab");
-    const skip = await d.page.evaluate(() => document.activeElement.className);
-    await d.page.keyboard.press("Tab");
-    const rail = await d.page.evaluate(() => document.activeElement.className);
-    const ring = await d.page.evaluate(() => getComputedStyle(document.activeElement)
+    // A fresh page: a hash-only goto is a same-document navigation that keeps old focus.
+    const f = await watched(desk, origin);
+    await f.page.goto(origin + "/#frame-1");
+    await ready(f.page);
+    await f.page.keyboard.press("Tab");
+    const skip = await f.page.evaluate(() => document.activeElement.className);
+    await f.page.keyboard.press("Tab");
+    const rail = await f.page.evaluate(() => document.activeElement.className);
+    const ring = await f.page.evaluate(() => getComputedStyle(document.activeElement)
       .outlineStyle);
+    d.errors.push(...f.errors);
+    d.foreign.push(...f.foreign);
     record("Tab reaches skip link then the frame rail with a visible focus ring",
       skip === "skip" && rail.includes("rail-btn") && ring !== "none", { skip, rail, ring });
     record("no console errors (desktop)", d.errors.length === 0, d.errors);
