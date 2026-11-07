@@ -76,12 +76,19 @@ def collect(runs: list[tuple[str, dict]]) -> dict:
 
 def comparator_metrics(name: str, rows: list[dict], not_attempted: list[str]) -> dict:
     outcomes = Counter(row["outcome"] for row in rows)
-    dispositions = [r for r in rows if r["outcome"] == "disposition"]
+    completed = [r for r in rows if r["outcome"] == "disposition"]
     workflow = name in artifact.WORKFLOW_COMPARATORS
-    acceptable = [r for r in dispositions if r.get("disposition")
-                  and catalog.acceptable(r["case"], r["disposition"])]
+    # A disposition whose telemetry could not be read has an unknown recommendation: it is
+    # reported apart, never counted acceptable or unacceptable (unknown stays unknown).
+    unknown = [r["attempt_id"] for r in completed if r.get("disposition") is None]
+    dispositions = [r for r in completed if r.get("disposition") is not None]
+    acceptable = [r for r in dispositions if catalog.acceptable(r["case"], r["disposition"])]
     holds = [r["attempt_id"] for r in dispositions
              if catalog.wrong_hold(r["case"], r.get("disposition"))]
+    # A pending (unknown commit) attempt whose stored state shows a hold is listed, never
+    # inferred to be a completed disposition.
+    pending_holds = [r["attempt_id"] for r in rows if r["outcome"] == "pending"
+                     and catalog.wrong_hold(r["case"], r.get("disposition"))]
     metrics = {
         "counts": {"attempts": len(rows), "dispositions": outcomes["disposition"],
                    "inconclusive": outcomes["inconclusive"], "refused": outcomes["refused"],
@@ -92,9 +99,18 @@ def comparator_metrics(name: str, rows: list[dict], not_attempted: list[str]) ->
             if r["outcome"] == "inconclusive")),
         "not_attempted": not_attempted,
         "acceptable_recommendation": rate(len(acceptable), len(dispositions)),
-        "wrong_holds": {"count": len(holds), "attempts": holds,
-                        "note": "completed, unacceptable dispositions (0/1 each), kept"},
+        "recommendation_unknown": {"count": len(unknown), "attempts": unknown},
+        "wrong_holds": {"count": len(holds), "attempts": holds, "unknown": len(unknown),
+                        "pending_with_stored_hold": pending_holds,
+                        "note": "completed, unacceptable dispositions (0/1 each), kept; "
+                                "dispositions with an unknown recommendation and pending "
+                                "attempts are reported apart, not inferred"},
     }
+    if unknown:
+        metrics["acceptable_recommendation"]["note"] = (
+            f"over dispositions with a recorded recommendation; {len(unknown)} of "
+            f"{len(completed)} dispositions have an unknown recommendation (telemetry "
+            "unavailable)")
     if workflow:
         def abstained(labels):
             eligible = [r for r in dispositions
@@ -140,58 +156,145 @@ def comparator_metrics(name: str, rows: list[dict], not_attempted: list[str]) ->
     return metrics
 
 
-def read_sheet(path: Path) -> dict:
-    """packet_id -> {"statements": [values], "acceptable": v, "would_correct": v}."""
-    packets = {}
+STATEMENT_MARKS = ("supported", "unsupported", "not_checkable")
+YES_NO = ("yes", "no")
+ANSWERS = ("supported", "acceptable", "reason_code", "would_correct", "correction")
+APPLIES = {"evidence": (), "statement": ("supported",),
+           "recommendation": ("acceptable", "reason_code", "would_correct", "correction")}
+
+
+def _choice(value: str, allowed: tuple, where: str, column: str) -> str:
+    """A blank answer is unknown (""), never "no"; anything else must be a listed choice."""
+    value = value.strip().lower()
+    if value and value not in allowed:
+        raise ScoreError(f"{where}: {column} must be blank or one of {', '.join(allowed)} "
+                         "(refused)")
+    return value
+
+
+def read_sheet(path: Path, mapping: dict) -> dict:
+    """packet_id -> {"statements": [marks], "acceptable": v, "would_correct": v}.
+
+    The sheet must be the one generated for these packets (R47): the exact columns, every
+    row's packet/item/kind/text bound to the key, each item once, every generated item
+    present, and only the listed choices in the columns that apply. Text is never
+    interpreted; free-text answers (reason_code, correction) are kept inert."""
+    for packet_id, entry in mapping.items():
+        if not isinstance(entry.get("items"), dict):
+            raise ScoreError(f"the unblinding key has no sheet binding for {packet_id}; "
+                             "regenerate the packets (refused)")
+    packets, seen = {}, set()
     with open(path, encoding="utf-8", newline="") as handle:
-        for row in csv.DictReader(handle):
-            packet = packets.setdefault(row["packet_id"].lstrip("'"),
-                                        {"statements": [], "acceptable": "",
-                                         "would_correct": ""})
-            if row["kind"] == "statement":
-                packet["statements"].append(row["supported"].strip().lower())
-            elif row["kind"] == "recommendation":
-                packet["acceptable"] = row["acceptable"].strip().lower()
-                packet["would_correct"] = row["would_correct"].strip().lower()
+        reader = csv.reader(handle)
+        header = next(reader, None)
+        if header is None or tuple(header) != artifact.SHEET_COLUMNS:
+            raise ScoreError("the sheet columns are not the generated review sheet columns "
+                             "(refused)")
+        for number, values in enumerate(reader, 2):
+            if not any(v.strip() for v in values):
+                continue
+            if len(values) != len(artifact.SHEET_COLUMNS):
+                raise ScoreError(f"sheet line {number}: wrong number of columns (refused)")
+            row = dict(zip(artifact.SHEET_COLUMNS, values))
+            packet_id, item, kind = row["packet_id"], row["item"], row["kind"]
+            where = f"sheet line {number} ({packet_id} {item})"
+            if packet_id not in mapping:
+                raise ScoreError(f"{where}: packet is not in the key (refused)")
+            bound = mapping[packet_id]["items"].get(item)
+            if bound is None:
+                raise ScoreError(f"{where}: item is not in the generated packet (refused)")
+            if (packet_id, item) in seen:
+                raise ScoreError(f"{where}: duplicate item (refused)")
+            seen.add((packet_id, item))
+            if kind != bound["kind"]:
+                raise ScoreError(f"{where}: kind {kind!r} is not the generated kind (refused)")
+            if artifact.text_digest(row["text"]) != bound["text_sha256"]:
+                raise ScoreError(f"{where}: text differs from the generated packet (refused)")
+            for column in ANSWERS:
+                if column not in APPLIES[kind] and row[column].strip():
+                    raise ScoreError(f"{where}: an answer in {column}, which does not apply "
+                                     f"to a {kind} row (refused)")
+            packet = packets.setdefault(packet_id, {"statements": [], "acceptable": "",
+                                                    "would_correct": ""})
+            if kind == "statement":
+                packet["statements"].append(
+                    _choice(row["supported"], STATEMENT_MARKS, where, "supported"))
+            elif kind == "recommendation":
+                packet["acceptable"] = _choice(row["acceptable"], YES_NO, where, "acceptable")
+                packet["would_correct"] = _choice(row["would_correct"], YES_NO, where,
+                                                  "would_correct")
+                if row["correction"].strip() and packet["would_correct"] != "yes":
+                    raise ScoreError(f"{where}: a correction is written but would_correct is "
+                                     "not 'yes' (refused; an answer is never assumed)")
+    for packet_id, entry in mapping.items():
+        missing = sorted(set(entry["items"]) - {i for p, i in seen if p == packet_id})
+        if missing:
+            raise ScoreError(f"the sheet is missing generated items of {packet_id}: "
+                             f"{', '.join(missing)} (refused)")
     return packets
 
 
 def human_metrics(sheet: Path | None, key: Path | None, digests: set[str]) -> dict:
+    """Per comparator: each metric with its answered and unanswered counts (R47).
+
+    A blank answer is unknown: it is excluded from that metric's denominator and counted
+    as unanswered, never read as "no". The rubric-supported statement rate uses protocol-v1
+    §3's denominator, every statement the rubric scored (supported + unsupported +
+    not_checkable). A packet with some but not all answers makes the review partial."""
     if sheet is None:
         return {"status": "not scored (no completed review sheet)"}
     if key is None or not key.exists():
         raise ScoreError("a review sheet needs its unblinding key")
     mapping = json.loads(key.read_text(encoding="utf-8"))["packets"]
-    packets = read_sheet(sheet)
-    if set(packets) - set(mapping):
-        raise ScoreError("the sheet has packet IDs that are not in the key (refused)")
     if {m["run_artifact_sha256"] for m in mapping.values()} - digests:
         raise ScoreError("the key refers to run artifacts that are not being scored")
+    packets = read_sheet(sheet, mapping)
     per = {}
     for packet_id, answers in packets.items():
-        name = mapping[packet_id]["comparator"]
-        entry = per.setdefault(name, Counter())
+        entry = per.setdefault(mapping[packet_id]["comparator"], Counter())
         marks = answers["statements"]
-        if not any(marks) and not answers["acceptable"]:
+        fields = [*marks, answers["acceptable"], answers["would_correct"]]
+        if not any(fields):
             entry["packets_not_scored"] += 1
-            continue
-        entry["packets_scored"] += 1
-        entry["supported"] += marks.count("supported")
-        entry["unsupported"] += marks.count("unsupported")
-        entry["not_checkable"] += marks.count("not_checkable")
-        entry["unmarked_statements"] += marks.count("")
-        entry["would_correct"] += answers["would_correct"] == "yes"
-        entry["acceptable_yes"] += answers["acceptable"] == "yes"
-    return {name: {"rubric_supported_statements": rate(c["supported"],
-                                                       c["supported"] + c["unsupported"]),
-                   "statement_denominator": "statements marked supported or unsupported "
-                                            "(not_checkable and unmarked reported apart)",
-                   "not_checkable": c["not_checkable"],
-                   "unmarked_statements": c["unmarked_statements"],
-                   "human_correction": rate(c["would_correct"], c["packets_scored"]),
-                   "human_acceptable": rate(c["acceptable_yes"], c["packets_scored"]),
-                   "packets_scored": c["packets_scored"],
-                   "packets_not_scored": c["packets_not_scored"]} for name, c in per.items()}
+        else:
+            entry["packets_scored"] += 1
+            entry["packets_complete"] += all(fields)
+        for mark in STATEMENT_MARKS:
+            entry[mark] += marks.count(mark)
+        entry["statements_unanswered"] += marks.count("")
+        for column in ("acceptable", "would_correct"):
+            entry[f"{column}_{answers[column] or 'unanswered'}"] += 1
+    result = {}
+    for name, c in per.items():
+        scored = c["supported"] + c["unsupported"] + c["not_checkable"]
+        unanswered = (c["statements_unanswered"] + c["acceptable_unanswered"]
+                      + c["would_correct_unanswered"])
+        answered = scored + c["acceptable_yes"] + c["acceptable_no"] + \
+            c["would_correct_yes"] + c["would_correct_no"]
+        status = ("complete" if not unanswered else
+                  f"partial ({unanswered} of {unanswered + answered} answer fields blank; "
+                  "blank is unknown, not no)" if answered else
+                  "not scored (blank sheet)")
+        result[name] = {
+            "review_status": status,
+            "rubric_supported_statements": rate(c["supported"], scored),
+            "statement_denominator": "all statements the rubric scored: supported + "
+                                     "unsupported + not_checkable (protocol-v1 §3); blank "
+                                     "statements are unanswered and excluded",
+            "unsupported": c["unsupported"], "not_checkable": c["not_checkable"],
+            "statements_answered": scored,
+            "statements_unanswered": c["statements_unanswered"],
+            "human_acceptable": rate(c["acceptable_yes"],
+                                     c["acceptable_yes"] + c["acceptable_no"]),
+            "acceptable_answered": c["acceptable_yes"] + c["acceptable_no"],
+            "acceptable_unanswered": c["acceptable_unanswered"],
+            "human_correction": rate(c["would_correct_yes"],
+                                     c["would_correct_yes"] + c["would_correct_no"]),
+            "correction_answered": c["would_correct_yes"] + c["would_correct_no"],
+            "correction_unanswered": c["would_correct_unanswered"],
+            "packets_scored": c["packets_scored"], "packets_complete": c["packets_complete"],
+            "packets_not_scored": c["packets_not_scored"]}
+    return result
 
 
 def score(runs: list[tuple[str, dict]], pilot_not_attempted: list[str] | None = None,

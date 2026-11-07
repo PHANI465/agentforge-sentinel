@@ -108,8 +108,8 @@ def test_a_censored_wrong_result_is_refused():
         scoring.score([("censored", doc)])
     relabelled = fixture()  # the hold relabelled as a refusal
     row = relabelled["comparators"]["C1"]["attempts"][2]
-    row["outcome"] = "refused"
-    with pytest.raises(scoring.ScoreError, match="counts"):
+    row["outcome"] = "refused"  # its disposition and missing refusal code contradict it
+    with pytest.raises(scoring.ScoreError, match="refused"):
         scoring.score([("relabelled", relabelled)])
 
 
@@ -134,32 +134,45 @@ def write_sheet(path, rows):
         writer.writerows(rows)
 
 
+def bound_key(path, doc, comparators, rows):
+    """A key binding each packet's rows (item, kind, text digest), as review_packets does."""
+    packets = {pid: {"comparator": name, "attempt_id": f"{name}:1:D01",
+                     "run_artifact_sha256": artifact.digest(doc), "items": {}}
+               for pid, name in comparators.items()}
+    for row in rows:
+        packets[row[0]]["items"][row[1]] = {"kind": row[2],
+                                            "text_sha256": artifact.text_digest(row[3])}
+    path.write_text(json.dumps({"packets": packets}))
+
+
 def test_human_metrics_need_completed_sheets_and_a_matching_key(tmp_path):
     doc = fixture()
     key = tmp_path / "key.json"
-    key.write_text(json.dumps({"packets": {
-        "PK-a": {"comparator": "C1", "attempt_id": "C1:1:D01",
-                 "run_artifact_sha256": artifact.digest(doc)},
-        "PK-b": {"comparator": "C2", "attempt_id": "C2:1:D01",
-                 "run_artifact_sha256": artifact.digest(doc)}}}))
     blank = tmp_path / "blank.csv"
-    write_sheet(blank, [["PK-a", "S1", "statement", "t", "", "", "", "", ""],
-                        ["PK-a", "R", "recommendation", "r", "", "", "", "", ""]])
+    blank_rows = [["PK-a", "S1", "statement", "t", "", "", "", "", ""],
+                  ["PK-a", "R", "recommendation", "r", "", "", "", "", ""]]
+    bound_key(key, doc, {"PK-a": "C1"}, blank_rows)
+    write_sheet(blank, blank_rows)
     human = scoring.score([("f", doc)], sheet=blank, key=key)["human_rubric"]
     assert human["C1"]["packets_scored"] == 0 and human["C1"]["packets_not_scored"] == 1
     assert human["C1"]["rubric_supported_statements"]["text"] == "n/a (0/0)"
+    assert human["C1"]["review_status"].startswith("not scored")
     done = tmp_path / "done.csv"
-    write_sheet(done, [["PK-a", "S1", "statement", "t", "supported", "", "", "", ""],
-                       ["PK-a", "S2", "statement", "t", "unsupported", "", "", "", ""],
-                       ["PK-a", "S3", "statement", "t", "not_checkable", "", "", "", ""],
-                       ["PK-a", "R", "recommendation", "r", "", "yes", "", "no", ""],
-                       ["PK-b", "S1", "statement", "t", "supported", "", "", "", ""],
-                       ["PK-b", "R", "recommendation", "r", "", "no", "x", "yes", "y"]])
+    done_rows = [["PK-a", "S1", "statement", "t", "supported", "", "", "", ""],
+                 ["PK-a", "S2", "statement", "t", "unsupported", "", "", "", ""],
+                 ["PK-a", "S3", "statement", "t", "not_checkable", "", "", "", ""],
+                 ["PK-a", "R", "recommendation", "r", "", "yes", "", "no", ""],
+                 ["PK-b", "S1", "statement", "t", "supported", "", "", "", ""],
+                 ["PK-b", "R", "recommendation", "r", "", "no", "x", "yes", "y"]]
+    bound_key(key, doc, {"PK-a": "C1", "PK-b": "C2"}, done_rows)
+    write_sheet(done, done_rows)
     human = scoring.score([("f", doc)], sheet=done, key=key)["human_rubric"]
-    assert human["C1"]["rubric_supported_statements"]["text"] == "1/2 (0.500)"
+    # protocol-v1 section 3: supported / all statements the rubric scored (incl. not_checkable)
+    assert human["C1"]["rubric_supported_statements"]["text"] == "1/3 (0.333)"
     assert human["C1"]["not_checkable"] == 1 and human["C1"]["human_correction"]["text"] == \
         "0/1 (0.000)"
     assert human["C2"]["human_correction"]["text"] == "1/1 (1.000)"
+    assert human["C1"]["review_status"] == human["C2"]["review_status"] == "complete"
     other = copy.deepcopy(json.loads(key.read_text()))
     other["packets"]["PK-a"]["run_artifact_sha256"] = "f" * 64
     key.write_text(json.dumps(other))

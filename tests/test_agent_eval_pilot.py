@@ -24,6 +24,10 @@ needs_pg = pytest.mark.skipif(devdb.find_pg_bin() is None, reason="needs Postgre
 URL_CANARY = "postgresql://canary-owner@127.0.0.1:1/never"
 
 
+CODES = {"refused": "agent_capacity_exhausted", "pending": "investigation_outcome_unknown",
+         "error": "OperationalError"}
+
+
 def make_run(comparators, cases, outcomes=None, status="complete"):
     """A valid version-1 artifact (test data, not a real run). outcomes maps
     (comparator, case) -> (outcome, operation, reason)."""
@@ -39,14 +43,22 @@ def make_run(comparators, cases, outcomes=None, status="complete"):
             if outcome == "disposition":
                 row["disposition"] = {"kind": "recommend" if name.startswith("C2") else None,
                                       "operation": operation, "reason_code": reason}
+            elif outcome in CODES:  # a consistent record names its typed/untyped code
+                row["code"] = CODES[outcome]
             rows.append(row)
+        not_attempted = []
+        if status == "incomplete" and name == comparators[-1]:  # a setup stop, last case
+            rows, not_attempted = rows[:-1], [cases[-1]]
         counts = {"attempts": len(rows)}
         for row in rows:
             key = "dispositions" if row["outcome"] == "disposition" else row["outcome"]
             counts[key] = counts.get(key, 0) + 1
-        result[name] = {"counts": counts, "attempts": rows, "cases_not_attempted": []}
+        result[name] = {"counts": counts, "attempts": rows,
+                        "cases_not_attempted": not_attempted}
+    stopped = {"comparator": comparators[-1], "case": cases[-1], "phase": "ingest",
+               "code": "OperationalError"} if status == "incomplete" else None
     return json.dumps({"record": {
-        "artifact_version": artifact.RUN_VERSION, "status": status, "stopped": None,
+        "artifact_version": artifact.RUN_VERSION, "status": status, "stopped": stopped,
         "comparators_not_started": [], "planned_comparators": list(comparators),
         "planned_cases": list(cases), "authorities": {"runtime_verified": True},
         "cases": {c: {"runtime_sha256": catalog.runtime_digest(c), "faults_not_applied": []}

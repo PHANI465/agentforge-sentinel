@@ -42,6 +42,11 @@ Statuses keep their protocol-v1 meaning: `disposition`, `inconclusive`, `refused
 
 **Integrity check (`agent_eval_support.artifact.validate_run`).** For every comparator, the attempts plus `cases_not_attempted` must be exactly `planned_cases`, in order. Indices must be contiguous, counts must equal the rows, and `workflow_elapsed_ms` must be null. A removed (censored) attempt therefore makes the artifact invalid; it cannot silently disappear.
 
+Consistency rules added for review finding R46 (each refused, never repaired):
+- **Status and the stop boundary.** `status` is `complete` or `incomplete`. A `complete` record has no `stopped`, no comparator not started and **no case not attempted** on any comparator. An `incomplete` record must say where it stopped: for a setup stop, the stopped comparator is the last one that ran and its first not-attempted case is the stopped case; for a comparator-construction stop, the stopped comparator is the first one not started. No other comparator may list cases not attempted. Comparators appear in the planned order.
+- **Each row tells one story.** `disposition`: no code, case state `awaiting_approval` (when recorded), and a recorded disposition unless telemetry was `unavailable` (then none: the recommendation is unknown). `inconclusive`: no code, not `awaiting_approval`, no disposition. `refused`: code `agent_capacity_exhausted`, no case state, no disposition, no recorded role attempt. `pending`: an `investigation_in_progress`/`investigation_outcome_unknown` code; it may carry the stored state read afterwards, but stays pending. `error`: a non-typed code and no disposition. A disposition's `kind` and `source` must fit the comparator (`recommend`/`abstain` for workflow comparators, `null` for the single investigator).
+- So a wrong hold relabelled `refused` with matching counts, or a complete record whose suffix was moved into `cases_not_attempted`, is refused. This is consistency checking of an editable, unsigned file, not tamper-proofing: a fully coherent rewrite is not detectable from the file alone (the export below checks the file against storage).
+
 **Never in an artifact:** bearer tokens, connection strings, passwords, auth output, or CLI envelopes and stdout.
 
 Example (abridged, from a real C2-det attempt on D01):
@@ -101,7 +106,9 @@ uv run --locked python scripts/agent_eval_report.py packets --root <DIR> [--seed
 **Export** (`exports/<pair>.bundle.json`, private):
 - **Authority and isolation.** The export runs as the **runtime role** (never the operator), in one `REPEATABLE READ, READ ONLY` transaction, against the pair's own database only. The supervisor starts the owned cluster for it and stops it afterwards.
 - **Scope.** Each query selects by the IDs that the attempt's artifact row names, plus that row's tenant and session. Every returned row is then re-checked against that scope. So a foreign or tampered mapping, or a broken scope filter, is refused with nothing written; the export never widens a query.
-- **Workflows.** The stored workflow IDs must equal the artifact's. The adopted run is the artifact's `basis_run_id`, and it must be stored in the same scope.
+- **Workflows.** The stored workflow IDs must equal the artifact's.
+- **Adopted disposition (R49).** The adoption is rebuilt from storage by the runner's own rule (a workflow's recorded `disposition` and its `basis_run_id`, or the single investigator's one run with a finding). Every recommendation and claim field the artifact records (`source`, `kind`, `operation`, `reason_code`, `basis_run_id`, `workflow_id`, `supported_claims`, `unsupported_claims`) must equal it, and the basis must be a run with a finding in the adopted workflow and scope. A disagreement, or a stored adoption contradicting a recorded `inconclusive`/`refused` outcome, is refused before any bundle or packet exists; nothing is repaired. Exported fields come from storage, labelled `verification: matches stored disposition`. A disposition whose run-artifact telemetry was unavailable is exported from storage labelled `stored only (...)`; stored state found after a `pending`/`error` outcome is labelled as found later. The recorded outcome is never changed.
+- **Identity.** Before reading, the export login is refused if it owns (or is a member of the owner of) a mutable table, holds administration attributes or runs as a switched role.
 - **What it records** per attempt:
   - case state and revision, and pins;
   - transaction amount, direction and time, and scoring;
@@ -124,7 +131,8 @@ uv run --locked python scripts/agent_eval_report.py packets --root <DIR> [--seed
 - **Blinding is partial and is disclosed in the file:**
   - C2's server-rendered rationale (for example "Reviewer: accept.") and the presence of tool values reveal the system;
   - nothing claims an independent human scored anything.
-- **Files.** The packets go in `review/packets.json` and `review/sheet.csv`, with blank scoring columns: `supported`, `acceptable`, `reason_code`, `would_correct` and `correction`. The unblinding key (packet → attempt, comparator, case, run digest) is written separately to `keys/unblinding-key.json`.
+- **Bundle check.** Before any packet is built, each bundle's run digest and run artifact are re-validated, and every adopted record must agree with its run row (R49). A bundle edited in one place but not the other is refused.
+- **Files.** The packets go in `review/packets.json` and `review/sheet.csv`, with blank scoring columns: `supported`, `acceptable`, `reason_code`, `would_correct` and `correction`. The unblinding key (packet → attempt, comparator, case, run digest, and the sheet binding: each generated row's item, kind and text digest) is written separately to `keys/unblinding-key.json`.
 - **Inert text.** Text stays data:
   - JSON escapes it;
   - in CSV, a text cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with `'`;
@@ -154,10 +162,16 @@ Per comparator, with counts beside every rate:
 | Workflow elapsed | "not measured (150 s gate not demonstrated)" |
 | Tokens | `adapter_reported` only if every row is; otherwise `unknown` |
 
-**Human rubric.** Scored only from a completed `review/sheet.csv`, with its key. Only packet IDs from the key are accepted, and the key's run digests must be the runs being scored.
-- Rubric-supported statements = statements marked `supported` / statements marked `supported` or `unsupported`. `not_checkable` and unmarked statements are reported apart.
-- Human correction = packets with `would_correct = yes` / packets scored.
-- A sheet with no marks is "not scored".
+**Human rubric (R47).** Scored only from the generated `review/sheet.csv`, with its key; the key's run digests must be the runs being scored. The sheet is refused unless:
+- its columns are exactly the generated ones, every row's packet, item, kind and text match the key's binding, each item appears once and every generated item is present;
+- `supported` is blank or `supported`/`unsupported`/`not_checkable`, `acceptable` and `would_correct` are blank or `yes`/`no`, answers appear only in the columns that apply to the row's kind, and a written `correction` has `would_correct = yes`. Free text (`reason_code`, `correction`) is never interpreted.
+
+**Blank is unknown, never "no".** Each metric reports its answered and unanswered counts, and a blank is excluded from that metric's denominator:
+- Rubric-supported statements = statements marked `supported` / **all statements the rubric scored** (`supported` + `unsupported` + `not_checkable`), the frozen protocol-v1 §3 denominator. Unanswered statements are counted apart.
+- Human acceptable = `acceptable = yes` / packets with `acceptable` answered. Human correction = `would_correct = yes` / packets with `would_correct` answered.
+- `review_status` per comparator: `complete`, `partial (N of M answer fields blank; blank is unknown, not no)`, or `not scored (blank sheet)`. A partially answered sheet is never called a completed review.
+
+**Unknown recommendations (R46).** A disposition whose recommendation is unknown (telemetry unavailable) is listed under `recommendation_unknown` and excluded from the acceptable-recommendation denominator (with a note); it is never counted acceptable, unacceptable or a wrong hold. A `pending` attempt whose stored state shows a hold is listed under `wrong_holds.pending_with_stored_hold`, not inferred to be a completed disposition.
 
 **Always shown:** the faults not applied per case, and the hard gates, each "not demonstrated", "not exercised" or `0/0 (not exercised)`.
 

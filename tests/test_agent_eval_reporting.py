@@ -313,10 +313,14 @@ def test_hostile_text_stays_inert_and_formulas_are_escaped():
               "outcome": "disposition", "transaction": {"amount": {"minor_units": 250000}},
               "evidence": [{"name": "transaction_count_1h", "value": -1, "source": "s"}],
               "tool_results": [], "role_outputs": [{"output": {"note": t}} for t in hostile],
-              "adopted": {"operation": "escalate", "reason_code": "unusual_amount",
+              "adopted": {"agent_run_id": "r1", "verification": module.VERIFIED,
+                          "source": "single_investigator_finding", "kind": None,
+                          "operation": "simulated_hold", "reason_code": "velocity_pattern",
                           "finding": {"rationale": "=1+1 rationale"}}}
-    packets, _key = module.review_packets([{"run_artifact_sha256": "x", "exports": [export]}],
-                                          seed=1)
+    doc = fixture()  # the bundle carries the run its adopted record must agree with
+    packets, _key = module.review_packets(
+        [{"run_artifact_sha256": artifact.digest(doc), "run": doc, "exports": [export]}],
+        seed=1)
     texts = [s["text"] for s in packets["packets"][0]["statements"]]
     assert texts == ["=1+1 rationale", *hostile]  # data, unchanged, in JSON
     rows = list(csv.reader(io.StringIO(module.sheet_csv(packets))))

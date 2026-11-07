@@ -32,8 +32,12 @@ from agent_eval_support import artifact  # noqa: E402
 MUTABLE = ("cases", "agent_workflows", "agent_runs", "agent_steps", "action_intents",
            "approvals", "simulated_actions", "audit_events")
 FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
-SHEET_COLUMNS = ("packet_id", "item", "kind", "text", "supported", "acceptable",
-                 "reason_code", "would_correct", "correction")
+SHEET_COLUMNS = artifact.SHEET_COLUMNS
+# Recommendation and claim fields an exported adoption must share with storage (R49).
+DISPOSITION_FIELDS = ("source", "kind", "operation", "reason_code", "basis_run_id",
+                      "workflow_id", "supported_claims", "unsupported_claims")
+VERIFIED = "matches stored disposition"
+STORED_ONLY = "stored only (run artifact telemetry unavailable; artifact recommendation unknown)"
 
 
 class ExportError(RuntimeError):
@@ -68,6 +72,77 @@ def snapshot(runtime_url: str) -> dict:
             " FROM {} t").format(sql.Identifier(table))).fetchone()) for table in MUTABLE}
 
 
+def stored_disposition(workflows: list[dict], runs: list[dict]) -> dict | None:
+    """The adopted disposition as storage records it, by the runner's own rule: a workflow
+    names its basis run (never the last role or attempt 1); without a workflow, the single
+    investigator's one run with a finding. None when nothing was adopted."""
+    adopted = None
+    for workflow in sorted(workflows, key=lambda w: (w["started_at"], str(w["id"]))):
+        disposition = workflow["body"].get("disposition") or {}
+        if disposition.get("kind") in ("recommend", "abstain"):
+            adopted = {"source": "workflow_disposition", "kind": disposition["kind"],
+                       "operation": disposition.get("operation"),
+                       "reason_code": disposition.get("reason_code"),
+                       "basis_run_id": disposition.get("basis_run_id"),
+                       "workflow_id": str(workflow["id"]),
+                       "supported_claims": disposition.get("supported_claims"),
+                       "unsupported_claims": disposition.get("unsupported_claims")}
+    if adopted is None and not workflows:
+        found = [r for r in runs if r["finding"]]
+        if len(found) == 1:
+            adopted = {"source": "single_investigator_finding", "kind": None,
+                       "operation": found[0]["finding"].get("operation"),
+                       "reason_code": found[0]["finding"].get("reason_code"),
+                       "basis_run_id": str(found[0]["id"])}
+    return adopted
+
+
+def adopted_disposition(row: dict, workflows: list[dict], runs: list[dict]) -> dict | None:
+    """The exported adoption, built from storage and checked against the run artifact (R49).
+
+    Every recommendation and claim field the artifact records must equal the stored
+    adopted disposition; a disagreement is refused, never repaired. The recorded outcome is
+    never changed: a disposition whose telemetry was unavailable is exported from storage
+    and labelled so, and stored state found after a pending/error outcome is labelled as
+    found later, not as the outcome."""
+    attempt_id, outcome = row["attempt_id"], row.get("outcome")
+    stored, claimed = stored_disposition(workflows, runs), row.get("disposition")
+    if stored is not None:
+        basis = [r for r in runs if str(r["id"]) == stored["basis_run_id"]]
+        if len(basis) != 1 or not basis[0]["finding"] or (
+                stored["source"] == "workflow_disposition"
+                and str(basis[0]["workflow_id"]) != stored["workflow_id"]):
+            raise ExportError(f"{attempt_id}: the stored adopted basis run is not a run with "
+                              "a finding in the adopted workflow and scope (refused)")
+    if claimed is not None:
+        if stored is None:
+            raise ExportError(f"{attempt_id}: the run artifact names a disposition but none "
+                              "is stored as adopted in this scope (refused)")
+        differs = [k for k in DISPOSITION_FIELDS if k in stored and claimed.get(k) != stored[k]]
+        if differs:
+            raise ExportError(f"{attempt_id}: the run artifact's {', '.join(differs)} "
+                              "disagree with the stored adopted disposition (refused; "
+                              "nothing exported)")
+        verification = VERIFIED
+    elif stored is None:
+        if outcome == "disposition":
+            raise ExportError(f"{attempt_id}: a disposition outcome with no stored adopted "
+                              "disposition (refused)")
+        return None
+    elif outcome == "disposition" and (row.get("telemetry") or {}).get("status") == \
+            "unavailable":
+        verification = STORED_ONLY
+    elif outcome in ("pending", "error"):
+        verification = f"stored state found after a {outcome} outcome (not the recorded " \
+                       "outcome)"
+    else:
+        raise ExportError(f"{attempt_id}: the stored adopted disposition contradicts the "
+                          f"recorded {outcome} outcome (refused)")
+    return {"agent_run_id": stored["basis_run_id"], "verification": verification,
+            "finding": basis[0]["finding"],
+            **{k: stored[k] for k in DISPOSITION_FIELDS if k in stored}}
+
+
 def export_attempt(conn, row: dict) -> dict:
     scope = row["ids"]
     cases = _rows(conn, "SELECT id, tenant_id, session_id, alert_id, state, revision, body"
@@ -85,8 +160,9 @@ def export_attempt(conn, row: dict) -> dict:
                     alerts[0]["transaction_id"], scope) if alerts else []
     evidence = _rows(conn, "SELECT id, tenant_id, session_id, body FROM evidence_items"
                            " WHERE case_id = %s", scope["case_id"], scope)
-    workflows = _rows(conn, "SELECT id, tenant_id, session_id, status, terminal_by, body FROM"
-                            " agent_workflows WHERE case_id = %s", scope["case_id"], scope)
+    workflows = _rows(conn, "SELECT id, tenant_id, session_id, status, terminal_by, body,"
+                            " started_at FROM agent_workflows WHERE case_id = %s",
+                      scope["case_id"], scope)
     runs = _rows(conn, "SELECT id, tenant_id, session_id, workflow_id, attempt, status, body,"
                        " finding, seq FROM agent_runs WHERE case_id = %s", scope["case_id"],
                  scope)
@@ -98,17 +174,7 @@ def export_attempt(conn, row: dict) -> dict:
                           "artifact (tampered mapping; refused)")
     runs.sort(key=lambda r: r["seq"])
     steps.sort(key=lambda s: (str(s["workflow_id"]), s["step_seq"]))
-    adopted = None
-    basis = (row.get("disposition") or {}).get("basis_run_id")
-    if basis is not None:
-        match = [r for r in runs if str(r["id"]) == basis]
-        if len(match) != 1:
-            raise ExportError(f"{row['attempt_id']}: the adopted basis run is not stored in "
-                              "this scope (refused)")
-        adopted = {"agent_run_id": basis, "finding": match[0]["finding"],
-                   **{k: row["disposition"].get(k) for k in (
-                       "kind", "operation", "reason_code", "supported_claims",
-                       "unsupported_claims")}}
+    adopted = adopted_disposition(row, workflows, runs)
     txn = txns[0]["body"] if txns else {}
     return {
         "attempt_id": row["attempt_id"], "case": row["case"], "outcome": row["outcome"],
@@ -143,6 +209,7 @@ def export_run(runtime_url: str, doc: dict) -> dict:
     import psycopg
     from psycopg.rows import dict_row
     artifact.validate_run(doc)
+    check_identity(runtime_url)
     before = snapshot(runtime_url)
     exports = []
     with psycopg.connect(runtime_url, row_factory=dict_row) as conn, conn.transaction():
@@ -155,8 +222,31 @@ def export_run(runtime_url: str, doc: dict) -> dict:
     after = snapshot(runtime_url)
     return {"version": artifact.BUNDLE_VERSION, "run_artifact_sha256": artifact.digest(doc),
             "run": doc, "exports": exports,
-            "mutation_proof": {"identity": "runtime role", "before": before, "after": after,
+            "mutation_proof": {"identity": "runtime role",
+                               "identity_check": "not a table owner, administrator or "
+                                                 "switched role (checked before reading)",
+                               "before": before, "after": after,
                                "unchanged": before == after}}
+
+
+def check_identity(runtime_url: str) -> None:
+    """Refuse an export login that owns (or is a member of the owner of) a mutable table,
+    holds administration attributes or runs as another role: export is runtime-only."""
+    import psycopg
+    with psycopg.connect(runtime_url) as conn, conn.transaction():
+        conn.execute("SET TRANSACTION READ ONLY")
+        admin, switched = conn.execute(
+            "SELECT rolsuper OR rolcreaterole OR rolcreatedb OR rolreplication OR rolbypassrls,"
+            " session_user <> current_user FROM pg_roles WHERE rolname = session_user"
+        ).fetchone()
+        owns = conn.execute(
+            "SELECT count(*) FROM pg_class c WHERE c.relkind IN ('r', 'p')"
+            " AND c.relname = ANY(%s) AND pg_table_is_visible(c.oid)"
+            " AND pg_has_role(session_user, c.relowner, 'MEMBER')", (list(MUTABLE),)
+        ).fetchone()[0]
+    if admin or switched or owns:
+        raise ExportError("the export login is not the least-privilege runtime role (an "
+                          "owner, administrator or switched role; refused, nothing read)")
 
 
 # ---- partially blinded review packets --------------------------------------------------------
@@ -186,8 +276,46 @@ def evidence_shown(export: dict) -> dict:
     return shown
 
 
+def check_bundle(bundle: dict) -> None:
+    """A bundle's adopted records must agree with the run artifact it carries (R49).
+
+    The export already checked them against storage; this re-check refuses a bundle file
+    edited afterwards in one place but not the other. It is consistency checking of an
+    unsigned file, not tamper-proofing."""
+    run = bundle.get("run")
+    if not isinstance(run, dict) or artifact.digest(run) != bundle.get("run_artifact_sha256"):
+        raise ExportError("the bundle's run artifact digest does not match (refused)")
+    artifact.validate_run(run)
+    rows = {row["attempt_id"]: (name, row) for name, result in run["comparators"].items()
+            for row in result["attempts"]}
+    for export in bundle["exports"]:
+        adopted = export.get("adopted")
+        if not adopted or export.get("outcome") != "disposition":
+            continue
+        name, row = rows.get(export["attempt_id"], (None, None))
+        if row is None or name != export["comparator"] or row["outcome"] != "disposition":
+            raise ExportError(f"{export['attempt_id']}: the bundle export does not match its "
+                              "run artifact (refused)")
+        claimed = row.get("disposition")
+        if claimed is None:
+            if adopted.get("verification") != STORED_ONLY:
+                raise ExportError(f"{export['attempt_id']}: the bundle's adopted record "
+                                  "disagrees with its run artifact (refused)")
+            continue
+        differs = [k for k in DISPOSITION_FIELDS if k in adopted and k != "basis_run_id"
+                   and adopted[k] != claimed.get(k)]
+        if adopted.get("verification") != VERIFIED or differs or \
+                adopted.get("agent_run_id") != claimed.get("basis_run_id"):
+            raise ExportError(f"{export['attempt_id']}: the bundle's adopted record "
+                              "disagrees with its run artifact (refused; no packet built)")
+
+
 def review_packets(bundles: list[dict], seed: int) -> tuple[dict, dict]:
-    """(blinded packets, separate unblinding key). Only dispositions are scored."""
+    """(blinded packets, separate unblinding key). Only dispositions are scored. The key
+    binds each packet's generated sheet rows (item, kind, text digest) so a returned sheet
+    can be checked against the material that was actually shown (R47)."""
+    for bundle in bundles:  # every bundle is checked before any packet is built
+        check_bundle(bundle)
     items = [(bundle, export) for bundle in bundles for export in bundle["exports"]
              if export["outcome"] == "disposition" and export.get("adopted")]
     rng = random.Random(seed)
@@ -198,20 +326,23 @@ def review_packets(bundles: list[dict], seed: int) -> tuple[dict, dict]:
         while packet_id in used:
             packet_id = f"PK-{rng.getrandbits(40):010x}"
         used.add(packet_id)
-        packets.append({"packet_id": packet_id, "evidence": evidence_shown(export),
-                        "recommendation": {k: export["adopted"][k]
-                                           for k in ("operation", "reason_code")},
-                        "statements": [{"item": f"S{i}", "text": text}
-                                       for i, text in enumerate(statements(export), 1)]})
+        packet = {"packet_id": packet_id, "evidence": evidence_shown(export),
+                  "recommendation": {k: export["adopted"][k]
+                                     for k in ("operation", "reason_code")},
+                  "statements": [{"item": f"S{i}", "text": text}
+                                 for i, text in enumerate(statements(export), 1)]}
+        packets.append(packet)
         key[packet_id] = {"attempt_id": export["attempt_id"], "comparator": export["comparator"],
                           "case": export["case"], "run_artifact_sha256":
-                          bundle["run_artifact_sha256"]}
+                          bundle["run_artifact_sha256"], "items": sheet_binding(packet)}
     return ({"version": artifact.PACKETS_VERSION, "seed_recorded_in_key": True,
              "blinding": "partial: comparator, config, role names, pins, case IDs and expected "
                          "answers are removed; output shape may still reveal the system",
              "instructions": "For each statement: supported / unsupported / not_checkable "
                              "against the evidence shown. Then: is the recommendation "
-                             "acceptable (yes/no + reason code), and would you correct it?",
+                             "acceptable (yes/no + reason code), and would you correct it? "
+                             "Leave a field blank only if you did not answer it: blank is "
+                             "recorded as unanswered, never as no.",
              "packets": packets},
             {"version": artifact.PACKETS_VERSION, "seed": seed, "packets": key})
 
@@ -223,21 +354,32 @@ def cell(value):
     return value
 
 
+def packet_rows(packet: dict) -> list[list]:
+    """The sheet rows generated for one packet, as written (formula-like text escaped)."""
+    rows = [[cell(packet["packet_id"]), cell(f"E:{name}"), "evidence", cell(value),
+             "", "", "", "", ""] for name, value in packet["evidence"]["facts"].items()]
+    rows += [[cell(packet["packet_id"]), statement["item"], "statement",
+              cell(statement["text"]), "", "", "", "", ""] for statement in packet["statements"]]
+    rec = packet["recommendation"]
+    rows.append([cell(packet["packet_id"]), "R", "recommendation",
+                 cell(f"{rec['operation']} / {rec['reason_code']}"), "", "", "", "", ""])
+    return rows
+
+
+def sheet_binding(packet: dict) -> dict:
+    """item -> {kind, text_sha256} of the rows exactly as a CSV reader reads them back."""
+    out = io.StringIO()
+    csv.writer(out, lineterminator="\n").writerows(packet_rows(packet))
+    return {row[1]: {"kind": row[2], "text_sha256": artifact.text_digest(row[3])}
+            for row in csv.reader(io.StringIO(out.getvalue()))}
+
+
 def sheet_csv(packets: dict) -> str:
     out = io.StringIO()
     writer = csv.writer(out, lineterminator="\n")
     writer.writerow(SHEET_COLUMNS)
     for packet in packets["packets"]:
-        for name, value in packet["evidence"]["facts"].items():
-            writer.writerow([cell(packet["packet_id"]), cell(f"E:{name}"), "evidence",
-                             cell(value), "", "", "", "", ""])
-        for statement in packet["statements"]:
-            writer.writerow([cell(packet["packet_id"]), statement["item"], "statement",
-                             cell(statement["text"]), "", "", "", "", ""])
-        rec = packet["recommendation"]
-        writer.writerow([cell(packet["packet_id"]), "R", "recommendation",
-                         cell(f"{rec['operation']} / {rec['reason_code']}"), "", "", "", "",
-                         ""])
+        writer.writerows(packet_rows(packet))
     return out.getvalue()
 
 
