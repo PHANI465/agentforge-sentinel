@@ -142,6 +142,8 @@ R16 and R14 share `occurred_at` 10-01T10:00:00Z. Their order is decided by `id` 
 
 ## 7. Contract impacts and open questions for review
 
+Proposed resolutions are in [AN01-decisions-r3.md](AN01-decisions-r3.md). That is a proposal, not accepted. Among them: contract version v1.3, a derived 256-character cursor limit, and keeping the row cap and budget provisional until AN01-M1.
+
 1. **Capability.** `read_report` needs `TrustedContext.capabilities` (`src/sentinel/contracts/v1.py`) and `Capability` (`src/sentinel/contracts/http_v1.py`) widened in a new contract version, plus a CLI choice outside the default set. The v1.x `SessionView` enum stays frozen. How a v1.x client should treat the new value is design open question 2.
 2. **New error codes.** `report_too_large` (413) and `report_timeout` (503) are new. `invalid_cursor` (422) is reused.
 3. **Index.** Draft migration `(tenant_id, session_id, occurred_at, id)` on `transactions`.
