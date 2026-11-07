@@ -49,8 +49,8 @@ also lets the page compute the data file's SHA-256 and compare it with the manif
 
 Use the keyboard: Left and Right arrows step through the frames, and Home and End go to the
 first and last frame. "Technical details" lists the requests the capture program sent for
-that frame, and the projected JSON. The footer gives provenance: generator commit, the tested
-application reference, the data hash, the scenario, adapter identities and the limitations.
+that frame, and the projected JSON. The footer gives provenance: generator commit, the recorded
+content identity, the tested application reference, the data hash, the scenario, adapter identities and the limitations.
 
 ## Regenerate, validate, QA
 
@@ -63,7 +63,9 @@ node demo/tests/browser_qa.mjs --node-modules <an existing node_modules with pla
 `capture` runs on a committed tree. It starts its own disposable PostgreSQL cluster under the
 git-ignored `.agent/demo01/`, stops it and removes it. It writes the public fixture only after
 validation and a scan for the real session token. The raw capture stays private. A failed
-capture writes nothing public; it never substitutes fixture data. The browser QA script uses
+capture writes nothing public; it never substitutes fixture data. `validate` also checks
+that the generator and `src/` bytes in this checkout still match the digests recorded at
+capture (CRLF read as LF). It needs no Git history. If they differ, re-run `capture`. The browser QA script uses
 an already installed Playwright and Chromium. It serves this folder from its own loopback
 server and closes that server afterwards. See `docs/demo/DEMO01.md` for provenance and
 evidence.
