@@ -78,9 +78,17 @@ def _no_git(monkeypatch):
     monkeypatch.setattr(demo.shutil, "which", lambda *a, **k: None)
 
 
+def test_content_identity_passes_the_projection_key_allowlist():
+    """Recapture 1 on 2bcc03d failed safely: the identity's own `scope` key is a forbidden
+    (identity-scope) key. The projection check stays; the identity must not use that key."""
+    identity = demo.content_identity()
+    assert demo.forbidden_keys(identity) == set()
+    assert demo.forbidden_keys({"provenance": {"content_identity": identity}}) == set()
+
+
 def test_capture_content_identity_matches_this_checkout(tracked):
     identity = tracked[0]["provenance"]["content_identity"]
-    assert identity["scope"] == list(demo.CONTENT_SCOPE)
+    assert identity["inputs"] == list(demo.CONTENT_SCOPE)
     assert identity["canonicalization"] == demo.CANONICALIZATION
     assert "scripts/build_recorded_demo.py" in identity["files"]
     assert any(name.startswith("src/sentinel/") for name in identity["files"])
@@ -201,11 +209,11 @@ def test_missing_provenance_fails_with_a_useful_message(tracked, tmp_path):
     lambda c: c["files"].update({"src\\pkg\\a.py": "0" * 64}),
     lambda c: c.update(sha256="0" * 64),
     lambda c: c.pop("sha256"),
-    lambda c: c.update(scope=["src"]),
+    lambda c: c.update(inputs=["src"]),
     lambda c: c.update(canonicalization="raw bytes"),
     lambda c: c.clear(),
 ], ids=["files-list", "files-empty", "bad-digest", "escaping-path", "backslash-path",
-        "aggregate-mismatch", "no-aggregate", "wrong-scope", "wrong-canonicalization",
+        "aggregate-mismatch", "no-aggregate", "wrong-inputs", "wrong-canonicalization",
         "empty"])
 def test_malformed_content_identity_fails_without_crashing(tmp_path, corrupt):
     root = _mini_root(tmp_path)

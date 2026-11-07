@@ -816,7 +816,7 @@ def content_files(root: Path | None = None) -> list[str]:
 def content_identity(root: Path | None = None) -> dict:
     base = ROOT if root is None else Path(root)
     files = {name: canonical_digest(base / name) for name in content_files(base)}
-    return {"scope": list(CONTENT_SCOPE), "canonicalization": CANONICALIZATION,
+    return {"inputs": list(CONTENT_SCOPE), "canonicalization": CANONICALIZATION,
             "files": files, "sha256": _aggregate(files)}
 
 
@@ -834,8 +834,8 @@ def identity_shape_problems(identity) -> list[str]:
     if not isinstance(identity, dict):
         return ["content_identity is malformed (not an object); re-run the capture"]
     p = []
-    if identity.get("scope") != list(CONTENT_SCOPE):
-        p.append(f"content_identity scope {identity.get('scope')!r} is not "
+    if identity.get("inputs") != list(CONTENT_SCOPE):
+        p.append(f"content_identity inputs {identity.get('inputs')!r} is not "
                  f"{list(CONTENT_SCOPE)!r}; re-run the capture")
     if identity.get("canonicalization") != CANONICALIZATION:
         p.append("content_identity canonicalization is not the current rule; re-run the "
