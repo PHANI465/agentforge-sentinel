@@ -104,7 +104,7 @@ def test_every_started_request_is_counted_once_with_its_observed_result():
     items = [bench.Planned("investigate", "POST", f"/c/{i}", {}, 200, item_check, timeout=1)
              for i in range(len(script))]
     send, calls = sender(script)
-    budget = bench.Budget(100, 60, bench.time.monotonic)
+    budget = bench.Budget(100, 60, bench.CLOCK)
     cell = bench.run_cell("investigate", items, 1, budget, send)
     observed = [(r.outcome, r.code, r.status) for r in cell["records"]]
     assert observed == [
@@ -146,12 +146,12 @@ def test_a_cell_with_no_success_or_no_start_reports_not_applicable():
     send, _ = sender([(409, {"error": "agent_capacity_exhausted"})])
     refused = bench.cell_summary(bench.run_cell(
         "investigate", [planned(i) for i in range(3)], 2, bench.Budget(100, 60,
-                                                                       bench.time.monotonic),
+                                                                       bench.CLOCK),
         send))
     assert refused["outcomes"]["refused"] == 3 and refused["latency_success"]["n"] == 0
     assert refused["latency_success"]["p50_s"] == "n/a"
     assert refused["throughput_success_per_s"] in (0.0, "n/a")
-    exhausted = bench.Budget(0, 60, bench.time.monotonic)
+    exhausted = bench.Budget(0, 60, bench.CLOCK)
     empty = bench.cell_summary(bench.run_cell("read", [planned(0)], 1, exhausted, send))
     assert empty["started"] == 0 and empty["not_started"] == 1
     assert empty["window_s"] == "n/a" and empty["throughput_attempted_per_s"] == "n/a"
@@ -162,7 +162,7 @@ def test_a_cell_with_no_success_or_no_start_reports_not_applicable():
 
 def test_the_request_cap_stops_new_work_across_cells():
     send, calls = sender([(200, {})])
-    budget = bench.Budget(5, 60, bench.time.monotonic)
+    budget = bench.Budget(5, 60, bench.CLOCK)
     first = bench.run_cell("read", [planned(i) for i in range(4)], 2, budget, send)
     second = bench.run_cell("read", [planned(i) for i in range(4)], 4, budget, send)
     third = bench.run_cell("read", [planned(i) for i in range(4)], 1, budget, send)
@@ -190,7 +190,7 @@ def test_a_request_still_in_flight_after_the_bounded_wait_stays_unknown():
     def send(item):
         release.wait(30)
         return 200, {}
-    budget = bench.Budget(10, 0.05, bench.time.monotonic)
+    budget = bench.Budget(10, 0.05, bench.CLOCK)
     try:
         cell = bench.run_cell("investigate", [planned(0, timeout=0.05)], 1, budget, send,
                               join_margin=0.05)
@@ -249,6 +249,13 @@ def test_the_client_targets_only_owned_loopback_and_ignores_proxies(monkeypatch)
         assert client.trust_env is False
     finally:
         client.close()
+
+
+def test_the_measurement_clock_is_monotonic_and_finer_than_a_millisecond():
+    info = bench.time.get_clock_info(bench.CLOCK_NAME)
+    assert bench.CLOCK is bench.time.perf_counter
+    assert info.monotonic and info.resolution <= 1e-3
+    assert "perf_counter" in bench.provenance()["clock"]
 
 
 def test_provenance_holds_no_host_user_path_or_environment():

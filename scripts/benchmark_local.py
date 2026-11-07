@@ -30,7 +30,8 @@ Outcomes: success (expected status and body), refused (any 4xx, its service code
 expected 409 agent_capacity_exhausted is refused, never a success), failed (5xx, unexpected
 body, or a request that provably never reached the server) and unknown (client timeout,
 broken connection after sending, investigation_outcome_unknown, or a request still in flight
-when the bounded wait ended). Latency is monotonic seconds; quantiles are nearest-rank.
+when the bounded wait ended). Latency is time.perf_counter (monotonic) seconds; quantiles are
+nearest-rank.
 
 Private raw records stay in the run directory (default .agent/perf01/, git-ignored). The
 token never leaves memory; reports contain no URL, host name, user, command line or
@@ -77,6 +78,10 @@ MAX_VERIFY_REQUESTS = 400
 # a slow but bounded workflow is observed, not turned into an artificial unknown.
 TIMEOUT = {"ingest": 30.0, "read": 30.0, "investigate": 175.0, "setup": 30.0, "verify": 30.0}
 JOIN_MARGIN_SECONDS = 10.0
+# Measurement clock: monotonic and high resolution. time.monotonic is 15.625 ms on Windows
+# (GetTickCount64), which quantized the first real run's latencies.
+CLOCK_NAME = "perf_counter"
+CLOCK = time.perf_counter
 NOT_NEEDED = "not needed (no stack state was created)"
 STACK_UP_SECONDS = 600
 STACK_DOWN_SECONDS = 180
@@ -231,7 +236,7 @@ class Budget:
 
 
 def run_cell(workload: str, planned: list[Planned], concurrency: int, budget: Budget, send,
-             clock=time.monotonic, phase: str = "measure",
+             clock=CLOCK, phase: str = "measure",
              join_margin: float = JOIN_MARGIN_SECONDS) -> dict:
     """A closed loop of `concurrency` workers over `planned`. Every started request is kept,
     including one still in flight when the bounded wait ends (it stays unknown)."""
@@ -526,6 +531,12 @@ def _run_quiet(argv: list[str]) -> str | None:
     return done.stdout.strip() if done.returncode == 0 else None
 
 
+def clock_description() -> str:
+    info = time.get_clock_info(CLOCK_NAME)
+    return (f"time.{CLOCK_NAME} ({info.implementation}, monotonic={info.monotonic}, "
+            f"resolution {info.resolution:g} s)")
+
+
 def provenance() -> dict:
     """Source, platform and resource facts. No host name, user, path, command line,
     environment or URL."""
@@ -542,7 +553,7 @@ def provenance() -> dict:
         "machine": platform.machine(), "processor": platform.processor() or "unknown",
         "logical_cpus": os.cpu_count() or "unknown", **_memory_total(),
         "postgres": pg or "unknown",
-        "clock": "time.monotonic (seconds)",
+        "clock": clock_description(),
     }
 
 
@@ -658,7 +669,7 @@ class SetupFailed(RuntimeError):
 
 
 def sequential(phase: str, workload: str, planned: list[Planned], send, records: list,
-               cap: int, clock=time.monotonic) -> list[Record]:
+               cap: int, clock=CLOCK) -> list[Record]:
     """Setup/verification requests: one at a time, each counted, hard-capped."""
     done = []
     for index, item in enumerate(planned):
@@ -671,7 +682,7 @@ def sequential(phase: str, workload: str, planned: list[Planned], send, records:
     return done
 
 
-def fetch(send, records: list, phase: str, path: str, cap: int, clock=time.monotonic):
+def fetch(send, records: list, phase: str, path: str, cap: int, clock=CLOCK):
     """One counted GET whose body is needed (setup checks and verification)."""
     if len(records) >= cap:
         raise SetupFailed(f"{phase} request cap {cap} reached")
@@ -745,7 +756,7 @@ def new_result() -> dict:
             "budget": None, "memory": None, "checked": None}
 
 
-def benchmark(args, stack: OwnedStack, result: dict, clock=time.monotonic,
+def benchmark(args, stack: OwnedStack, result: dict, clock=CLOCK,
               sender=None) -> None:
     """Setup, measurement and verification against the already started owned stack.
     `sender` replaces the HTTP client in tests only."""
@@ -900,10 +911,11 @@ def summarize(args, result: dict | None, stack_info: dict, cleanup: dict, run_di
         "provenance": provenance(),
         "stack": stack_info,
         "definitions": {
-            "latency": "monotonic seconds from just before the request is sent until its "
-                       "response is classified; all-attempt includes refused/failed/unknown",
+            "latency": "perf_counter (monotonic) seconds from just before the request is "
+                       "sent until its response is classified; all-attempt includes "
+                       "refused/failed/unknown",
             "quantile": "nearest-rank: value at rank ceil(q*n) of the sorted sample",
-            "cell_window": "first request start to last request end in the cell (monotonic)",
+            "cell_window": "first request start to last request end in the cell (perf_counter)",
             "throughput": "started (attempted) or successful requests / cell window",
             "empty": "n/a when the denominator or sample is empty"},
         "limitations": LIMITATIONS, "cleanup": cleanup,
@@ -952,10 +964,10 @@ def main(argv: list[str] | None = None, stack_factory=OwnedStack) -> int:
                           args.db_port or devdb.free_port(), args.investigator)
     result, error, stack_info = None, None, {}
     try:  # every exit path below reaches the helper's own down
-        started = time.monotonic()
+        started = CLOCK()
         code = stack.up()
         stack_info = {"helper_up_exit": code,
-                      "helper_up_seconds": round(time.monotonic() - started, 3)}
+                      "helper_up_seconds": round(CLOCK() - started, 3)}
         if code != 0:
             error = "the owned stack did not start (the helper refused or failed)"
         else:
