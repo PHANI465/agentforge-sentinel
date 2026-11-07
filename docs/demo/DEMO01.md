@@ -21,8 +21,10 @@ control.
 
 ## What was really captured, and what is fixture
 
-Capture run: stamp 20261107T010104Z, from generator commit
-`8675b5c191c3280755bc36406d7b0b74acd40c3c` on a clean tree.
+Current capture run: stamp 20261107T014928Z, from generator commit
+`26f73e0ff2cd4101ec65e7b51009338ba55fcbfb` on a clean tree. It replaces the first capture
+(stamp 20261107T010104Z, from 8675b5c) after the scan fix described below. Both runs
+recorded the same story; only times and IDs differ.
 
 - `src/` was identical to the tested application `495c7d33424054d27d68d08004191d4be37adaf9`
   (G3D-P3). The generator checks this with git and records it.
@@ -66,8 +68,10 @@ Capture run: stamp 20261107T010104Z, from generator commit
 **Fixture**: the only tracked data is `demo/data/recorded-case.json`, an explicit allowlisted
 projection of that capture, plus its `manifest.json`:
 
-- SHA-256 `f24da3ca46fab8d0dc15b0ae7be98f60f2d4d5f8f9b1a9ae19125cc87c42ee2c`;
-- 45,531 bytes, LF, canonical JSON (`sort_keys`, indent 1).
+- SHA-256 `fa47192ede8d9ed2c4ab5bd7e69d3e589542377a131d21709aba34696d92bcea`;
+- 45,529 bytes, LF, canonical JSON (`sort_keys`, indent 1).
+
+It supersedes the first fixture, `f24da3ca46fab8d0dc15b0ae7be98f60f2d4d5f8f9b1a9ae19125cc87c42ee2c`.
 
 Nothing in it was edited by hand. The frame titles, notice, provenance text and actor labels
 were written by the generator. The narrative text lives in `demo/replay.js`. The raw capture,
@@ -116,8 +120,8 @@ data.
 ## Secret-safe scan
 
 During the capture, with the real token still in memory (43 characters), the generator
-scanned every public file: 7 files under `demo/` at that time, including the new fixture and
-manifest. It checked against 15 forbidden values:
+scanned every public file: 8 files (all of `demo/` plus this document), including the new
+fixture and manifest. It checked against 18 forbidden values:
 
 - the token and its SHA-256;
 - both connection strings and the PostgreSQL URL scheme;
@@ -131,14 +135,32 @@ and both connection strings: clean. Report: `.agent/demo01/capture-report-<stamp
 (ignored). An empty forbidden source is refused, not treated as a pass. The tests re-run the
 path and user scan over `demo/` and this document.
 
-## Verification run (single heavy slot granted by the batch coordinator)
+**Native fix (preview 82316a5).** The coordinator's native Ubuntu gate ran as an account
+named `sentinel`. The first generator also used the bare account name as a needle, matched
+case-insensitively, so it hit the product name in six public files. That was a false
+positive, not a leak: each real path needle alone matched nothing. The account name is now
+matched only in path form. Regression tests check two things:
+
+- account names that are product words ("sentinel", "Sentinel", "demo", "replay", "root"),
+  with Linux and Windows layouts, produce no bare-name needle and scan clean;
+- planted `/home/<u>` paths, checkout paths in every separator form, and `C:\Users\<u>`,
+  `c:/users/<u>`, JSON-escaped and `/Users/<u>` strings are still caught.
+
+This changed the generator, so the fixture was recaptured from 26f73e0.
+
+## Verification runs (heavy slots granted by the batch coordinator)
+
+Current run, on 26f73e0:
 
 | Check | Result |
 | --- | --- |
-| `scripts/build_recorded_demo.py capture` on 8675b5c | pass: 10 frames valid, scan clean, cluster stopped and removed |
+| `scripts/build_recorded_demo.py capture` | pass: 10 frames valid, scan clean, cluster stopped and removed |
 | `scripts/build_recorded_demo.py validate` | pass |
-| `pytest -q tests/test_recorded_demo.py` | 15 passed, including one more real capture on a pytest-owned cluster |
-| `node demo/tests/browser_qa.mjs` (headless Chromium 1248, existing install) | 30/30 on the second run (see below) |
+| `pytest -q tests/test_recorded_demo.py` | 21 passed, including one more real capture on a pytest-owned cluster |
+| `node demo/tests/browser_qa.mjs` on the new fixture (headless Chromium 1248, existing install) | 30/30 on the first run |
+
+First run, on 8675b5c (superseded): capture and validate passed; pytest 15 passed; browser QA
+30/30 on its second run (see below).
 
 The pytest run includes these negative controls, and each is detected:
 
@@ -177,7 +199,8 @@ The first QA run reported 28/30. Both failures were bugs in the QA script, not i
 - a hash-only `goto` kept the earlier focus.
 
 The script was corrected and rerun once, with 30/30. The failed report is kept privately.
-Screenshots are private under `.agent/demo01/qa/`. No token existed on disk, and none was in
+Screenshots are private under `.agent/demo01/qa/` (first fixture) and `.agent/demo01/qa-r2/`
+(current fixture). No token existed on disk, and none was in
 any page or screenshot.
 
 ## Not verified / limitations
