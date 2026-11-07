@@ -1,6 +1,25 @@
 # Project status
 
-## November7: AN01 r3 reviewed; focused design corrections R50–R52
+## November 7: AN01 reviewed design accepted; M1 prototype assigned
+
+[Final design review](reviews/AN01-r31-2db42ee.md) closes R50–R52 for the **review-corrected
+r3.2 specification**, integrating preserved `2db42ee` plus Codex's stage-supervision and
+reserved-capacity corrections. The public v1.3 contract is not frozen and report features
+are not implemented. 200,000 rows / 5,000 ms ms and resource values remain provisional.
+
+[Claude AN01-M1 assignment](prompts/CLAUDE_AN01_M1_IMPLEMENTATION.md), Opus 5.5 / High:
+implement the SQL prototype, resource/lease adapter and safe stage supervisor, with
+real known-answer tests and tiny Windows/native smoke only. No full-size/multi-hour
+grid is assigned. One heavy slot; all existing timeouts/assertions/skips stay unchanged.
+Codex reviews code/controller/resource evidence before any large measurement assignment.
+
+Independent design checks: 59 revised-table checks, 34 r2 checks, exactly 7 intended old-table
+coverage failures, Windows/native matching padded table, and arithmetic capacity/stage
+counterexamples and corrected invariants. No DB/load/provider/auth/account/final cases
+were run for this review. Current application remains tested `871e31d` (810 + one skip each);
+this publication adds documentation/checkers only, not a new full-runtime gate claim.
+
+## Earlier review: AN01 r3 corrections R50–R52 (superseded above)
 
 Proposalb436c5e is documentation/checkers only and stays unmerged. The
 [independent review](reviews/AN01-r3-b436c5e.md) supports opt-in v1.3 with explicit legacy

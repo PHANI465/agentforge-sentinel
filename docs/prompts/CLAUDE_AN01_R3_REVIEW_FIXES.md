@@ -1,6 +1,9 @@
 # AN01 proposal revision: R50–R52 before report-query measurement
 
-Recommended coding assistant: **Claude Opus5.5 / High**. Local/UTC boundary conversions,
+Completed for design scope under [the final review](../reviews/AN01-r31-2db42ee.md).
+Use [the new prototype assignment](CLAUDE_AN01_M1_IMPLEMENTATION.md); do not restart this revision task.
+
+Recommended coding assistant: **Claude Opus 5.5 / High**. Local/UTC boundary conversions,
 deadline scopes and a pre-registered measurement schedule need precise reasoning. No max
 effort blanket setting and no change to Sentinel's investigator/model configuration.
 

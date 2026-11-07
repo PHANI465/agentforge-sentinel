@@ -1,6 +1,13 @@
 # AgentForge Sentinel: shared agent instructions
 
-Current AN01 next step (November7): proposalb436c5e is reviewed but changes-requested
+Current AN01 step: the reviewed r3.2 design in docs/analytics/AN01-decisions-r3.md is
+accepted under docs/reviews/AN01-r31-2db42ee.md, closing R50–R52 as design issues. Claude's
+next assignment is docs/prompts/CLAUDE_AN01_M1_IMPLEMENTATION.md: prototype/controller
+code and tiny proof fixtures only. No full-size benchmark, production Reports, v1.3
+freeze, live/auth/account/final-case work, new spending or remote operation is assigned.
+The older r3 correction dispatch below is history; preserve all candidates and Cursor edits.
+
+Historical AN01 dispatch (superseded above): proposalb436c5e is reviewed but changes-requested
 under docs/reviews/AN01-r3-b436c5e.md (R50–R52). Use
 docs/prompts/CLAUDE_AN01_R3_REVIEW_FIXES.md on its existing proposal branch; documentation
 and stdlib checkers only. No SQL measurement/reporting implementation or live evaluation

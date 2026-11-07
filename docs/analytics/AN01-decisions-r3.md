@@ -1,9 +1,9 @@
-# AN01 r3: proposed resolutions of the six open decisions, and a report-query measurement plan
+# AN01 reviewed design and report-query protocol (r3.2)
 
 Audience: Codex, who decides whether the AN01 S1 contract can be frozen; then the backend and frontend implementers.
 
-- **Status: revision r3.1.** It answers the review `task/coordination:docs/reviews/AN01-r3-b436c5e.md` (R50–R52) on the same branch, after `b436c5e`. It is a proposal: nothing is accepted, implemented or exposed. No route, migration, capability, contract document, script, lockfile, UI or CI change. AN01-M1 is not run.
-- **Base:** main `c2140ce`, with the AN01-r2 documents (`a8c164a`). The review's supported policy decisions are applied as stated in §1.
+- **Status: reviewed design r3.2, with Codex's binding corrections below.** It incorporates Claude's preserved revision `2db42ee` and Codex's final integration corrections to R50–R52; see the linked final review. The design is accepted for a measurement prototype; performance values and the public HTTP contract are not frozen, and no reporting feature is implemented or exposed. No route, migration, capability, contract document, script, lockfile, UI or CI change. AN01-M1 is not run.
+- **Source base:** Claude's proposal began at main `c2140ce`, with AN01-r2 (`a8c164a`); the final design integration starts from main `87724e4`. The review's supported policy decisions are applied as stated in §1.
 - **Companion files:**
   - [AN01-zone-table.json](AN01-zone-table.json): the pinned zone table, now padded per R50;
   - [derive_an01_zones.py](derive_an01_zones.py): derives that table under review;
@@ -17,6 +17,23 @@ Audience: Codex, who decides whether the AN01 S1 contract can be frozen; then th
 | R51 | The measured unit is a complete report operation under one budget, and every SQL and control statement is enumerated and hashed. The plan is staged commands, each inside the unchanged 2,700 s cap, with an honest total bound. One index configuration is chosen jointly for both platforms. Phase E becomes a matched design comparison at N\*. Missing evidence means "not demonstrated" | §8 |
 | R52 | Connection acquisition gets its own disclosed policy, outside the budget. The report budget starts after acquisition, with a report-specific ROLLBACK reserve. Admission and quarantine are finite and separate from the workflow registry. Refusal controls are separated from submitted-statement controls, with feasible budgets and proof of submission | §5, §8.3 |
 | Policy | Opt-in v1.3 with explicit legacy-client incompatibility. Selectable CLI choices are separated from the unchanged default grants. Cursor counts must be coherent. The nudge now reads "Received {n} minutes ago". The cutoff applies to ingestion timestamps | §3, §4, §7 |
+
+## 0.1 Binding review corrections in r3.2
+
+This integrates preserved candidate `2db42ee` with
+[Codex's final review](../reviews/AN01-r31-2db42ee.md). The padded table and R50 checks are
+accepted unchanged. R51/R52 are closed as **design** requirements after two remaining
+inconsistencies are corrected here:
+
+- A libpq connection policy is not an absolute bound. Whole-stage supervision, not a
+  presumed 13-second operation, must bound stage waiting and preserve unresolved recovery.
+- Admission reserves resource capacity **before** connecting. Retired connections retain
+  their reservation until actual final close; checking only the current quarantine count
+  is insufficient with concurrent requests.
+
+AN01-M1 may implement/test this protocol on tiny synthetic fixtures. The full-size staged
+grid is not authorized by that implementation assignment; it needs a later resource and
+controller review. Nothing here proves production equivalence of the prototype controls.
 
 ## How each number is labelled
 
@@ -215,10 +232,12 @@ The review's preferred option: a separate connection policy, then one report bud
    - The connection attributes `isolation_level = REPEATABLE READ` and `read_only = True` make psycopg's implicit `BEGIN` carry both.
    - `read_at` is read from the application clock just before the first armed statement, which establishes the snapshot.
    - The transaction always ends with **ROLLBACK, never COMMIT**.
-4. **Finite admission, per process.**
-   - At most `M` report operations may be active at once (provisional 2), counted from **before** the connection attempt.
-   - At most `Q` connections may sit in the **report quarantine** (provisional 2).
-   - A request arriving at either limit is refused with 409 `report_capacity_exhausted` (new, draft). Nothing is connected or submitted, and no wait is taken. This follows the existing `agent_capacity_exhausted` convention.
+4. **Finite admission with reserved resource capacity, per process.**
+   - `M` is the maximum admitted report coordinators (provisional 2), including connection acquisition.
+   - `Q` is the maximum held **resource reservations** (provisional 2): connecting, open and retired-but-not-finally-closed connections all consume one. The retired registry can therefore never exceed Q.
+   - Admission atomically checks `active < M` **and** `reserved < Q`, then increments both **before connecting**. Otherwise it returns 409 `report_capacity_exhausted`, with no connection or statement submitted.
+   - The coordinator slot is released when its request's database phase ends. The resource reservation is released exactly once only after acquisition definitively fails without a connection, or the connection is actually closed. A timeout/retirement does **not** release it: ownership transfers to the lease's final-close callback.
+   - Checking only `active < M` and `quarantined < Q` is not sufficient: with one retired connection, two admitted operations could both retire and grow the registry to 3. Reserving capacity prevents that transition. Test interleaved admission, retirement, healthy close and delayed final close.
 5. **A separate quarantine registry.** Retired report connections go into a report-specific registry, so workflow admission never counts them and report admission never counts workflow connections. *(implementation: `bounded_call`/`_Lease` would take the registry as a parameter, defaulting to today's `QUARANTINE`. That is a reviewed change to `budget.py`, with workflow behaviour unchanged.)*
 6. **Cleanup ownership.**
    - **Normal path:** the request code owns the connection and closes it after ROLLBACK, including after an answered error.
@@ -229,7 +248,7 @@ The review's preferred option: a separate connection policy, then one report bud
 
 | Outcome | When | Statement submitted? | Connection | HTTP |
 | --- | --- | --- | --- | --- |
-| Admission refused | `M` active or `Q` quarantined | none, and no connection attempt | none | 409 `report_capacity_exhausted` |
+| Admission refused | `M` active or `Q` resource reservations held | none, and no connection attempt | none | 409 `report_capacity_exhausted` |
 | Connection failed | connect error, or libpq timeout | none | none | the existing database-error path; **not** `report_timeout` |
 | Refused before submission | work budget below 100 ms before any statement | **no** (that statement) | ROLLBACK, closed | 503 `report_timeout` |
 | Server cancelled | `statement_timeout` fired, and the server answered | yes | ROLLBACK, closed | 503 `report_timeout` |
@@ -252,7 +271,7 @@ The review's preferred option: a separate connection policy, then one report bud
 | Matching-row cap | 200,000 (413 above it) | **provisional** |
 | Report budget `B` | 5,000 ms | **provisional** |
 | ROLLBACK reserve `R` | 250 ms | **provisional** |
-| Admission `M` and quarantine `Q` | 2 and 2 per process | **provisional** |
+| Coordinator admission `M` and held-resource capacity `Q` | 2 and 2 per process; retired leases keep their slot | **provisional** |
 | Memory and temp files | not bounded by S1 | stated gap; M1 measures spills |
 | Workload rows | not covered by the transaction cap; bounded only by `B` | stated gap; M1 measures it |
 
@@ -308,7 +327,7 @@ One **operation** is everything one request does after admission. The connection
 | --- | --- | --- |
 | `totals` | K0, G guard, P consistency pair, Q currency totals, Kr | 3 |
 | `daily_utc` | K0, G, P, Q daily (boundary instants as parameters), Kr | 3 |
-| `daily_ny` | as `daily_utc`, with New York boundaries (DST-length days) | 3 |
+| `daily_ny` | as `daily_utc`, with New York boundaries; 23/25-hour semantics are checked by small correctness fixtures, not claimed for the July-to-October timing distribution | 3 |
 | `workload` | K0, Q1 created in window by state, Q2 actions completed, Q3 open now by state and age, Kr | 3 (no guard: there is no transaction set) |
 | `quality` | K0, G, P, Q1 the four count checks, Q2 lag quantiles (`percentile_disc`), Kr | 4 |
 | `drill_first` | K0, G, P, Q page (`LIMIT limit+1`, joins), Kr | 3 |
@@ -317,6 +336,7 @@ One **operation** is everything one request does after admission. The connection
 That is 22 SQL statements and 3 control texts.
 
 **Hashes.**
+- The literal SQL registry and actual hashes are an M1 deliverable; the operation/statement IDs above are the design, not already implemented statements. Record exact client templates and, where relevant, the driver-generated control form.
 - Each statement's SHA-256 is taken over its exact UTF-8 text with placeholders. Each operation has a digest over its ordered statement digests.
 - The later implementation must reproduce identical digests, checked by a unit test, or M1 is repeated.
 - Every statement carries a constant tag comment, `/* an01-m1:<op>:<S> */`, so a server-side observer can prove submission (§8.3 phase C).
@@ -345,7 +365,7 @@ That is 22 SQL statements and 3 control texts.
 | **A, index** | D2, 200k session, variants A (existing), B (+transactions), C (B + simulated_actions) | 3 × 7 operations | 3 × 7 × 6 = 126, plus 21 EXPLAIN passes |
 | **B, cap curve** | The **common** variant; D1 and D2; sessions 10k, 50k, 100k and 200k. Filters for the six transaction operations: base, `as_of` excluding about 90%, single currency. Workload has base only | 2 × 4 × (6 × 3 + 1) = 152 cells | 912, plus 152 EXPLAIN passes |
 | **B-guard** | D2, 200,001 session, six transaction operations | 6 cells | 6 × 5 = 30, each expected to return 413 |
-| **C, controls** | D2, 200k, common variant | see below | 37, plus 1 drain check and 1 admission-refusal request |
+| **C, controls** | D2, 200k, common variant | see below | 37 C1–C4 operations, plus 2 C5 holders, 1 refused admission and 1 fresh-after-drain operation (41 attempts total); drain observations separately |
 | **D, two clients** | D2, 200k: `quality` and `drill_first`, 2 concurrent clients | 1 cell | 20 |
 | **E, design comparison** | D2, the selected **N\*** session: `totals` and `daily_utc` under the JSON design, and under a measurement-only **shadow table** with real `currency`, `direction` and `minor_units` columns (same rows, filters, index and statements otherwise) | 2 × 2 | 24, plus 4 EXPLAIN passes |
 
@@ -356,20 +376,22 @@ That is 22 SQL statements and 3 control texts.
 | C1, refusal before submission | `B` = 300 and 349 ms, so the work budget (`B − R`) is 50 and 99 ms (×5 each) | Refused at the first `Ka`, because the work budget is below `MIN_DB_MS` 100. 503, no statement sent | The client's statement counter is 0, and an owner observer sees no tagged statement |
 | C2, submitted and cancelled by the server | `B` = 400, 700 and 1,250 ms (`R` = 250, so a work budget of at least 150 ms) | The tagged control statement `SELECT pg_sleep(5) /* an01-m1:C2 */` runs inside the report transaction, and `statement_timeout` → QueryCanceled is answered. The connection is closed normally, not quarantined. ×5 each | The observer sees the tagged statement `active` before the deadline. Measured: deadline-to-error latency |
 | C3, submitted and lock timeout | The same three budgets (×3 each) | The owner holds `ACCESS EXCLUSIVE` on `transactions`, and `totals` is submitted: LockNotAvailable or QueryCanceled, recorded as whichever fired | The observer sees the tagged statement waiting on the lock |
-| C4, submitted with the reply withheld | `B` = 1,250 ms (×3) | An owned loopback relay between client and server stops forwarding server-to-client bytes after the tagged statement. NoReply at `work_end`; the connection is retired into the **report** registry | The relay logs that it forwarded the statement. After the third run, `Q` = 2 is full, and the **next request is refused with 409 before connecting**. After the relay closes, the registry drains to 0 |
+| C4, submitted with the reply withheld | `B` = 1,250 ms (×3) | An owned loopback relay withholds the tagged statement's reply. NoReply retires the connection. Retain socket shutdown; its worker may finish and drain immediately | The relay proves submission, and retirement/final-close events prove ownership. Observe bounded eventual drain before the next run. Do not claim relay withholding alone fills Q |
+| C5, reserved-capacity fault control | 2 holder operations, then 1 refused request and 1 fresh request after drain | A test-only gate delays the two leases' actual final-close callbacks, retaining both Q reservations. The third request must refuse before connect; releasing the gates closes once, drains to 0, then permits the fresh request | Record controlled lease events and 0 connect calls for the refusal. This is an injected final-close delay, not real cancellation/network performance. Never manually increment a quarantine counter or disable socket shutdown to force the result |
 
-Phase C totals 10 + 15 + 9 + 3 = 37 operation runs, plus 1 drain check and 1 admission-refusal request. These test the measurement harness's copy of the §5.2 design. Equivalence with production code is an implementation-review item.
+Phase C has 37 C1–C4 operations (10+15+9+3), plus 2 C5 holders, 1 refused admission and 1 fresh-after-drain operation: 41 attempts. Drain observations are separate. Every test gate has bounded release/finally cleanup. These test the measurement harness's copy of the §5.2 design. Equivalence with production code is an implementation-review item.
 
 ### 8.4 Schedule, joint selection and pre-registered rules
 
 **Staged commands.** Each stage is a separate command inside the **unchanged 2,700 s command cap**. Existing verification and application timeouts are not changed.
 - **Inside each stage**, on one monotonic clock from the command's start:
-  - setup (cluster start, generation, COPY, ANALYZE and index builds) is capped at 900 s, and counts toward the same clock;
-  - **no new operation or EXPLAIN pass starts after 2,300 s**;
-  - one operation runs at most about 12.3 s (a 2 s connect, plus 10 s of work, plus a 0.25 s reserve);
-  - a 300 s cleanup reserve follows.
+  - setup (start/generation/COPY/ANALYZE/index builds) has a 900 s deadline and counts toward the same stage clock;
+  - no new operation or EXPLAIN pass starts after 2300 s;
+  - the **whole-stage work/wait deadline is 2350 s**, covering setup and connection waits too. An independent supervising controller must enforce it even when a worker blocks. The report B deadline alone does not do that;
+  - cleanup gets at most 300 s, to a controller deadline of 2650 s, leaving 50 s before the unchanged 2700 s outer command safety cap.
 
-  So 2,300 + 13 + 300 = 2,613 s is less than 2,700 s.
+  Thus 2350 + 300 = 2650 < 2700 for controller waiting; no bound on a connection is inferred from connect_timeout=2. The implementation must prove the supervisor's deadline and process/resource ownership with a deliberately stalled connector/worker.
+  Stop only verified owned workers/clusters using accepted identity/lifecycle mechanisms, never by name. If stop or cleanup is unconfirmed, exit nonzero with recovery state and keep the heavy slot unavailable for further stages. A bounded wait is **not** proof a worker stopped. Do not report a clean stage or resume automatically.
 - **Checkpoint:** a checkpoint file records completed cells and every digest.
 - **Owned recovery:** `recover --run-dir` stops only clusters carrying this run's ownership marker, and prints what it kept.
 - **No automatic resume, and no retries.** An unstarted cell is listed as **not run**, never estimated. Failed cells are kept.
@@ -388,7 +410,7 @@ Phase C totals 10 + 15 + 9 + 3 = 37 operation runs, plus 1 drain check and 1 adm
 | S9 | offline | Final report, then `cleanup` on each platform |
 
 - **Heavy slot.** All platform stages run one at a time in the one heavy slot, never on both platforms together.
-- **Worst-case total.** Each platform has seven stages (S1, S2, S4, S5a, S5b, S6 and S8). Seven stages × 2 platforms × 2,700 s = 37,800 s, plus about 600 s for the offline steps and cleanup. That is **at most about 10.7 hours**, and is expected to be far less. A stage that runs out of time leaves its unstarted cells not run; it is not silently extended.
+- **Planning allowance, not a completion guarantee.** Seven platform stages × 2 platforms × 2700 s gives 10.5 hours of command allowances, plus offline review/recovery. This is not a hard bound on elapsed time until everything is clean: unconfirmed cleanup halts the job and keeps recovery. A stage that exhausts its budget lists unstarted work and cannot qualify a limit. The initial M1 implementation assignment runs only tiny proof fixtures, not this full-size grid; a later resource/controller review must authorize the grid.
 
 **Pre-registered rules.** These are fixed before any run, and are applied to complete operations.
 1. **Common index configuration (S3).**
@@ -407,7 +429,7 @@ Phase C totals 10 + 15 + 9 + 3 = 37 operation runs, plus 1 drain check and 1 adm
 3. **Budget, reserve and admission.**
    - `B` stays 5,000 ms unless the C2 or C3 median deadline-to-error latency exceeds 10% of that cell's budget, or the D maximum exceeds `B − R`.
    - `R` stays 250 ms unless any C2 or C3 ROLLBACK exceeds 50% of `R`.
-   - `M` and `Q` stay 2 unless C4's admission or drain checks fail.
+   - `M` and `Q` stay 2 unless C5's reserved-capacity/admission/drain checks fail; C4 assesses real no-reply retirement without assuming it fills the registry.
    - Any trigger opens a re-review and never quietly changes a number.
 4. **Spills.** Any temp-file spill at N\* is reported, and S1 acceptance then needs an explicit `work_mem` statement.
 5. **The phase E design comparison.** It compares the JSON design with a columns design on matched rows, filters, index and statements, at **N\***.
@@ -415,7 +437,7 @@ Phase C totals 10 + 15 + 9 + 3 = 37 operation runs, plus 1 drain check and 1 adm
    - It is reported as the difference between two designs. It assigns **no causal percentage** to JSON extraction, which also differs in row width and pages.
    - No generated column is assigned by M1.
 6. **Mandatory evidence, or "not demonstrated."**
-   - Mandatory: all phase A cells on both platforms, every phase B cell at every size up to a candidate N\*, the B-guard cells, and C1–C4 on both platforms.
+   - Mandatory: all phase A cells on both platforms, every phase B cell at every size up to a candidate N\*, the B-guard cells, and C1–C5 on both platforms.
    - A limit whose mandatory evidence is missing, failed or not run is **not demonstrated** and stays provisional. A size with any missing cell cannot be N\*.
    - D and E are mandatory for their own rules only.
 7. **What the result is called.** "Measured on one laptop, warm cache, synthetic distribution": an input to Codex's contract decision, never a guarantee.

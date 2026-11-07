@@ -1,13 +1,23 @@
 # AgentForge Sentinel: project overview and remaining work
 
-## Latest AN01 design review
+## Current next step: reporting prototype
+
+AN01's corrected r3.2 design is accepted; R50–R52 close as design issues. Codex applied
+the final stage-watchdog and pre-connect capacity-reservation corrections while preserving
+Claude's `2db42ee` commit. The SQL/controller implementation and tiny real-database proofs
+are now assigned. No full-size grid, production Reports route or live evaluation is assigned;
+all performance values remain provisional and v1.3 is not frozen.
+[Design review](../reviews/AN01-r31-2db42ee.md) ·
+[Claude prototype assignment](../prompts/CLAUDE_AN01_M1_IMPLEMENTATION.md).
+
+## Earlier AN01 review (superseded above)
 
 Proposalb436c5e still needs R50–R52 corrections: UTC-edge zone-table coverage, a fully
 specified/bounded report-query measurement plan, and honest connection versus SQL budget
 semantics. Opt-in versioning, the unsigned cursor and a five-minute receipt-age nudge are
 supported for revision. The app/tooling remains accepted; this is a new design gate.
 [Review](../reviews/AN01-r3-b436c5e.md) ·
-[Current Claude revision prompt](../prompts/CLAUDE_AN01_R3_REVIEW_FIXES.md).
+[Completed Claude revision prompt](../prompts/CLAUDE_AN01_R3_REVIEW_FIXES.md).
 No report-query load run or production Reports implementation is assigned yet.
 
 Latest status: [the November7 checkpoint](AgentForge_Sentinel_Session_2026-11-07.md)
