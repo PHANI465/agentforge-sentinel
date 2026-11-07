@@ -1,5 +1,11 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current AN01 next step (November7): proposalb436c5e is reviewed but changes-requested
+under docs/reviews/AN01-r3-b436c5e.md (R50–R52). Use
+docs/prompts/CLAUDE_AN01_R3_REVIEW_FIXES.md on its existing proposal branch; documentation
+and stdlib checkers only. No SQL measurement/reporting implementation or live evaluation
+is assigned. Accepted runtime/tooling and owner identity instructions below remain intact.
+
 Current checkpoint (November7): corrected batch R46–R49 is accepted and locally
 integrated at tested871e31d. Read docs/artifacts/AgentForge_Sentinel_Session_2026-11-07.md
 and docs/reviews/Batch-r2-10a65ee.md. AN01 is still a draft; live evaluation is unassigned.

@@ -1,5 +1,25 @@
 # Shared implementation queue
 
+## November7: AN01 r3 reviewed; focused design corrections R50–R52
+
+Proposalb436c5e is documentation/checkers only and stays unmerged. The
+[independent review](reviews/AN01-r3-b436c5e.md) supports opt-in v1.3 with explicit legacy
+compatibility limits, unsigned256-character cursors and a five-minute receipt-age nudge.
+It requests local/UTC table-boundary coverage (R50), executable full-report measurement
+units/budgets/common platform configuration (R51), and accurate connection/budget and
+short cancellation-control semantics (R52).200k/5000 ms remain provisional.
+
+[Claude revision assignment](prompts/CLAUDE_AN01_R3_REVIEW_FIXES.md): continue the existing
+proposal branch, documentation/stdlib checkers only, Opus5.5 / High. Independent checks:
+r3 23/23, r2 34/34, Ruff, and matching manual Windows/native zone derivation. Separate
+boundary/arithmetic/injected-wait probes establish the gaps; no real SQL measurement,
+load, browser, live/auth/account/final-case work or spending. AN01-M1 and reporting
+implementation remain unassigned pending the corrected proposal's review.
+
+Main application/tooling remains tested871e31d plus documentation (810+one allowed skip
+per platform); this publication adds no runtime behavior or new full-gate claim. Preserve
+b436c5e, accepted/delivered worktrees, original evidence and Cursor's seven edits.
+
 ## November7: corrected tooling/demo batch accepted and locally integrated
 
 R46–R49 close under [the independent re-review](reviews/Batch-r2-10a65ee.md). P4ab32f45c,
