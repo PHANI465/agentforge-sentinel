@@ -73,6 +73,46 @@ def test_tracked_fixture_has_no_forbidden_keys_or_local_paths(tracked):
     assert demo.scan(demo.public_files(), demo.path_variants()) == []
 
 
+@pytest.mark.parametrize("user", ["sentinel", "Sentinel", "demo", "replay", "root"])
+def test_account_named_like_a_product_word_is_not_a_false_positive(user):
+    """Native Ubuntu preview 82316a5 ran as account "sentinel": the bare name matched the
+    product name in every public file. Only path contexts identify an account."""
+    linux = demo.path_variants(root=f"/home/{user}/preview-native", home=f"/home/{user}",
+                               user=user)
+    windows = demo.path_variants(root=f"C:\\Users\\{user}\\sentinel-wt\\demo01",
+                                 home=f"C:\\Users\\{user}", user=user)
+    assert user not in linux and user not in windows
+    assert demo.scan(demo.public_files(), linux) == []
+    assert demo.scan(demo.public_files(), windows) == []
+
+
+def test_planted_home_and_user_paths_are_still_caught(tmp_path):
+    user = "sentinel"
+    needles = sorted(set(
+        demo.path_variants(root=f"/home/{user}/preview-native", home=f"/home/{user}",
+                           user=user)
+        + demo.path_variants(root="E:\\work\\checkout", home=f"C:\\Users\\{user}", user=user)))
+    benign = tmp_path / "benign.md"
+    benign.write_text("Sentinel recorded replay; SENTINEL_DATABASE_URL; /home/ and Users/.",
+                      encoding="utf-8")
+    assert demo.scan([benign], needles) == []
+    planted = {
+        "linux_home.txt": "log at /home/sentinel/.cache/x",
+        "linux_checkout.txt": "ran in /home/sentinel/preview-native/demo",
+        "win_users.txt": "C:\\Users\\Sentinel\\AppData",
+        "win_forward.txt": "c:/users/sentinel/Desktop",
+        "json_escaped.json": json.dumps({"p": "C:\\Users\\sentinel\\x"}),
+        "checkout_forward.txt": "E:/work/checkout/demo/index.html",
+        "checkout_json.json": json.dumps({"p": "E:\\work\\checkout\\x"}),
+        "mac_users.txt": "/Users/sentinel/Library",
+    }
+    files = []
+    for name, text in planted.items():
+        (tmp_path / name).write_text(text, encoding="utf-8")
+        files.append(tmp_path / name)
+    assert sorted(demo.scan(files, needles)) == sorted(planted)
+
+
 # ---- negative controls ------------------------------------------------------------------------
 
 def test_action_before_the_approval_frame_is_detected(tracked):

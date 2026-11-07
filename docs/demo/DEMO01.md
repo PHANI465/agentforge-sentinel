@@ -122,7 +122,9 @@ manifest. It checked against 15 forbidden values:
 - the token and its SHA-256;
 - both connection strings and the PostgreSQL URL scheme;
 - tenant, session and actor IDs;
-- local repository and home paths, and the user name.
+- local repository and home paths in every separator form, and the account name only in
+  path form (`/home/<u>`, `Users/<u>`, `Users\<u>`, JSON-escaped). A bare account name
+  is not a needle: it also matches ordinary words (see the native fix below).
 
 Result: clean. The private raw capture and capture log were scanned for the token, its digest
 and both connection strings: clean. Report: `.agent/demo01/capture-report-<stamp>.json`
