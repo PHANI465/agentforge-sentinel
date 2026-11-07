@@ -648,6 +648,10 @@
           ["Generator", mono(p.generator)],
           ["Generator commit", [mono(p.generator_commit, "hash"),
             p.generator_tree_clean ? " (clean tree)" : " (UNCLEAN tree)"]],
+          ["Content identity", p.content_identity && p.content_identity.files ?
+            [mono(p.content_identity.sha256, "hash"), " (" +
+              Object.keys(p.content_identity.files).length + " generator and src/ files, " +
+              "CRLF canonicalized to LF)"] : "not recorded"],
           ["Tested application", [mono(p.tested_application_reference, "hash"),
             p.src_identical_to_tested_application ? " (src/ identical)" :
               " (src/ differs)"]],

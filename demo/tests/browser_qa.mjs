@@ -111,6 +111,10 @@ async function main() {
     const prov = await d.page.textContent("#provenance");
     record("data hash computed and matches manifest", prov.includes("matches the manifest") &&
       !prov.includes("DOES NOT"));
+    const identity = fixture.provenance.content_identity;
+    record("recorded content identity is shown", Boolean(identity) &&
+      prov.includes(identity.sha256) &&
+      prov.includes(Object.keys(identity.files).length + " generator and src/ files"));
     record("integrity banner hidden for published data",
       await d.page.$eval("#integrity", (n) => n.hidden));
     await d.page.screenshot({ path: join(OUT, "desktop-frame01.png"), fullPage: true });

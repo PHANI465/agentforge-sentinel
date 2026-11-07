@@ -51,6 +51,15 @@ RUNTIME_ROLE = "sentinel_demo01_runtime"
 TESTED_APPLICATION = "495c7d33424054d27d68d08004191d4be37adaf9"
 # Paths whose working-tree state must be committed for a capture to name its source commit.
 GENERATOR_PATHS = ("src", "scripts", "contracts", "pyproject.toml", "uv.lock")
+# Freshness inputs (R48): the generator and the application whose behaviour the capture
+# records. Their canonical content digests are recorded at capture time and re-checked
+# against the checkout's actual bytes, so freshness needs neither Git nor capture history.
+CONTENT_SCOPE = ("scripts/build_recorded_demo.py", "src")
+CANONICALIZATION = "sha256 of file bytes with CRLF replaced by LF"
+# Untracked build/interpreter output under src/ that is not application input.
+_IGNORED_DIRS = ("__pycache__",)
+_IGNORED_DIR_SUFFIXES = (".egg-info",)
+_IGNORED_FILE_SUFFIXES = (".pyc", ".pyo")
 CAPABILITIES = frozenset({"ingest_transaction", "read_case", "approve_action",
                           "execute_simulated_action"})
 LABELS = ("recorded", "synthetic", "rule baseline", "deterministic roles",
@@ -445,10 +454,11 @@ def forbidden_keys(value, found=None) -> set[str]:
     return found
 
 
-def provenance_for(raw: dict, git: dict) -> dict:
+def provenance_for(raw: dict, git: dict, identity: dict | None = None) -> dict:
     return {
         "generator": "scripts/build_recorded_demo.py",
         "generator_commit": git["commit"], "generator_tree_clean": git["clean"],
+        "content_identity": content_identity() if identity is None else identity,
         "tested_application_reference": TESTED_APPLICATION,
         "src_identical_to_tested_application": git["src_identical"],
         "capture_started_at": raw["capture_started_at"],
@@ -528,6 +538,10 @@ def _validate(fx: dict) -> list[str]:
     need(prov["scorer"]["mode"] == "rule", "scorer is not the rule baseline")
     need(prov["workflow"]["live"] is False, "workflow is not deterministic")
     need(prov["runtime_role"].get("session_issuance_refused") is True, "runtime role check")
+    if "content_identity" not in prov:
+        p.append(_NO_IDENTITY)
+    else:
+        p.extend(identity_shape_problems(prov["content_identity"]))
     frames = fx["frames"]
     need([f["stage"] for f in frames] == list(STAGES), "frame stages/order")
     need([f["index"] for f in frames] == list(range(1, len(STAGES) + 1)), "frame indexes")
@@ -760,6 +774,119 @@ def public_files() -> list[Path]:
     return files + ([doc] if doc.exists() else [])
 
 
+# ---- content identity: history-independent capture freshness (R48) -------------------------
+
+_NO_IDENTITY = ("provenance has no content_identity: the fixture cannot show which generator "
+                "and application bytes it was captured from; re-run the capture")
+_HEX64 = frozenset("0123456789abcdef")
+
+
+def canonical_digest(path: Path) -> str:
+    """Digest of a file's bytes with CRLF canonicalized to LF, so that Windows (autocrlf)
+    and Ubuntu checkouts of the same commit agree. Lone CR and all other bytes are kept."""
+    return sha256(path.read_bytes().replace(b"\r\n", b"\n"))
+
+
+def _aggregate(files: dict) -> str:
+    return sha256("".join(f"{files[name]}  {name}\n" for name in sorted(files)).encode())
+
+
+def content_files(root: Path | None = None) -> list[str]:
+    """Relative POSIX names of the freshness inputs present in a checkout (no Git): the
+    generator file and every file under src/ except interpreter/build output."""
+    base = ROOT if root is None else Path(root)
+    found = []
+    for entry in CONTENT_SCOPE:
+        path = base / entry
+        if path.is_file():
+            found.append(entry)
+            continue
+        if not path.is_dir():
+            continue
+        for item in path.rglob("*"):
+            rel = item.relative_to(base)
+            if (not item.is_file() or item.name.endswith(_IGNORED_FILE_SUFFIXES) or any(
+                    part in _IGNORED_DIRS or part.endswith(_IGNORED_DIR_SUFFIXES)
+                    for part in rel.parts[:-1])):
+                continue
+            found.append(rel.as_posix())
+    return sorted(found)
+
+
+def content_identity(root: Path | None = None) -> dict:
+    base = ROOT if root is None else Path(root)
+    files = {name: canonical_digest(base / name) for name in content_files(base)}
+    return {"inputs": list(CONTENT_SCOPE), "canonicalization": CANONICALIZATION,
+            "files": files, "sha256": _aggregate(files)}
+
+
+def _safe_name(name) -> bool:
+    if not isinstance(name, str) or not name or "\\" in name or name.startswith("/"):
+        return False
+    parts = name.split("/")
+    if any(part in ("", ".", "..") for part in parts) or ":" in parts[0]:
+        return False
+    return any(name == entry or name.startswith(entry + "/") for entry in CONTENT_SCOPE)
+
+
+def identity_shape_problems(identity) -> list[str]:
+    """Problems with a recorded content_identity's shape; never raises."""
+    if not isinstance(identity, dict):
+        return ["content_identity is malformed (not an object); re-run the capture"]
+    p = []
+    if identity.get("inputs") != list(CONTENT_SCOPE):
+        p.append(f"content_identity inputs {identity.get('inputs')!r} is not "
+                 f"{list(CONTENT_SCOPE)!r}; re-run the capture")
+    if identity.get("canonicalization") != CANONICALIZATION:
+        p.append("content_identity canonicalization is not the current rule; re-run the "
+                 "capture")
+    files = identity.get("files")
+    if not isinstance(files, dict) or not files:
+        return p + ["content_identity files is missing, empty or not an object; re-run the "
+                    "capture"]
+    bad = sorted(str(n) for n, d in files.items() if not _safe_name(n) or not (
+        isinstance(d, str) and len(d) == 64 and set(d) <= _HEX64))
+    if bad:
+        p.append(f"content_identity has invalid entries {bad}; re-run the capture")
+    if CONTENT_SCOPE[0] not in files:
+        p.append(f"content_identity does not record the generator {CONTENT_SCOPE[0]}")
+    aggregate = identity.get("sha256")
+    if not isinstance(aggregate, str):
+        p.append("content_identity has no aggregate sha256; re-run the capture")
+    elif not bad and aggregate != _aggregate(files):
+        p.append("content_identity aggregate sha256 does not match its file digests "
+                 "(edited or corrupted provenance); re-run the capture")
+    return p
+
+
+def freshness_problems(fixture, root: Path | None = None) -> list[str]:
+    """Whether the checkout's generator/application bytes equal those recorded at capture.
+
+    Reads files only; no Git call, so a shallow, exported or history-less checkout is
+    checked exactly like a full clone. Empty means fresh; never raises."""
+    prov = fixture.get("provenance") if isinstance(fixture, dict) else None
+    if not isinstance(prov, dict) or "content_identity" not in prov:
+        return [_NO_IDENTITY]
+    identity = prov["content_identity"]
+    shape = identity_shape_problems(identity)
+    if shape:
+        return shape
+    base = ROOT if root is None else Path(root)
+    try:
+        current = content_identity(base)["files"]
+    except OSError as error:
+        return [f"content_identity inputs could not be read ({error}); re-run the capture"]
+    recorded = identity["files"]
+    commit = prov.get("generator_commit", "an unrecorded commit")
+    where = f"since the capture (recorded generator_commit {commit}); re-run the capture"
+    p = [f"{name} changed {where}" for name in sorted(set(recorded) & set(current))
+         if recorded[name] != current[name]]
+    p += [f"{name} missing from this checkout {where}" for name in
+          sorted(set(recorded) - set(current))]
+    p += [f"{name} added {where}" for name in sorted(set(current) - set(recorded))]
+    return p
+
+
 # ---- git provenance ------------------------------------------------------------------------
 
 def _git(*args: str) -> subprocess.CompletedProcess:
@@ -862,6 +989,7 @@ def cmd_validate(args) -> int:
             problems.append("manifest hash/size does not match the data file")
         if not fixture["provenance"]["generator_tree_clean"]:
             problems.append("tracked fixture was captured from an unclean tree")
+        problems.extend(x for x in freshness_problems(fixture) if x not in problems)
     hits = scan([data_path], path_variants())
     if hits:
         problems.append("local path or user path in the data file")

@@ -21,13 +21,17 @@ control.
 
 ## What was really captured, and what is fixture
 
-Current capture run: stamp 20261107T014928Z, from generator commit
-`26f73e0ff2cd4101ec65e7b51009338ba55fcbfb` on a clean tree. It replaces the first capture
-(stamp 20261107T010104Z, from 8675b5c) after the scan fix described below. Both runs
-recorded the same story; only times and IDs differ.
+Current capture run: stamp 20261107T152954Z, from generator commit
+`af4890afb3b6f0af9e85d3841428b10d4ddb25b6` on a clean tree, after the R48 freshness change
+described below. It replaces the capture of stamp 20261107T014928Z (from 26f73e0, fixture in
+commit 521148d), which replaced the first capture (stamp 20261107T010104Z, from 8675b5c)
+after the scan fix. All runs recorded the same story; only times and IDs differ.
 
 - `src/` was identical to the tested application `495c7d33424054d27d68d08004191d4be37adaf9`
-  (G3D-P3). The generator checks this with git and records it.
+  (G3D-P3). The generator checks this with git at capture time and records it.
+- The provenance also records `content_identity`: canonical digests of the generator and of
+  all 32 `src/` files (33 files; aggregate
+  `c7b2a5897b75371bc026caa5fce47ef4a5e4e6678c083e534f8734463099bfd1`). See "Capture freshness".
 - Database: a disposable PostgreSQL 14.17 cluster, created by `scripts/build_recorded_demo.py`
   through the accepted `scripts/local_stack.py` ownership machinery: marker, recorded
   identity and verified stop. The cluster was stopped and its directory removed afterwards.
@@ -68,10 +72,12 @@ recorded the same story; only times and IDs differ.
 **Fixture**: the only tracked data is `demo/data/recorded-case.json`, an explicit allowlisted
 projection of that capture, plus its `manifest.json`:
 
-- SHA-256 `fa47192ede8d9ed2c4ab5bd7e69d3e589542377a131d21709aba34696d92bcea`;
-- 45,529 bytes, LF, canonical JSON (`sort_keys`, indent 1).
+- SHA-256 `663a27d1b7f6177b9a6f90381041b2c63e2628fe9b11a5b46ef060aba2575625`;
+- 49,327 bytes, LF, canonical JSON (`sort_keys`, indent 1).
 
-It supersedes the first fixture, `f24da3ca46fab8d0dc15b0ae7be98f60f2d4d5f8f9b1a9ae19125cc87c42ee2c`.
+It supersedes `fa47192ede8d9ed2c4ab5bd7e69d3e589542377a131d21709aba34696d92bcea` (26f73e0) and
+the first fixture, `f24da3ca46fab8d0dc15b0ae7be98f60f2d4d5f8f9b1a9ae19125cc87c42ee2c`. Both stay
+in branch history.
 
 Nothing in it was edited by hand. The frame titles, notice, provenance text and actor labels
 were written by the generator. The narrative text lives in `demo/replay.js`. The raw capture,
@@ -112,7 +118,9 @@ The validator checks:
   consumption, and replay identity;
 - per-frame approval and action counts;
 - the audit sequence, actors and times, and audit counts per observation time;
-- the manifest hash and size.
+- the manifest hash and size;
+- the recorded `content_identity` shape, and capture freshness against this checkout's bytes
+  (see below).
 
 A capture whose fixture fails validation writes nothing public and never falls back to fixture
 data.
@@ -148,19 +156,60 @@ matched only in path form. Regression tests check two things:
 
 This changed the generator, so the fixture was recaptured from 26f73e0.
 
+## Capture freshness without Git history (R48)
+
+Review finding R48 (`docs/reviews/Parallel-batch-830f018.md`): the old freshness test ran
+`git diff <capture commit> HEAD -- src scripts/build_recorded_demo.py` and **skipped** when Git
+or the capture commit was missing, as in a shallow or exported checkout. That added a skip to
+a gate whose only allowed skip is the opt-in live-Claude test.
+
+Now freshness reads files only:
+
+- At capture, the generator records `provenance.content_identity`: `inputs`
+  (`scripts/build_recorded_demo.py`, `src`), the canonicalization rule, one SHA-256 per file
+  and an aggregate SHA-256 over the sorted `digest  path` lines.
+- Inputs: the generator file, and every file under `src/` except `__pycache__/`, `*.egg-info/`
+  and `*.pyc`/`*.pyo`. Paths are relative and use `/`.
+- Canonicalization: CRLF becomes LF before hashing, so Windows (autocrlf) and Ubuntu checkouts
+  of the same commit agree. No other bytes change. `.gitattributes` already checks out LF.
+- `freshness_problems()` recomputes the digests from the checkout's actual bytes. It reports
+  each changed, missing or added file and tells you to re-run the capture. It makes no Git
+  call. The validator CLI and `test_capture_content_identity_matches_this_checkout` both use it.
+- Missing or malformed identity fails with a re-capture message and does not crash. That
+  covers a non-object identity, empty or non-object `files`, a bad digest, a path that is
+  escaping, absolute, backslashed or out of scope, a wrong `inputs` or rule, and a missing or
+  mismatched aggregate.
+- `generator_commit` stays as recorded provenance. Its local presence is never a condition.
+
+Tests that failed first, on the 47b7cf1 generator (17 failed), cover these cases:
+
+- simulated Git absence (`_git` returns 128, any `git` subprocess raises, `which` finds none);
+- a changed generator, and a changed, added or removed `src/` file, in a minimal tree and in
+  a copy of the real checkout;
+- a CRLF copy that passes;
+- ignored build output;
+- missing and malformed provenance;
+- the validator CLI reporting stale content (on 47b7cf1 it printed `ok`).
+
+The first recapture on 2bcc03d failed safely. The identity's own key `scope` is a forbidden
+projection key, so the unchanged forbidden-key check refused it and nothing public was
+written. The key was renamed `inputs`, and a regression test pins the result (it failed first
+on 2bcc03d).
+
 ## Verification runs (heavy slots granted by the batch coordinator)
 
-Current run, on 26f73e0:
+Current run, on af4890a (the fixture is in ed4afe1):
 
 | Check | Result |
 | --- | --- |
-| `scripts/build_recorded_demo.py capture` | pass: 10 frames valid, scan clean, cluster stopped and removed |
+| `scripts/build_recorded_demo.py capture` | pass: 10 frames valid; 8 public files x 18 forbidden values clean (real 43-character token); cluster stopped and removed |
 | `scripts/build_recorded_demo.py validate` | pass |
-| `pytest -q tests/test_recorded_demo.py` | 21 passed, including one more real capture on a pytest-owned cluster |
-| `node demo/tests/browser_qa.mjs` on the new fixture (headless Chromium 1248, existing install) | 30/30 on the first run |
+| `pytest -q tests/test_recorded_demo.py` | 38 passed, 0 skipped, including one more real capture on a pytest-owned cluster; the structured gate validator reports no finding with no allowed skips |
+| same pure tests and `validate` in a `git archive` export with no `.git` | 37 passed (real capture deselected), validate ok |
+| `node demo/tests/browser_qa.mjs` on the new fixture (headless Chromium, existing install) | 31/31 on the first run, including the new content-identity row |
 
-First run, on 8675b5c (superseded): capture and validate passed; pytest 15 passed; browser QA
-30/30 on its second run (see below).
+Earlier runs (superseded): on 26f73e0 capture, validate, pytest 21 passed and QA 30/30; on
+8675b5c capture, validate, pytest 15 passed and QA 30/30 on its second run (see below).
 
 The pytest run includes these negative controls, and each is detected:
 
@@ -173,7 +222,8 @@ The pytest run includes these negative controls, and each is detected:
 - an injected `session_id`;
 - an unlabelled actor;
 - a malformed fixture;
-- the token scan (positive control, plus refusal of an empty source).
+- the token scan (positive control, plus refusal of an empty source);
+- stale, missing and malformed capture content identity (see R48 above).
 
 Static checks cover CSP, no external URL, no form or input, no HTML sinks
 (`innerHTML`/`eval`/...), fetch only of the two data constants, and in-page links only.
@@ -182,6 +232,7 @@ Browser QA served `demo/` from its own Node server on loopback, closed by its ha
 covered:
 
 - persistent labels, and the manifest hash computed in the browser and matching;
+- the recorded content-identity aggregate and file count shown in provenance;
 - Next/Previous, rail, arrow keys and Home/End in recorded order, with Next keeping focus;
 - per-frame ledger counts;
 - no approve or execute control;
@@ -199,8 +250,8 @@ The first QA run reported 28/30. Both failures were bugs in the QA script, not i
 - a hash-only `goto` kept the earlier focus.
 
 The script was corrected and rerun once, with 30/30. The failed report is kept privately.
-Screenshots are private under `.agent/demo01/qa/` (first fixture) and `.agent/demo01/qa-r2/`
-(current fixture). No token existed on disk, and none was in
+Screenshots are private under `.agent/demo01/qa/` (first fixture), `.agent/demo01/qa-r2/`
+(26f73e0 fixture) and `.agent/demo01/qa-r3/` (current fixture). No token existed on disk, and none was in
 any page or screenshot.
 
 ## Not verified / limitations
