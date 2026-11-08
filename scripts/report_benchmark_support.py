@@ -1204,14 +1204,23 @@ def _run_admitted(rt, admission, sequence, guard, bind=None) -> Outcome:
             raise                               # setup hook failure: closed below, re-raised
         out.kind, out.error_class, out.sqlstate = "error", type(error).__name__, error.sqlstate
     finally:
-        if not rc.retired:
-            if budget is not None:
+        # Nested finalization (R56): ROLLBACK may itself raise, including an interrupt that
+        # lands after its reply (when nothing uses the connection any more). The inner
+        # finally still closes the connection then; when the interrupt landed while an
+        # operation was still running, bounded_call has already retired it, so its lease
+        # (the last user) closes it instead. A failed close keeps its reservation and owner.
+        # The original exception, or KeyboardInterrupt/SystemExit, propagates unchanged.
+        try:
+            if not rc.retired and budget is not None:
                 out.rollback = _rollback(rc, budget, rt, out)
-            if not rc.retired:
-                rc.close_normal()
-        out.elapsed_ms = None if budget is None else rt.clock() - budget.t0
-        out.retired = rc.retired
-        out.close = "retired" if rc.retired else rc.close_state
+        finally:
+            try:
+                if not rc.retired:
+                    rc.close_normal()
+            finally:
+                out.elapsed_ms = None if budget is None else rt.clock() - budget.t0
+                out.retired = rc.retired
+                out.close = "retired" if rc.retired else rc.close_state
     if out.kind == "ok" and out.rollback == "unanswered":
         out.kind = "rollback_unanswered"
     return out

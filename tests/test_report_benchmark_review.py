@@ -299,14 +299,34 @@ def cell_record(cell: br.Cell, platform: str) -> dict:
     if cell.phase == "D":
         return {**base, "timed": _timed("ok", cell.timed), "max_ms": 10.0}
     if cell.expect == "C5":
-        return {**base, "timed": [{"holders": ["no_reply", "no_reply"]}, {"drained": True}]}
-    kind = {"C1": "refused_before_submission", "C2": "server_cancelled",
-            "C3": "lock_timeout", "C4": "no_reply"}[cell.expect]
-    extra = {"proved": True}
+        return {**base, "label": "fault injection: delayed final close (not cancellation "
+                "latency)", "timed": [
+                    {"holders": ["no_reply", "no_reply"]},
+                    {"counts_held": [0, 2], "quarantined": 2},
+                    {"connect_calls": 0, "third": "admission_refused"},
+                    {"close_calls": [1, 1], "drained": True},
+                    {"connect_calls": 1, "fresh": "ok"}]}
+    work_end = cell.budget_ms - 250
+    # Each control run carries its defining diagnostics, as Worker.control records them.
+    extra = {"C1": {"kind": "refused_before_submission", "submitted": 0, "sql_submitted": 0,
+                    "observer": [], "refused_at": "Ka", "rollback": "not_needed",
+                    "retired": False, "close": "closed", "work_end_ms": work_end},
+             "C2": {"kind": "server_cancelled", "sqlstate": "57014",
+                    "error_class": "QueryCanceled", "submitted": 2, "sql_submitted": 1,
+                    "observer": [["an01-m1:C2:S", "active", "Timeout"]]},
+             "C3": {"kind": "lock_timeout", "sqlstate": "55P03",
+                    "error_class": "LockNotAvailable", "submitted": 2, "sql_submitted": 1,
+                    "observer": [["an01-m1:totals:G", "active", "Lock"]]},
+             "C4": {"kind": "no_reply", "submitted": 2, "sql_submitted": 1, "retired": True,
+                    "close": "retired", "rollback": "not_needed", "relay_saw_statement": True,
+                    "drained": True, "drain_s": 0.2, "events": ["retired", "final_close"],
+                    "work_end_ms": work_end}}[cell.expect]
     if cell.expect in ("C2", "C3"):
         extra.update(deadline_to_error_ms=5.0, rollback="answered", rollback_ms=2.0,
-                     error_at_ms=float(cell.budget_ms - 270))
-    return {**base, "timed": _timed(kind, cell.timed, **extra)}
+                     error_at_ms=float(work_end - 20), work_end_ms=work_end,
+                     armed_deadline_ms=float(work_end - 25), retired=False, close="closed")
+    kind = extra.pop("kind")
+    return {**base, "timed": _timed(kind, cell.timed, proved=True, **extra)}
 
 
 def stage_record(stage: str, platform: str, profile=TINY, cells=None, identities=None,
@@ -999,3 +1019,248 @@ def test_r57_real_report_with_delayed_acquisition_and_unanswered_rollback(
     assert _until(lambda: rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0)
     assert out.connection.close_calls == 1
     assert not math.isnan(out.elapsed_ms)
+
+
+# ---- R54 residual (review 5e0a578): summaries and control diagnostics -----------------------
+# Every case goes through the public loader (load_records) and then a rule, as `select`
+# and `report` do. Mutations are validation counterexamples applied to synthetic records
+# shaped like the worker's, never to captured smoke records.
+
+def loaded(tmp_path, records: list[dict]) -> dict:
+    return br.load_records(write_records(tmp_path / secrets.token_hex(4), records), "tiny")
+
+
+def s6_pair(mutate=None):
+    out = []
+    for p in br.PAIR:
+        rec = stage_record("S6", p)
+        if mutate:
+            mutate(rec["cells"])
+        out.append(rec)
+    return out
+
+
+def test_r54b_unmodified_records_still_qualify(tmp_path):
+    """control"""
+    s2 = loaded(tmp_path, [stage_record("S2", p) for p in br.PAIR])
+    assert br.rule_common_index(s2)["value"] == {"variant": "A", "demonstrated": True}
+    controls = br.rule_controls(loaded(tmp_path, s6_pair()))
+    assert controls["demonstrated"] is True and controls["triggers"] == [], controls
+
+
+def test_r54b_contradictory_medians_cannot_select_an_index(tmp_path):
+    """defect: B's stored medians claim 100x faster than its own timed outcomes."""
+    records = [stage_record("S2", p) for p in br.PAIR]
+    for rec in records:
+        for op in rb.OPERATIONS:
+            rec["cells"][f"A:B:{op}"]["median_ms"] = rec["cells"][f"A:A:{op}"]["median_ms"] / 100
+    value = br.rule_common_index(loaded(tmp_path, records))["value"]
+    assert not (value["variant"] == "B" and value["demonstrated"]), value
+
+
+def test_r54b_a_median_derived_from_timed_outcomes_is_used(tmp_path):
+    """control: a stored median equal to the timed median (at 0.001 ms) is accepted."""
+    records = [stage_record("S2", p) for p in br.PAIR]
+    for rec in records:
+        cell = rec["cells"]["A:A:totals"]
+        for i, t in enumerate(cell["timed"]):
+            t["elapsed_ms"] = [9.0, 11.0, 10.0, 12.0, 8.0][i]
+        cell["median_ms"] = 10.0
+    assert br.rule_common_index(loaded(tmp_path, records))["value"]["demonstrated"] is True
+
+
+@pytest.mark.parametrize("case", ["c5-empty", "c5-no-refusal", "c5-not-drained",
+                                  "c1-submitted", "c1-observer-saw", "c2-no-observer",
+                                  "c2-late", "c2-wrong-sqlstate", "c3-no-lock-wait",
+                                  "c4-relay-blind", "c4-not-drained"])
+def test_r54b_control_diagnostics_must_prove_the_control(tmp_path, case):
+    """defect: proved=True / status complete / a nonempty list are not evidence by
+    themselves; each control's own diagnostics must show what it claims."""
+    def mutate(cells):
+        name, _, what = case.partition("-")
+        if name == "c5":
+            timed = cells["C5"]["timed"]
+            if what == "empty":
+                cells["C5"]["timed"] = [{}]
+            elif what == "no-refusal":
+                timed[2] = {"connect_calls": 1, "third": "ok"}
+            else:
+                timed[3] = {"close_calls": [1, 0], "drained": False}
+            return
+        cid = {"c1": "C1:300", "c2": "C2:400", "c3": "C3:400", "c4": "C4:1250"}[name]
+        for t in cells[cid]["timed"]:
+            if case == "c1-submitted":
+                t.update(kind="ok", submitted=99, sql_submitted=99)
+            elif case == "c1-observer-saw":
+                t["observer"] = [["an01-m1:totals:G", "active", None]]
+            elif case == "c2-no-observer":
+                t["observer"] = []
+            elif case == "c2-late":
+                t["error_at_ms"] = t["work_end_ms"] + 3.0
+            elif case == "c2-wrong-sqlstate":
+                t["sqlstate"] = "57P01"
+            elif case == "c3-no-lock-wait":
+                t["observer"] = [["an01-m1:totals:G", "active", None]]
+            elif case == "c4-relay-blind":
+                t["relay_saw_statement"] = False
+            else:
+                t["drained"] = False
+    answer = br.rule_controls(loaded(tmp_path, s6_pair(mutate)))
+    assert answer["demonstrated"] is False, answer
+
+
+def test_r54b_a_stored_maximum_cannot_hide_over_budget_measurements(tmp_path):
+    """defect: D's timed outcomes are 6000 ms; its stored max_ms claims 1."""
+    def mutate(cells):
+        for t in cells["D"]["timed"]:
+            t["elapsed_ms"] = 6000.0
+        cells["D"]["max_ms"] = 1.0
+    answer = br.rule_controls(loaded(tmp_path, s6_pair(mutate)))
+    assert answer["demonstrated"] is False or any("maximum" in t for t in answer["triggers"])
+
+
+def test_r54b_raw_rule_inputs_fail_safe_without_the_loader():
+    """defect: the rules apply the same evidence checks to raw dicts."""
+    cells = {p: stage_record("S6", p)["cells"] for p in br.PAIR}
+    for p in br.PAIR:
+        cells[p]["C5"]["timed"] = [{}]
+        for t in cells[p]["D"]["timed"]:
+            t["elapsed_ms"] = 6000.0
+        cells[p]["D"]["max_ms"] = 1.0
+    answer = br.rule_controls(cells)
+    assert answer["demonstrated"] is False, answer
+    s2 = {p: stage_record("S2", p)["cells"] for p in br.PAIR}
+    for p in br.PAIR:
+        for op in rb.OPERATIONS:
+            s2[p][f"A:B:{op}"]["median_ms"] = 0.1
+    assert br.rule_common_index(s2)["value"]["variant"] != "B"
+
+
+def test_r54b_n_star_tolerates_absent_summaries_but_not_contradictory_ones():
+    """Added after the fix (not failing-first evidence): rule_n_star consumes only timed
+    outcomes, so on raw input an absent median/EXPLAIN is tolerated (Codex's good-cap
+    control), but a present median contradicting the timed outcomes disqualifies."""
+    def bare(cells):
+        for rec in cells.values():
+            rec.pop("median_ms", None)
+            rec.pop("explain", None)
+    good = {p: b_cells(p, bare) for p in br.PAIR}
+    assert br.rule_n_star(good, TINY.sizes)["value"] == {"n_star": 80, "demonstrated": True}
+    bad = {p: b_cells(p) for p in br.PAIR}
+    bad["linux"]["B:D2:20:totals:base"]["median_ms"] = 0.5
+    assert br.rule_n_star(bad, TINY.sizes)["value"]["demonstrated"] is False
+
+
+@pytest.mark.parametrize("bad", ["order", "outcome", "count"])
+def test_r54b_explain_evidence_names_the_operation_statements(tmp_path, bad):
+    """defect: EXPLAIN evidence must cover the operation's statements, in order, answered."""
+    records = [stage_record("S2", p) for p in br.PAIR]
+    for rec in records:
+        explain = rec["cells"]["A:A:totals"]["explain"]
+        if bad == "order":
+            explain.reverse()
+        elif bad == "outcome":
+            explain[0]["outcome"] = {"kind": "server_cancelled"}
+        else:
+            explain.append(dict(explain[0]))
+    value = br.rule_common_index(loaded(tmp_path, records))["value"]
+    assert value["demonstrated"] is False, value
+
+
+def test_r54b_an_invalid_mandatory_cell_is_not_mandatory_evidence(tmp_path):
+    """defect: the final report cannot claim mandatory evidence over an unproved control."""
+    records = [stage_record(s, p) for s in ("S2", "S5a", "S5b", "S6") for p in br.PAIR]
+    for rec in records:
+        if rec["stage"] == "S6":
+            rec["cells"]["C5"]["timed"] = [{}]
+    report = br.final_report(loaded(tmp_path, records), TINY)
+    assert report["rule6_status"] == "not demonstrated", report["rule6_missing_mandatory"]
+
+
+# ---- R56 residual: an interrupt after the ROLLBACK reply ----------------------------------
+
+def _interrupt_at(monkeypatch, n, error):
+    """Let the real wait helper finish, then raise `error` at the n-th wait."""
+    import sentinel.clock as sclock
+    real, calls = sclock.wait_until, []
+
+    def wait(*args, **kwargs):
+        calls.append(1)
+        value = real(*args, **kwargs)
+        if len(calls) == n:
+            raise error()
+        return value
+    monkeypatch.setattr(sclock, "wait_until", wait)
+    return calls
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, SystemExit])
+def test_r56b_interrupt_after_rollback_reply_still_closes(monkeypatch, error,
+                                                         workflow_quarantine_unchanged):
+    """defect: Ka, G, then ROLLBACK replies; the interrupt hits as ROLLBACK's waiter
+    returns. Nothing uses the connection any more, so it must be closed once and released
+    once, and the interrupt must still propagate."""
+    calls = _interrupt_at(monkeypatch, 3, error)
+    conn = RConn()
+    rt = rt_for(conn)
+    with pytest.raises(error):
+        rb.run_statements(rt, SEQ[:1])
+    assert len(calls) == 3
+    assert conn.close_calls == 1 and conn.closed, "acquired connection left unowned"
+    assert rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, SystemExit])
+def test_r56b_interrupt_raised_by_rollback_itself_still_closes(error,
+                                                               workflow_quarantine_unchanged):
+    """defect: ROLLBACK's own call raises the interrupt (it answered by raising)."""
+    conn = RConn()
+
+    def rollback():
+        conn.began = False
+        raise error()
+    conn.rollback = rollback
+    rt = rt_for(conn)
+    with pytest.raises(error):
+        rb.run_statements(rt, SEQ[:1])
+    assert conn.close_calls == 1 and conn.closed
+    assert rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0
+
+
+def test_r56b_interrupt_after_rollback_with_failed_close_keeps_an_owner(
+        monkeypatch, workflow_quarantine_unchanged):
+    """defect: the same interrupt, and the close then fails: reservation and owner kept."""
+    _interrupt_at(monkeypatch, 3, KeyboardInterrupt)
+    conn = RConn(close_failures=1)
+    rt = rt_for(conn)
+    with pytest.raises(KeyboardInterrupt):
+        rb.run_statements(rt, SEQ[:1])
+    assert conn.close_calls == 1 and not conn.closed
+    assert rt.resources.counts() == (0, 1) and rt.quarantine.count() == 1
+
+
+def test_r56b_interrupt_while_rollback_still_runs_transfers_to_the_lease(
+        monkeypatch, workflow_quarantine_unchanged):
+    """control: ROLLBACK has NOT replied when the interrupt lands: never closed under its
+    running thread; the lease closes it after the late return."""
+    import sentinel.clock as sclock
+    real, calls = sclock.wait_until, []
+
+    def wait(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 3:
+            raise KeyboardInterrupt
+        return real(*args, **kwargs)
+    monkeypatch.setattr(sclock, "wait_until", wait)
+    gate = threading.Event()
+    conn = RConn(rollback_gate=gate)
+    rt = rt_for(conn, total_ms=3000)
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            rb.run_statements(rt, SEQ[:1])
+        assert conn.close_calls == 0 and rt.resources.counts() == (0, 1)
+        assert rt.quarantine.count() == 1
+    finally:
+        gate.set()
+    assert _until(lambda: rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0)
+    assert conn.close_calls == 1

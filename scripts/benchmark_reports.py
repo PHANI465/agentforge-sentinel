@@ -1437,9 +1437,96 @@ def _pair(records: dict) -> bool:
 CONTROL_ANSWERED = {"C2": ("server_cancelled",), "C3": ("lock_timeout", "server_cancelled")}
 
 
-def cell_problems(cell: Cell, rec) -> list[str]:
+# Summary serialization rule (R54): every public time is rounded to 0.001 ms (rb._r), and
+# medians/maxima are computed by the worker from those rounded outcomes. A stored summary
+# is accepted only if it equals the value derived from the timed outcomes within half that
+# resolution; rules always use the DERIVED value, never the stored one.
+SUMMARY_TOLERANCE_MS = 0.0005
+CONTROL_SQLSTATE = {"server_cancelled": "57014", "lock_timeout": "55P03"}
+C5_EVENTS = ({"holders": ["no_reply", "no_reply"]},
+             {"counts_held": [0, 2], "quarantined": 2},
+             {"third": "admission_refused", "connect_calls": 0},
+             {"drained": True, "close_calls": [1, 1]},
+             {"fresh": "ok", "connect_calls": 1})
+
+
+def _elapsed(rec) -> list | None:
+    """The finite timed elapsed times of a cell, or None when any is missing/non-finite."""
+    timed = rec.get("timed") if isinstance(rec, dict) else None
+    if not isinstance(timed, list) or not timed or not all(
+            isinstance(t, dict) and _finite(t.get("elapsed_ms")) for t in timed):
+        return None
+    return [t["elapsed_ms"] for t in timed]
+
+
+def _summary_matches(stored, derived) -> bool:
+    return _finite(stored) and abs(stored - derived) <= SUMMARY_TOLERANCE_MS
+
+
+def _observed(t) -> list:
+    rows = t.get("observer")
+    return [r for r in rows if isinstance(r, list) and len(r) == 3] \
+        if isinstance(rows, list) else []
+
+
+def control_run_problem(expect: str, t: dict) -> str | None:
+    """Whether one C1-C4 run's own diagnostics show what the control claims. proved=True
+    and the cell status are never evidence by themselves (R54)."""
+    if t.get("proved") is not True:
+        return "not proved"
+    kind = t.get("kind")
+    if expect == "C1":
+        if not (kind == "refused_before_submission" and t.get("submitted") == 0
+                and t.get("sql_submitted") == 0 and t.get("observer") == []
+                and t.get("refused_at") == "Ka" and t.get("rollback") == "not_needed"
+                and t.get("retired") is False):
+            return "C1 lacks its refusal before any submission"
+    elif expect in CONTROL_ANSWERED:
+        seen = _observed(t)
+        submitted = (any(r[0] == "an01-m1:C2:S" and r[1] == "active" for r in seen)
+                     if expect == "C2" else
+                     any(r[0] == "an01-m1:totals:G" and r[2] == "Lock" for r in seen))
+        timing = [t.get(k) for k in ("error_at_ms", "work_end_ms", "armed_deadline_ms",
+                                     "deadline_to_error_ms", "rollback_ms")]
+        if not (kind in CONTROL_ANSWERED[expect]
+                and t.get("sqlstate") == CONTROL_SQLSTATE.get(kind)
+                and isinstance(t.get("sql_submitted"), int) and t["sql_submitted"] >= 1
+                and submitted):
+            return f"{expect} lacks its observed submission or expected server answer"
+        if not all(_finite(x) for x in timing):
+            return f"{expect} lacks a measured interval"
+        error_at, work_end, armed, d2e, rollback_ms = timing
+        if not (error_at <= work_end and abs(d2e - (error_at - armed)) <= 0.002
+                and rollback_ms >= 0 and t.get("rollback") == "answered"
+                and t.get("retired") is False and t.get("close") == "closed"):
+            return f"{expect} reply not on time, inconsistent, or ROLLBACK not answered"
+    elif expect == "C4":
+        if not (kind == "no_reply" and t.get("retired") is True
+                and isinstance(t.get("sql_submitted"), int) and t["sql_submitted"] >= 1
+                and t.get("relay_saw_statement") is True and t.get("drained") is True
+                and _finite(t.get("drain_s"))
+                and t.get("events") == ["retired", "final_close"]):
+            return "C4 lacks its sent-and-withheld statement, retirement or drain"
+    else:
+        return "unknown control"
+    return None
+
+
+def cell_problems(cell: Cell, rec, strict: bool = True) -> list[str]:
     """Typed validation of one recorded cell (R54). Only a `complete` cell is checked for
-    content; any problem makes it `invalid`, which every rule treats as missing."""
+    content; any problem makes it `invalid`, which every rule treats as missing.
+
+    Checked: the registered outcome count and kinds with finite times; stored medians and
+    maxima against the values derived from those outcomes (SUMMARY_TOLERANCE_MS); EXPLAIN
+    evidence for exactly the operation's statements, in order, each answered with a plan;
+    each control's own diagnostics (control_run_problem); and C5's exact event sequence
+    (two holders retired, Q held, a third refused before connecting, drained with one close
+    each, then a fresh admission).
+
+    strict (the loader, and every rule that consumes medians or EXPLAIN): a recorded
+    summary and EXPLAIN evidence must be present. Non-strict (rule_n_star on raw input,
+    which consumes only timed outcomes): an ABSENT summary or EXPLAIN is tolerated, but
+    anything present must still agree with the timed outcomes."""
     if not isinstance(rec, dict) or not isinstance(rec.get("status"), str):
         return ["cell record shape"]
     if rec["status"] != "complete":
@@ -1449,34 +1536,50 @@ def cell_problems(cell: Cell, rec) -> list[str]:
     if not isinstance(timed, list) or not all(isinstance(t, dict) for t in timed):
         return ["timed outcomes missing"]
     if cell.expect == "C5":
-        return [] if timed else ["C5 events missing"]
+        return [] if tuple(timed) == C5_EVENTS else ["C5 events do not show the control"]
     if len(timed) != cell.timed:
         problems.append(f"{len(timed)} timed outcomes, {cell.timed} registered")
     if cell.phase in ("A", "B", "BG", "E", "D"):
-        if not _timed_ok({**rec, "timed": timed}, len(timed), cell.expect):
+        elapsed = _elapsed(rec)
+        if elapsed is None or not _timed_ok({**rec, "timed": timed}, len(timed), cell.expect):
             problems.append("an outcome kind or elapsed time is wrong or unknown")
-        if cell.phase != "D" and not _finite(rec.get("median_ms")):
-            problems.append("median unknown")
-        if cell.phase == "D" and not _finite(rec.get("max_ms")):
-            problems.append("maximum unknown")
-        if cell.explain:
-            n = len(rb.OPERATIONS[cell.op.removesuffix("_cols")])
+        elif cell.phase == "D":
+            if (strict or "max_ms" in rec)                     and not _summary_matches(rec.get("max_ms"), max(elapsed)):
+                problems.append("stored maximum contradicts the timed outcomes")
+        elif (strict or "median_ms" in rec)                 and not _summary_matches(rec.get("median_ms"), statistics.median(elapsed)):
+            problems.append("stored median contradicts the timed outcomes")
+        if cell.explain and (strict or "explain" in rec):
+            expected = [sid for sid, _ in rb.OPERATIONS[cell.op.removesuffix("_cols")]]
             explain = rec.get("explain")
-            if not (isinstance(explain, list) and len(explain) == n and all(
-                    isinstance(e, dict) and isinstance(e.get("plan"), dict)
-                    and isinstance(e["plan"].get("scans"), list) for e in explain)):
-                problems.append("EXPLAIN evidence missing")
+            if not (isinstance(explain, list)
+                    and [e.get("statement") if isinstance(e, dict) else None
+                         for e in explain] == expected
+                    and all(isinstance(e.get("outcome"), dict)
+                            and e["outcome"].get("kind") == "ok"
+                            and isinstance(e.get("plan"), dict)
+                            and isinstance(e["plan"].get("scans"), list) for e in explain)):
+                problems.append("EXPLAIN evidence does not cover the operation's statements")
+        elif rec.get("explain") not in (None, []):
+            problems.append("unregistered EXPLAIN evidence")
     else:  # C1-C4
-        if not all(t.get("proved") is True and isinstance(t.get("kind"), str) for t in timed):
-            problems.append("a control run is not proved")
-        if cell.expect in CONTROL_ANSWERED:
-            for t in timed:
-                if not (t.get("kind") in CONTROL_ANSWERED[cell.expect]
-                        and _finite(t.get("deadline_to_error_ms"))
-                        and t.get("rollback") == "answered" and _finite(t.get("rollback_ms"))):
-                    problems.append("an answered control lacks its measured intervals")
-                    break
+        for t in timed:
+            problem = control_run_problem(cell.expect, t)
+            if problem:
+                problems.append(problem)
+                break
     return problems
+
+
+_CELLS = {c.id: c for p in PROFILES.values() for c in grid(p, n_star=p.sizes[0])}
+
+
+def valid_cell(cid: str, rec, strict: bool = True) -> bool:
+    """A complete cell whose content passes cell_problems. Rules call this on whatever they
+    are given, so raw (unloaded) inputs fail safe too. Cell structure (counts, statements)
+    is profile-independent; only sizes differ."""
+    cell = _CELLS.get(cid)
+    return cell is not None and isinstance(rec, dict) and rec.get("status") == "complete" \
+        and not cell_problems(cell, rec, strict)
 
 
 def load_evidence(paths: list[str], profile: str | None = None) -> tuple[dict, dict]:
@@ -1548,16 +1651,17 @@ def load_records(paths: list[str], profile: str | None = None) -> dict:
 
 
 def _medians(cells: dict, prefix: str) -> dict:
-    """Medians of complete cells with all 5 timed outcomes ok and finite; else None."""
-    return {k.split(":")[-1]: v.get("median_ms") if _timed_ok(v, 5, "ok")
-            and _finite(v.get("median_ms")) else None
+    """Medians DERIVED from the 5 timed outcomes of valid cells (a stored median that
+    contradicts them makes the cell invalid); None for anything else (R54)."""
+    return {k.split(":")[-1]: statistics.median(_elapsed(v)) if valid_cell(k, v) else None
             for k, v in cells.items() if k.startswith(prefix)}
 
 
 def _seq_scan(cells: dict, variant: str) -> set:
     found = set()
     for k, v in cells.items():
-        if k.startswith(f"A:{variant}:") and k.split(":")[-1] in rb.TRANSACTION_OPS:
+        if k.startswith(f"A:{variant}:") and k.split(":")[-1] in rb.TRANSACTION_OPS \
+                and valid_cell(k, v):
             for e in v.get("explain", []):
                 for rel, node in (e.get("plan") or {}).get("scans", []):
                     if rel == "transactions" and node == "Seq Scan":
@@ -1610,7 +1714,8 @@ def rule_n_star(records: dict, sizes: tuple[int, ...], budget_ms: int = rb.PROVI
                 "reason": "the windows and linux records are required"}
     # Every B-guard cell on both platforms: all 5 real outcomes 413 within B (R54: an
     # empty or short outcome list never counts as all-413).
-    guard_ok = all(_timed_ok(cells.get(f"BG:{op}"), 5, "too_large", budget_ms)
+    guard_ok = all(valid_cell(f"BG:{op}", cells.get(f"BG:{op}"), strict=False)
+                   and _timed_ok(cells.get(f"BG:{op}"), 5, "too_large", budget_ms)
                    for cells in records.values() for op in rb.TRANSACTION_OPS)
     guard_present = guard_ok
     n_star, failures = None, []
@@ -1620,8 +1725,9 @@ def rule_n_star(records: dict, sizes: tuple[int, ...], budget_ms: int = rb.PROVI
             for dataset in ("D1", "D2"):
                 for op in rb.OPERATIONS:
                     for filt in (FILTERS if op != "workload" else ("base",)):
-                        if not _timed_ok(cells.get(f"B:{dataset}:{size}:{op}:{filt}"),
-                                         5, "ok", limit):
+                        cid = f"B:{dataset}:{size}:{op}:{filt}"
+                        if not (valid_cell(cid, cells.get(cid), strict=False)
+                                and _timed_ok(cells.get(cid), 5, "ok", limit)):
                             good = False
                             failures.append(f"{p}:{dataset}:{size}:{op}:{filt}")
         if not good:
@@ -1662,9 +1768,9 @@ def rule_controls(records: dict, budget_ms: int = rb.PROVISIONAL_B_MS,
                                 or t.get("rollback") == "unanswered":
                             triggers.append(f"{p}:{cid}: ROLLBACK over 50% of R")
                             break
-                if not (isinstance(rec, dict) and rec.get("status") == "complete"
-                        and len(timed) == runs
-                        and all(t.get("proved") is True for t in timed)):
+                # valid_cell checks the registered run count and each run's own
+                # diagnostics (control_run_problem), not proved/status alone.
+                if not (valid_cell(cid, rec) and len(timed) == runs):
                     missing.append(f"{p}:{cid}")
                     continue
                 if control in CONTROL_ANSWERED:
@@ -1677,15 +1783,16 @@ def rule_controls(records: dict, budget_ms: int = rb.PROVISIONAL_B_MS,
                                         "budget")
                     if not all(_finite(x) for x in rollback):
                         missing.append(f"{p}:{cid}: ROLLBACK interval unknown")
-        c5 = cells.get("C5")
-        if not (isinstance(c5, dict) and c5.get("status") == "complete"):
+        if not valid_cell("C5", cells.get("C5")):
             missing.append(f"{p}:C5")
         d = cells.get("D")
-        if not (isinstance(d, dict) and d.get("status") == "complete"
-                and _finite(d.get("max_ms"))):
-            missing.append(f"{p}:D")
-        elif d["max_ms"] > budget_ms - reserve_ms:
+        elapsed = _elapsed(d)
+        if elapsed is not None and max(elapsed) > budget_ms - reserve_ms:
+            # The DERIVED maximum of the client measurements opens review even when the
+            # cell is otherwise invalid; a stored max_ms can never hide it.
             triggers.append(f"{p}:D maximum exceeds B - R")
+        if not valid_cell("D", d):
+            missing.append(f"{p}:D")
     return {"rule": "controls", "triggers": triggers, "missing": missing,
             "demonstrated": not missing}
 
@@ -1702,12 +1809,14 @@ def rule_design_comparison(records: dict) -> dict:
     out, opens = {}, len(records) == 2
     for p, cells in records.items():
         for op in rb.SHADOW_REGISTRY_OPS:
-            j, c = cells.get(f"E:json:{op}"), cells.get(f"E:cols:{op}")
-            if not (j and c and j.get("median_ms") and c.get("median_ms")):
+            jid, cid = f"E:json:{op}", f"E:cols:{op}"
+            j, c = cells.get(jid), cells.get(cid)
+            if not (valid_cell(jid, j) and valid_cell(cid, c)
+                    and statistics.median(_elapsed(j)) > 0):
                 opens = False
                 out[f"{p}:{op}"] = "not run"
                 continue
-            ratio = c["median_ms"] / j["median_ms"]
+            ratio = statistics.median(_elapsed(c)) / statistics.median(_elapsed(j))
             out[f"{p}:{op}"] = round(ratio, 3)
             opens = opens and ratio <= 0.5
     return {"rule": "design-comparison", "columns_over_json_median": out,
@@ -1723,7 +1832,10 @@ def final_report(records: dict, profile: Profile) -> dict:
         cells = records.get(p, {})
         for cell in grid(profile):
             if cell.mandatory and cell.phase in ("A", "BG", "C"):
-                st = cells.get(cell.id, {}).get("status", "not_run")
+                rec = cells.get(cell.id)
+                st = rec.get("status", "not_run") if isinstance(rec, dict) else "not_run"
+                if st == "complete" and not valid_cell(cell.id, rec):
+                    st = "invalid"               # raw input that the loader did not see
                 if st != "complete":
                     mandatory.setdefault(p, []).append(f"{cell.id}={st}")
     return {"kind": "an01-m1-final-report", "profile": profile.name,

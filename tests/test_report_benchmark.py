@@ -1035,8 +1035,14 @@ def _phase_a(medians: dict, seq_scan: bool) -> dict:
             ms = by_op.get(op, 10)
             cells[f"A:{variant}:{op}"] = {"status": "complete", "median_ms": ms,
                                           "timed": [{"kind": "ok", "elapsed_ms": ms}] * 5,
-                                          "explain": [{"plan": {"scans": scans}}]}
+                                          "explain": _explain(op, scans)}
     return cells
+
+
+def _explain(op, scans):
+    """EXPLAIN evidence for exactly the operation's statements, in order (R54)."""
+    return [{"statement": sid, "outcome": {"kind": "ok"}, "plan": {"scans": scans}}
+            for sid, _ in rb.OPERATIONS[op]]
 
 
 def test_rule1_common_index_is_joint_and_never_picks_unmeasured():
@@ -1064,11 +1070,14 @@ def test_rule2_n_star_and_missing_evidence_are_not_demonstrated():
                 for op in rb.OPERATIONS:
                     for filt in (br.FILTERS if op != "workload" else ("base",)):
                         ms = 3000 if slow_at and size >= slow_at else 10
+                        # R54: a complete cell's median and EXPLAIN evidence must agree
+                        # with its timed outcomes and operation statements.
                         cells[f"B:{dataset}:{size}:{op}:{filt}"] = {
-                            "status": "complete",
-                            "timed": [{"kind": "ok", "elapsed_ms": ms}] * 5}
+                            "status": "complete", "median_ms": ms,
+                            "timed": [{"kind": "ok", "elapsed_ms": ms}] * 5,
+                            "explain": _explain(op, [["transactions", "Index Scan"]])}
         for op in rb.TRANSACTION_OPS:
-            cells[f"BG:{op}"] = {"status": "complete",
+            cells[f"BG:{op}"] = {"status": "complete", "median_ms": 5, "explain": [],
                                  "timed": [{"kind": "too_large", "elapsed_ms": 5}] * 5}
         if drop:
             del cells[drop]
