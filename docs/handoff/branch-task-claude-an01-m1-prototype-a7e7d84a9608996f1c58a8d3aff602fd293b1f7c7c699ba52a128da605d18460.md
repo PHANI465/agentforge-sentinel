@@ -1,110 +1,79 @@
 # Handoff: task/claude-an01-m1-prototype
 
 - **Task and acceptance criteria:**
-  - current: `task/coordination:docs/prompts/CLAUDE_AN01_M1_REVIEW_FIXES.md` (R53–R57), under the binding review `docs/reviews/AN01-M1-93583a.md`;
-  - original: `docs/prompts/CLAUDE_AN01_M1_IMPLEMENTATION.md`.
+  - current: `task/coordination:docs/prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md`, the residual R54 and R56, under the binding review `docs/reviews/AN01-M1-5e0a578.md`;
+  - earlier: `CLAUDE_AN01_M1_REVIEW_FIXES.md` (R53–R57) and `CLAUDE_AN01_M1_IMPLEMENTATION.md`.
 
-  Prototype code and tiny proofs only. The full-size benchmark is not run.
+  Prototype code and tiny proofs only. DOC01 is not started here.
 - **Tool and worktree:** Claude Code, `E:/PHANI/sentinel-wt/claude-an01-m1-prototype`, from accepted main `a07ec12710c86b15f111d13e3384c4cf0c6c8f6e`. Native clone: WSL `~/an01-m1-native`, fast-forwarded from git bundles of this branch.
 - **Updated:** 2026-11-08 (America/Phoenix).
-- **State:** R53–R57 corrections delivered for Codex review. Not accepted and not merged.
-  - Delivered candidate `93583a7570ae78f254a2d69e9857b701b0e444ad` and its ancestors are preserved: no reset, amend or rebase.
-- **Code reference tested before this note:** `73984b902e4e05baed7a3b54394664682fea970b`.
-  - The tiny smoke, the probes and the focused tests on both platforms ran at that commit.
-  - The note's own commit changes documentation only, so the source and statement identities are unchanged.
+- **State:** the R54/R56 follow-up is delivered for Codex re-review. Not accepted and not merged.
+  - `93583a7570ae78f254a2d69e9857b701b0e444ad` and `5e0a578be91b7739e5d08fc315dc37504f0df188` are preserved with their ancestors: no reset, amend or rebase.
+- **Code reference tested before this note:** `af6292f5466b3d99d23796b00fac3e53ff362b77`.
+  - The registered tiny validation pair, the probes and the focused tests ran at that commit.
+  - This note's commit changes documentation only, so the source and statement identities are unchanged.
 - **Final check evidence:** the six-command gates and the JUnit, HTTP, package and ML checks run on the final commit, Windows then native. Results are reported in chat.
 - **Owned/changed paths:**
   - `scripts/benchmark_reports.py`
   - `scripts/report_benchmark_support.py`
   - `tests/test_report_benchmark.py`
-  - `tests/test_report_benchmark_review.py` (new)
+  - `tests/test_report_benchmark_review.py`
   - `docs/benchmarks/AN01-M1.md`
   - this note
 
-## Implemented
+## Implemented (see [AN01-M1.md §5c](../benchmarks/AN01-M1.md))
 
-See [docs/benchmarks/AN01-M1.md §5b](../benchmarks/AN01-M1.md).
-
-- **R53:**
-  - an OS-released run slot, held by every stage, recover and cleanup invocation;
-  - an invocation-bound run lock (identity and token), removed only by its owner;
-  - recovery refuses a live or unverifiable holder;
-  - a recorded hand-off after unconfirmed cleanup;
-  - a lock release that the interrupted controller performs only when no worker was ever recorded.
 - **R54:**
-  - schema-2 typed records, bound to the code identities, the profile and the windows/linux pair;
-  - duplicates and conflicts are refused;
-  - registered counts and finite metrics are required;
-  - the ROLLBACK > 50% of R trigger, with measured `rollback_ms`;
-  - bound, digested selections, consumed only when demonstrated.
-- **R55:**
-  - a budget recheck after arming;
-  - `BudgetExpired` before any thread for a non-positive wait;
-  - `late_reply` by arrival;
-  - the armed deadline counted from submission.
-
-  B, R, `work_end` and the 30 ms margin are unchanged.
-- **R56:**
-  - ownership from acquisition, hooks included;
-  - `close_failed` keeps its reservation and owner, with `retry_close`;
-  - an interrupt hands a busy connection to its lease;
-  - unique lease users.
-- **R57:**
-  - one snapshot-bound `read_at` in the SQL and the DTO;
-  - an explicit `as_of` is kept, and a default one is bound;
-  - cursors repeat the resolved `as_of`;
-  - a `rollback_unanswered` report keeps its body.
-- **Also fixed:** a Windows sharing-violation retry for the state and lock files. It had crashed a live controller under a concurrent reader.
+  - stored medians and maxima are reconciled with the timed outcomes (0.001 ms rounding rule), and the rules use derived values;
+  - EXPLAIN evidence must name the operation's statements, in order, each answered;
+  - per-control diagnostics are validated (C1–C4 `control_run_problem`; C5's exact event sequence);
+  - rules check their own inputs (`valid_cell`), and an invalid mandatory cell is missing;
+  - the loader is strict, while `rule_n_star` tolerates absent (never contradictory) summaries on raw input.
+- **R56:** nested finalization. An interrupt after ROLLBACK's reply, or raised by it, closes the idle connection once. A busy connection still goes to its lease, and a failed close keeps its owner.
 
 ## Verified
 
-- **Failing first, on unchanged `93583a` (Windows):**
-  - 42 failed and 15 passed. Of the failures, 41 are defect evidence (39 assertions and 2 rule crashes) and 1 is a new-API test;
-  - Codex's probes gave 11/3/0.
-- **Codex probes on `73984b9`, both platforms:**
-  - unchanged: 13/1/0. The one failure is a mocked-outcome interface difference, explained in §5b;
-  - one-line adapted copy: 14/0/0;
-  - the adapted copy on exported `93583a`: 11/3/0.
-- **Focused tests** (66 + 57): Windows 123 passed; native 123 passed on real PostgreSQL.
-- **Tiny smoke at `73984b9`:**
-  - Windows then native, every platform stage complete;
-  - S3 picks A, S7 gives N\* = 80, S9 says "mandatory evidence present";
-  - rule 3 is demonstrated with no triggers;
-  - all 14 records carry identical identities;
+- **Failing first, on unchanged `5e0a578` (Windows):** 22 failed (all AssertionError, 0 setup errors; R54 17, R56 5) and 61 passed. Codex's additional probes gave 6/2/0.
+- **At `af6292f`:**
+  - Codex original 14: 13/1/0 on both platforms (the disclosed `read_at` fake);
+  - Codex adapted 14: 14/0/0 on both;
+  - Codex additional 8, on the new records: 7/1/0 on both. The failing baseline control reflects the genuine C2:400 failure;
+  - focused tests: native 150 passed; Windows 149 passed and 1 failed (the stall test, kept and not rerun).
+- **Tiny validation pair at `af6292f`** (14 records, identical identities):
+  - every stage complete except Windows S6 (C2:400 failed: run 1 got no reply by `work_end`);
+  - S3 picks A and S7 gives N\* = 80;
+  - S9 says **not demonstrated**;
   - cleanup was verified on both platforms.
 
 ## Not verified / gaps
 
-- **R-M1-1:** the policy is unchanged and the margin is not qualified. The smallest Windows slack was 4.7 ms, and the `f00df8c` native C2:1250 failure stays recorded.
-- **R-M1-2:** production `budget.py` clock coarseness was not changed (not assigned).
-- **R-M1-3:** the 4 GB and backing-space preflight refusals are kept. A full grid needs its own storage and scheduling plan.
-- **Not run:**
-  - my maintained tests, natively against `93583a`. Codex's native probes are the native failing-first evidence;
-  - the full grid;
-  - production S1 code and HTTP.
-- **Recovery refuses old `93583a`-format locks**, which have no invocation identity; they need manual inspection.
+- **R-M1-1:** the margin is not qualified. Windows C2:400 failed in the r3 pair, and native C2:1250 failed at `f00df8c`; both stay failed.
+- **The Windows stall test (unchanged path):** a setup server start stalled about 10 s, so the 15 s deadline stopped the worker before the injected stall. Cleanup was correct and nothing leaked; the cause of the stall is not established.
+- **D's derived maximum:** through the loader, an invalid D cell is missing (not demonstrated), but its derived over-budget trigger shows only on raw rule input.
+- **Unchanged and still open:** R-M1-2 (production clock) and R-M1-3 (4 GB and backing-space refusals kept).
+- **Not run:** the full grid, production S1 code and HTTP, and DOC01.
 
 ## Next action
 
-Codex reviews the exact corrected SHA reported in chat before integration or any further assignment.
+Codex re-reviews the exact final SHA reported in chat.
 
 ## Coordination and provenance
 
 - **Reused unchanged:**
-  - `scripts/local_stack.py` (identity, classify, cluster ownership);
+  - `scripts/local_stack.py`;
   - `sentinel.db.roles.grant_runtime`;
   - `sentinel.db.migrate`;
   - the v1 contract models;
   - the scoring artifacts;
-  - Codex's probe source. Its original is unchanged; the one-line adapted copy and its diff are under `.agent/an01-m1-r2/probes/`.
-- **Not touched:** src, contracts, migrations, locks, CI, checker limits and central STATUS/TASK_QUEUE.
+  - Codex's probe sources in `.agent/an01-m1-r2-review/`, run unmodified. The additional set's records folder was given through its own `AN01_RECORDS_ROOT` variable.
+- **Not touched:** src, contracts, migrations, locks, CI, timeouts, skips and central STATUS/TASK_QUEUE.
 - **Preserved:** Cursor's edits and every other checkout.
-- **Evidence** is in the ignored `.agent/an01-m1-r2/`:
+- **Evidence** is in the ignored `.agent/an01-m1-r3/`:
   - failing-first runs;
   - probes;
-  - focused runs;
-  - smoke run directories, records and logs;
+  - focused runs and the stall-test failure;
+  - validation run directories, records and logs;
   - cleanup output.
 
-  The `f00df8c` and `93583a` evidence in `.agent/an01-m1/` and `.agent/gate-*` is kept, along with the native `~/an01-m1-native/.agent/`.
+  Earlier evidence is kept in `.agent/an01-m1/`, `.agent/an01-m1-r2/` and `.agent/gate-*`, and natively in `~/an01-m1-native/.agent/`.
 - **Run data:** synthetic only; no credentials in public records.
