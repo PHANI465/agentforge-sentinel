@@ -528,9 +528,9 @@ Git commits, the coordination queue and handoff documents preserve context. A lo
 
 ### Your last Claude prompt was correct
 
-The instruction to read CLAUDE_AN01_M1_IMPLEMENTATION.md and implement the prototype and tiny proofs was the assigned task. Claude delivered that work as candidate 93583a. Do not send the original implementation prompt again as if nothing exists. The next activity is Codex review, including the changed C2/C3 tests and unresolved timing/resource policy. Claude can wait with its tested worktree untouched.
+The instruction to read CLAUDE_AN01_M1_IMPLEMENTATION.md and implement the prototype and tiny proofs was the assigned task. Claude delivered that work as candidate 93583a. Do not send the original implementation prompt again as if nothing exists. Codex has now completed the independent review and requested R53–R57. Continue only through the focused correction dispatch on the existing branch; preserve the tested candidate and the earlier failed evidence.
 
-A fresh Claude chat is reasonable after the large idle context you reported. Use the saved resume prompt linked in the source map below. It restores the exact candidate, the assigned scope and the current pause without authorizing another benchmark or a rewrite.
+A fresh Claude chat is reasonable after the large idle context you reported. Use the saved resume prompt linked in the source map below. It restores the exact candidate and points to the correction dispatch. It does not authorize a full-size benchmark or replacement implementation.
 
 ## 23 What is complete, where we stopped, and what remains
 
@@ -553,9 +553,9 @@ The latest accepted application/tooling integration is 871e31d40e93306cfde6617e8
 
 The last applicable Windows product UI evidence is 133 unit tests and browser suites of 19 legacy plus 10 trace tests on the trace/clock release. Those suites were not rerun for later tooling-only work. A test count is evidence tied to a specific code state, not a universal completeness score.
 
-### Delivered now, awaiting Codex review
+### Delivered candidate: changes requested
 
-AN01-M1 candidate **93583a7570ae78f254a2d69e9857b701b0e444ad**, branch task/claude-an01-m1-prototype, is clean and based on accepted a07ec12. It adds only three prototype/test files and two documentation/handoff files. It is not merged or accepted.
+AN01-M1 candidate **93583a7570ae78f254a2d69e9857b701b0e444ad**, branch task/claude-an01-m1-prototype, is clean and based on accepted a07ec12. It adds only three prototype/test files and two documentation/handoff files. It is not merged or accepted. Independent review now requests R53–R57: active recovery locks, evidence qualification, deadline rechecks, resource error paths and result/provenance correctness. The existing 66 focused tests pass; 14 extra probes give 11 intended failures and 3 controls on both platforms. See [the independent review](../reviews/AN01-M1-93583a.md) and [Claude correction assignment](../prompts/CLAUDE_AN01_M1_REVIEW_FIXES.md).
 
 | Evidence | Status and meaning |
 | --- | --- |
@@ -572,7 +572,7 @@ Earlier interrupted native tests have no usable result; the author reran the foc
 
 | Next stage | Work to do | Evidence needed before calling it done |
 | --- | --- | --- |
-| 1 Review AN01-M1 | Independently examine SQL semantics, controller ownership, lease lifetime, timing classifications, changed assertions and disk/resource findings. | Targeted probes and a written verdict; any corrections get their own preserved commit and appropriate checks. |
+| 1 Correct and re-review AN01-M1 | Address independent findings R53–R57 on the preserved prototype branch. | Failing-first regressions, corrected exact SHA, appropriate tiny/gate evidence and Codex re-review. |
 | 2 Decide and measure reports | Resolve reply policy and realistic disk/workload bounds, then separately assign the full grid if resources permit. | Both platforms, common index choice, complete required cells, retained failures and qualified limits or an honest not-demonstrated result. |
 | 3 Ship AN01 S1 | Review/freeze v1.3, implement capability and curated read-only API, integrate the report UI and known-answer/browser tests. | Browser → production API → Postgres with scope, exact money/time semantics, capacity/error handling and secret-safe lifecycle. |
 | 4 Extend analyst depth | S2 exports/label availability and separately scoped saved analysis, reconciliation/cohort tasks as needed. | Controlled export content, correct denominators, data/label availability and independent known answers. |
@@ -587,14 +587,14 @@ Steps can be split into isolated tasks, but resource-heavy verification stays se
 
 Currency-normalized features, calibration, drift monitoring, sequence models, entity graphs, retrieval/RAG, an isolated document reader, AML/scam modules and queues are worthwhile experiments when a measured weakness motivates them. They are optional extensions, not hidden requirements for declaring the present local investigation workflow complete. Each new domain needs its own labels, data rights, metrics, safety boundaries and comparison baseline.
 
-There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, measured live-agent value and a verified public release are the three substantial workstreams still ahead. We stopped immediately before independent review of the delivered AN01-M1 prototype.
+There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, measured live-agent value and a verified public release are the three substantial workstreams still ahead. The independent AN01-M1 review is complete and requests R53–R57; the next step is the focused correction task, not full-size measurement.
 
 ### Source map and the next chat
 
 - [Current project status](../STATUS.md) and [task queue](../TASK_QUEUE.md): current ownership and authorization.
 - [November 8 checkpoint](AgentForge_Sentinel_Session_2026-11-08.md): exact stopping point and preserved candidate.
-- [Claude new-chat resume prompt](../prompts/CLAUDE_RESUME_AN01_M1_REVIEW_2026-11-08.md): read and wait for Codex review, not repeat implementation.
-- [AN01-M1 intake](../reviews/AN01-M1-93583a-intake.md): evidence received and outstanding independent review; not an acceptance.
+- [Claude new-chat resume prompt](../prompts/CLAUDE_RESUME_AN01_M1_REVIEW_2026-11-08.md): read the current correction dispatch without repeating the original implementation.
+- [AN01-M1 intake](../reviews/AN01-M1-93583a-intake.md): original delivery record; the completed review above requests corrections.
 - [Milestone roadmap](../PROJECT_PLAN.md): complete planned product; proposed technologies are not all installed dependencies.
 - [Active API contract](../../contracts/http/openapi.v1.2.json), [API notes](../api/README.md) and [trace contract](../api/investigation-trace-v1.2.md).
 - [ML protocol](../../ml/protocol.json), [data card](../ml/data-card.md), [model card](../ml/model-card.md) and [frozen model report](../../ml/results/p1/test_report.json).

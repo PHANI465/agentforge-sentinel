@@ -1,5 +1,7 @@
 # AN01-M1 93583a: delivery intake, independent review pending
 
+Superseded for next-action status: [the completed independent review](AN01-M1-93583a.md) requests R53–R57. This intake remains the preserved delivery record, not acceptance.
+
 November 8, 2026. This is an intake record, **not an acceptance or a completed independent review**.
 
 - Candidate: 93583a7570ae78f254a2d69e9857b701b0e444ad, task/claude-an01-m1-prototype.

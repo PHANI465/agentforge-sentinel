@@ -1,5 +1,15 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current AN01 dispatch, November 8: independent review requests R53–R57 on preserved
+93583a. Read docs/reviews/AN01-M1-93583a.md and the concrete correction assignment
+docs/prompts/CLAUDE_AN01_M1_REVIEW_FIXES.md. Claude continues its existing prototype
+branch; the former restore-and-wait prompt is superseded. No candidate acceptance/main
+code integration, full-size grid, production clock/report change, v1.3 freeze, live/auth/
+account/final-case work, spending or remote/deployment is assigned. Independent 66 focused
+tests pass; additional Windows/native probes expose 11 assertion failures with 3 controls.
+Current accepted application/tooling remains 871e31d; prior intake headers below are history.
+Preserve exact candidates, failed evidence and Cursor's seven saved edits.
+
 Current checkpoint, November 8: AN01-M1 is delivered at exact 93583a7570ae78f254a2d69e9857b701b0e444ad,
 not accepted or merged. Read docs/reviews/AN01-M1-93583a-intake.md and
 docs/artifacts/AgentForge_Sentinel_Session_2026-11-08.md. Codex independent review is next;

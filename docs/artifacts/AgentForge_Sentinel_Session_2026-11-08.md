@@ -1,5 +1,16 @@
 # Sentinel checkpoint: November 8, 2026
 
+## Latest review: R53–R57 corrections next
+
+Codex independently reviewed 93583a: the 66 existing focused tests pass; 14 additional
+probes on Windows and native give 11 intended failures and 3 passing controls. The
+[review](../reviews/AN01-M1-93583a.md) requests corrections for recovery locks, evidence
+validation, statement deadlines, resource error paths and read-result/provenance semantics.
+Use [the concrete Claude correction prompt](../prompts/CLAUDE_AN01_M1_REVIEW_FIXES.md)
+on the existing branch. The prior wait instruction and intake descriptions below are
+historical. The candidate remains unaccepted/unmerged; no full-size run or production
+change is authorized. The accepted local application remains unchanged.
+
 ## Where we stopped
 
 AN01-M1 is delivered for Codex review at **93583a7570ae78f254a2d69e9857b701b0e444ad**, task/claude-an01-m1-prototype. It is clean, unmerged and unaccepted. The previous prototype assignment was correct and is now a delivered assignment, not a fresh task to repeat.

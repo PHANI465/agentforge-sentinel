@@ -1,5 +1,25 @@
 # Shared implementation queue
 
+## November 8 independent review: AN01-M1 changes requested R53–R57
+
+[Independent review](reviews/AN01-M1-93583a.md): candidate 93583a remains unaccepted and
+unmerged. Its 66 existing focused tests pass independently on Windows/real PostgreSQL.
+Fourteen additional probes on both Windows and native give 11 meaningful assertion
+failures, 3 controls passing and 0 setup errors. These expose active recovery-lock theft,
+invalid measurement qualification, expired SQL submission, error-path resource ownership,
+and lost report results/incorrect snapshot provenance. No full grid was run.
+
+[Current Claude correction dispatch](prompts/CLAUDE_AN01_M1_REVIEW_FIXES.md), Opus 5.5 / High:
+continue the existing prototype branch from preserved 93583a. The old restore-and-wait
+handoff is superseded. Keep B/R/work_end, provisional margin and disk/preflight limits;
+strict timing misses remain failed/not demonstrated. No production clock fix is assigned.
+All full-size/production Reports/v1.3/live/auth/account/final-case/spend/remote/deploy work
+remains unassigned. Candidate author 876+one-skip gates do not settle the new findings.
+
+Accepted application/tooling remains tested 871e31d. This publication changes documentation
+and guide status only, not runtime or candidate code. Preserve all previous reports,
+accepted/delivered checkouts and Cursor edits. Earlier intake paragraphs below are history.
+
 ## November 8: AN01-M1 delivered; independent review pending
 
 Candidate **93583a7570ae78f254a2d69e9857b701b0e444ad** is preserved on

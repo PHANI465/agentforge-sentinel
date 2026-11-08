@@ -1,5 +1,16 @@
 # AgentForge Sentinel: project overview and remaining work
 
+## Latest review: R53–R57 corrections next
+
+Codex independently reviewed 93583a: the 66 existing focused tests pass; 14 additional
+probes on Windows and native give 11 intended failures and 3 passing controls. The
+[review](../reviews/AN01-M1-93583a.md) requests corrections for recovery locks, evidence
+validation, statement deadlines, resource error paths and read-result/provenance semantics.
+Use [the concrete Claude correction prompt](../prompts/CLAUDE_AN01_M1_REVIEW_FIXES.md)
+on the existing branch. The prior wait instruction and intake descriptions below are
+historical. The candidate remains unaccepted/unmerged; no full-size run or production
+change is authorized. The accepted local application remains unchanged.
+
 Updated November 8, 2026. Start with the [complete current study guide](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md) or its [offline HTML edition](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html). The [current checkpoint](AgentForge_Sentinel_Session_2026-11-08.md) records the precise stop. Earlier dated guides remain preserved historical snapshots.
 
 ## What we are building
