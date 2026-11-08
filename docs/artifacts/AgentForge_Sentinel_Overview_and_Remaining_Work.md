@@ -1,5 +1,23 @@
 # AgentForge Sentinel: project overview and remaining work
 
+## November 8 independent re-review of corrected AN01-M1
+
+Corrected candidate **5e0a578be91b7739e5d08fc315dc37504f0df188** is reviewed, not accepted
+or merged. [Review](../reviews/AN01-M1-5e0a578.md): R53/R55/R57 close for the reviewed scope;
+R54 and R56 remain open. Independent Windows focused tests pass 123/123. Original 14 probes
+pass after the disclosed fake read_at addition; eight additional probes on Windows/native
+give six assertion failures, two controls and zero errors. Contradictory summaries/missing
+control diagnostics still qualify; a post-rollback-reply interrupt can orphan ownership.
+
+[Current Claude dispatch](../prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md), **Opus 5.5 / High**:
+continue the existing branch from 5e0a578 with only those two fixes. Preserve93583a,
+5e0a578 and all prior evidence. Author exact-commit gates are inspected/validated:
+933 passed + one allowed skip on each platform; they are not independent full reruns.
+Tiny stages completed on corrected code 73984b9, still no qualified limits or full grid.
+The 30 ms margin, production clock and disk questions stay open. No candidate code merge,
+full-size measurement or production Reports. DOC01 follows this correction handoff in
+its own worktree; do not combine them. Accepted runtime remains 871e31d plus documents.
+
 ## Owner expansion: decisions and private GitHub
 
 Read [the decision ledger](../decisions/PROJECT_DECISION_LEDGER.md) for every confirmed

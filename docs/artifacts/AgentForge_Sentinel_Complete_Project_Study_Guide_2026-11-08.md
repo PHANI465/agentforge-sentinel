@@ -2,7 +2,7 @@
 
 November 8, 2026 · Project idea, implementation, examples and remaining stages
 
-Prepared for Phaneendra Gavara. This edition replaces the November 2 guide for current reading. That edition remains a preserved historical snapshot. The final chapter separates accepted work, delivered candidates, unmeasured claims and future plans. All present financial data is synthetic and all actions are simulated.
+Prepared for Phaneendra Gavara. This edition replaces the November 2 guide for current reading. That edition remains a preserved historical snapshot. The final chapter separates accepted work, delivered candidates, unmeasured claims and future plans. Product fixtures use synthetic financial data and simulated actions. The separately downloaded ULB research dataset is real anonymized data, ignored locally and not used by the product model.
 
 ## 1 The complete project we are building
 
@@ -294,7 +294,7 @@ The read-only investigation trace uses GET /v1/cases/{id}/investigation-trace, o
 - No workflow differs from old single-investigator history and a real zero-role workflow.
 - Null counts, usage and limits stay unknown. Zero is displayed as zero.
 - Overdue means recovery is due, not that a GET has recovered the workflow.
-- An analyst claim check that was not stored is “not recorded,” not verified.
+- An analyst claim check that was not stored is “not recorded, ” not verified.
 - Recorded role attempts are not proof of provider submission; reported tokens are not billing.
 
 The client fences responses by session, case, selected workflow and generation. Render-time ownership prevents old private content appearing under a new context before React effects run. Sign-out clears memory. A historical selection survives an ordinary refresh; changing session or case starts with the latest workflow.
@@ -528,7 +528,7 @@ Git commits, the coordination queue and handoff documents preserve context. A lo
 
 ### Your last Claude prompt was correct
 
-The instruction to read CLAUDE_AN01_M1_IMPLEMENTATION.md and implement the prototype and tiny proofs was the assigned task. Claude delivered that work as candidate 93583a. Do not send the original implementation prompt again as if nothing exists. Codex has now completed the independent review and requested R53–R57. Continue only through the focused correction dispatch on the existing branch; preserve the tested candidate and the earlier failed evidence.
+The instruction to read CLAUDE_AN01_M1_IMPLEMENTATION.md and implement the prototype and tiny proofs was the assigned task. Claude delivered that work as candidate 93583a. Do not send the original implementation prompt again as if nothing exists. Codex requested R53–R57, then re-reviewed corrected 5e0a578. R53/R55/R57 close, while R54/R56 need the current follow-up on that same branch. Preserve both candidates and every earlier failure.
 
 A fresh Claude chat is reasonable after the large idle context you reported. Use the saved resume prompt linked in the source map below. It restores the exact candidate and points to the correction dispatch. It does not authorize a full-size benchmark or replacement implementation.
 
@@ -589,24 +589,27 @@ The last applicable Windows product UI evidence is 133 unit tests and browser su
 
 ### Delivered candidate: changes requested
 
-AN01-M1 candidate **93583a7570ae78f254a2d69e9857b701b0e444ad**, branch task/claude-an01-m1-prototype, is clean and based on accepted a07ec12. It adds only three prototype/test files and two documentation/handoff files. It is not merged or accepted. Independent review now requests R53–R57: active recovery locks, evidence qualification, deadline rechecks, resource error paths and result/provenance correctness. The existing 66 focused tests pass; 14 extra probes give 11 intended failures and 3 controls on both platforms. See [the independent review](../reviews/AN01-M1-93583a.md) and [Claude correction assignment](../prompts/CLAUDE_AN01_M1_REVIEW_FIXES.md).
+Latest AN01-M1 candidate **5e0a578be91b7739e5d08fc315dc37504f0df188** is clean on task/claude-an01-m1-prototype. It preserves original 93583a and changes only the two prototype scripts, two test modules and write-up/handoff paths. Codex's corrected review closes R53/R55/R57; R54/R56 still block acceptance. It is not merged. The original 93583a review remains historical evidence; use the new follow-up rather than restarting the five-finding assignment.
 
 | Evidence | Status and meaning |
 | --- | --- |
-| Final candidate gates | Claude reports Windows then native Ubuntu: 876 passed + one allowed skip each, six commands, same-run JUnit validation, unchanged frozen HTTP and matching ML reproduction. Local Windows checker metadata names the exact candidate and a clean tree. This guide does not independently certify those suites. |
-| Tiny smoke | Run at earlier f00df8c, not final 93583a. Native C2:1250 missed the reply margin once in five runs; the result remains not demonstrated and was not retried. Final cleanup/reply-timestamp changes do not make this an exact-final smoke. |
-| R-M1-1 | Decide how the server-cancel reply margin relates to work end and the rollback reserve; review arrival versus notice timing and the changed C2/C3 tests. |
-| R-M1-2 | Review the reported coarse Windows clock in the accepted budget implementation; production code was not changed by M1. This is a reported finding, not a newly accepted fix. |
-| R-M1-3 | Review the estimate that the full grid exceeds the 4 GB cluster budget, and the WSL backing-volume free-space constraint. The estimate is from tiny data, not measured full-size disk use. |
-| Full-size measurement | Not run and not authorized. Provisional row, budget, reserve and capacity values remain unqualified. |
+| Latest candidate | Corrected 5e0a578, with code 73984b9 and a docs-only final commit. Independent review closes R53/R55/R57; R54/R56 remain open. No candidate code is integrated. |
+| Author gates | Windows/native exact clean 5e0a578 reports each contain 933 passed and one allowed skip, six exit 0 commands, HTTP and ML success. Codex validated saved JUnit reports; it did not rerun both full gates. |
+| Independent checks | Windows 123 focused tests pass. Original 14 probes pass with one disclosed read_at fake addition. Eight additional probes on Windows/native yield six assertion failures, two controls, zero errors. |
+| Remaining R54 | Contradictory medians/maxima and missing or contradictory control diagnostics still qualify evidence. |
+| Remaining R56 | Ctrl-C/SystemExit immediately after a ROLLBACK reply can leave an unclosed connection, reservation 1 and no quarantine owner. |
+| Corrected tiny smoke | At 73984b9 all stages completed once on both platforms; A, N*=80. This is tiny plumbing only, not qualified performance. Original f00df8c native timing failure remains failed. |
+| Timing/clock/disk | Keep B/R/work_end and provisional 30 ms policy. Production coarse clock and full-grid 4 GB/backing-space issues remain separate and unresolved. |
+| Full-size measurement | Not run or authorized. Row, budget, reserve and capacity values remain provisional. |
 
-Earlier interrupted native tests have no usable result; the author reran the focused tests separately. Earlier failed gate reports remain preserved. The changed test assertions are specifically a review target; a later green gate is not enough to settle that question.
+Read the [corrected review](../reviews/AN01-M1-5e0a578.md) and [current Claude follow-up](../prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md).
+The original review/candidates, interrupted run and failed gate/timing records remain history.
 
 ### Remaining work in dependency order
 
 | Next stage | Work to do | Evidence needed before calling it done |
 | --- | --- | --- |
-| 1 Correct and re-review AN01-M1 | Address independent findings R53–R57 on the preserved prototype branch. | Failing-first regressions, corrected exact SHA, appropriate tiny/gate evidence and Codex re-review. |
+| 1 Correct and re-review AN01-M1 | Close residual R54/R56 on corrected 5e0a578; preserve closed R53/R55/R57 and all candidates. | Failing-first regressions, corrected exact SHA, appropriate tiny/gate evidence and Codex re-review. |
 | 2 Decide and measure reports | Resolve reply policy and realistic disk/workload bounds, then separately assign the full grid if resources permit. | Both platforms, common index choice, complete required cells, retained failures and qualified limits or an honest not-demonstrated result. |
 | 3 Ship AN01 S1 | Review/freeze v1.3, implement capability and curated read-only API, integrate the report UI and known-answer/browser tests. | Browser → production API → Postgres with scope, exact money/time semantics, capacity/error handling and secret-safe lifecycle. |
 | 4 Extend analyst depth | S2 exports/label availability and separately scoped saved analysis, reconciliation/cohort tasks as needed. | Controlled export content, correct denominators, data/label availability and independent known answers. |
@@ -625,7 +628,7 @@ DOC01 adds bounded local extraction first, then a separately reviewed upload/fee
 
 Currency-normalized features, calibration, drift monitoring, sequence models, entity graphs, retrieval/RAG, an isolated document reader, AML/scam modules and queues are worthwhile experiments when a measured weakness motivates them. They are optional extensions, not hidden requirements for declaring the present local investigation workflow complete. Each new domain needs its own labels, data rights, metrics, safety boundaries and comparison baseline.
 
-There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, local document feedback, measured agent value and a verified public release are the four substantial workstreams still ahead. The independent AN01-M1 review is complete and requests R53–R57; the next step is the focused correction task, not full-size measurement.
+There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, local document feedback, measured agent value and a verified public release are the four substantial workstreams still ahead. The corrected AN01-M1 review closes R53/R55/R57 but still requests R54/R56 follow-up; the next step remains that focused correction, not full-size measurement.
 
 ### Source map and the next chat
 

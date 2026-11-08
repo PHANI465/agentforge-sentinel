@@ -25,7 +25,7 @@ These are retrospective summaries of written project records, not reconstructed 
 | H05 | Verification commands have an owner-approved 2700 s cap. Application deadlines, individual assertions and skip policy are not widened by it. | [ADR0009](0009-verification-command-budget.md) |
 | H06 | Held-out final cases are separate from development. Unknown usage/timing and missing evidence remain unknown/not demonstrated. | [Agent protocol](../evals/agents/protocol-v1.md), [accepted pilot plan](../artifacts/AgentForge_Sentinel_G3D-P4_Development_Evaluation_Plan_2026-11-06.md) |
 | H07 | Cursor delivered its contribution; its original seven saved edits remain preserved. Other tools work in isolated checkouts. | AGENTS.md and current [checkpoint](../artifacts/AgentForge_Sentinel_Session_2026-11-08.md) |
-| H08 | AN01-M1 is a measurement prototype, not production Reports. Full-size measurement and performance values are not qualified. R53–R57 remain changes-requested until a corrected delivery is independently reviewed. | [M1 review](../reviews/AN01-M1-93583a.md), [r3.2 acceptance](../reviews/AN01-r31-2db42ee.md) |
+| H08 | AN01-M1 is a measurement prototype, not production Reports. Full-size measurement and performance values are not qualified. Corrected 5e0a578 is reviewed: R53/R55/R57 close, while residual R54/R56 still block acceptance. | [M1 review](../reviews/AN01-M1-93583a.md), [r3.2 acceptance](../reviews/AN01-r31-2db42ee.md) |
 
 ## Owner decisions confirmed November 8
 
@@ -71,3 +71,13 @@ SHA and commands; remaining unknowns; supersedes/revisit trigger. Update START_H
 STATUS/TASK_QUEUE and the latest checkpoint in the same publication. A new chat must read
 these files and inspect Git; the files do not automatically resume jobs or make old tests
 valid for a new commit.
+
+## Review decision November 8: corrected M1 remains changes-requested
+
+D20261108-16 — Codex's [independent review of 5e0a578](../reviews/AN01-M1-5e0a578.md)
+closes R53/R55/R57 and retains R54/R56. This is a review decision, not a new owner feature
+choice. Actual author smoke records pass their unchanged baseline; mutated copies expose
+qualification gaps. Preserve those records and all old failures. One newly registered
+tiny pair in the narrow follow-up validates changed code only, no timing-limit claim or
+full-size permission. DOC01 and live quality work stay separate. Revisit on the exact
+next corrected SHA with independent regression evidence.

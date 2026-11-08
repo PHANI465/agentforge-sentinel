@@ -1,5 +1,23 @@
 # Shared implementation queue
 
+## November 8 independent re-review of corrected AN01-M1
+
+Corrected candidate **5e0a578be91b7739e5d08fc315dc37504f0df188** is reviewed, not accepted
+or merged. [Review](reviews/AN01-M1-5e0a578.md): R53/R55/R57 close for the reviewed scope;
+R54 and R56 remain open. Independent Windows focused tests pass 123/123. Original 14 probes
+pass after the disclosed fake read_at addition; eight additional probes on Windows/native
+give six assertion failures, two controls and zero errors. Contradictory summaries/missing
+control diagnostics still qualify; a post-rollback-reply interrupt can orphan ownership.
+
+[Current Claude dispatch](prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md), **Opus 5.5 / High**:
+continue the existing branch from 5e0a578 with only those two fixes. Preserve93583a,
+5e0a578 and all prior evidence. Author exact-commit gates are inspected/validated:
+933 passed + one allowed skip on each platform; they are not independent full reruns.
+Tiny stages completed on corrected code 73984b9, still no qualified limits or full grid.
+The 30 ms margin, production clock and disk questions stay open. No candidate code merge,
+full-size measurement or production Reports. DOC01 follows this correction handoff in
+its own worktree; do not combine them. Accepted runtime remains 871e31d plus documents.
+
 ## November 8 owner expansion decisions and private publication
 
 [Decision ledger](decisions/PROJECT_DECISION_LEDGER.md) and [START_HERE](START_HERE.md)
@@ -98,7 +116,7 @@ units/budgets/common platform configuration (R51), and accurate connection/budge
 short cancellation-control semantics (R52).200k/5000 ms remain provisional.
 
 [Claude revision assignment](prompts/CLAUDE_AN01_R3_REVIEW_FIXES.md): continue the existing
-proposal branch, documentation/stdlib checkers only, Opus5.5 / High. Independent checks:
+proposal branch, documentation/stdlib checkers only, Opus 5.5 / High. Independent checks:
 r3 23/23, r2 34/34, Ruff, and matching manual Windows/native zone derivation. Separate
 boundary/arithmetic/injected-wait probes establish the gaps; no real SQL measurement,
 load, browser, live/auth/account/final-case work or spending. AN01-M1 and reporting
@@ -180,7 +198,7 @@ Plan cee83f9 is accepted for development planning; R44/R45 close under
 The owner asked to finish Claude work before review. [Today's batch](prompts/CLAUDE_TODAY_BATCH_2026-11-06.md)
 assigns P4a's complete evaluator tooling in one branch (artifacts, owned deterministic
 pilot, scoped export/blinding, offline scoring, tests), then independent AN01 analyst
-workspace design in another branch. Both use Opus5.5 / High and current accepted main.
+workspace design in another branch. Both use Opus 5.5 / High and current accepted main.
 Internal P4a milestones need no extra review hop; final candidates still need Codex
 acceptance before runtime integration. AN01 consumes no unaccepted P4a code.
 
@@ -195,7 +213,7 @@ Preserve accepted branches, prior evidence and Cursor's seven edits. Older entri
 Proposal3366edf is documentation only and not accepted/merged. [Review](reviews/G3D-P4-3366edf.md)
 finds misleading workflow/per-role timing definitions and ambiguous scoring of a bad
 recommendation after stopping. Claude revises only its existing plan/handoff under
-[the correction prompt](prompts/CLAUDE_G3DP4_PLAN_REVIEW_FIXES.md), Opus5.5 / High.
+[the correction prompt](prompts/CLAUDE_G3DP4_PLAN_REVIEW_FIXES.md), Opus 5.5 / High.
 The protocol/cases remain frozen. P4a tooling is not assigned and no live/final-case
 run is authorized. The pilot cap must describe application invocation reservations,
 not proven provider requests or billing. Exact workflow elapsed remains unmeasured.
@@ -396,7 +414,7 @@ that a clock jump was captured inside the original failed run. Known WSL clock s
 are documented separately. [Integration finding](reviews/G3D-P1-integration-8b4e4eb.md).
 
 **Next:** [Claude fixture correction](prompts/CLAUDE_G3D_MODEL_FIXTURE_CLOCK.md),
-Opus5.5 / High, in a new worktree from exact 8b4e4eb. Keep production time validation,
+Opus 5.5 / High, in a new worktree from exact 8b4e4eb. Keep production time validation,
 exact model scores/inputs and all frozen contracts unchanged. Then Codex re-reviews and
 resumes integration. Populated-workflow backup and the operator helper remain later
 tasks; live comparison/final cases are not assigned.
@@ -421,7 +439,7 @@ give five real assertion failures and two controls passing. R41: errors after co
 open/preflight or outside the investigate try block can escape, print a raw canary-bearing
 server traceback and lose prior results; post-result usage failure also escapes. R42:
 missing usage provenance is omitted from the aggregate, falsely yielding adapter_reported.
-A lower-priority duplicate-name note shows C0,C0 executes twice but reports one attempt.
+A lower-priority duplicate-name note shows C0, C0 executes twice but reports one attempt.
 [Review](reviews/G3D-P1-5811a29.md).
 
 [Claude correction](prompts/CLAUDE_G3DP1_REVIEW_FIXES.md), **Opus 5.5 / High**, continues
@@ -667,7 +685,7 @@ canceller acts on the next operation (Windows/Linux), and native socket shutdown
 a reused unrelated descriptor (real probe-owned Linux sockets). **G3B remains unaccepted/
 unmerged for this focused correction; G3A stays accepted; G3C has not started.**
 
-[Claude's current task](prompts/CLAUDE_G3B_OWNERSHIP_FIX.md): Opus5.5/High, existing G3B
+[Claude's current task](prompts/CLAUDE_G3B_OWNERSHIP_FIX.md): Opus 5.5/High, existing G3B
 branch from exactb74473e, preserve closed work, fix connection/helper lifetime and re-run
 required final gates. Keep unexplained earlier failure reports visible; no cause is inferred.
 Main application remains f091a34, all task/Cursor changes preserved, no provider/paid/
@@ -682,7 +700,7 @@ probes reproduce R34 (COMMIT cancellation is not a finite client wait), R35 (liv
 budget stale after start persistence) and R36 (max_transitions ignored), on **Windows and
 native Ubuntu**. **G3B is not accepted/merged; G3C has not started.**
 
-[Current Claude task](prompts/CLAUDE_G3B_REVIEW_FIXES.md): Opus5.5 / High, same G3B branch
+[Current Claude task](prompts/CLAUDE_G3B_REVIEW_FIXES.md): Opus 5.5 / High, same G3B branch
 from exact391effe, narrow R34-R36 corrections with failing-first tests and final sequential
 platform gates. Keep all delivered functionality and approved packaging/inventory edits.
 G3A remains accepted; there is no new architecture-design task.
@@ -698,7 +716,7 @@ See [today's session checkpoint](artifacts/AgentForge_Sentinel_Session_2026-10-3
 
 G3A is accepted at candidate43d9e8a; all R31-R33 are closed. The exact checked G3B base is
 **2919f76a5cad729ea078d5bfb35c226a3d2bff3f**. [Claude's active implementation prompt](prompts/CLAUDE_G3B_WORKFLOW.md)
-starts a separate task/claude-g3b-workflow checkout with **Opus5.5 / High**. The task is now
+starts a separate task/claude-g3b-workflow checkout with **Opus 5.5 / High**. The task is now
 ready for Claude; Codex has not launched an external agent process or implemented G3B.
 
 Deliver the bounded three-role backend with runtime-role tools, server-verified claims,
@@ -902,7 +920,7 @@ C08 R28 correction **353ecec2fadbba43f939a27f5ad2b9227ff6fe87** is delivered on 
 
 Next session starts with docs/prompts/NEXT_SESSION_2026-10-26.md. Preserve all tested worktrees. Cursor remains inactive, H01 remains non-blocking/unassigned, and no new paid runtime usage is assumed. The expanded vision is approximately **85 out of 200 planning points** under the explicit artifact rubric; this is a subjective scope estimate, not measured completion or a time forecast.
 
-Matching HTML, Markdown and Word checkpoint files are in E:/PHANI/agentforge-sentinel/docs/artifacts/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md,docx}. Their shared content covers the summary, 21 progress steps, the rubric, tomorrow's handoff and proposed improvements. Final document render/QA results are recorded separately; no future pass is claimed here.
+Matching HTML, Markdown and Word checkpoint files are in E:/PHANI/agentforge-sentinel/docs/artifacts/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html, md, docx}. Their shared content covers the summary, 21 progress steps, the rubric, tomorrow's handoff and proposed improvements. Final document render/QA results are recorded separately; no future pass is claimed here.
 
 
 ## Earlier checkpoint: C06 accepted; C08 startup follow-up assigned
@@ -911,7 +929,7 @@ C06 is **accepted at 4f06e32385424613fa0006b5bdbaab81ffea028f** for the refreshe
 
 C08 **784e1014044920706a41bd91c61b965a03379999 remains changes-requested for R28 only**. Its original 10 ownership/rollback/backup tests passed independently, and the documented rollback works. Additional intercepted startup probes confirmed a lost recovery record when identity inspection fails after launch, and false startup success after a readiness timeout. See reviews/784e101.md. Accepted I02 f38e920 is unchanged.
 
-**Historical assignment, now delivered at 353ecec: Claude followed docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md** on the existing C08 branch. Preserve accepted C06 and I02; no C06 rework or broad operator rewrite is assigned. H01 is non-blocking and unassigned. Cursor remains inactive. After the focused correction/re-review, define release integration; main is still 507538e. Portable checkpoint files are in E:/PHANI/agentforge-sentinel/docs/artifacts/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html,md} and remain dated snapshots.
+**Historical assignment, now delivered at 353ecec: Claude followed docs/prompts/CLAUDE_C08_STARTUP_FOLLOWUP.md** on the existing C08 branch. Preserve accepted C06 and I02; no C06 rework or broad operator rewrite is assigned. H01 is non-blocking and unassigned. Cursor remains inactive. After the focused correction/re-review, define release integration; main is still 507538e. Portable checkpoint files are in E:/PHANI/agentforge-sentinel/docs/artifacts/AgentForge_Sentinel_Project_Checkpoint_2026-10-25.{html, md} and remain dated snapshots.
 
 ## Latest checkpoint: combined local model/browser integration accepted
 

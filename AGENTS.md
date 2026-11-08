@@ -1,5 +1,14 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current M1 re-review: corrected 5e0a578 is changes-requested for remaining R54/R56;
+R53/R55/R57 close in scoped review docs/reviews/AN01-M1-5e0a578.md. The current dispatch
+is docs/prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md on the existing Claude branch. It supersedes
+the original five-finding correction where applicable. Preserve every candidate/failure,
+keep full-size/production/clock changes unassigned, and keep DOC01 separate until this
+handoff. Independent 123 focused tests pass; six additional assertion failures on each
+platform block acceptance. Author 933+one-skip gates are not independent re-certification.
+Earlier dated headers below remain history; latest current status governs.
+
 Owner expansion decisions, November 8: read docs/START_HERE.md and
 docs/decisions/PROJECT_DECISION_LEDGER.md. The owner authorized a private GitHub repo
 PHANI465/agentforge-sentinel and accepted-main publication, public research-data acquisition,

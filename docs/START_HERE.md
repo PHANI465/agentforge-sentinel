@@ -19,9 +19,10 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 ## Current position
 
 - Accepted application/tooling remains exact tested 871e31d plus later documentation.
-- Reviewed M1 candidate 93583a requires R53–R57. Claude is working corrections on its
-  existing branch; actual HEAD may have advanced. A new author commit is not final
-  certification or acceptance. Wait for the exact new handoff, then Codex re-reviews.
+- Corrected M1 candidate 5e0a578 is independently reviewed, still changes-requested for
+  R54/R56. R53/R55/R57 close for the scoped correction. Read the [new review](reviews/AN01-M1-5e0a578.md)
+  and [follow-up](prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md); preserve93583a and 5e0a578.
+  Author gates/tiny results do not override independent counterexamples.
 - Private GitHub repo: https://github.com/PHANI465/agentforge-sentinel. Only accepted main
   is published; Actions disabled. No force/mirror/all-branch push or private data upload.
 - ULB dataset is acquired privately, not trained. p1 and protected final cases unchanged.

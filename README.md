@@ -14,8 +14,8 @@ Windows/native Ubuntu backend gates passed 810 + one allowed skip each. Earlier 
 UI evidence is 133 unit and 19 legacy + 10 trace browser cases, not rerun for later tooling.
 See [release evidence](docs/releases/Batch-r2-main-integration-2026-11-07.md).
 
-AN01-M1 reporting prototype has changes-requested findings R53–R57; corrections are in
-progress and not integrated. The downloaded ULB public dataset is a separate future
+AN01-M1 corrected prototype5e0a578 still needs R54/R56 follow-up; R53/R55/R57 close
+for the scoped review. It is not accepted or integrated. See the [review](docs/reviews/AN01-M1-5e0a578.md). The downloaded ULB public dataset is a separate future
 benchmark; p1 is unchanged. Local document feedback, automated development grading and
 more readable metrics are [planned slices](docs/research/2026-11-08-expansion-research.md),
 not shipped functionality. Current scores are uncalibrated synthetic-benchmark rankings.

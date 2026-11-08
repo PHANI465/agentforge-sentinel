@@ -1,5 +1,7 @@
 # AN01-M1 corrections: R53–R57 on the existing prototype branch
 
+Delivered correction5e0a578 has been re-reviewed. **Continue [the R54/R56 follow-up](CLAUDE_AN01_M1_R2_FOLLOWUP.md)**; R53/R55/R57 are closed for that scope. The original assignment below is preserved history.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. Process ownership, faulted
 connection lifetimes and timing/evidence invariants need careful reasoning. Use existing
 allowance; no paid overage. Sentinel providers stay deterministic and no auth/account call.
