@@ -1,6 +1,18 @@
 # Project artifacts
 
-## Current complete project study guide
+## Current complete project guide — November 8, 2026
+
+- [Complete Markdown guide: 23 chapters](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md)
+- [Offline HTML guide: navigation, search, pipeline walkthrough and print](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html)
+- [Current checkpoint and exact stopping point](AgentForge_Sentinel_Session_2026-11-08.md)
+- [Short overview and remaining work](AgentForge_Sentinel_Overview_and_Remaining_Work.md)
+
+Read the project idea and full implementation pipeline first; completed and remaining
+stages are at the end of the guide. AN01-M1 is delivered for review at 93583a, not accepted;
+its tiny benchmark is not demonstrated. Older Word/Markdown documents below remain dated
+historical snapshots. No updated Word file is claimed by this Markdown/HTML publication.
+
+## Earlier complete project study guide (November 2 snapshot)
 
 - [Word guide with20 chapters](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.docx)
 - [Matching Markdown guide](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md)

@@ -1,5 +1,16 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current checkpoint, November 8: AN01-M1 is delivered at exact 93583a7570ae78f254a2d69e9857b701b0e444ad,
+not accepted or merged. Read docs/reviews/AN01-M1-93583a-intake.md and
+docs/artifacts/AgentForge_Sentinel_Session_2026-11-08.md. Codex independent review is next;
+Claude preserves its tested branch and may restore context with
+docs/prompts/CLAUDE_RESUME_AN01_M1_REVIEW_2026-11-08.md, then waits for a concrete dispatch.
+The old M1 implementation prompt below is delivered history, not a new implementation task.
+No full-size grid, production Reports, v1.3 freeze, live/auth/account/final-case work,
+new spending, remote/push or deployment is assigned. Candidate gate passes are author
+evidence; tiny smoke is not demonstrated. Current complete guide is the November 8
+Markdown/HTML pair in docs/artifacts/. Preserve all candidates, failures and Cursor edits.
+
 Current AN01 step: the reviewed r3.2 design in docs/analytics/AN01-decisions-r3.md is
 accepted under docs/reviews/AN01-r31-2db42ee.md, closing R50–R52 as design issues. Claude's
 next assignment is docs/prompts/CLAUDE_AN01_M1_IMPLEMENTATION.md: prototype/controller

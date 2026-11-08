@@ -1,5 +1,12 @@
 # AN01-M1: report-query prototype, safe stage controller and tiny proofs
 
+Delivered at 93583a7570ae78f254a2d69e9857b701b0e444ad; independent review is pending.
+This is the preserved implementation assignment, not a fresh build to repeat. Read
+[the delivery intake](../reviews/AN01-M1-93583a-intake.md) and
+[new-chat resume prompt](CLAUDE_RESUME_AN01_M1_REVIEW_2026-11-08.md). Claude preserves its
+tested candidate and waits for Codex's concrete review dispatch. No full-size grid is assigned.
+The original assignment follows.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. Exact SQL semantics, bounded
 supervision and late-connection ownership require careful tests. Sentinel investigators
 stay deterministic; no live provider, auth/account call, final cases or spending.

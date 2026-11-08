@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="AgentForge Sentinel: complete project idea, implementation guide and honest completion map, November 8 2026."><title>AgentForge Sentinel · Complete project guide · November 8, 2026</title><style>
+:root{color-scheme:light;--ink:#172b32;--muted:#52656b;--paper:#fcfaf5;--line:#d6dedb;--accent:#12685a;--soft:#edf3ee;--warn:#754a15;font-family:Segoe UI,Arial,sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:1.2rem}body{margin:0;background:var(--paper);color:var(--ink);font-size:17px;line-height:1.7}a{color:#075d83;text-underline-offset:.18em}a:hover{color:#00402f}button,input{font:inherit}button{min-height:44px;padding:.55rem 1rem;border:1px solid #aebfba;border-radius:6px;background:white;color:var(--ink);cursor:pointer}button:hover{background:var(--soft)}button:disabled{opacity:.5;cursor:default}input{width:100%;min-height:44px;padding:.5rem .7rem;border:1px solid #aebfba;border-radius:6px;background:white;color:var(--ink)}:focus-visible{outline:3px solid #a66b14;outline-offset:3px}
+.skip{position:absolute;left:1rem;top:-5rem;background:white;padding:.5rem;z-index:2}.skip:focus{top:.5rem}.masthead{padding:3.5rem max(1.2rem,calc((100% - 1240px)/2));background:#173c38;color:#f6f5eb}.masthead .eyebrow{font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;color:#bbd8ce}.masthead h1{font-size:clamp(2rem,4vw,3.4rem);font-weight:650;line-height:1.12;max-width:900px;margin:.65rem 0 1rem}.masthead p{max-width:800px;margin:.5rem 0;color:#e0ece4}.masthead a{color:#d1e4a9}.shell{max-width:1280px;margin:auto;padding:2rem 1.5rem 4rem;display:grid;grid-template-columns:265px minmax(0,1fr);gap:3rem}.sidebar{min-width:0}.sidebar h2{font-size:1rem;margin-top:1rem}.sidebar ol{padding-left:0;list-style:none}.sidebar a{display:block;padding:.32rem 0;line-height:1.4;font-size:.88rem;text-decoration:none}.sidebar a:hover{text-decoration:underline}.sidebar .small{font-size:.85rem;color:var(--muted)}main{min-width:0;max-width:870px}main h1{font-size:1.55rem;line-height:1.25;margin-top:2.4rem}main h2{font-size:1.7rem;line-height:1.25;margin:3.4rem 0 1rem;padding-top:1.6rem;border-top:2px solid var(--line)}main h3{font-size:1.18rem;line-height:1.35;margin:2rem 0 .6rem}main p,main li{overflow-wrap:anywhere}main li{margin:.35rem 0}main ul,main ol{padding-left:1.4rem}code{font-family:Consolas,monospace;font-size:.87em;background:#eaf0eb;padding:.1em .24em;border-radius:3px;overflow-wrap:anywhere}.table-wrap{width:100%;overflow-x:auto;margin:1.1rem 0 1.6rem;border-block:1px solid var(--line)}table{width:100%;border-collapse:collapse;font-size:.88rem;line-height:1.5}th,td{text-align:left;vertical-align:top;padding:.8rem .75rem;border-bottom:1px solid var(--line);overflow-wrap:anywhere}thead{background:#e8eee8}th{font-weight:650}tr:last-child td{border-bottom:0}.reader-tools{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;margin:.5rem 0 1.5rem}.reading-note{padding:1rem 1.1rem;border-left:4px solid var(--accent);background:var(--soft);margin-bottom:2rem;font-size:.95rem}.pipeline{padding:1.4rem 0 1.8rem;border-block:1px solid var(--line)}.pipeline h2{font-size:1.4rem;margin:0;border:0;padding:0}.step-track{display:flex;gap:.3rem;margin:1.1rem 0}.step-dot{flex:1;min-width:0;height:8px;background:#dbe5df}.step-dot.active{background:var(--accent)}#step-title{font-size:1.22rem;line-height:1.4;margin:.7rem 0}.step-note{min-height:5.7em;margin:.5rem 0}.step-boundary{font-weight:650;color:var(--accent);margin:.4rem 0 1rem}.pipeline-controls{display:flex;gap:.6rem;flex-wrap:wrap}.pipeline .small{font-size:.85rem;color:var(--muted)}#find-status{font-size:.85rem;color:var(--muted);min-height:1.5em}mark{background:#ffdf82;color:#172b32}footer{border-top:1px solid var(--line);margin-top:3rem;padding-top:1rem;font-size:.86rem;color:var(--muted)}[hidden]{display:none!important}
+@media(max-width:850px){.shell{display:block;max-width:850px;padding:1.4rem 1.15rem}.sidebar{margin-bottom:2rem}.sidebar ol{columns:2;column-gap:1.4rem}.sidebar li{break-inside:avoid}.masthead{padding:2.4rem 1.2rem}.step-note{min-height:0}main h2{font-size:1.45rem}}
+@media(max-width:460px){body{font-size:16px}.sidebar ol{columns:1}.masthead h1{font-size:2rem}.shell{padding:1rem}.table-wrap table{min-width:520px}.reader-tools button{flex:1}.pipeline-controls button{flex:1}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{body{background:white;color:black;font-size:10.5pt}.masthead{background:white;color:black;padding:0}.masthead p,.masthead .eyebrow,.masthead a{color:black}.masthead h1{font-size:25pt}.shell{display:block;padding:0;max-width:none}.sidebar,.reader-tools,.pipeline{display:none}.reading-note{background:white}.table-wrap{overflow:visible}table{font-size:8.5pt;min-width:0!important}thead{display:table-header-group}tr{break-inside:avoid}h2,h3{break-after:avoid}main{max-width:none}main h2{font-size:17pt;margin-top:1.5rem}a{color:black}footer{font-size:9pt}}
+</style></head><body>
+<a class="skip" href="#main">Skip to guide</a>
+<header class="masthead"><div class="eyebrow">AgentForge Sentinel / study edition / 08 Nov 2026</div><h1>From transaction to accountable decision.</h1><p>The complete project: temporal fraud scoring, bounded investigations, human approval and financial analysis. Learn the implementation first; see exactly what is complete and what remains at the end.</p><p><a href="AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md">Markdown source</a> · <a href="AgentForge_Sentinel_Session_2026-11-08.md">Current checkpoint</a></p></header>
+<div class="shell"><aside class="sidebar" aria-label="Guide navigation"><form id="find-form"><label for="find"><strong>Find in this guide</strong></label><input type="search" id="find" placeholder="Try approval, latency, AN01…" autocomplete="off"><p id="find-status" role="status">Search the complete guide.</p><button id="find-next" type="button" disabled>Next match</button></form><h2>Chapters</h2><ol><li><a href="#1-the-complete-project-we-are-building">1 The complete project we are building</a></li><li><a href="#2-the-complete-online-transaction-pipeline">2 The complete online transaction pipeline</a></li><li><a href="#3-a-worked-fraud-review-example">3 A worked fraud review example</a></li><li><a href="#4-architecture-and-technology-choices">4 Architecture and technology choices</a></li><li><a href="#5-what-the-database-remembers">5 What the database remembers</a></li><li><a href="#6-time-contracts-and-causal-correctness">6 Time contracts and causal correctness</a></li><li><a href="#7-the-offline-machine-learning-pipeline">7 The offline machine learning pipeline</a></li><li><a href="#8-reading-the-frozen-model-results">8 Reading the frozen model results</a></li><li><a href="#9-serving-the-trained-model-safely">9 Serving the trained model safely</a></li><li><a href="#10-how-the-three-roles-cooperate">10 How the three roles cooperate</a></li><li><a href="#11-deadlines-concurrency-and-recovery">11 Deadlines concurrency and recovery</a></li><li><a href="#12-the-security-model">12 The security model</a></li><li><a href="#13-the-analyst-interface-and-trace-view">13 The analyst interface and trace view</a></li><li><a href="#14-evaluating-agents-without-inventing-evidence">14 Evaluating agents without inventing evidence</a></li><li><a href="#15-testing-and-the-debugging-lessons">15 Testing and the debugging lessons</a></li><li><a href="#16-running-and-operating-the-local-project">16 Running and operating the local project</a></li><li><a href="#17-future-financial-analyst-uses">17 Future financial analyst uses</a></li><li><a href="#18-future-ai-and-scaling-experiments">18 Future AI and scaling experiments</a></li><li><a href="#19-how-to-study-and-explain-the-implementation">19 How to study and explain the implementation</a></li><li><a href="#20-the-financial-analysis-workspace-what-an01-adds">20 The financial-analysis workspace: what AN01 adds</a></li><li><a href="#21-evaluation-preparation-local-performance-and-the-recorded-demo">21 Evaluation preparation, local performance and the recorded demo</a></li><li><a href="#22-how-to-continue-safely-and-keep-context-between-chats">22 How to continue safely and keep context between chats</a></li><li><a href="#23-what-is-complete-where-we-stopped-and-what-remains">23 What is complete, where we stopped, and what remains</a></li></ol><p class="small">Self-contained and offline. No model, API, analytics or credentials. Printed output includes the full text.</p></aside>
+<main id="main"><div class="reader-tools"><button id="print" type="button">Print / save as PDF</button><a href="#23-what-is-complete-where-we-stopped-and-what-remains">Jump to completed &amp; remaining</a></div><div class="reading-note"><strong>Read the labels carefully.</strong> The local case workflow is accepted. The AN01-M1 candidate is delivered for review. Its tiny benchmark is not demonstrated, and the full grid has not run. This is an educational guide, not the product UI or a live case.</div>
+<section class="pipeline" aria-labelledby="pipeline-title"><h2 id="pipeline-title">Walk through one illustrative case</h2><p class="small">The recommendation → approval branch. These controls explain the flow; they perform no operation.</p><div class="step-track" aria-hidden="true"><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span></div><div aria-live="polite"><h3 id="step-title"></h3><p class="step-note" id="step-note"></p><p class="step-boundary" id="step-boundary"></p></div><div class="pipeline-controls"><button id="step-prev" type="button">Previous step</button><button id="step-next" type="button">Next step</button></div><noscript><p>The complete pipeline is also described in chapter 2 below. JavaScript is optional for reading the guide.</p></noscript></section>
+<article id="guide-article"><h1 id="agentforge-sentinel-the-complete-project-guide">AgentForge Sentinel: the complete project guide</h1>
+<p>November 8, 2026 · Project idea, implementation, examples and remaining stages</p>
+<p>Prepared for Phaneendra Gavara. This edition replaces the November 2 guide for current reading. That edition remains a preserved historical snapshot. The final chapter separates accepted work, delivered candidates, unmeasured claims and future plans. All present financial data is synthetic and all actions are simulated.</p>
+<h2 id="1-the-complete-project-we-are-building">1 The complete project we are building</h2>
+<p>AgentForge Sentinel is an evidence-driven financial investigation workbench. It connects transaction data, reproducible fraud scoring, bounded AI investigation and a human decision in one auditable system. Its purpose is to help an analyst answer: <strong>What happened, what was known at the time, why was this transaction flagged, what evidence supports a recommendation, and who authorized the outcome?</strong></p>
+<p>The complete planned product has three connected experiences. The investigation workbench handles individual cases. The financial-analysis workspace will explain patterns, reconcile measures and let analysts drill into the records behind a report. A demonstration and operations layer will make the project understandable and, after separate verification, usable in a controlled hosted environment.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Experience</th><th scope="col">What a user should be able to do</th><th scope="col">Position today</th></tr></thead><tbody>
+<tr><td>Investigate a transaction</td><td>Inspect the score and evidence, run an investigation, see disagreements, approve or reject, execute a simulated action and inspect its audit.</td><td>Implemented locally, accepted and integrated.</td></tr>
+<tr><td>Analyze a portfolio of transactions and cases</td><td>Compare totals by currency and day, inspect data quality and case workload, drill into source rows, then produce controlled reports.</td><td>AN01 design accepted for prototype work; measurement prototype delivered for review. Production reports API/UI and exports are not built.</td></tr>
+<tr><td>Understand or try the system</td><td>Watch a key-free recorded replay; later use restricted staging and explicitly supported live inference.</td><td>Recorded replay accepted locally. Real CI, hosting and visitor live inference remain separate work.</td></tr>
+</tbody></table></div>
+<h3 id="three-different-jobs-three-different-kinds-of-evidence">Three different jobs, three different kinds of evidence</h3>
+<ul>
+<li><strong>Fraud scorer:</strong> a rule or trained classical model ranks a transaction. Its score is not a finding of guilt and cannot authorize an action.</li>
+<li><strong>Investigation agents:</strong> bounded analyst, investigator and reviewer roles interpret allowed facts and propose a disposition. Their outputs are untrusted inputs to the server.</li>
+<li><strong>Application and human:</strong> server code enforces scope, checks facts and builds a precise proposal. A human approves or rejects it; execution is a separate request.</li>
+</ul>
+<p>There are also three distinct evaluation questions. ML evaluation asks whether scores rank synthetic fraud well. Agent evaluation asks whether investigations produce useful, supported recommendations. Software verification asks whether authentication, state transitions, failures and simulated effects behave correctly. Passing one does not answer the other two.</p>
+<h3 id="a-realistic-use-without-pretending-it-is-a-bank-deployment">A realistic use, without pretending it is a bank deployment</h3>
+<p>A payments analyst sees a large transaction after a burst of small payments. Sentinel shows the stored rule or model score, the prior transactions that were actually available, and any permitted account facts. The investigator proposes a hold or escalation; a reviewer can challenge the reasoning. The analyst may recognize a legitimate supplier invoice and reject the proposal. If the analyst instead approves and explicitly executes, Sentinel records one simulated effect with an audit trail.</p>
+<p>Later, a team lead could use the planned reporting workspace to ask whether alerts increased in one currency, how much review work is waiting, and whether a count agrees with its underlying transactions. These aggregates require their own scoped queries, known-answer tests and performance limits; they are not already available because the case screen exists.</p>
+<p>Banks, payment processors, marketplaces and internal risk teams have related investigation needs. Sentinel is a portfolio and research implementation of those patterns. Real financial deployment would additionally require suitable data rights, domain validation, privacy controls, regulatory review and operational evidence. It currently connects to no bank account and moves no money.</p>
+<h3 id="how-to-study-the-project">How to study the project</h3>
+<p>Read the pipeline and worked example first. Then study storage and time, the offline/online ML boundary, agents and permissions, and the UI. The later chapters explain reporting, evaluation and future uses. The final chapter is the current completion map and exact resume point. Technology names describe actual components unless explicitly labelled proposed.</p>
+<h2 id="2-the-complete-online-transaction-pipeline">2 The complete online transaction pipeline</h2>
+<p>The database is the durable source of truth. The browser initiates requests and displays stored results; an agent response or a successful-looking screen is not proof that an action occurred.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Stage</th><th scope="col">What the server does</th></tr></thead><tbody>
+<tr><td>1 Authenticate</td><td>Resolve a bearer token to tenant, session, actor and capabilities. Only the token hash is stored.</td></tr>
+<tr><td>2 Validate and order</td><td>Validate the transaction and take the account lock before reading decision time.</td></tr>
+<tr><td>3 Score and persist</td><td>Compute allowed historical features, run the configured scorer and save every scoring outcome.</td></tr>
+<tr><td>4 Open the case</td><td>If score meets the threshold, create an alert, case, evidence and provenance pins.</td></tr>
+<tr><td>5 Investigate</td><td>Claim the current revision and run the chosen deterministic, single or three-role investigator.</td></tr>
+<tr><td>6 Validate the proposal</td><td>Check structured output and claims, then build exact action parameters from stored records.</td></tr>
+<tr><td>7 Human decision</td><td>Approve or reject the current proposal. A reviewer agent cannot supply human approval.</td></tr>
+<tr><td>8 Execute explicitly</td><td>Check the approval and execution key, consume approval atomically and record one simulated outcome.</td></tr>
+<tr><td>9 Read and audit</td><td>Return the stored case, trace and audit. Replays and restarts retain the original decisions.</td></tr>
+</tbody></table></div>
+<h3 id="two-important-branches">Two important branches</h3>
+<p>A transaction below the alert threshold still has a saved scoring outcome; it does not need a case. An investigation that cannot reach a valid disposition can end inconclusive and reopen its case without creating an executable proposal. Unknown results are displayed honestly rather than converted into success.</p>
+<p>Read: src/sentinel/api.py, service.py, scoring.py, scorers.py and trace.py. The active public response snapshot is contracts/http/openapi.v1.2.json; older v1 and v1.1 snapshots remain frozen.</p>
+<h2 id="3-a-worked-fraud-review-example">3 A worked fraud review example</h2>
+<p>Imagine a fictional USD account making two small payments, then a USD 4,800 payment ten minutes later. This example uses the current rule baseline so the arithmetic is transparent; it is not a production fraud policy.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Time</th><th scope="col">Payment</th><th scope="col">Prior events in hour</th><th scope="col">Rule score</th></tr></thead><tbody>
+<tr><td>09 00</td><td>USD 20</td><td>0</td><td>0.0</td></tr>
+<tr><td>09 05</td><td>USD 25</td><td>1</td><td>0.2</td></tr>
+<tr><td>09 10</td><td>USD 4,800</td><td>2</td><td>1.0</td></tr>
+</tbody></table></div>
+<p>For USD, the demonstration large-amount cutoff is 100,000 minor units, or USD 1,000. A large transaction adds 0.6. Each prior event contributes 0.2, with that velocity contribution capped at 0.6; the overall score is capped at 1.0. The third transaction scores 0.6 + 0.4 = 1.0, above the rule alert threshold of 0.5.</p>
+<h3 id="what-the-analyst-sees">What the analyst sees</h3>
+<p>The case shows the amount, available history, recorded score and rule identity. The evidence analyst gathers allowed facts. The investigator can recommend a simulated hold, while the reviewer can challenge unsupported statements. Server checks and a deterministic rationale connect the final proposal to actual records.</p>
+<p>Suppose the payment is a legitimate supplier invoice. The analyst can reject the hold. A high score only earns review; it is not proof of fraud. A useful system must also help explain false alarms and abstain when evidence is insufficient.</p>
+<h3 id="what-happens-when-the-network-fails">What happens when the network fails</h3>
+<p>If execution commits but its response is lost, the browser keeps the same execution idempotency key. A retry retrieves the original action instead of inserting another one. The server rechecks the current actor’s authority. If an unused approval has expired, it cannot be revived; the case must follow the fresh revision and approval path.</p>
+<p>Study exercise: change the amount and the number of prior events on paper. Calculate the rule score, then explain why that number still cannot authorize an action.</p>
+<h2 id="4-architecture-and-technology-choices">4 Architecture and technology choices</h2>
+<p>Sentinel uses one application API and one PostgreSQL database. The coordinator is an explicit Python state machine. Separate queues, streaming infrastructure and additional orchestration frameworks are future choices driven by measurement.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Layer</th><th scope="col">Implemented technology</th><th scope="col">Purpose</th></tr></thead><tbody>
+<tr><td>Interface</td><td>React, TypeScript, Vite</td><td>Case workbench, model reports and investigation trace.</td></tr>
+<tr><td>HTTP and contracts</td><td>FastAPI and Pydantic</td><td>Typed validation, response schemas and OpenAPI snapshots.</td></tr>
+<tr><td>Persistence</td><td>PostgreSQL and psycopg</td><td>Transactions, locks, durable cases, approval and audit.</td></tr>
+<tr><td>Classical ML</td><td>NumPy, scikit-learn, joblib</td><td>CPU baselines, pinned artifact and online inference.</td></tr>
+<tr><td>Agent system</td><td>Python coordinator and typed adapters</td><td>Bounded roles, scoped tools, claim checks and recovery.</td></tr>
+<tr><td>Verification</td><td>pytest, Ruff, Vitest, Playwright</td><td>Backend, component, real browser and security regressions.</td></tr>
+<tr><td>Build and workflow</td><td>uv, setuptools, npm, Git worktrees</td><td>Locked dependencies, packaged assets and isolated tasks.</td></tr>
+</tbody></table></div>
+<h3 id="why-this-shape-helps">Why this shape helps</h3>
+<p>FastAPI keeps transport separate from service rules. PostgreSQL transactions make approval consumption and action insertion atomic. Versioned contracts let a TypeScript client evolve without inventing endpoints. A small trained CPU model fits the laptop-first budget. Keeping orchestration explicit makes limits and failure transitions inspectable.</p>
+<p>The repository includes GitHub Actions configuration, but a real GitHub Actions runner has not been exercised. Native Ubuntu backend checks run under WSL as an unprivileged user. The browser suites have Windows evidence. Hosting, public visitor-key inference and measured production capacity remain future work.</p>
+<p>Not yet core dependencies: PyTorch, LangGraph, Kafka, Kubernetes, a vector database, a feature store or hosted MLflow. Learn or introduce them when a concrete experiment or operating requirement benefits.</p>
+<h2 id="5-what-the-database-remembers">5 What the database remembers</h2>
+<p>Five packaged SQL migrations create the current 16-table inventory. The design records business objects and execution history separately so a later investigation can explain the original decision rather than recompute it from today’s data.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Tables</th><th scope="col">Meaning</th></tr></thead><tbody>
+<tr><td>api_sessions</td><td>Token hashes, scope, actor, capabilities and expiry.</td></tr>
+<tr><td>transactions and scoring_outcomes</td><td>Submitted transaction and the exact saved scoring decision, including non-alerts.</td></tr>
+<tr><td>alerts cases evidence_items</td><td>Review work, case revisions, pinned identities and supporting facts.</td></tr>
+<tr><td>agent_runs agent_workflows agent_steps</td><td>Individual attempts, coordinated workflows and ordered execution records.</td></tr>
+<tr><td>action_intents approvals simulated_actions</td><td>Server-built proposal, human authorization and recorded simulated effect.</td></tr>
+<tr><td>audit_events</td><td>Application audit history with update/delete protection.</td></tr>
+<tr><td>account_profiles fraud_disclosures</td><td>Operator-provisioned model inputs and known fraud disclosures.</td></tr>
+<tr><td>schema_migrations</td><td>Which schema changes have been applied.</td></tr>
+</tbody></table></div>
+<h3 id="identity-and-concurrency">Identity and concurrency</h3>
+<p>Tenant and session scope are attached to records and supplied by trusted authentication context. SQL queries must include that scope. This is application-enforced scoped SQL; do not describe it as an implemented database row-level-security policy. A foreign identifier does not become authorized because a model or browser submits it.</p>
+<p>Per-account transaction locks serialize ingestion and operator profile/disclosure changes. Case and approval locks protect revision checks and approval consumption. An execution key binds a retry to the original result. All callers must finish and their individual outcomes must be checked in concurrency tests.</p>
+<p>The audit trigger protects normal application behavior, not against the schema owner or superuser. Backups include workflow tables in their inventory. G3D-P2 has since proved backup/restore with populated workflows and steps, including authority and corruption controls; it is accepted and integrated.</p>
+<p>Read: src/sentinel/db/migrations/, db/roles.py and service.py. New tables need explicit role permissions, packaging and backup-inventory review.</p>
+<h2 id="6-time-contracts-and-causal-correctness">6 Time contracts and causal correctness</h2>
+<p>A financial event has several different times. Confusing them leaks future information into a decision, breaks a replay or creates unreliable tests.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Time</th><th scope="col">Question it answers</th></tr></thead><tbody>
+<tr><td>occurred_at</td><td>When did the transaction event happen?</td></tr>
+<tr><td>ingested_at and decision time</td><td>When was the row available to this decision?</td></tr>
+<tr><td>disclosed_at and recorded_at</td><td>Was a fraud disclosure both disclosed and recorded by that time?</td></tr>
+<tr><td>label_available_at</td><td>Was a training or evaluation label actually observable by its cutoff?</td></tr>
+<tr><td>Monotonic elapsed time</td><td>How much waiting budget remains, regardless of wall-clock steps?</td></tr>
+</tbody></table></div>
+<p>The rule history window is [event time minus one hour, event time). Events at the upper boundary are excluded. Availability uses ingested_at &lt;= decision time. A previously committed row may legitimately share an ingestion timestamp on a coarse clock; a later arrival with that same timestamp was not available yet. The concurrency reference therefore also records decision order.</p>
+<p>The service reads time after acquiring the relevant account, case or approval locks. Model operator writers use the same account lock, so a concurrent update cannot leak halfway into a decision. Direct owner SQL can bypass that convention; the ordinary runtime cannot grant itself owner authority.</p>
+<h3 id="typed-boundaries">Typed boundaries</h3>
+<p>Pydantic validates fields and variants, rejects unexpected data and publishes schemas. Amounts use integer minor units and an explicit currency exponent. A hold and an escalation have different parameters. The TypeScript parser must accept documented nulls while rejecting malformed responses. Missing values mean unknown, not a fabricated zero.</p>
+<p>Read: contracts/v1.py, http_v1.py, http_v12.py, decision 0005 and data_pipeline/features.py. The ML protocol defines exact half-open day windows; informal “days 10 to 55” must not override those bounds.</p>
+<h2 id="7-the-offline-machine-learning-pipeline">7 The offline machine learning pipeline</h2>
+<ol>
+<li>Generate a versioned synthetic stream with fixed seed, account activity, fraud episodes, legitimate lookalikes, delayed ingestion and delayed labels.</li>
+<li>Build decision-time features using only rows and disclosures available at each transaction’s decision.</li>
+<li>Split chronologically, apply label-availability rules and fit preprocessing on training data only.</li>
+<li>Train the rule, logistic-regression and tree comparators under a protocol frozen before selection.</li>
+<li>Select on validation average precision, freeze the threshold and model identity, then evaluate the test view.</li>
+<li>Save the artifact, protocol, selection record, feature/dependency identity, hashes and model/data cards.</li>
+</ol>
+<h3 id="features-and-labels">Features and labels</h3>
+<p>The model uses 12 numeric features plus currency: amount, credit direction, foreign currency, account age, one-hour and 24-hour counts, small-payment count, same-currency amount sum, credit sum, time since previous event, amount-to-median ratio and prior known fraud. Identifiers, scenario tags, timestamps and true labels are excluded as direct model inputs.</p>
+<p>A label not yet disclosed is unknown, not legitimate. The protocol lets training labels mature to day 85 and validation labels to day 115. Its numeric windows are train [10,55), validation [56,85) and test [116,150). The gaps are chronological embargoes; feature windows still share historical stream context, so they do not establish independent observations.</p>
+<p>The reference experiment uses 600 accounts over 150 generated days. The original short data configuration had too few mature labels for classification. Extending the horizon was preferable to relabeling unknowns as negatives. Final test truth is synthetic simulator truth, including never-disclosed fraud; that is an offline benchmark, not a real bank’s observable labels.</p>
+<p>Read: data_pipeline/generator.py, features.py and splits.py; ml/protocol.json, dataset.py, models.py and run.py. Data cards explain the simulator’s assumptions and its deliberately learnable patterns.</p>
+<h2 id="8-reading-the-frozen-model-results">8 Reading the frozen model results</h2>
+<p>The selected p1 model is a balanced HistGradientBoostingClassifier behind fixed preprocessing: signed log1p numeric transforms and one-hot currency. It was selected on validation, not by repeatedly choosing whichever test result looked best.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Candidate</th><th scope="col">Validation AP</th><th scope="col">Test AP</th></tr></thead><tbody>
+<tr><td>Rule baseline</td><td>0.488</td><td>0.455</td></tr>
+<tr><td>Balanced logistic regression</td><td>0.532</td><td>0.400</td></tr>
+<tr><td>Unweighted logistic regression</td><td>0.636</td><td>0.622</td></tr>
+<tr><td>Unweighted gradient boosting</td><td>0.273</td><td>0.208</td></tr>
+<tr><td>Balanced gradient boosting selected</td><td>0.830</td><td>0.817</td></tr>
+</tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th scope="col">Test review policy</th><th scope="col">Flagged</th><th scope="col">Precision</th><th scope="col">Recall</th></tr></thead><tbody>
+<tr><td>Daily top 15</td><td>510</td><td>0.198</td><td>0.927</td></tr>
+<tr><td>Frozen validation threshold</td><td>442</td><td>0.231</td><td>0.936</td></tr>
+</tbody></table></div>
+<p>The test has 18,597 rows and 109 fraud labels. At daily capacity the selected model finds 101 positives with 409 false positives. At the frozen threshold it finds 102 with 340 false positives. These policies answer different operating questions; the API uses the frozen threshold, not a daily top-15 quota.</p>
+<p>Average precision summarizes ranked precision at positive examples. Trapezoidal PR-AUC interpolates between curve points and can differ substantially when scores are tied; the rule has AP 0.455 versus trapezoidal PR-AUC 0.579. High accuracy on an imbalanced dataset would be a weak headline by itself.</p>
+<p>The 95% account-bootstrap AP interval is approximately 0.697–0.914. It resamples accounts, not independent rows. Scores are uncalibrated rankings, not probabilities. One seed, synthetic truth, small positive counts and legitimate lookalikes limit the conclusion.</p>
+<p>Read: ml/results/p1/test_report.json, docs/ml/model-card.md and ml/evaluate.py. Frozen test reproduction recomputes and compares without tuning the artifact or rewriting the result.</p>
+<h2 id="9-serving-the-trained-model-safely">9 Serving the trained model safely</h2>
+<p>Rule scoring remains the default. Model scoring requires an explicit operator setting, SENTINEL_SCORER=model:hgb_balanced@p1. An unknown registry entry or failed artifact check refuses startup instead of silently falling back.</p>
+<ol>
+<li>Load only the registered trusted artifact after verifying hashes, feature schema, model code and expected dependency identity.</li>
+<li>Require the account profile; refuse a missing one before storing transaction or scoring rows.</li>
+<li>Under the account lock, compute features with the accepted offline feature code and only available history/disclosures.</li>
+<li>Store the exact feature inputs, score, threshold, semantics and model provenance with the decision.</li>
+<li>On a repeated external transaction, return the stored outcome rather than scoring against a different model or newer history.</li>
+</ol>
+<p>The frozen streaming threshold is 4.0295386895426815e-6. Its small magnitude does not make it a probability estimate. Class weighting and training behavior affect the score scale. The threshold was chosen by a fixed validation review policy and must be interpreted with the recorded metrics.</p>
+<h3 id="currency-and-temporal-pitfalls">Currency and temporal pitfalls</h3>
+<p>INR contributes 181 false positives among 201 flagged INR rows in the daily top-15 slice. Raw minor-unit amounts have different scales across currencies. A currency-normalized feature is a reasonable next experiment, but it needs a new feature identity, protocol and validation evidence; it cannot overwrite p1.</p>
+<p>Profiles and disclosures are operator data, not model-chosen facts. There is no implemented profile-staleness or disclosure-retraction policy yet. Recorded scores survive a scorer switch and API/database restart. This supports reproducibility, not a promise that old evidence remains sufficient for a real financial decision.</p>
+<p>Read: src/sentinel/scorers.py, service.py, ml/artifact.py and decision 0006. joblib deserialization is restricted to trusted pinned local artifacts; visitor-supplied models are not supported.</p>
+<h2 id="10-how-the-three-roles-cooperate">10 How the three roles cooperate</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">Role</th><th scope="col">Its contribution</th><th scope="col">Its boundary</th></tr></thead><tbody>
+<tr><td>Evidence analyst</td><td>Requests and summarizes allowed facts.</td><td>Cannot choose tenant, account ID, SQL or credentials.</td></tr>
+<tr><td>Investigator</td><td>Builds a structured recommendation or abstention.</td><td>Cannot author an executable target or human approval.</td></tr>
+<tr><td>Reviewer</td><td>Accepts or challenges supported claims and the recommendation.</td><td>Agreement is advisory, not authorization.</td></tr>
+<tr><td>Deterministic coordinator</td><td>Owns transitions, tools, checks, persistence and final disposition.</td><td>Does not treat a model’s JSON or rationale as trusted policy.</td></tr>
+</tbody></table></div>
+<p>The workflow gathers baseline facts, calls the evidence analyst, then the investigator and reviewer. One bounded investigator revision may address a reviewer challenge. The coordinator validates structured claims against recorded facts and renders the final rationale from server-controlled values. Unsupported claims do not become facts because two agents agree.</p>
+<p>The four read-only tools are case_evidence, scoring_outcome, account_history and account_profile. Requests use a small typed vocabulary. The server supplies scope and identifiers, bounds time windows and derives results at the case’s decision boundary. A citation establishes a reference; its claim still needs a value/support check.</p>
+<h3 id="endings-matter">Endings matter</h3>
+<p>A valid recommendation creates a server-built intent for separate human review. An abstention can create an insufficient-evidence escalation based on a completed investigator. If there is no valid basis, the workflow ends inconclusive and the case returns to open with no intent. The workflow record and case state are distinct objects.</p>
+<p>Deterministic roles exercise the plumbing in tests. Optional local Claude role adapters provide the live mode. No live one-agent-versus-three-role quality result is claimed at this checkpoint. Free-text notes remain untrusted, even when their structured claims pass.</p>
+<p>Read: agents/coordinator.py, adapters.py, tools.py, claims.py and contracts/agents.py. Role configuration, limits and tool profile are pinned with the case.</p>
+<h2 id="11-deadlines-concurrency-and-recovery">11 Deadlines concurrency and recovery</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">Default limit</th><th scope="col">Recorded value</th></tr></thead><tbody>
+<tr><td>Role attempts / coordinator transitions</td><td>5 / 12</td></tr>
+<tr><td>Investigator revisions / repeats</td><td>1 / 1</td></tr>
+<tr><td>Role timeout plus grace</td><td>45 seconds plus 2 seconds</td></tr>
+<tr><td>Workflow waiting deadline / final reserve</td><td>150 seconds / 5 seconds</td></tr>
+<tr><td>Live workflows / outstanding calls per process</td><td>1 / 2, including late workers</td></tr>
+</tbody></table></div>
+<p>The coordinator reserves time for its final database write and recalculates remaining budgets before operations. It refuses to submit a role call unless the call and grace still fit. A repeat is allowed only after a worker has already returned with a repeatable error; a timed-out worker may still be running, so it is not immediately repeated.</p>
+<p>A workflow slot is released when coordination ends. A call slot stays occupied until its worker actually returns. Database operations whose replies stop arriving are quarantined rather than reusing an uncertain connection. These bounds are process-local, not provider-wide quotas or proof of cancelled remote billing.</p>
+<h3 id="the-three-commit-outcomes">The three commit outcomes</h3>
+<ul>
+<li>Confirmed commit: return the stored result.</li>
+<li>Known rollback or refused work: report the corresponding bounded failure or pending state.</li>
+<li>Commit reply lost: report investigation_outcome_unknown and re-read; do not claim success or rollback.</li>
+</ul>
+<p>Wall-clock jumps exposed timed-wait problems on the observed portable Python build. Shared monotonic waits now cover database coordination and both Future callers. Polling at up to a 5 ms interval is not a guaranteed response latency. PostgreSQL server timeouts still use realtime, and bounded client waiting does not guarantee commit durability by the deadline.</p>
+<p>Recovery uses persisted workflow/revision guards. A trace GET shows overdue status but never recovers it; the mutation path performs recovery. Read clock.py, agents/budget.py, capacity.py and the native-clock diagnosis.</p>
+<h2 id="12-the-security-model">12 The security model</h2>
+<p>The core security question is what an untrusted model or visitor can cause the application to do. Sentinel places permissions and financial effects in server code and database transactions.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Boundary</th><th scope="col">Implemented technique</th></tr></thead><tbody>
+<tr><td>Session isolation</td><td>Hashed bearer tokens, explicit capabilities and tenant/session-filtered queries.</td></tr>
+<tr><td>Database authority</td><td>Restricted runtime role; operator-only provisioning and migrations.</td></tr>
+<tr><td>Model output</td><td>Typed fields, fixed operations, allowlisted tools and server-side fact/claim checks.</td></tr>
+<tr><td>Human action</td><td>Separate approve/reject/execute with revision, expiry, actor and idempotency checks.</td></tr>
+<tr><td>Browser text</td><td>Inert rationale/notes, scoped citation targets and memory-only session token.</td></tr>
+<tr><td>Diagnostics</td><td>Safe request IDs, fixed log fields, code-only errors and secret-scanned test artifacts.</td></tr>
+</tbody></table></div>
+<p>The restricted role cannot create sessions, change the schema or disable audit protection. Runtime setup checks direct and relevant PUBLIC privileges and exact table identities. The owner remains powerful; application audit protection is not tamper-proof against a database administrator.</p>
+<p>Security tests exercise foreign-case access, capability denial, malformed outputs, unsupported claims, approval replay, oversized bodies, timeouts, crashes and secret leakage. Report attacks tested and observed outcomes. Tests do not establish universal prompt-injection prevention or protection against input types that the product does not yet accept.</p>
+<h3 id="subscription-and-public-key-boundaries">Subscription and public key boundaries</h3>
+<p>The optional local Claude adapter verifies supported first-party login and strips paid-provider routing variables. That is a local account-isolation condition, not proof of a particular subscription allowance. A future public visitor cannot be routed through the owner’s personal subscription. Public BYOK needs its own key handling, isolation, abuse limits and verification.</p>
+<p>Read: docs/security/README.md, db/roles.py, investigators.py and the review regressions. Future document retrieval and generated SQL introduce new security boundaries; they cannot inherit a tested claim from today’s structured case flow.</p>
+<h2 id="13-the-analyst-interface-and-trace-view">13 The analyst interface and trace view</h2>
+<p>The React workbench includes session entry, queue/overview, case detail, evidence, proposal, approval/rejection, separate execution, audit and model reports. It distinguishes a rule score from a trained score and a deterministic investigator from a live adapter.</p>
+<p>The read-only investigation trace uses GET /v1/cases/{id}/investigation-trace, optionally selecting a workflow_id. The server reads a single REPEATABLE READ READ ONLY snapshot scoped to tenant and session. Workflows are ordered by case revision, with up to 25 listed and an explicit total. A selected historical trace cannot authorize a historical action.</p>
+<h3 id="unknown-and-stale-are-real-states">Unknown and stale are real states</h3>
+<ul>
+<li>No workflow differs from old single-investigator history and a real zero-role workflow.</li>
+<li>Null counts, usage and limits stay unknown. Zero is displayed as zero.</li>
+<li>Overdue means recovery is due, not that a GET has recovered the workflow.</li>
+<li>An analyst claim check that was not stored is “not recorded,” not verified.</li>
+<li>Recorded role attempts are not proof of provider submission; reported tokens are not billing.</li>
+</ul>
+<p>The client fences responses by session, case, selected workflow and generation. Render-time ownership prevents old private content appearing under a new context before React effects run. Sign-out clears memory. A historical selection survives an ordinary refresh; changing session or case starts with the latest workflow.</p>
+<p>Malformed or non-JSON server/network responses are unconfirmed, not an invented empty result. A 409 triggers a server re-read. An ambiguous action retry retains one execution key. Unicode note limits count code points, matching the Python schema. Model notes render as text, not HTML or executable Markdown.</p>
+<p>Read: web/src/, docs/ui/G3C-trace.md, contracts/http/openapi.v1.2.json and decision 0008. Read_at and elapsed_ms describe recorded snapshots/coordinator work, not live provider state.</p>
+<h2 id="14-evaluating-agents-without-inventing-evidence">14 Evaluating agents without inventing evidence</h2>
+<p>G3D measures whether three roles earn their added complexity. The comparators are C0 deterministic investigator, C1 single live investigator, C2-det deterministic workflow plumbing and C2 live three-role workflow. Deterministic success does not establish live reasoning quality.</p>
+<p>The frozen protocol compares supported claims, acceptable recommendations, useful and unnecessary abstention, human correction, security failures, completion counts, workflow/request timing and observable usage. A common blinded human rubric evaluates free text. A model grader may add a labelled signal, but does not replace human ground truth.</p>
+<h3 id="what-the-accepted-development-runner-does">What the accepted development runner does</h3>
+<p>The evaluator uses SENTINEL_EVAL_OPERATOR_URL for catalog verification and session provisioning only. SENTINEL_EVAL_RUNTIME_URL authenticates, ingests, investigates and reads usage under the restricted role. Unsafe or mismatched authority refuses before comparator construction. C1 and C2 require explicit live consent; no such comparison was run for this checkpoint.</p>
+<p>One attempt means one investigate request. Failed provisioning, authentication or ingestion is not an attempt. The corrected runner stops with incomplete JSON and exit 3, preserving earlier requests and listing what did not start. Request errors remain counted. A failed usage lookup cannot erase a known outcome; its provenance becomes unavailable. Missing usage or zero attempts cannot become adapter_reported. Duplicate comparator names are refused.</p>
+<p>Development cases include fault instructions that this manual runner does not apply. It records faults_not_applied; those failure scenarios are demonstrated in pytest instead. Runtime facts remain separate from evaluator expectations. Protected final-case evaluation, live comparisons and completed blinded quality review remain future work. The accepted preparation tools do not establish a live quality result.</p>
+<p>C1 versus C2 is an end-to-end comparison with unequal evidence access. It cannot by itself prove that extra roles caused a quality improvement. Read docs/evals/agents/protocol-v1.md, docs/evals/agents/evaluator-runbook.md and scripts/agent_eval.py. Accepted P4a adds pilot supervision, bound review packets, safe extraction and offline scoring; chapter 21 explains the remaining evaluation work.</p>
+<h2 id="15-testing-and-the-debugging-lessons">15 Testing and the debugging lessons</h2>
+<p>Verification is layered so a green mocked interface is not mistaken for a working financial workflow.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Layer</th><th scope="col">What it demonstrates</th></tr></thead><tbody>
+<tr><td>Contract and unit tests</td><td>Validation, variants, scoring arithmetic, metric definitions and parser behavior.</td></tr>
+<tr><td>Database integration</td><td>Real transactions, scoped SQL, locks, races, rollback and role permissions.</td></tr>
+<tr><td>Real HTTP processes</td><td>Production API behavior, restarts, typed errors and failure cleanup.</td></tr>
+<tr><td>Browser integration</td><td>Browser to API to disposable Postgres, approval/execution and trace behavior.</td></tr>
+<tr><td>Packaging and reproduction</td><td>Installed inference outside the checkout, migrations/assets and frozen model results.</td></tr>
+<tr><td>Cross-platform gates</td><td>Windows and native Ubuntu backend runs, with exact commit and allowed skip.</td></tr>
+</tbody></table></div>
+<p>Regression tests should fail for the claimed defect before a fix. Negative controls and mutations check that an assertion can detect a broken implementation. Concurrent tests must check every caller and the final stored result, not merely that one call succeeded.</p>
+<h3 id="three-useful-examples">Three useful examples</h3>
+<p>The old ingestion reference used strict timestamp order and failed when legitimate decisions shared a timestamp. Tracking earlier decisions and testing a fixed clock corrected the reference without changing scoring. Both event-time and availability cutoff mutations are caught.</p>
+<p>R43 model fixtures originally used seed-time now as event time. A lagging API clock hit future_event_time before the intended missing-profile check. A five-minute historical event margin, paired with profile opening time, fixes the finite-skew precondition while retaining exact model inputs and scores.</p>
+<p>Native realtime steps also exposed wall-clock waits; monotonic waiting and an advisory-lock commit fixture addressed demonstrated paths. Preserve failed reports and qualify uncaptured causes. A later passing run never erases a failure. Strict gates run on clean exact commits; JUnit skip validation uses that same full run.</p>
+<h2 id="16-running-and-operating-the-local-project">16 Running and operating the local project</h2>
+<p>The canonical folder is E:/PHANI/agentforge-sentinel. Follow SETUP.md and the current STATUS first, because an accepted component can still await main integration. Do not paste a command from an old dated guide without checking its supported flags.</p>
+<ol>
+<li>Install the locked development and model extras with uv sync --locked --extra dev --extra ml.</li>
+<li>Start the local deterministic rule stack with uv run --locked python scripts/local_stack.py up.</li>
+<li>In web/, run npm ci and npm run dev; enter the private local session token from the owned stack session file.</li>
+<li>Use the documented smoke command for a synthetic case, then inspect its evidence, approval, execution and audit.</li>
+<li>Stop through scripts/local_stack.py down. Use the owned recovery records when shutdown cannot be confirmed.</li>
+</ol>
+<p>Model mode is explicit and needs operator-provisioned account profiles. The API and accepted local_stack helper support explicit investigator and adapter selection, including the three-role mode, with recorded restart settings. That configuration support is not evidence of a live provider run. The deterministic investigator stays the safe development default.</p>
+<h3 id="restart-backup-and-process-ownership">Restart backup and process ownership</h3>
+<p>Local tools record the processes and folders they own. A stop must verify process identity, not kill by executable name. Failed cleanup keeps recovery state. The separate browser stack uses disposable clusters and private manifests; its tokens stay available for artifact secret scanning until teardown finishes.</p>
+<p>Backup uses a PostgreSQL custom-format dump and restore into a new owned database, with migration inventory and audit checks. The accepted populated-workflow round-trip verifies stored workflow/step content, rather than showing only matching empty-table counts. The operator’s POSIX orphan-detection limits and PID-check-to-signal window remain disclosed.</p>
+<p>Logs use safe request metadata; default web-server access logs can include query strings, so documented local launchers disable them. Metrics are process-memory counters without a public metrics endpoint. Log retention, cloud monitoring, capacity and hosted operations remain future engineering work.</p>
+<h2 id="17-future-financial-analyst-uses">17 Future financial analyst uses</h2>
+<p>The current case and model-report screens are a foundation for a broader financial data workspace. AN01 now has an accepted design and a delivered measurement prototype, but no accepted production reports API/UI. The uses below are proposed workflows and acceptance targets, not shipped banking capabilities.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Future use</th><th scope="col">Concrete analyst task</th><th scope="col">Evidence needed</th></tr></thead><tbody>
+<tr><td>Payment reconciliation</td><td>Find a missing settlement or duplicate ledger entry.</td><td>Seeded totals, matched/unmatched records and independently checked discrepancies.</td></tr>
+<tr><td>Fraud trend analysis</td><td>Compare alert and error rates by week, currency or merchant cohort.</td><td>Versioned source rows, clear denominators and delayed-label handling.</td></tr>
+<tr><td>Case operations</td><td>Identify backlogs, false-alarm workload and ageing approvals.</td><td>Actual persisted case histories and reproducible aggregates.</td></tr>
+<tr><td>Marketplace abuse</td><td>Investigate seller payout bursts or repeated refund patterns.</td><td>Defined entities/events, new labels and scoped evidence.</td></tr>
+<tr><td>Scam or AML research</td><td>Review transfer chains or suspicious account relationships.</td><td>Separate task definition, data rights, evaluation and domain review.</td></tr>
+<tr><td>Credit or market risk</td><td>Study default or loss scenarios and exposure changes.</td><td>Separate targets, assumptions, backtesting and uncertainty.</td></tr>
+</tbody></table></div>
+<h3 id="a-useful-analyst-pipeline">A useful analyst pipeline</h3>
+<p>Validate ingestion and reconcile source totals, publish curated scoped views, calculate cohort/temporal measures, investigate exceptions, then export an evidence-backed report. Each displayed count needs a known-answer fixture. Keep actual records, reported model results and hypothetical scenarios visibly distinct.</p>
+<p>If natural-language SQL is added, use a dedicated read-only role, curated views, mandatory scope and query/time/row limits. An LLM-generated SELECT is not trusted just because a text filter accepts it. Block filesystem/network extensions and validate export contents.</p>
+<p>A fraud model does not become a credit or market-risk model by renaming its screen. Infrastructure can be reused; outcomes, datasets, decision costs and evaluations must be designed for each new problem.</p>
+<h2 id="18-future-ai-and-scaling-experiments">18 Future AI and scaling experiments</h2>
+<p>Expand one measured weakness at a time. Each experiment needs a baseline, data/protocol version, resource measurement and a decision about whether to adopt it.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Proposed track</th><th scope="col">Question to answer</th><th scope="col">Possible techniques</th></tr></thead><tbody>
+<tr><td>Better fraud features</td><td>Can currency effects and legitimate bursts be separated better?</td><td>Normalized amount features, calibration study and new temporal evaluation.</td></tr>
+<tr><td>Sequence learning</td><td>Does ordered history add value beyond window aggregates?</td><td>A small PyTorch sequence model against the frozen tree baseline.</td></tr>
+<tr><td>Entity graphs</td><td>Do relationships reveal patterns missed per account?</td><td>Defined entity/edge features, then a GNN only if justified.</td></tr>
+<tr><td>Evidence retrieval</td><td>Can investigators use documents safely and accurately?</td><td>Permission-filtered RAG, pgvector, reranking and injection tests.</td></tr>
+<tr><td>Local inference</td><td>Which model fits this laptop’s quality and latency budget?</td><td>Ollama benchmark; later quantization or PEFT/LoRA if a gap warrants it.</td></tr>
+<tr><td>MLOps and operation</td><td>Can models and services be changed safely under load?</td><td>Drift/delayed-label monitoring, registry/promotion, rollback and measured queues.</td></tr>
+</tbody></table></div>
+<p>Ollama is a model runtime, not the multi-agent coordinator and not free cloud hardware. CPU-first classical training is already useful. GPU experiments depend on measured local capacity or an actual free allowance, with no paid fallback assumed.</p>
+<h3 id="the-public-product-path">The public product path</h3>
+<p>A reviewed recorded replay without a model key is now accepted locally. The next release work is restricted staging, genuine CI, session lifecycle, retention, abuse limits and measured capacity. A local static replay is not a hosted service. Visitor BYOK must be request-scoped, secret-safe and isolated; never substitute a personal owner key or subscription bridge.</p>
+<p>Vercel/Neon or another host can be evaluated later against current official limits and the actual bundle/process model. Durable queues or separate workers become useful when measured replay/concurrency requirements justify them. Kubernetes is an optional infrastructure learning exercise, not evidence of scale by itself.</p>
+<h2 id="19-how-to-study-and-explain-the-implementation">19 How to study and explain the implementation</h2>
+<h3 id="first-reading-pass">First reading pass</h3>
+<ol>
+<li>Explain the online pipeline in chapter 2 without looking. Separate scorer, investigator and approver.</li>
+<li>Read service.py alongside the v1 contracts and identify the transaction boundary for ingestion and execution.</li>
+<li>Read the data/model cards, protocol and test report. Recalculate precision and recall from one confusion matrix.</li>
+<li>Follow one coordinator workflow through tools, claims, role attempts, disposition and terminal transaction.</li>
+<li>Read the trace API/client and one race regression. Explain why null differs from zero and why stale content must clear before effects.</li>
+<li>Read the authority, approval/idempotency and clock regressions. Explain what each failure would look like to an analyst.</li>
+</ol>
+<h3 id="questions-you-should-be-able-to-answer">Questions you should be able to answer</h3>
+<ul>
+<li>Why is random train/test splitting inappropriate for this stream? How do delayed labels change training eligibility?</li>
+<li>What prevents a model from choosing another account or approving its own recommendation?</li>
+<li>What happens if COMMIT succeeds but its response is lost? Why must a retry keep the same execution key?</li>
+<li>Why can two equal ingestion timestamps describe different availability? Why is event time still exclusive at the upper bound?</li>
+<li>What did multi-agent tests demonstrate, and what still needs a live comparison and blinded human review?</li>
+</ul>
+<h3 id="an-accurate-project-explanation">An accurate project explanation</h3>
+<p>“I am building a synthetic fraud investigation workbench that connects temporal ML scoring to bounded agent investigations and human-approved simulated actions. I implemented persistent, scoped workflows, reproducible classical baselines, typed evidence/tools, failure recovery and an analyst trace interface. The next steps are measured live-agent evaluation, broader financial analytics and a verified public demonstration.”</p>
+<p>Your demonstrated skills are Python, SQL, typed APIs, statistical ML, evaluation, concurrency, security boundaries, React/TypeScript and testing. Deep learning, RAG, streaming and cloud operations remain explicit learning tracks until their own artifacts and experiments exist.</p>
+<h2 id="20-the-financial-analysis-workspace-what-an01-adds">20 The financial-analysis workspace: what AN01 adds</h2>
+<p>The investigation workbench explains one case. AN01 is intended to explain a scoped collection of financial records. Its first production slice, S1, is planned as curated read-only reports rather than a free-form SQL console. Export and label-availability extensions are later S2 work. Saved queries, arbitrary natural-language SQL, settlement matching and new business domains require additional design; they are not silently included in the first reports slice.</p>
+<p><strong>Two uses of stage names:</strong> reporting feature slices S1/S2 describe future product delivery. The M1 benchmark also has orchestration stages named S1–S9. Finishing tiny benchmark stages S1–S9 does not ship the production reporting slice S1. Read each stage name with its task prefix.</p>
+<h3 id="the-report-pipeline">The report pipeline</h3>
+<ol>
+<li>Authenticate the session and check the future report capability under an accepted versioned contract.</li>
+<li>Validate the requested UTC interval or local-date interval, timezone, cutoff, currency and page parameters.</li>
+<li>Admit the operation only when both coordinator and held-resource capacity are available. Reserve before connecting.</li>
+<li>Open a restricted connection, then start the report budget and one REPEATABLE READ READ ONLY transaction.</li>
+<li>Arm positive statement and lock budgets before each statement. Run guard, consistency and result statements in the same snapshot.</li>
+<li>Return typed measures with their currency, denominators, time semantics and change flags. End with ROLLBACK; reports do not write business state.</li>
+<li>Show the chosen cutoff and server read time. The client measures receipt age using its own monotonic clock. A refresh is another read, not an investigation or action.</li>
+</ol>
+<p>This is the intended production pipeline. The current M1 code is a measurement-only prototype in scripts, with no reports route or capability issuance. A copied budget adapter must still be checked for production equivalence before S1 can use it.</p>
+<h3 id="seven-complete-operations-in-the-prototype">Seven complete operations in the prototype</h3>
+<div class="table-wrap"><table><thead><tr><th scope="col">Operation</th><th scope="col">Analyst question</th><th scope="col">Important distinction</th></tr></thead><tbody>
+<tr><td>totals</td><td>How many matching transactions and how much money are present?</td><td>Keep currencies and exponents separate; do not add USD to INR.</td></tr>
+<tr><td>daily_utc</td><td>How do counts and amounts vary by UTC day?</td><td>A daily row is a defined bucket, not a naive string prefix.</td></tr>
+<tr><td>daily_ny</td><td>How do they vary under a selected supported local timezone?</td><td>This prototype operation serves the non-UTC choices; daylight-saving days can be 23 or 25 hours.</td></tr>
+<tr><td>workload</td><td>What case work was created, completed or remains open?</td><td>Case creation, action completion and current backlog use distinct time bases.</td></tr>
+<tr><td>quality</td><td>Do transaction/outcome records agree, and how long did ingestion take?</td><td>Unknown outcomes differ from real zero; counts and lag quantiles need defined denominators.</td></tr>
+<tr><td>drill_first</td><td>Which exact records contribute to a report?</td><td>Stable order and page counts are part of the report contract.</td></tr>
+<tr><td>drill_cursor</td><td>What is the next scoped page?</td><td>A cursor positions a query; it grants no authority and is validated against the request.</td></tr>
+</tbody></table></div>
+<p>M1 has 22 tagged SQL statements and 3 control templates. Statement and operation hashes bind a measurement to the exact SQL. Measuring a convenient query and shipping a different one would not qualify its performance.</p>
+<h3 id="correctness-details-worth-understanding">Correctness details worth understanding</h3>
+<p><strong>Time:</strong> the proposed public UTC request range is [2000-01-01, 2038-01-01). A pinned local-midnight table covers extra dates from 1999-12-31 through 2038-01-02 because a UTC edge can lie in a different local day and the final day needs its next midnight. The five zones are UTC, Europe/London, America/New_York, Asia/Kolkata and Asia/Tokyo. Unsupported lookups are refused, not clamped. The 92-day request window is a policy choice.</p>
+<p><strong>Snapshots:</strong> each request gets one read-only snapshot, but two separate requests can observe different database states. An ingestion cutoff is a filter on stored ingestion time, not proof that every row with that timestamp had committed when an earlier request ran. The design includes consistency/change detection instead of pretending that a timestamp recreates an old commit snapshot.</p>
+<p><strong>Money:</strong> aggregate integer minor units and publish an explicit currency/exponent. Large totals use the specified integer-string representation at the API boundary. Avoid floating-point display arithmetic. A count of matching rows, a count with known outcomes and a flagged count are different measures.</p>
+<p><strong>Capacity:</strong> two admitted coordinators and two held-resource reservations are provisional process-local limits. Connecting, open and retired-but-not-finally-closed resources consume reservations. A coordinator timing out does not release a connection that still exists. Report quarantine must remain separate from workflow quarantine so a stuck report cannot quietly consume an investigation slot.</p>
+<p><strong>Permissions and versions:</strong> read_report and opt-in v1.3 are proposed for S1; they are not in the accepted active API. Strict older clients can be incompatible with sessions carrying the new capability. That compatibility boundary must be reviewed before introducing it.</p>
+<h3 id="why-measurement-comes-before-the-production-route">Why measurement comes before the production route</h3>
+<p>The provisional figures are 200,000 matching rows, a 5,000 ms report budget, a 250 ms rollback reserve and 2/2 capacity limits. They are not promises. The grid compares index configurations on both platforms, chooses one common configuration, measures complete operations, checks refusal/cancel/lock/no-reply behavior and compares matched storage designs. Missing required evidence means not demonstrated.</p>
+<p>The tiny profile is a plumbing proof, not a smaller statistical version of production capacity. Its selected N* of 80 does not qualify 200,000 rows. The full grid has not run. A later resource/controller review must authorize it, and its disk estimates currently require a decision.</p>
+<h2 id="21-evaluation-preparation-local-performance-and-the-recorded-demo">21 Evaluation preparation, local performance and the recorded demo</h2>
+<p>Three accepted supporting packages make the project easier to evaluate and explain. They answer different questions and must not be combined into one success claim.</p>
+<h3 id="p4a-prepare-a-reviewable-agent-experiment">P4a: prepare a reviewable agent experiment</h3>
+<p>The accepted tooling supervises a bounded development pilot, records attempts and incomplete work, extracts pilot-owned data as the restricted runtime role, creates review packets with a binding to their exact contents, and scores completed or partial human sheets offline. It rebuilds recommendations from storage and refuses disagreement. Contradictory run records, duplicate or invalid sheet rows and stale packet bindings are refused.</p>
+<p>A blank answer is unanswered, not a negative judgement. Supported plus not-checkable claims give the denominator required by the protocol, not a flattering rate that excludes uncertainty. An unacceptable hold is a completed bad recommendation and remains counted. Setup failures, refused investigations, dispositions, inconclusive results and unavailable usage stay separate.</p>
+<p>Preparation is complete; live C1 versus C2 development evaluation is not. It needs explicit authorization, a recorded model/configuration and quota state, one registered pass, retained failure counts and completed blinded human review. The pilot&#x27;s request latency is measurable. Its exact 150-second workflow-elapsed gate is not demonstrated merely by stored timestamps or a terminal step with elapsed_ms=0. An exact observer is separate design work.</p>
+<p>Fault instructions that the manual runner does not apply remain labelled faults_not_applied. Development D11 alone does not establish a matched injection-control experiment. The frozen protocol, original failures and reporting limitations remain part of the evidence.</p>
+<h3 id="perf01-an-initial-local-benchmark">PERF01: an initial local benchmark</h3>
+<p>PERF01 is accepted as a bounded deterministic benchmark, not a production load qualification. In its recorded small Windows sample, ingestion and reads succeeded at concurrency 1, 2 and 4. Investigations succeeded 12/12 at concurrency 1, 2/12 at concurrency 2 and 1/12 at concurrency 4; other requests were counted as capacity refusals because only one workflow is admitted per API process. No approval or simulated action occurred.</p>
+<p>This shows the cost of an explicit concurrency policy, not that the system is broken or that more processes are automatically safe. It does not measure full reports, hosted capacity, live provider latency or fraud accuracy. A future queue or worker design needs its own requirements and measurements.</p>
+<h3 id="demo01-show-the-system-without-a-key">DEMO01: show the system without a key</h3>
+<p>The accepted recorded replay captures one real deterministic synthetic case in ten frames. It shows no approval or action before the human boundary, then one approval, one simulated action and an idempotent retry. Its content validator and freshness checks bind the capture to the generator and production source it records. It is not a live agent result.</p>
+<p>This is useful for an interview, a portfolio walkthrough and an eventual public key-free mode. A visitor can understand the flow without supplying credentials. Publishing or hosting it still needs a separate release step. Freshness currently covers the captured generator and src; changes in contracts, local_stack or lockfiles are not automatically covered by that freshness claim.</p>
+<h2 id="22-how-to-continue-safely-and-keep-context-between-chats">22 How to continue safely and keep context between chats</h2>
+<p>Git commits, the coordination queue and handoff documents preserve context. A long assistant conversation is not the project database. Opening a new chat does not erase committed code; it does require the assistant to read the correct references before acting. No chat automatically knows another chat&#x27;s uncommitted work or private background-job state.</p>
+<h3 id="how-to-read-our-task-names">How to read our task names</h3>
+<ul>
+<li>G0–G5 are broad roadmap milestones, not individual commands. G5 is optional research.</li>
+<li>C01–C08 identify earlier backend/data/ML/CI/operator packages; U01–U03 identify UI/browser packages; I01–I03 identify integration packages. Their task numbers are historical ownership labels.</li>
+<li>G3A is agent design, G3B is the coordinator, G3C is the trace API/UI, and G3D is evaluation and operating preparation. A completed preparation task does not complete all of G3D.</li>
+<li>P4a means evaluation tooling; the live pilot is a later separately authorized step. AN01 is the analyst-reporting workstream; AN01-M1 is its measurement prototype.</li>
+<li>R numbers identify review findings. Closing a design finding proves neither implementation nor a performance value. A named commit and scoped acceptance determine what is actually complete.</li>
+</ul>
+<h3 id="our-working-method">Our working method</h3>
+<ul>
+<li>Main is the canonical accepted application and documentation. Codex coordinates independent review and local integration.</li>
+<li>Claude develops in its named task worktree and hands off an exact commit. Its passing checks are author evidence until independently reviewed.</li>
+<li>Cursor has already supplied the required substantive UI/browser contribution. Its original seven saved edits remain preserved; another tool does not overwrite them to resume work.</li>
+<li>All future commits and merge commits use PHANI465 &lt;pgavara1@asu.edu&gt; as sole author and committer, without co-author or AI trailers. Existing history is preserved.</li>
+<li>Heavy database, browser, benchmark and full-gate jobs run one at a time. Interruption can bypass shell finally blocks: verify processes, recovery state and ownership before clearing a stale lock or restarting.</li>
+<li>No live provider, account/auth probe, paid overage, full-size measurement, remote push or deployment is implied by a document describing it.</li>
+</ul>
+<h3 id="your-last-claude-prompt-was-correct">Your last Claude prompt was correct</h3>
+<p>The instruction to read CLAUDE_AN01_M1_IMPLEMENTATION.md and implement the prototype and tiny proofs was the assigned task. Claude delivered that work as candidate 93583a. Do not send the original implementation prompt again as if nothing exists. The next activity is Codex review, including the changed C2/C3 tests and unresolved timing/resource policy. Claude can wait with its tested worktree untouched.</p>
+<p>A fresh Claude chat is reasonable after the large idle context you reported. Use the saved resume prompt linked in the source map below. It restores the exact candidate, the assigned scope and the current pause without authorizing another benchmark or a rewrite.</p>
+<h2 id="23-what-is-complete-where-we-stopped-and-what-remains">23 What is complete, where we stopped, and what remains</h2>
+<p>This is the status as of November 8, 2026. <strong>Accepted</strong> means reviewed and integrated for the stated scope. <strong>Delivered for review</strong> means a candidate exists and its author&#x27;s evidence is recorded; it is not accepted merely because tests pass. <strong>Planned</strong> means work remains. Local readiness is distinct from public production readiness.</p>
+<h3 id="completed-and-accepted">Completed and accepted</h3>
+<div class="table-wrap"><table><thead><tr><th scope="col">Stage</th><th scope="col">Accepted result</th><th scope="col">Practical limits</th></tr></thead><tbody>
+<tr><td>Foundation and contracts, G0 core</td><td>Typed domain/HTTP boundaries, scoped identity, migrations, isolated worktrees and reproducible checks.</td><td>Hosting/hardware experiments are not all demonstrated just because contracts exist.</td></tr>
+<tr><td>Local case workflow, G1 local</td><td>Transaction, saved score, alert/case, investigation, human decision, simulated execution and audit.</td><td>No bank connection, hosted release or general live-provider quality claim.</td></tr>
+<tr><td>Data and ML, G2 ML</td><td>Synthetic generator, temporal/label-aware features, baseline selection, pinned p1 model, online/offline parity and model-results UI.</td><td>One synthetic world; financial-analysis depth is incomplete.</td></tr>
+<tr><td>G3A/G3B agent design and runtime</td><td>Bounded roles/tools, server claim checks, persisted state, capacity, failure handling and recovery.</td><td>Deterministic plumbing does not establish live-agent superiority.</td></tr>
+<tr><td>G3C trace and clock corrections</td><td>Read-only trace API and UI, stale-response protection, unknown states and monotonic caller/database waiting fixes.</td><td>PostgreSQL realtime behavior and documented OS/process limitations remain.</td></tr>
+<tr><td>G3D preparation, P1–P4a</td><td>Operator/runtime separation, fixture/reference fixes, populated workflow backup, operator selection, pilot packets and offline scoring.</td><td>Live development comparison and final-case evaluation remain unrun.</td></tr>
+<tr><td>Local benchmark and replay</td><td>PERF01 and DEMO01, accepted for their deterministic laptop/static scopes.</td><td>No hosted capacity or deployment claim.</td></tr>
+<tr><td>AN01 design</td><td>Reviewed r3.2 design with zone, stage-supervision and held-resource reservation corrections.</td><td>No active v1.3 report contract, production reports route or reporting UI.</td></tr>
+</tbody></table></div>
+<p>The latest accepted application/tooling integration is 871e31d40e93306cfde6617e814c2cb78ae67c9e. Its independent Windows and native Ubuntu gates each passed 810 tests plus the one allowed live-Claude skip, with six commands, same-run JUnit, HTTP, package and read-only ML checks. Main was a07ec12710c86b15f111d13e3384c4cf0c6c8f6e at the start of this guide update; the later documentation publication does not claim a new application gate.</p>
+<p>The last applicable Windows product UI evidence is 133 unit tests and browser suites of 19 legacy plus 10 trace tests on the trace/clock release. Those suites were not rerun for later tooling-only work. A test count is evidence tied to a specific code state, not a universal completeness score.</p>
+<h3 id="delivered-now-awaiting-codex-review">Delivered now, awaiting Codex review</h3>
+<p>AN01-M1 candidate <strong>93583a7570ae78f254a2d69e9857b701b0e444ad</strong>, branch task/claude-an01-m1-prototype, is clean and based on accepted a07ec12. It adds only three prototype/test files and two documentation/handoff files. It is not merged or accepted.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Evidence</th><th scope="col">Status and meaning</th></tr></thead><tbody>
+<tr><td>Final candidate gates</td><td>Claude reports Windows then native Ubuntu: 876 passed + one allowed skip each, six commands, same-run JUnit validation, unchanged frozen HTTP and matching ML reproduction. Local Windows checker metadata names the exact candidate and a clean tree. This guide does not independently certify those suites.</td></tr>
+<tr><td>Tiny smoke</td><td>Run at earlier f00df8c, not final 93583a. Native C2:1250 missed the reply margin once in five runs; the result remains not demonstrated and was not retried. Final cleanup/reply-timestamp changes do not make this an exact-final smoke.</td></tr>
+<tr><td>R-M1-1</td><td>Decide how the server-cancel reply margin relates to work end and the rollback reserve; review arrival versus notice timing and the changed C2/C3 tests.</td></tr>
+<tr><td>R-M1-2</td><td>Review the reported coarse Windows clock in the accepted budget implementation; production code was not changed by M1. This is a reported finding, not a newly accepted fix.</td></tr>
+<tr><td>R-M1-3</td><td>Review the estimate that the full grid exceeds the 4 GB cluster budget, and the WSL backing-volume free-space constraint. The estimate is from tiny data, not measured full-size disk use.</td></tr>
+<tr><td>Full-size measurement</td><td>Not run and not authorized. Provisional row, budget, reserve and capacity values remain unqualified.</td></tr>
+</tbody></table></div>
+<p>Earlier interrupted native tests have no usable result; the author reran the focused tests separately. Earlier failed gate reports remain preserved. The changed test assertions are specifically a review target; a later green gate is not enough to settle that question.</p>
+<h3 id="remaining-work-in-dependency-order">Remaining work in dependency order</h3>
+<div class="table-wrap"><table><thead><tr><th scope="col">Next stage</th><th scope="col">Work to do</th><th scope="col">Evidence needed before calling it done</th></tr></thead><tbody>
+<tr><td>1 Review AN01-M1</td><td>Independently examine SQL semantics, controller ownership, lease lifetime, timing classifications, changed assertions and disk/resource findings.</td><td>Targeted probes and a written verdict; any corrections get their own preserved commit and appropriate checks.</td></tr>
+<tr><td>2 Decide and measure reports</td><td>Resolve reply policy and realistic disk/workload bounds, then separately assign the full grid if resources permit.</td><td>Both platforms, common index choice, complete required cells, retained failures and qualified limits or an honest not-demonstrated result.</td></tr>
+<tr><td>3 Ship AN01 S1</td><td>Review/freeze v1.3, implement capability and curated read-only API, integrate the report UI and known-answer/browser tests.</td><td>Browser → production API → Postgres with scope, exact money/time semantics, capacity/error handling and secret-safe lifecycle.</td></tr>
+<tr><td>4 Extend analyst depth</td><td>S2 exports/label availability and separately scoped saved analysis, reconciliation/cohort tasks as needed.</td><td>Controlled export content, correct denominators, data/label availability and independent known answers.</td></tr>
+<tr><td>5 Run agent development evaluation</td><td>Explicitly authorize the limited live pilot, record model/quota context and complete blinded reviews.</td><td>Attempt/failure accounting, security gates, supported/unsupported claims, quality and honest timing/usage. Exact workflow timing remains separately instrumented or not demonstrated.</td></tr>
+<tr><td>6 Evaluate held-out cases</td><td>Freeze chosen behavior and authorize a final evaluation separate from development tuning.</td><td>No repeated tuning on final cases; retained negative outcomes and limitations.</td></tr>
+<tr><td>7 Verify the release environment</td><td>Real GitHub Actions, Linux browser execution and chosen platform/session/retention/abuse policies.</td><td>Runner and deployment evidence tied to actual source/configuration; no assumption that WSL equals hosted CI.</td></tr>
+<tr><td>8 Publish or host, if chosen</td><td>Package the replay and documentation; deploy a controlled service only after the host and budget are approved.</td><td>Reachable reviewed release, operational recovery, secret handling and realistic resource limits. Visitor BYOK needs its own accepted design and tests.</td></tr>
+</tbody></table></div>
+<p>Steps can be split into isolated tasks, but resource-heavy verification stays sequential. Reports and evaluation are separate workstreams; completing one does not demonstrate the other. macOS remains unverified and is not automatically a mandatory release target unless we choose it.</p>
+<h3 id="optional-improvements-after-the-core-milestones">Optional improvements after the core milestones</h3>
+<p>Currency-normalized features, calibration, drift monitoring, sequence models, entity graphs, retrieval/RAG, an isolated document reader, AML/scam modules and queues are worthwhile experiments when a measured weakness motivates them. They are optional extensions, not hidden requirements for declaring the present local investigation workflow complete. Each new domain needs its own labels, data rights, metrics, safety boundaries and comparison baseline.</p>
+<p>There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, measured live-agent value and a verified public release are the three substantial workstreams still ahead. We stopped immediately before independent review of the delivered AN01-M1 prototype.</p>
+<h3 id="source-map-and-the-next-chat">Source map and the next chat</h3>
+<ul>
+<li><a href="../STATUS.md">Current project status</a> and <a href="../TASK_QUEUE.md">task queue</a>: current ownership and authorization.</li>
+<li><a href="AgentForge_Sentinel_Session_2026-11-08.md">November 8 checkpoint</a>: exact stopping point and preserved candidate.</li>
+<li><a href="../prompts/CLAUDE_RESUME_AN01_M1_REVIEW_2026-11-08.md">Claude new-chat resume prompt</a>: read and wait for Codex review, not repeat implementation.</li>
+<li><a href="../reviews/AN01-M1-93583a-intake.md">AN01-M1 intake</a>: evidence received and outstanding independent review; not an acceptance.</li>
+<li><a href="../PROJECT_PLAN.md">Milestone roadmap</a>: complete planned product; proposed technologies are not all installed dependencies.</li>
+<li><a href="../../contracts/http/openapi.v1.2.json">Active API contract</a>, <a href="../api/README.md">API notes</a> and <a href="../api/investigation-trace-v1.2.md">trace contract</a>.</li>
+<li><a href="../../ml/protocol.json">ML protocol</a>, <a href="../ml/data-card.md">data card</a>, <a href="../ml/model-card.md">model card</a> and <a href="../../ml/results/p1/test_report.json">frozen model report</a>.</li>
+<li><a href="../evals/agents/protocol-v1.md">Agent protocol</a>, <a href="../evals/agents/evaluator-runbook.md">evaluator runbook</a> and <a href="../security/README.md">security notes</a>.</li>
+<li><a href="../analytics/AN01-decisions-r3.md">Reviewed reports design</a> and <a href="../prompts/CLAUDE_AN01_M1_IMPLEMENTATION.md">prototype assignment</a>. Candidate M1 write-up is on task/claude-an01-m1-prototype at docs/benchmarks/AN01-M1.md; read it with git show until integration.</li>
+<li><a href="../releases/Batch-r2-main-integration-2026-11-07.md">Accepted tooling/demo release</a>, <a href="../releases/G3D-P2-main-integration-2026-11-06.md">populated backup proof</a> and <a href="../releases/G3D-P3-main-integration-2026-11-06.md">operator-mode integration</a>.</li>
+</ul>
+<p>For an interview, explain one transaction, one temporal leakage risk, one claim check, one human-approval boundary and one ambiguous failure before listing frameworks. Be clear that synthetic accuracy, deterministic tests and a static replay answer different questions. The project is strongest when every claimed capability has a traceable artifact and every unmeasured limit stays visible.</p></article><footer>Source: the matching Markdown guide. November 8, 2026. Accepted code and candidate author evidence are distinguished; future plans do not authorize execution or spending.</footer></main></div><script>
+const pipeline=[["Authenticate", "A token resolves to tenant, session, actor and capabilities. The model does not choose its scope.", "No approval · no action"], ["Validate and order", "Validate the input and take the account lock before reading decision time. Reject future or malformed inputs.", "No approval · no action"], ["Score and store", "Compute available historical features and save the rule or model outcome. A replay keeps the saved decision.", "No approval · no action"], ["Open a case", "An alerting score creates the case and evidence with provenance pins. A non-alerting score still remains stored.", "No approval · no action"], ["Investigate", "The coordinator runs bounded analyst, investigator and reviewer roles over allowlisted facts. Here we illustrate the recommendation branch.", "No approval · no action"], ["Check the proposal", "Server code validates claims and builds exact action parameters. Reviewer agreement is not human authorization.", "No approval · no action"], ["Human decision", "For this illustrative branch, a human approves. Reject and inconclusive paths do not proceed to execution.", "One human approval · no action"], ["Execute explicitly", "A separate request checks revision, actor, expiry and one idempotency key, then stores a simulated effect atomically.", "One approval · one simulated action"], ["Read and audit", "The stored case, trace and audit explain the decision. An execution retry with the same key returns the original effect.", "One simulated action · retry adds none"]];
+let step=0;
+const dots=[...document.querySelectorAll('.step-dot')];
+function drawStep(){const s=pipeline[step];document.getElementById('step-title').textContent=`${step+1} / ${pipeline.length} · ${s[0]}`;document.getElementById('step-note').textContent=s[1];document.getElementById('step-boundary').textContent=s[2];document.getElementById('step-prev').disabled=step===0;document.getElementById('step-next').disabled=step===pipeline.length-1;dots.forEach((d,i)=>d.classList.toggle('active',i<=step));}
+document.getElementById('step-prev').addEventListener('click',()=>{step--;drawStep()});document.getElementById('step-next').addEventListener('click',()=>{step++;drawStep()});document.getElementById('print').addEventListener('click',()=>window.print());drawStep();
+const article=document.getElementById('guide-article');
+let matches=[],hit=-1;
+function clearMarks(){article.querySelectorAll('mark').forEach(m=>m.replaceWith(document.createTextNode(m.textContent)));article.normalize();matches=[];hit=-1;}
+function findText(){clearMarks();const q=document.getElementById('find').value.trim();const status=document.getElementById('find-status');if(!q){status.textContent='Search the complete guide.';document.getElementById('find-next').disabled=true;return;}const walker=document.createTreeWalker(article,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest('script,style,button,input')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});const texts=[];while(walker.nextNode())texts.push(walker.currentNode);for(const node of texts){const text=node.nodeValue;let pos=0,start=0;const f=document.createDocumentFragment();const lower=text.toLocaleLowerCase();const query=q.toLocaleLowerCase();while((pos=lower.indexOf(query,start))!==-1){f.append(document.createTextNode(text.slice(start,pos)));const mark=document.createElement('mark');mark.textContent=text.slice(pos,pos+q.length);f.append(mark);matches.push(mark);start=pos+q.length;}if(start){f.append(document.createTextNode(text.slice(start)));node.replaceWith(f);}}status.textContent=`${matches.length} matching passages`;document.getElementById('find-next').disabled=!matches.length;}
+document.getElementById('find').addEventListener('input',findText);document.getElementById('find-next').addEventListener('click',()=>{if(!matches.length)return;hit=(hit+1)%matches.length;matches[hit].scrollIntoView({block:'center',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});document.getElementById('find-status').textContent=`Match ${hit+1} of ${matches.length}`;});
+document.getElementById('find-form').addEventListener('submit',e=>{e.preventDefault();document.getElementById('find-next').click();});
+</script></body></html>

@@ -1,11 +1,39 @@
 # Shared implementation queue
 
+## November 8: AN01-M1 delivered; independent review pending
+
+Candidate **93583a7570ae78f254a2d69e9857b701b0e444ad** is preserved on
+task/claude-an01-m1-prototype, based on accepted a07ec12. It is not accepted or merged.
+[Delivery intake](reviews/AN01-M1-93583a-intake.md) records author evidence and review targets.
+Claude reports exact-final Windows/native gates of 876 + one allowed skip each. The tiny
+smoke at earlier f00df8c remains **not demonstrated** after native C2:1250 missed its reply
+margin; final cleanup/arrival changes do not establish an exact-final smoke.
+
+Next is Codex independent review of SQL, controller/resource ownership, changed C2/C3
+assertions, timing policy R-M1-1, reported clock coarseness R-M1-2 and disk/resource estimate
+R-M1-3. No full-size benchmark is assigned. Existing 200,000-row / 5,000 ms / 250 ms / 2/2
+values remain provisional. No production reports route, v1.3 freeze, live/auth/account/
+final-case work, new spending, remote operation or deployment is assigned.
+
+The previous implementation assignment is delivered, not a task to repeat. A new Claude
+chat may read [the saved resume prompt](prompts/CLAUDE_RESUME_AN01_M1_REVIEW_2026-11-08.md),
+restore the exact candidate and wait for a concrete review dispatch. Recommended assistant:
+Opus 5.5 / High, within existing allowance. Preserve the tested checkout and Cursor edits.
+
+[Current complete guide](artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md)
+and [offline HTML](artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html)
+explain the project first and completed/remaining stages last.
+[November 8 checkpoint](artifacts/AgentForge_Sentinel_Session_2026-11-08.md).
+Accepted application/tooling remains tested 871e31d (independent 810 + one skip per platform);
+this guide/intake publication changes documentation and a static HTML artifact only. It is
+not an independent acceptance of 93583a and claims no new full application gate.
+
 ## November 7: AN01 reviewed design accepted; M1 prototype assigned
 
 [Final design review](reviews/AN01-r31-2db42ee.md) closes R50–R52 for the **review-corrected
 r3.2 specification**, integrating preserved `2db42ee` plus Codex's stage-supervision and
 reserved-capacity corrections. The public v1.3 contract is not frozen and report features
-are not implemented. 200,000 rows / 5,000 ms ms and resource values remain provisional.
+are not implemented. 200,000 rows / 5,000 ms and resource values remain provisional.
 
 [Claude AN01-M1 assignment](prompts/CLAUDE_AN01_M1_IMPLEMENTATION.md), Opus 5.5 / High:
 implement the SQL prototype, resource/lease adapter and safe stage supervisor, with
