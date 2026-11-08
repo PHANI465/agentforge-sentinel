@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import base64
 import bisect
+import dataclasses
 import hashlib
 import json
 import math
@@ -183,6 +184,7 @@ class Request:
     direction: str | None = None
     limit: int | None = None
     cursor: tuple | None = None   # (last_occurred_at, last_id, matching, with_outcome)
+    as_of_explicit: bool = False  # False: as_of is the default, bound to the snapshot read_at
 
     @property
     def filter_digest(self) -> str:
@@ -226,6 +228,11 @@ def normalize(zones: ZoneTable, report_id: str, *, read_at: datetime, from_=None
             raise InvalidRequest("date outside the zone table") from None
     if not (DOMAIN_LOWER <= start and end <= DOMAIN_UPPER):
         raise InvalidRequest("window outside the request domain")
+    explicit = as_of is not None
+    if cursor is not None and not explicit:
+        # Contract draft: page 2+ repeats page 1's provenance.as_of explicitly. A default
+        # would resolve to this request's own read_at and silently change the filters.
+        raise InvalidCursor("a cursor needs page 1's as_of repeated explicitly")
     as_of = read_at if as_of is None else parse_instant(as_of)
     if as_of > read_at:
         raise InvalidRequest("as_of after read_at")
@@ -242,12 +249,42 @@ def normalize(zones: ZoneTable, report_id: str, *, read_at: datetime, from_=None
             raise InvalidRequest("limit 1-100")
     elif limit is not None or cursor is not None:
         raise InvalidRequest("limit/cursor apply only to rows.transactions")
-    request = Request(report_id, start, end, tz, as_of, read_at, currencies, direction, limit)
+    request = Request(report_id, start, end, tz, as_of, read_at, currencies, direction, limit,
+                      None, explicit)
     if cursor is not None:
         position = decode_cursor(cursor, request, cap)
-        request = Request(report_id, start, end, tz, as_of, read_at, currencies, direction,
-                          limit, position)
+        request = dataclasses.replace(request, cursor=position)
     return request
+
+
+def bind_read_at(request: Request, read_at: datetime) -> Request:
+    """The request bound to its ONE authoritative read time: the application clock read
+    just before the first armed statement, which establishes the snapshot (decisions 5.2.3).
+
+    `normalize` only validates against a provisional request-time instant. Acquisition can
+    wait outside B, so the snapshot read is later; SQL parameters and DTO provenance both
+    use this bound value. An explicit as_of is kept as chosen; a default as_of becomes
+    read_at. An explicit as_of after the actual read_at (a wall clock that stepped back)
+    is invalid_request, never clamped."""
+    if read_at.tzinfo is None:
+        raise InvalidRequest("read_at without offset")
+    read_at = read_at.astimezone(UTC)
+    as_of = request.as_of if request.as_of_explicit else read_at
+    if as_of > read_at:
+        raise InvalidRequest("as_of after the snapshot read_at")
+    return dataclasses.replace(request, read_at=read_at, as_of=as_of)
+
+
+def snapshot_binding(request: Request) -> Callable[[datetime], dict | None]:
+    """For run_statements: the parameter overrides for the actual read_at, or None when
+    the request is invalid at that instant. Pure; the shared params dict is never mutated."""
+    def bind(read_at: datetime) -> dict | None:
+        try:
+            bound = bind_read_at(request, read_at)
+        except InvalidRequest:
+            return None
+        return {"read_at": bound.read_at, "as_of": bound.as_of}
+    return bind
 
 
 def encode_cursor(request: Request, last_occurred: datetime, last_id, counts) -> str:
@@ -752,8 +789,31 @@ class NoReply(Exception):
     quarantine and its reservation stays held until the final close."""
 
 
+class LateReply(NoReply):
+    """The reply ARRIVED after the wait deadline, though the waiting thread noticed it
+    (polling and sleep overshoot wake it late). By the configured monotonic deadline that
+    is no reply by work_end, so the connection is retired exactly as for NoReply (R55)."""
+
+    def __init__(self, late_ms: float, reply_class: str | None):
+        super().__init__(f"reply arrived {late_ms:.3f} ms after the deadline")
+        self.late_ms, self.reply_class = late_ms, reply_class
+
+
+class BudgetExpired(Exception):
+    """bounded_call was given a non-positive wait: nothing was started or submitted (R55)."""
+
+
+_users = iter(range(1, 1 << 62))
+
+
 class ReportConnection:
-    """One report request's connection, its admission and its single close."""
+    """One report request's connection, its admission and its single ACTUAL close.
+
+    close_state: open -> closing -> closed, or -> close_failed when conn.close() raised.
+    A failed close is not a close (R56): the reservation stays held and the connection stays
+    in the report quarantine under this owner, until retry_close() succeeds or the process
+    exits (which closes its sockets; decisions 5.2.6). A logical flag is never treated as
+    proof that the socket closed, so the reservation is released only after close() returned."""
 
     def __init__(self, conn, admission: Admission, quarantine: ReportQuarantine,
                  final_close_gate: Callable[[], None] | None = None):
@@ -762,9 +822,16 @@ class ReportConnection:
         self.cond = threading.Condition()
         self.users: set[str] = set()
         self.retired = self.closed = False
+        self.close_state = "open"
+        self.close_error: str | None = None
         self.close_calls = 0
         self.events: list[str] = []
         self.reply_at: float | None = None
+
+    def new_user(self) -> str:
+        """A unique user name per bounded call, so one call's late leave can never remove
+        another call's entry."""
+        return f"sql-{next(_users)}"
 
     def enter(self, user: str) -> None:
         with self.cond:
@@ -791,6 +858,7 @@ class ReportConnection:
     def _closing(self) -> bool:  # holding the lock
         if self.retired and not self.users and not self.closed:
             self.closed = True
+            self.close_state = "closing"
             return True
         return False
 
@@ -801,26 +869,48 @@ class ReportConnection:
                 self.final_close_gate()          # test-only injected delay (phase C5)
         finally:
             self._do_close("final_close")
-            self.quarantine.release(self.conn)
 
     def close_normal(self) -> bool:
         """Request-owned close of a connection that was never retired. Returns False (and
-        does nothing) for a retired one: its lease owns the close."""
+        does nothing) for a retired one: its lease owns the close. True means a close was
+        ATTEMPTED; close_state says whether it succeeded."""
         with self.cond:
             if self.retired or self.closed:
                 return False
             self.closed = True
+            self.close_state = "closing"
         self._do_close("normal_close")
         return True
 
-    def _do_close(self, why: str) -> None:
+    def retry_close(self) -> bool:
+        """Retry a failed close (only when nothing uses the connection). True only when
+        this retry actually closed it; the reservation is then released, once."""
+        with self.cond:
+            if self.close_state != "close_failed" or self.users:
+                return False
+            self.close_state = "closing"
+        return self._do_close("retry_close")
+
+    def _do_close(self, why: str) -> bool:
+        """The only path to conn.close(); callers hold close_state == "closing"."""
         self.close_calls += 1
         self.events.append(why)
         try:
             self.conn.close()
-        except Exception:
-            pass
+        except Exception as error:
+            # Not closed: keep the reservation and an accountable owner in the report
+            # registry (never the workflow QUARANTINE). KeyboardInterrupt/SystemExit
+            # propagate with the state left "closing" and the reservation held.
+            with self.cond:
+                self.close_state, self.close_error = "close_failed", type(error).__name__
+            self.events.append(f"{why}_failed")
+            self.quarantine.hold(self.conn)
+            return False
+        with self.cond:
+            self.close_state = "closed"
+        self.quarantine.release(self.conn)
         self.admission.release_reservation(why)
+        return True
 
 
 def bounded_call(rc: ReportConnection, operation: Callable, wait_ms: float,
@@ -832,12 +922,23 @@ def bounded_call(rc: ReportConnection, operation: Callable, wait_ms: float,
 
     The SQL thread records when its reply (result or server error) arrived in
     `rc.reply_at` on `clock`; the waiter may notice it later (polling every <= 5 ms, plus
-    sleep overshoot), so latencies use the arrival time, not the moment it was noticed."""
+    sleep overshoot), so latencies use the arrival time, not the moment it was noticed.
+
+    R55: a non-positive (or NaN) wait raises BudgetExpired BEFORE any thread starts. The
+    deadline is `clock() + wait_ms` at entry; a reply whose recorded arrival is after it
+    raises LateReply (a NoReply) even when the waiter wakes and sees it, so a late reply is
+    never classified as answered on time. An interrupt (KeyboardInterrupt/SystemExit) while
+    the operation still runs retires the connection to its lease before propagating, so
+    the request never ROLLBACKs or closes it under the running SQL thread (R56)."""
+    if not wait_ms > 0:
+        raise BudgetExpired()
     from sentinel.clock import wait_until
+    deadline = clock() + wait_ms
     own = _OwnSocket(rc.conn)
     box: dict = {}
     done = threading.Event()
     started = time.perf_counter()
+    user = rc.new_user()
 
     def work():
         try:
@@ -847,19 +948,35 @@ def bounded_call(rc: ReportConnection, operation: Callable, wait_ms: float,
         finally:
             box["at"] = clock()
             done.set()
-            rc.leave("sql")
+            rc.leave(user)
 
     try:
-        rc.enter("sql")
-        threading.Thread(target=work, name="an01-m1-sql", daemon=True).start()
-        wait_until(done.is_set, lambda: wait_ms / 1000 - (time.perf_counter() - started))
+        rc.enter(user)
+        try:
+            threading.Thread(target=work, name="an01-m1-sql", daemon=True).start()
+        except BaseException:
+            rc.leave(user)
+            raise
+        try:
+            wait_until(done.is_set, lambda: wait_ms / 1000 - (time.perf_counter() - started))
+        except BaseException:
+            if not done.is_set():
+                rc.retire()
+                own.shutdown()
+            raise
         if not done.is_set():
             rc.retire()
             own.shutdown()
             raise NoReply()
+        rc.reply_at = box["at"]
+        if box["at"] > deadline:
+            rc.retire()
+            own.shutdown()
+            error = box.get("error")
+            raise LateReply(box["at"] - deadline,
+                            None if error is None else type(error).__name__)
     finally:
         own.release()
-    rc.reply_at = box.get("at")
     if "error" in box:
         raise box["error"]
     return box.get("value")
@@ -882,8 +999,8 @@ class ReportBudget:
     def end(self) -> float:
         return self.t0 + self.total_ms
 
-    def work_left(self) -> int:
-        return math.floor(self.work_end - self.clock())
+    def work_left(self, now: float | None = None) -> int:
+        return math.floor(self.work_end - (self.clock() if now is None else now))
 
     def left(self) -> int:
         return math.floor(self.end - self.clock())
@@ -896,10 +1013,12 @@ PROTOTYPE_HTTP = {
     "too_large": "413 report_too_large (prototype classification)",
     "admission_refused": "409 report_capacity_exhausted (prototype classification)",
     "connect_failed": "database error path (prototype classification)",
+    "invalid_request": "422 invalid_request (prototype classification)",
     "refused_before_submission": "503 report_timeout (prototype classification)",
     "server_cancelled": "503 report_timeout (prototype classification)",
     "lock_timeout": "503 report_timeout (prototype classification)",
     "no_reply": "503 report_timeout (prototype classification)",
+    "late_reply": "503 report_timeout (prototype classification)",
     "rollback_unanswered": "200 (prototype classification)",
     "error": "500 (prototype classification)",
 }
@@ -916,8 +1035,13 @@ class Outcome:
     work_end_ms: float | None = None
     error_at_ms: float | None = None  # when a server error reply ARRIVED (relative to t0)
     error_noticed_ms: float | None = None  # when the waiting thread noticed it
-    armed_deadline_ms: float | None = None  # client-clock time the last armed timeout fires
+    armed_deadline_ms: float | None = None  # SQL submission + armed timeout, relative to t0
+    refused_at: str | None = None    # Ka (before arming) or the statement key (after arming)
+    reply_late_ms: float | None = None   # late_reply: arrival after the wait deadline
+    late_reply_class: str | None = None  # what the late reply was (e.g. QueryCanceled)
     rollback: str = "not_needed"
+    rollback_ms: float | None = None  # ROLLBACK sent -> reply ARRIVED, when answered
+    close: str = "not_connected"     # closed | close_failed | retired | not_connected
     error_class: str | None = None
     sqlstate: str | None = None
     retired: bool = False
@@ -932,13 +1056,17 @@ class Outcome:
         return {"kind": self.kind, "http": self.http, "submitted": self.submitted,
                 "sql_submitted": self.sql_submitted, "elapsed_ms": _r(self.elapsed_ms),
                 "connect_ms": _r(self.connect_ms), "rollback": self.rollback,
+                "rollback_ms": _r(self.rollback_ms), "close": self.close,
                 "error_class": self.error_class, "sqlstate": self.sqlstate,
-                "retired": self.retired,
+                "retired": self.retired, "refused_at": self.refused_at,
                 "deadline_to_error_ms": None if self.error_at_ms is None
                 or self.armed_deadline_ms is None
                 else _r(self.error_at_ms - self.armed_deadline_ms),
+                "armed_deadline_ms": _r(self.armed_deadline_ms),
                 "error_at_ms": _r(self.error_at_ms),
                 "error_noticed_ms": _r(self.error_noticed_ms),
+                "reply_late_ms": _r(self.reply_late_ms),
+                "late_reply_class": self.late_reply_class,
                 "work_end_ms": _r(self.work_end_ms)}
 
 
@@ -979,81 +1107,119 @@ def runtime_connect(url: str, connect_timeout_s: int = 2) -> Callable[[], object
 
 
 def run_statements(rt: Runtime, sequence: list[tuple[str, str, dict]],
-                   guard: Callable[[str, list], bool] | None = None) -> Outcome:
+                   guard: Callable[[str, list], bool] | None = None,
+                   bind: Callable[[datetime], dict | None] | None = None) -> Outcome:
     """One complete operation after admission: connect (outside B), then BEGIN .. ROLLBACK
     under one budget. `sequence` is [(key, text, params)]; `guard(key, rows)` returning
-    True stops the operation as too_large after that statement."""
+    True stops the operation as too_large after that statement. `bind(read_at)` returns the
+    parameter overrides for the actual snapshot read time (see snapshot_binding), or None
+    for invalid_request; the sequence's params are never mutated."""
     admission = rt.resources.admit()
     if admission is None:
         return Outcome("admission_refused")
     try:
-        return _run_admitted(rt, admission, sequence, guard)
+        return _run_admitted(rt, admission, sequence, guard, bind)
     finally:
         admission.end_coordinator()
 
 
-def _run_admitted(rt, admission, sequence, guard) -> Outcome:
+def _run_admitted(rt, admission, sequence, guard, bind=None) -> Outcome:
     c0 = rt.clock()
     try:
         raw = rt.connect()
-    except psycopg.Error as error:
+    except BaseException as error:
+        # Acquisition definitively failed and no connection object was returned: this is
+        # the only release without an actual close (decisions 5.2.4). Interrupts propagate.
         admission.release_reservation("connect_failed")
-        return Outcome("connect_failed", connect_ms=rt.clock() - c0,
-                       error_class=type(error).__name__, sqlstate=error.sqlstate)
-    connect_ms = rt.clock() - c0
+        if isinstance(error, psycopg.Error):
+            return Outcome("connect_failed", connect_ms=rt.clock() - c0,
+                           error_class=type(error).__name__, sqlstate=error.sqlstate)
+        raise
+    # R56: ownership starts at acquisition. Everything after this line, the setup hook
+    # included, runs inside the try whose finally closes or transfers the connection.
     rc = ReportConnection(raw, admission, rt.quarantine, rt.final_close_gate)
-    if rt.on_connect is not None:
-        rt.on_connect(raw)                      # outside B, before it starts
-    budget = ReportBudget(rt.total_ms, rt.reserve_ms, rt.clock)
-    out = Outcome("ok", connect_ms=connect_ms, work_end_ms=rt.total_ms - rt.reserve_ms)
+    out = Outcome("ok", connect_ms=rt.clock() - c0, work_end_ms=rt.total_ms - rt.reserve_ms)
     out.connection = rc
+    budget = None
+    overrides: dict = {}
     began = False
     try:
+        if rt.on_connect is not None:
+            rt.on_connect(raw)                  # outside B, before it starts
+        budget = ReportBudget(rt.total_ms, rt.reserve_ms, rt.clock)
         for key, text, params in sequence:
             armed = budget.work_left() - rt.reply_margin_ms
             if armed < MIN_DB_MS:
-                out.kind = "refused_before_submission"
+                out.kind, out.refused_at = "refused_before_submission", "Ka"
                 break
             if not began:
                 out.read_at = rt.read_clock()  # just before the first armed statement
+                if bind is not None:
+                    bound = bind(out.read_at)
+                    if bound is None:
+                        out.kind = "invalid_request"
+                        break
+                    overrides = bound
             value = str(armed)
-            out.armed_deadline_ms = rt.clock() - budget.t0 + armed
             out.submitted += 1
             bounded_call(rc, lambda: raw.execute(CONTROLS["Ka"]["template"], (value, value)),
-                         max(budget.work_end - rt.clock(), 0), rt.clock)
+                         budget.work_end - rt.clock(), rt.clock)
             began = True
+            # R55: recheck immediately before the report SQL. Arming took time; the
+            # statement is sent only if it would still be armed now (floor(work_end - now)
+            # - margin >= MIN_DB_MS), so an expired or sub-minimum budget never submits
+            # report SQL, and the armed value (>= MIN_DB_MS) is never a zero/no-limit
+            # timeout. The server timer starts at this submission: armed_deadline_ms.
+            now = rt.clock()
+            if budget.work_left(now) - rt.reply_margin_ms < MIN_DB_MS:
+                out.kind, out.refused_at = "refused_before_submission", key
+                break
+            out.armed_deadline_ms = now - budget.t0 + armed
             out.submitted += 1
             out.sql_submitted += 1
-            p = params
+            p = {**params, **overrides} if overrides else params
             rows = bounded_call(rc, lambda: raw.execute(text, p).fetchall(),
-                                max(budget.work_end - rt.clock(), 0), rt.clock)
+                                budget.work_end - rt.clock(), rt.clock)
             out.results[key] = rows
             if guard is not None and guard(key, rows):
                 out.kind = "too_large"
                 break
+    except LateReply as late:
+        out.kind, out.retired = "late_reply", True
+        out.reply_late_ms, out.late_reply_class = late.late_ms, late.reply_class
+        if late.reply_class is not None and rc.reply_at is not None:
+            out.error_at_ms = rc.reply_at - budget.t0   # a late ERROR reply's arrival
     except NoReply:
         out.kind, out.retired = "no_reply", True
+    except BudgetExpired:
+        out.kind, out.refused_at = "refused_before_submission", "wait"
     except (psycopg.errors.LockNotAvailable, psycopg.errors.QueryCanceled) as error:
-        out.kind = "lock_timeout" if isinstance(error, psycopg.errors.LockNotAvailable)             else "server_cancelled"
+        out.kind = "lock_timeout" if isinstance(error, psycopg.errors.LockNotAvailable) \
+            else "server_cancelled"
         out.error_noticed_ms = rt.clock() - budget.t0
         out.error_at_ms = None if rc.reply_at is None else rc.reply_at - budget.t0
         out.error_class, out.sqlstate = type(error).__name__, error.sqlstate
     except psycopg.Error as error:
+        if budget is None:
+            raise                               # setup hook failure: closed below, re-raised
         out.kind, out.error_class, out.sqlstate = "error", type(error).__name__, error.sqlstate
     finally:
         if not rc.retired:
-            out.rollback = _rollback(rc, budget, rt, out)
-        out.elapsed_ms = rt.clock() - budget.t0
-        if not rc.retired:
-            rc.close_normal()
+            if budget is not None:
+                out.rollback = _rollback(rc, budget, rt, out)
+            if not rc.retired:
+                rc.close_normal()
+        out.elapsed_ms = None if budget is None else rt.clock() - budget.t0
         out.retired = rc.retired
+        out.close = "retired" if rc.retired else rc.close_state
     if out.kind == "ok" and out.rollback == "unanswered":
         out.kind = "rollback_unanswered"
     return out
 
 
 def _rollback(rc: ReportConnection, budget: ReportBudget, rt: Runtime, out: Outcome) -> str:
-    """ROLLBACK awaited until B (the reserve end), never past it. Nothing begun: nothing sent."""
+    """ROLLBACK awaited until B (the reserve end), never past it. Nothing begun: nothing sent.
+    rollback_ms is the interval from sending ROLLBACK to its reply's ARRIVAL (R54)."""
     raw = rc.conn
     try:
         status = raw.info.transaction_status
@@ -1061,15 +1227,18 @@ def _rollback(rc: ReportConnection, budget: ReportBudget, rt: Runtime, out: Outc
         return "connection_unusable"
     if status == psycopg.pq.TransactionStatus.IDLE:
         return "not_needed"
-    left = budget.end - rt.clock()
-    if left <= 0:
-        return "no_time_closed"
+    r0 = rt.clock()
+    left = budget.end - r0
     try:
-        bounded_call(rc, raw.rollback, left)
+        bounded_call(rc, raw.rollback, left, rt.clock)
+        out.rollback_ms = rc.reply_at - r0
         return "answered"
+    except BudgetExpired:
+        return "no_time_closed"
     except NoReply:
         return "unanswered"
     except psycopg.Error:
+        out.rollback_ms = None if rc.reply_at is None else rc.reply_at - r0
         return "error_closed"
 
 
@@ -1084,11 +1253,21 @@ def guard_for(cap: int) -> Callable[[str, list], bool]:
 
 def run_report(rt: Runtime, request: Request, scope: tuple, zones: ZoneTable,
                cap: int = MATCHING_ROW_CAP) -> tuple[Outcome, dict | None]:
+    """One report through the real adapter path. The body exists only when every read of
+    the operation answered (decisions 5.3): ok, or rollback_unanswered (200 WITH the report;
+    the connection is still retired). SQL and DTO both use the snapshot-bound read_at."""
     op = operation_for(request)
     params = parameters(request, scope, zones, cap)
-    params["read_at"] = request.read_at
-    outcome = run_statements(rt, operation_sequence(op, params), guard_for(cap))
-    body = shape(request, outcome.results, params, zones) if outcome.kind == "ok" else None
+    outcome = run_statements(rt, operation_sequence(op, params), guard_for(cap),
+                             snapshot_binding(request))
+    keys = [sid for sid, _ in OPERATIONS[op]]
+    answered = outcome.kind in ("ok", "rollback_unanswered") \
+        and all(k in outcome.results for k in keys) and outcome.read_at is not None
+    body = None
+    if answered:
+        bound = bind_read_at(request, outcome.read_at)
+        body = shape(bound, outcome.results,
+                     {**params, "read_at": bound.read_at, "as_of": bound.as_of}, zones)
     return outcome, body
 
 

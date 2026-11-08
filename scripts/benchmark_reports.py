@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import platform
 import secrets
@@ -73,6 +74,13 @@ SOURCES = ("scripts/benchmark_reports.py", "scripts/report_benchmark_support.py"
            "docs/analytics/AN01-zone-table.json")
 EXPLAIN_PREFIX = "EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) "
 EXIT = {"ok": 0, "failed": 1, "refused": 2, "incomplete": 3, "unconfirmed": 4}
+RECORD_SCHEMA = 2          # public stage records and selections (R54); 1 was 93583a's
+SELECTION_KIND = "an01-m1-selection"
+PLATFORM_OS = {"windows": "Windows", "linux": "Linux"}
+PAIR = ("linux", "windows")   # the only platform pair any rule combines
+IDENTITY_DOMAIN = "sentinel.an01-m1.identities.v1\n"
+SELECTION_DOMAIN = "sentinel.an01-m1.selection.v1\n"
+SELECTION_STAGES = {"common-index": ("S2",), "n-star": ("S5a", "S5b")}
 
 
 # ---- supervisor budgets ---------------------------------------------------------------------
@@ -249,6 +257,98 @@ class RunError(RuntimeError):
     """Refused; nothing outside the run directory was touched. Messages carry no secrets."""
 
 
+def _sharing_retry(action, seconds: float = 2.0):
+    """Windows: replacing or opening a small state file fails with PermissionError while
+    another process or thread briefly has it open (a sharing violation; e.g. `recover`
+    reading the state while a live controller rewrites it). Retry for a bounded time; any
+    other error, or a persisting one, propagates. POSIX never takes the retry path."""
+    end = time.monotonic() + seconds
+    while True:
+        try:
+            return action()
+        except PermissionError:
+            if os.name != "nt" or time.monotonic() >= end:
+                raise
+            time.sleep(0.01)
+
+
+class Slot:
+    """The run's invocation slot (R53): an exclusive OS advisory lock on `run.slot`, held
+    by every stage, recover and cleanup invocation for its whole lifetime.
+
+    The operating system releases it when the holding process exits, however it exits,
+    so acquiring it proves that no controller or recovery invocation is running in any
+    process. It is non-blocking, never stolen, and never inherited by a worker (Python file
+    descriptors are non-inheritable; the worker is started with close_fds). The run lock
+    file (below) is separate: it is the persistent record of which invocation owns the
+    stage slot or left recovery pending."""
+
+    def __init__(self, path: Path):
+        self.path, self.fd = Path(path), None
+
+    def acquire(self) -> bool:
+        try:
+            fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
+        except OSError:
+            raise RunError("run slot cannot be opened (refused)") from None
+        try:
+            if os.name == "nt":
+                import msvcrt
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(fd)
+            return False
+        self.fd = fd
+        return True
+
+    def release(self) -> None:
+        fd, self.fd = self.fd, None
+        if fd is None:
+            return
+        try:
+            if os.name == "nt":
+                import msvcrt
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass                                # closing the descriptor releases it too
+        finally:
+            os.close(fd)
+
+
+def invocation_holder(stage: str, role: str) -> dict:
+    """This invocation's identity for the run lock: the accepted local_stack process
+    identity (pid, creation time, executable) plus a fresh invocation token."""
+    try:
+        ident = local_stack.identity(os.getpid())
+    except local_stack.StackError:
+        ident = None
+    if ident is None:
+        raise RunError("this controller's own process identity is unavailable (refused)")
+    return {**ident, "token": secrets.token_hex(16), "stage": stage, "role": role}
+
+
+def controller_verdict(holder) -> str:
+    """absent | alive | unknown for the invocation named by a run lock.
+
+    absent: its process is provably gone (or the pid now names another process), or the
+    invocation itself recorded that it finished and handed the lock to recovery. Anything
+    incomplete, unreadable or uninspectable is unknown and authorizes nothing."""
+    if not isinstance(holder, dict) or not all(
+            holder.get(k) for k in ("pid", "start", "exe", "token")):
+        return "unknown"
+    kind = local_stack.classify(holder)
+    if kind in ("gone", "reused"):
+        return "absent"
+    if kind == "owned":
+        return "absent" if holder.get("handoff") == "recovery" else "alive"
+    return "unknown"
+
+
 class Run:
     def __init__(self, directory: Path):
         self.dir = Path(directory)
@@ -256,6 +356,7 @@ class Run:
         self.checkpoint_path = self.dir / "checkpoint.json"
         self.datasets_path = self.dir / "datasets.json"   # written only by stage workers
         self.lock_path = self.dir / "run.lock"
+        self.slot_path = self.dir / "run.slot"
 
     def canonical(self) -> str:
         return os.path.normcase(os.path.realpath(self.dir))
@@ -285,7 +386,7 @@ class Run:
             raise RunError("not an owned AN01-M1 run directory (refused)")
         try:
             owned = json.loads(marker.read_text())
-            state = json.loads(self.state_path.read_text())
+            state = json.loads(_sharing_retry(self.state_path.read_text))
         except (OSError, ValueError):
             raise RunError("run state is unreadable (refused)") from None
         if not (state.get("schema") == SCHEMA
@@ -298,13 +399,13 @@ class Run:
         self._write(self.state_path, state)
 
     def checkpoint(self) -> dict:
-        return json.loads(self.checkpoint_path.read_text())
+        return json.loads(_sharing_retry(self.checkpoint_path.read_text))
 
     def save_checkpoint(self, data: dict) -> None:
         self._write(self.checkpoint_path, data)
 
     def datasets(self) -> dict:
-        return json.loads(self.datasets_path.read_text())
+        return json.loads(_sharing_retry(self.datasets_path.read_text))
 
     def save_datasets(self, data: dict) -> None:
         self._write(self.datasets_path, data)
@@ -327,9 +428,10 @@ class Run:
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(data, indent=1, sort_keys=True, default=str) + "\n",
                        encoding="utf-8")
-        os.replace(tmp, path)
+        _sharing_retry(lambda: os.replace(tmp, path))
 
     # The run lock is the stage slot: present while a stage runs or recovery is pending.
+    # It names its owning invocation (identity + token); only that owner removes it.
     def acquire_lock(self, holder: dict) -> None:
         try:
             fd = os.open(self.lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -338,8 +440,33 @@ class Run:
         with os.fdopen(fd, "w") as handle:
             json.dump(holder, handle)
 
-    def release_lock(self) -> None:
+    def lock_holder(self):
+        """The recorded holder, None when there is no lock, "unreadable" otherwise."""
+        try:
+            return json.loads(_sharing_retry(self.lock_path.read_text))
+        except FileNotFoundError:
+            return None
+        except (OSError, ValueError):
+            return "unreadable"
+
+    def rewrite_lock(self, token: str, holder: dict) -> bool:
+        """Replace the lock's content, only if this invocation (token) still owns it."""
+        current = self.lock_holder()
+        if not isinstance(current, dict) or current.get("token") != token:
+            return False
+        tmp = self.lock_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(holder))
+        _sharing_retry(lambda: os.replace(tmp, self.lock_path))
+        return True
+
+    def release_lock(self, token: str) -> bool:
+        """Remove the lock only if it still names this invocation's token (R53): a lock
+        replaced by any other invocation is never removed here."""
+        current = self.lock_holder()
+        if not isinstance(current, dict) or current.get("token") != token:
+            return False
         self.lock_path.unlink(missing_ok=True)
+        return True
 
     def cluster(self, name: str, create: bool = False) -> tuple[local_stack.Stack, dict]:
         """A local_stack-owned cluster directory inside the run (marker verified)."""
@@ -545,8 +672,28 @@ def worker_resolved(record: dict | None) -> bool:
 
 def stage_command(args, budget: SupervisorBudget | None = None,
                   terminate=terminate_owned) -> int:
+    """One supervised platform stage. The whole invocation holds the run's OS slot (R53),
+    so no recovery or other stage can act while this controller lives, including the
+    interval between taking the run lock and recording a worker."""
     t0 = time.monotonic()
     run = Run(Path(args.run_dir))
+    run.load()                                  # ownership marker first: no slot elsewhere
+    slot = Slot(run.slot_path)
+    if not slot.acquire():
+        raise RunError("another controller or recovery invocation holds this run (refused)")
+    try:
+        return _stage(run, args, budget, terminate, t0)
+    finally:
+        slot.release()
+
+
+def _release_own_lock(run: Run, holder: dict) -> None:
+    if not run.release_lock(holder["token"]):
+        print("the run lock no longer names this invocation; it was left in place",
+              file=sys.stderr)
+
+
+def _stage(run: Run, args, budget, terminate, t0: float) -> int:
     state = run.load()
     profile = PROFILES[state["profile"]]
     budget = budget or profile.budget
@@ -558,13 +705,47 @@ def stage_command(args, budget: SupervisorBudget | None = None,
     run.verify_identities()
     if state.get("blocked"):
         raise RunError("recovery is pending for this run; run `recover` (refused)")
+    if state.get("worker"):
+        raise RunError("an earlier worker record is unresolved; run `recover` (refused)")
     if args.stage in state["stages"]:
         raise RunError(f"{args.stage} already ran in this run directory; there is no "
                        "automatic resume or retry (refused)")
     if args.fault and profile.name != "tiny":
         raise RunError("fault injection is allowed only on the tiny profile")
-    _require_selection(state, args)
-    run.acquire_lock({"pid": os.getpid(), "stage": args.stage})
+    _require_selection(run, state, args)
+    holder = invocation_holder(args.stage, "stage")
+    run.acquire_lock(holder)                    # recorded before any mutable stage work
+    try:
+        return _supervise(run, args, state, profile, budget, terminate, t0, holder)
+    except BaseException:
+        _abandon(run, args.stage, holder)
+        raise
+
+
+def _abandon(run: Run, stage: str, holder: dict) -> None:
+    """The controller failed or was interrupted after taking the run lock. With no worker
+    ever recorded, nothing was started: release its own lock. Otherwise hand the lock to
+    recovery (blocked, under its own token); a worker is never assumed stopped."""
+    try:
+        state = run.load()
+        state["controller"] = None
+        if state.get("worker") is None:
+            run.save(state)
+            _release_own_lock(run, holder)
+            return
+        state["blocked"] = {"stage": stage, "cleanup": {"controller": "interrupted"},
+                            "lock_token": holder["token"],
+                            "recovery": "benchmark_reports.py recover --run-dir <run>"}
+        run.save(state)
+        run.rewrite_lock(holder["token"], {**holder, "handoff": "recovery"})
+    except Exception:  # never mask the original failure; the lock then stays as it is
+        print("controller interrupted; run state could not be updated, lock kept",
+              file=sys.stderr)
+
+
+def _supervise(run: Run, args, state: dict, profile: Profile, budget, terminate, t0: float,
+               holder: dict) -> int:
+    state["controller"] = {k: holder[k] for k in ("pid", "start", "exe", "token", "stage")}
     pre = preflight(run.dir, profile, args.stage, args.wsl_host_path)
     record = {"stage": args.stage, "platform": state["platform"], "profile": profile.name,
               "budget": asdict(budget), "preflight": pre, "fault_injection": args.fault,
@@ -572,7 +753,9 @@ def stage_command(args, budget: SupervisorBudget | None = None,
     state["stages"][args.stage] = record
     run.save(state)
     if not pre["ok"]:
-        run.release_lock()
+        state["controller"] = None
+        run.save(state)
+        _release_own_lock(run, holder)
         _publish_stage(run, state, args.stage, t0)
         return EXIT["refused"]
     worker_argv = ["--run-dir", str(run.dir), "--stage", args.stage,
@@ -613,13 +796,19 @@ def stage_command(args, budget: SupervisorBudget | None = None,
     if not confirmed:
         rec["status"] = "cleanup-unconfirmed"
         state["blocked"] = {"stage": args.stage, "cleanup": cleanup,
+                            "lock_token": holder["token"],
                             "recovery": "benchmark_reports.py recover --run-dir <run>"}
+        state["controller"] = None
         run.save(state)
+        # This invocation is finishing: it records that the lock now only marks pending
+        # recovery (still under its own token), then releases the OS slot on return.
+        run.rewrite_lock(holder["token"], {**holder, "handoff": "recovery"})
         _publish_stage(run, state, args.stage, t0)
         print("cleanup NOT confirmed; recovery state and run lock kept; no further stage "
               "may start until `recover` confirms", file=sys.stderr)
         return EXIT["unconfirmed"]
     state["worker"] = None
+    state["controller"] = None
     if exited is None:
         rec["status"] = "deadline"
     elif exited != 0 or any(cells[k]["status"] == "failed" for k in cells):
@@ -627,28 +816,85 @@ def stage_command(args, budget: SupervisorBudget | None = None,
     else:
         rec["status"] = "complete" if not incomplete else "incomplete"
     run.save(state)
-    run.release_lock()
+    _release_own_lock(run, holder)
     _publish_stage(run, state, args.stage, t0)
     return EXIT["ok"] if rec["status"] == "complete" else (
         EXIT["incomplete"] if rec["status"] in ("incomplete", "deadline") else EXIT["failed"])
 
 
-def _require_selection(state: dict, args) -> None:
+def identities_digest(ident: dict) -> str:
+    return rb.sha(IDENTITY_DOMAIN + json.dumps(ident, sort_keys=True, separators=(",", ":")))
+
+
+def selection_digest(data: dict) -> str:
+    """Digest over the whole selection except its own digest field."""
+    body = {k: v for k, v in data.items() if k != "selection_sha256"}
+    return rb.sha(SELECTION_DOMAIN + json.dumps(body, sort_keys=True, separators=(",", ":"),
+                                                default=str))
+
+
+def selection_problems(data, needs: str, profile: Profile, ident: dict) -> list[str]:
+    """Why a selection may not be consumed by a run with this profile and these identities.
+    Only a demonstrated selection computed from this code's records of this profile on the
+    windows/linux pair, unedited since, qualifies (R54)."""
+    if not isinstance(data, dict):
+        return ["not a selection"]
+    problems = []
+    if data.get("kind") != SELECTION_KIND or data.get("schema") != RECORD_SCHEMA:
+        problems.append("not a current AN01-M1 selection artifact")
+    if data.get("rule") != needs:
+        problems.append(f"needs a {needs} selection")
+    if data.get("selection_sha256") != selection_digest(data):
+        problems.append("selection digest does not match its content (edited)")
+    binding = data.get("binding") if isinstance(data.get("binding"), dict) else {}
+    if binding.get("profile") != profile.name:
+        problems.append("selection was computed for another profile")
+    if binding.get("identities_sha256") != identities_digest(ident):
+        problems.append("selection was computed from other statements/setup/zone/sources")
+    if tuple(binding.get("platforms") or ()) != PAIR:
+        problems.append("selection is not bound to the windows/linux pair")
+    bound = {(r.get("stage"), r.get("platform")) for r in binding.get("records") or []
+             if isinstance(r, dict)}
+    for stage in SELECTION_STAGES.get(needs, ()):
+        for plat in PAIR:
+            if (stage, plat) not in bound:
+                problems.append(f"selection lacks its {stage} {plat} record")
+    value = data.get("value") if isinstance(data.get("value"), dict) else {}
+    if value.get("demonstrated") is not True:
+        problems.append("selection is not demonstrated (unqualified)")
+    if needs == "common-index" and value.get("variant") not in VARIANTS:
+        problems.append("no measured variant")
+    if needs == "n-star" and value.get("n_star") not in profile.sizes:
+        problems.append("N* is not a measured size of this profile")
+    return problems
+
+
+def _require_selection(run: Run, state: dict, args) -> None:
     needs = {"S4": "common-index", "S5a": "common-index", "S5b": "common-index",
              "S6": "common-index", "S8": "n-star"}.get(args.stage)
     if needs is None:
         return
+    profile = PROFILES[state["profile"]]
+    ident = run.checkpoint()["identities"]
     if args.selection:
-        data = json.loads(Path(args.selection).read_text())
-        if data.get("rule") != needs:
-            raise RunError(f"{args.stage} needs a {needs} selection")
-        digest = rb.sha(json.dumps(data, sort_keys=True))
+        try:
+            data = json.loads(Path(args.selection).read_text())
+        except (OSError, ValueError):
+            raise RunError("selection is unreadable (refused)") from None
+        problems = selection_problems(data, needs, profile, ident)
+        if problems:
+            raise RunError("selection refused: " + "; ".join(problems))
         recorded = state["selection"].get(needs)
-        if recorded and recorded["sha256"] != digest:
+        if recorded and recorded["sha256"] != data["selection_sha256"]:
             raise RunError("a different selection was already recorded for this run (refused)")
-        state["selection"][needs] = {"sha256": digest, "value": data["value"]}
-    if needs not in state["selection"]:
+        state["selection"][needs] = {"sha256": data["selection_sha256"],
+                                     "value": data["value"], "binding": data["binding"]}
+    recorded = state["selection"].get(needs)
+    if recorded is None:
         raise RunError(f"{args.stage} needs --selection from the offline {needs} rule")
+    if (recorded.get("binding") or {}).get("identities_sha256") != identities_digest(ident) \
+            or (recorded.get("value") or {}).get("demonstrated") is not True:
+        raise RunError("the recorded selection is not bound to this run (refused)")
 
 
 def _stage_cells(run: Run, state: dict, stage: str) -> dict:
@@ -676,7 +922,7 @@ def _stage_cells(run: Run, state: dict, stage: str) -> dict:
 def _publish_stage(run: Run, state: dict, stage: str, t0: float) -> None:
     rec = dict(state["stages"][stage])
     cells = _stage_cells(run, state, stage)
-    public = {"schema": SCHEMA, "kind": "an01-m1-stage-record", "stage": stage,
+    public = {"schema": RECORD_SCHEMA, "kind": "an01-m1-stage-record", "stage": stage,
               "platform": state["platform"], "profile": state["profile"],
               "label": "tiny plumbing evidence only" if state["profile"] == "tiny"
               else "measured on one laptop, warm cache, synthetic distribution",
@@ -832,7 +1078,10 @@ class Worker:
             request = self._mid_cursor(request, scope, owner, cap, kwargs)
         params = rb.parameters(request, scope, self.zones, cap)
         registry = rb.shadow_registry() if op.endswith("_cols") else rb.REGISTRY
-        return rb.operation_sequence(op, params, registry), params
+        # Each run binds its own snapshot read_at (and a default as_of) when it arms its
+        # first statement (R57); the shared params are never mutated.
+        return rb.operation_sequence(op, params, registry), params, \
+            rb.snapshot_binding(request)
 
     def _mid_cursor(self, request, scope, owner, cap, kwargs):
         """A cursor at the middle of the matching set (owner reads, not timed)."""
@@ -849,7 +1098,9 @@ class Worker:
             conn.rollback()
         cursor = rb.encode_cursor(request, mid["occurred_at"], mid["id"],
                                   issued_pair(counts["matching"], counts["with_outcome"], cap))
-        return rb.normalize(self.zones, "rows.transactions", cap=cap, cursor=cursor, **kwargs)
+        # Page 2 repeats page 1's resolved as_of explicitly (contract draft; R57).
+        return rb.normalize(self.zones, "rows.transactions", cap=cap, cursor=cursor,
+                            **{**kwargs, "as_of": request.as_of})
 
     def runtime(self, url: str, total_ms: int = rb.MEASUREMENT_B_MS, **kw) -> rb.Runtime:
         connect = rb.runtime_connect(url)
@@ -860,15 +1111,17 @@ class Worker:
                           quarantine=self.quarantine, total_ms=total_ms, **kw)
 
     def measure(self, cell: Cell, url: str, owner: str, scope: tuple, cap: int) -> dict:
-        sequence, params = self.request(cell.op, scope, cell.filter, owner, cap)
+        sequence, params, bind = self.request(cell.op, scope, cell.filter, owner, cap)
         guard = rb.guard_for(cap)
         rt = self.runtime(url)
-        warm = [rb.run_statements(rt, sequence, guard).public() for _ in range(cell.warmup)]
-        timed = [rb.run_statements(rt, sequence, guard).public() for _ in range(cell.timed)]
+        warm = [rb.run_statements(rt, sequence, guard, bind).public()
+                for _ in range(cell.warmup)]
+        timed = [rb.run_statements(rt, sequence, guard, bind).public()
+                 for _ in range(cell.timed)]
         explain = []
         if cell.explain:
             for key, text, p in sequence:
-                out = rb.run_statements(rt, [(key, EXPLAIN_PREFIX + text, p)])
+                out = rb.run_statements(rt, [(key, EXPLAIN_PREFIX + text, p)], None, bind)
                 plan = out.results.get(key, [{}])[0].get("QUERY PLAN") if out.kind == "ok" \
                     else None
                 explain.append({"statement": key, "outcome": out.public(),
@@ -951,7 +1204,7 @@ class Worker:
     def control(self, cell: Cell, url, owner, scope, cap, port) -> dict:
         import psycopg
         name = cell.expect
-        sequence, _ = self.request("totals", scope, "base", owner, cap)
+        sequence, _, bind = self.request("totals", scope, "base", owner, cap)
         runs = []
         if name == "C5":
             return self._c5(url, owner, scope, cap, port)
@@ -969,7 +1222,7 @@ class Worker:
                     holder = psycopg.connect(owner, connect_timeout=10)
                     holder.execute("LOCK TABLE transactions IN ACCESS EXCLUSIVE MODE")
                 try:
-                    out = rb.run_statements(rt, seq)
+                    out = rb.run_statements(rt, seq, None, None if name == "C2" else bind)
                 finally:
                     if holder is not None:
                         holder.rollback()
@@ -978,13 +1231,19 @@ class Worker:
                 entry = out.public()
                 entry["observer"] = sorted({(s["tag"], s["state"], s["wait"]) for s in seen},
                                            key=str)
-                entry["rollback_ms"] = None
                 expected = {"C1": ("refused_before_submission",),
                             "C2": ("server_cancelled",),
                             "C3": ("lock_timeout", "server_cancelled")}[name]
                 proof = {"C1": not seen and out.submitted == 0,
                          "C2": any(s["state"] == "active" for s in seen),
                          "C3": any(s["wait"] == "Lock" for s in seen)}[name]
+                if name in ("C2", "C3"):
+                    # Strict (R55): the server's answer ARRIVED by work_end, and the
+                    # ROLLBACK that followed was answered with its interval measured.
+                    # late_reply / no_reply leave the cell failed, never retried.
+                    proof = proof and out.error_at_ms is not None \
+                        and out.error_at_ms <= out.work_end_ms \
+                        and out.rollback == "answered" and out.rollback_ms is not None
                 entry["proved"] = out.kind in expected and proof
                 runs.append(entry)
             else:  # C4: the relay withholds the reply of the tagged statement
@@ -994,7 +1253,7 @@ class Worker:
                     rt = self.runtime(make_conninfo(url, port=str(relay.port),
                                                     sslmode="disable", gssencmode="disable"),
                                       cell.budget_ms)
-                    out = rb.run_statements(rt, sequence)
+                    out = rb.run_statements(rt, sequence, None, bind)
                     t_drain = time.monotonic()
                     drained = local_stack.wait_until(
                         lambda: self.resources.counts() == (0, 0)
@@ -1016,7 +1275,7 @@ class Worker:
 
     def _c5(self, url, owner, scope, cap, port) -> dict:
         from psycopg.conninfo import make_conninfo
-        sequence, _ = self.request("totals", scope, "base", owner, cap)
+        sequence, _, bind = self.request("totals", scope, "base", owner, cap)
         relay = rb.WithholdingRelay(port, b"an01-m1:totals:G")
         gate = threading.Event()
         connects = {"direct": 0}
@@ -1033,20 +1292,20 @@ class Worker:
                            quarantine=self.quarantine)
         events = []
         try:
-            held = [rb.run_statements(holders, sequence) for _ in range(2)]
+            held = [rb.run_statements(holders, sequence, None, bind) for _ in range(2)]
             events.append({"holders": [h.kind for h in held]})
             local_stack.wait_until(lambda: all(h.connection and h.connection.users == set()
                                                for h in held), 10)
             events.append({"counts_held": self.resources.counts(),
                            "quarantined": self.quarantine.count()})
-            refused = rb.run_statements(fresh, sequence)
+            refused = rb.run_statements(fresh, sequence, None, bind)
             events.append({"third": refused.kind, "connect_calls": connects["direct"]})
             gate.set()
             drained = local_stack.wait_until(lambda: self.resources.counts() == (0, 0)
                                              and self.quarantine.count() == 0, 10)
             events.append({"drained": drained,
                            "close_calls": [h.connection.close_calls for h in held]})
-            after = rb.run_statements(fresh, sequence)
+            after = rb.run_statements(fresh, sequence, None, bind)
             events.append({"fresh": after.kind, "connect_calls": connects["direct"]})
             proved = ([h.kind for h in held] == ["no_reply", "no_reply"]
                       and events[1] == {"counts_held": (0, 2), "quarantined": 2}
@@ -1061,13 +1320,14 @@ class Worker:
 
     def two_clients(self, cell: Cell, url, owner, scope, cap) -> dict:
         rt = self.runtime(url)
-        jobs = [self.request(op, scope, "base", owner, cap)[0]
+        jobs = [self.request(op, scope, "base", owner, cap)
                 for op in ("quality", "drill_first")]
         results, lock = [], threading.Lock()
 
         def client(i):
             for n in range(cell.timed // 2):
-                out = rb.run_statements(rt, jobs[(i + n) % 2], rb.guard_for(cap)).public()
+                sequence, _, bind = jobs[(i + n) % 2]
+                out = rb.run_statements(rt, sequence, rb.guard_for(cap), bind).public()
                 with lock:
                     results.append(out)
         threads = [threading.Thread(target=client, args=(i,)) for i in range(2)]
@@ -1155,20 +1415,143 @@ def summarize_plan(plan) -> dict | None:
 
 # ---- offline rules (pre-registered; decisions section 8.4) ---------------------------------
 
-def load_records(paths: list[str]) -> dict:
-    """{platform: {cell_id: record}} from public stage records."""
-    out: dict = {}
+def _finite(value) -> bool:
+    return type(value) in (int, float) and math.isfinite(value)
+
+
+def _timed_ok(rec, n: int, kind: str, limit: float = math.inf) -> bool:
+    """A complete cell with exactly n timed outcomes, each of `kind` with a finite elapsed
+    time <= limit. Missing, short, unknown or non-finite evidence is never accepted."""
+    if not isinstance(rec, dict) or rec.get("status") != "complete":
+        return False
+    timed = rec.get("timed")
+    return isinstance(timed, list) and len(timed) == n and all(
+        isinstance(t, dict) and t.get("kind") == kind and _finite(t.get("elapsed_ms"))
+        and 0 <= t["elapsed_ms"] <= limit for t in timed)
+
+
+def _pair(records: dict) -> bool:
+    return tuple(sorted(records)) == PAIR
+
+
+CONTROL_ANSWERED = {"C2": ("server_cancelled",), "C3": ("lock_timeout", "server_cancelled")}
+
+
+def cell_problems(cell: Cell, rec) -> list[str]:
+    """Typed validation of one recorded cell (R54). Only a `complete` cell is checked for
+    content; any problem makes it `invalid`, which every rule treats as missing."""
+    if not isinstance(rec, dict) or not isinstance(rec.get("status"), str):
+        return ["cell record shape"]
+    if rec["status"] != "complete":
+        return []
+    problems = []
+    timed = rec.get("timed")
+    if not isinstance(timed, list) or not all(isinstance(t, dict) for t in timed):
+        return ["timed outcomes missing"]
+    if cell.expect == "C5":
+        return [] if timed else ["C5 events missing"]
+    if len(timed) != cell.timed:
+        problems.append(f"{len(timed)} timed outcomes, {cell.timed} registered")
+    if cell.phase in ("A", "B", "BG", "E", "D"):
+        if not _timed_ok({**rec, "timed": timed}, len(timed), cell.expect):
+            problems.append("an outcome kind or elapsed time is wrong or unknown")
+        if cell.phase != "D" and not _finite(rec.get("median_ms")):
+            problems.append("median unknown")
+        if cell.phase == "D" and not _finite(rec.get("max_ms")):
+            problems.append("maximum unknown")
+        if cell.explain:
+            n = len(rb.OPERATIONS[cell.op.removesuffix("_cols")])
+            explain = rec.get("explain")
+            if not (isinstance(explain, list) and len(explain) == n and all(
+                    isinstance(e, dict) and isinstance(e.get("plan"), dict)
+                    and isinstance(e["plan"].get("scans"), list) for e in explain)):
+                problems.append("EXPLAIN evidence missing")
+    else:  # C1-C4
+        if not all(t.get("proved") is True and isinstance(t.get("kind"), str) for t in timed):
+            problems.append("a control run is not proved")
+        if cell.expect in CONTROL_ANSWERED:
+            for t in timed:
+                if not (t.get("kind") in CONTROL_ANSWERED[cell.expect]
+                        and _finite(t.get("deadline_to_error_ms"))
+                        and t.get("rollback") == "answered" and _finite(t.get("rollback_ms"))):
+                    problems.append("an answered control lacks its measured intervals")
+                    break
+    return problems
+
+
+def load_evidence(paths: list[str], profile: str | None = None) -> tuple[dict, dict]:
+    """({platform: {cell_id: record}}, binding) from public stage records, refusing anything
+    that cannot be combined (R54): another schema, profile, platform, or any identity that
+    differs from this code (statements, setup, zone, sources); a platform contradicted by
+    its environment; the same record twice; two records of one stage and platform (a
+    stage runs once, and a later record may never replace a first result); or a cell that
+    does not belong to its record's stage. Typed problems inside a complete cell mark that
+    cell `invalid` (not demonstrated) rather than refusing the whole set."""
+    current = identities()
+    seen, stages, bound, out = set(), set(), [], {}
     for path in paths:
-        data = json.loads(Path(path).read_text())
-        if data.get("kind") != "an01-m1-stage-record":
-            raise RunError("not an AN01-M1 stage record")
-        out.setdefault(data["platform"], {}).update(data["cells"])
-    return out
+        try:
+            raw = Path(path).read_bytes()
+            data = json.loads(raw)
+        except (OSError, ValueError):
+            raise RunError("a stage record is unreadable (refused)") from None
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest in seen:
+            raise RunError("the same stage record was given twice (refused: each counts once)")
+        seen.add(digest)
+        if not isinstance(data, dict) or data.get("kind") != "an01-m1-stage-record" \
+                or data.get("schema") != RECORD_SCHEMA:
+            raise RunError("not an AN01-M1 stage record of the current schema (refused)")
+        stage, platform, prof = data.get("stage"), data.get("platform"), data.get("profile")
+        if stage not in PLATFORM_STAGES or platform not in PLATFORM_OS or prof not in PROFILES:
+            raise RunError("a record names an unknown stage, platform or profile (refused)")
+        profile = profile or prof
+        if prof != profile:
+            raise RunError("records from different profiles cannot be combined (refused)")
+        if data.get("identities") != current:
+            raise RunError("a record's statement/setup/zone/source identities differ from "
+                           "this code (refused)")
+        env = data.get("environment")
+        if not isinstance(env, dict) or env.get("os") != PLATFORM_OS[platform]:
+            raise RunError("a record's platform contradicts its environment (refused)")
+        if (stage, platform) in stages:
+            raise RunError(f"two {stage} records for {platform}: conflicting or repeated "
+                           "outcomes are refused; the first result stands")
+        stages.add((stage, platform))
+        cells = data.get("cells")
+        if not isinstance(cells, dict):
+            raise RunError("a record has no cells (refused)")
+        expected = {c.id: c for c in grid(PROFILES[prof])}
+        target = out.setdefault(platform, {})
+        for cid, rec in cells.items():
+            if cid.startswith("prepare:"):
+                continue
+            cell = expected.get(cid)
+            if cell is None or cell.stage != stage:
+                raise RunError(f"cell {cid} does not belong to {stage} (refused)")
+            if cid in target:
+                raise RunError(f"conflicting outcomes for {platform} {cid} (refused)")
+            problems = cell_problems(cell, rec)
+            target[cid] = rec if not problems else {
+                "status": "invalid", "recorded_status": rec.get("status")
+                if isinstance(rec, dict) else None, "problems": problems}
+        bound.append({"stage": stage, "platform": platform, "sha256": digest})
+    binding = {"profile": profile, "identities_sha256": identities_digest(current),
+               "platforms": sorted(out), "records": sorted(
+                   bound, key=lambda r: (r["stage"], r["platform"]))}
+    return out, binding
+
+
+def load_records(paths: list[str], profile: str | None = None) -> dict:
+    """{platform: {cell_id: record}} from validated public stage records (load_evidence)."""
+    return load_evidence(paths, profile)[0]
 
 
 def _medians(cells: dict, prefix: str) -> dict:
-    return {k.split(":")[-1]: v.get("median_ms") for k, v in cells.items()
-            if k.startswith(prefix) and v.get("status") == "complete"}
+    """Medians of complete cells with all 5 timed outcomes ok and finite; else None."""
+    return {k.split(":")[-1]: v.get("median_ms") if _timed_ok(v, 5, "ok")
+            and _finite(v.get("median_ms")) else None
+            for k, v in cells.items() if k.startswith(prefix)}
 
 
 def _seq_scan(cells: dict, variant: str) -> set:
@@ -1184,12 +1567,12 @@ def _seq_scan(cells: dict, variant: str) -> set:
 
 def rule_common_index(records: dict, budget_ms: int = rb.PROVISIONAL_B_MS) -> dict:
     """Rule 1. One configuration for both platforms; an unmeasured variant is never chosen."""
-    if len(records) != 2:
+    if not _pair(records):
         return {"rule": "common-index", "value": {"variant": "A", "demonstrated": False},
-                "reason": "both platforms' phase A records are required"}
+                "reason": "the windows and linux phase A records are required"}
     ops = list(rb.OPERATIONS)
     med = {p: {v: _medians(c, f"A:{v}:") for v in VARIANTS} for p, c in records.items()}
-    complete = {p: {v: len(med[p][v]) == len(ops) and None not in med[p][v].values()
+    complete = {p: {v: all(med[p][v].get(o) is not None for o in ops)
                     for v in VARIANTS} for p in records}
 
     def no_regression(p, v):
@@ -1222,26 +1605,23 @@ def rule_n_star(records: dict, sizes: tuple[int, ...], budget_ms: int = rb.PROVI
     smaller size, on both platforms and datasets, is present with all 5 complete-operation
     times <= 40% of B and no timeout; and every B-guard cell returns 413 within B."""
     limit = 0.40 * budget_ms
-    if len(records) != 2:
+    if not _pair(records):
         return {"rule": "n-star", "value": {"n_star": None, "demonstrated": False},
-                "reason": "both platforms are required"}
-    guard_ok = all(v.get("status") == "complete" and all(
-        t["kind"] == "too_large" and (t["elapsed_ms"] or 1e18) <= budget_ms
-        for t in v.get("timed", []))
-        for c in records.values() for k, v in c.items() if k.startswith("BG:"))
-    guard_present = all(sum(k.startswith("BG:") for k in c) == len(rb.TRANSACTION_OPS)
-                        for c in records.values())
+                "reason": "the windows and linux records are required"}
+    # Every B-guard cell on both platforms: all 5 real outcomes 413 within B (R54: an
+    # empty or short outcome list never counts as all-413).
+    guard_ok = all(_timed_ok(cells.get(f"BG:{op}"), 5, "too_large", budget_ms)
+                   for cells in records.values() for op in rb.TRANSACTION_OPS)
+    guard_present = guard_ok
     n_star, failures = None, []
     for size in sorted(sizes):
         good = True
-        for p, cells in records.items():
+        for p, cells in sorted(records.items()):
             for dataset in ("D1", "D2"):
                 for op in rb.OPERATIONS:
                     for filt in (FILTERS if op != "workload" else ("base",)):
-                        rec = cells.get(f"B:{dataset}:{size}:{op}:{filt}")
-                        if rec is None or rec.get("status") != "complete" or not all(
-                                t["kind"] == "ok" and t["elapsed_ms"] <= limit
-                                for t in rec.get("timed", [])) or len(rec["timed"]) != 5:
+                        if not _timed_ok(cells.get(f"B:{dataset}:{size}:{op}:{filt}"),
+                                         5, "ok", limit):
                             good = False
                             failures.append(f"{p}:{dataset}:{size}:{op}:{filt}")
         if not good:
@@ -1258,22 +1638,53 @@ def rule_n_star(records: dict, sizes: tuple[int, ...], budget_ms: int = rb.PROVI
 
 def rule_controls(records: dict, budget_ms: int = rb.PROVISIONAL_B_MS,
                   reserve_ms: int = rb.PROVISIONAL_R_MS) -> dict:
-    """Rule 3: triggers only open a re-review; no number changes here."""
+    """Rule 3: triggers only open a re-review; no number changes here.
+
+    B: the C2/C3 median deadline-to-error latency over 10% of that cell's budget, or the D
+    maximum over B - R. R: any C2 or C3 ROLLBACK over 50% of R (an unanswered ROLLBACK
+    exceeded it too). Every registered run must be present and proved with finite measured
+    intervals; an unknown required metric is missing, so the rule is not demonstrated."""
     triggers, missing = [], []
-    for p, cells in records.items():
-        for cid in [f"{k}:{b}" for k, v in C_BUDGETS.items() for b, _ in v] + ["C5"]:
-            rec = cells.get(cid)
-            if rec is None or rec.get("status") != "complete":
-                missing.append(f"{p}:{cid}")
-        for k, rec in cells.items():
-            if k.split(":")[0] in ("C2", "C3") and rec.get("timed"):
-                cell_budget = int(k.split(":")[1])
-                lat = [t["deadline_to_error_ms"] for t in rec["timed"]
-                       if t.get("deadline_to_error_ms") is not None]
-                if lat and statistics.median(lat) > 0.10 * cell_budget:
-                    triggers.append(f"{p}:{k}: median deadline-to-error over 10% of budget")
+    if not _pair(records):
+        missing.append("the windows and linux records are required")
+    for p, cells in sorted(records.items()):
+        for control, budgets in C_BUDGETS.items():
+            for cell_budget, runs in budgets:
+                cid = f"{control}:{cell_budget}"
+                rec = cells.get(cid)
+                timed = rec.get("timed") if isinstance(rec, dict) else None
+                timed = [t for t in timed if isinstance(t, dict)] \
+                    if isinstance(timed, list) else []
+                if control in CONTROL_ANSWERED:
+                    for t in timed:          # the reserve trigger uses every measurement
+                        ms = t.get("rollback_ms")
+                        if (_finite(ms) and ms > 0.5 * reserve_ms) \
+                                or t.get("rollback") == "unanswered":
+                            triggers.append(f"{p}:{cid}: ROLLBACK over 50% of R")
+                            break
+                if not (isinstance(rec, dict) and rec.get("status") == "complete"
+                        and len(timed) == runs
+                        and all(t.get("proved") is True for t in timed)):
+                    missing.append(f"{p}:{cid}")
+                    continue
+                if control in CONTROL_ANSWERED:
+                    lat = [t.get("deadline_to_error_ms") for t in timed]
+                    rollback = [t.get("rollback_ms") for t in timed]
+                    if not all(_finite(x) for x in lat):
+                        missing.append(f"{p}:{cid}: deadline-to-error unknown")
+                    elif statistics.median(lat) > 0.10 * cell_budget:
+                        triggers.append(f"{p}:{cid}: median deadline-to-error over 10% of "
+                                        "budget")
+                    if not all(_finite(x) for x in rollback):
+                        missing.append(f"{p}:{cid}: ROLLBACK interval unknown")
+        c5 = cells.get("C5")
+        if not (isinstance(c5, dict) and c5.get("status") == "complete"):
+            missing.append(f"{p}:C5")
         d = cells.get("D")
-        if d and d.get("max_ms") is not None and d["max_ms"] > budget_ms - reserve_ms:
+        if not (isinstance(d, dict) and d.get("status") == "complete"
+                and _finite(d.get("max_ms"))):
+            missing.append(f"{p}:D")
+        elif d["max_ms"] > budget_ms - reserve_ms:
             triggers.append(f"{p}:D maximum exceeds B - R")
     return {"rule": "controls", "triggers": triggers, "missing": missing,
             "demonstrated": not missing}
@@ -1308,7 +1719,7 @@ def final_report(records: dict, profile: Profile) -> dict:
     index = rule_common_index(records)
     n_star = rule_n_star(records, profile.sizes)
     mandatory = {}
-    for p in sorted(records) or ["(none)"]:
+    for p in PAIR:                              # a missing platform is missing evidence
         cells = records.get(p, {})
         for cell in grid(profile):
             if cell.mandatory and cell.phase in ("A", "BG", "C"):
@@ -1332,8 +1743,41 @@ def final_report(records: dict, profile: Profile) -> dict:
 # ---- recover and cleanup ---------------------------------------------------------------------
 
 def recover_command(args) -> int:
+    """Exclusive, invocation-bound recovery (R53). It holds the run's OS slot for its whole
+    run, so it never overlaps a live controller (in any interval, including the one before
+    a worker is recorded), another recovery, or a cleanup. It acts only when the run
+    lock's invocation is provably absent; it then stops only a verified owned worker and
+    verified owned clusters, and removes only the lock it inspected."""
     run = Run(Path(args.run_dir))
-    state = run.load()
+    run.load()
+    slot = Slot(run.slot_path)
+    if not slot.acquire():
+        print(json.dumps({"recovered": [], "kept": [
+            "a live controller or another recovery holds this run; nothing was stopped "
+            "or removed"]}, indent=1))
+        return EXIT["refused"]
+    try:
+        return _recover(run)
+    finally:
+        slot.release()
+
+
+def _recover(run: Run) -> int:
+    state = run.load()                          # re-read under the slot
+    holder = run.lock_holder()
+    if holder is not None:
+        verdict = controller_verdict(holder)
+        blocked = state.get("blocked") or {}
+        if verdict == "absent" and isinstance(holder, dict) \
+                and holder.get("handoff") == "recovery" \
+                and holder.get("token") != blocked.get("lock_token"):
+            verdict = "unknown"                 # a hand-off must match the recorded block
+        if verdict != "absent":
+            reason = {"alive": "the run lock's controller invocation is alive",
+                      "unknown": "the run lock's holder cannot be verified as gone"}[verdict]
+            print(json.dumps({"recovered": [], "kept": [
+                f"{reason}; nothing was stopped or removed"]}, indent=1))
+            return EXIT["refused"] if verdict == "alive" else EXIT["unconfirmed"]
     until = time.monotonic() + 120
     kept, done = [], []
     worker = state.get("worker")
@@ -1357,8 +1801,13 @@ def recover_command(args) -> int:
         (kept if result.startswith("unconfirmed") else done).append(f"cluster {name}: {result}")
     if not kept:
         state["blocked"] = None
+        state["controller"] = None
         run.save(state)
-        run.release_lock()
+        if isinstance(holder, dict):
+            if run.release_lock(holder["token"]):
+                done.append("run lock of the absent invocation removed")
+            else:
+                kept.append("run lock changed during recovery; left in place")
     else:
         run.save(state)
     print(json.dumps({"recovered": done, "kept": kept}, indent=1))
@@ -1367,6 +1816,17 @@ def recover_command(args) -> int:
 
 def cleanup_command(args) -> int:
     run = Run(Path(args.run_dir))
+    run.load()
+    slot = Slot(run.slot_path)
+    if not slot.acquire():
+        raise RunError("a controller or recovery invocation holds this run (refused)")
+    try:
+        return _cleanup(run, args)
+    finally:
+        slot.release()
+
+
+def _cleanup(run: Run, args) -> int:
     state = run.load()
     if state.get("blocked") or run.lock_path.exists():
         raise RunError("recovery pending or a stage holds the run lock (refused)")
@@ -1453,13 +1913,19 @@ def main(argv=None) -> int:
         if args.command == "stage":
             return stage_command(args)
         if args.command in ("select", "report"):
-            records = load_records(args.record)
+            records, binding = load_evidence(args.record, args.profile)
             profile = PROFILES[args.profile]
             if args.command == "select":
                 result = rule_common_index(records) if args.rule == "common-index" \
                     else rule_n_star(records, profile.sizes)
+                # R54: the selection carries what it was computed from, and its digest;
+                # stages verify both before consuming it.
+                result.update({"kind": SELECTION_KIND, "schema": RECORD_SCHEMA,
+                               "binding": binding})
+                result["selection_sha256"] = selection_digest(result)
             else:
                 result = final_report(records, profile)
+                result["binding"] = binding
             write_public(None, Path(args.out), result)
             print(json.dumps(result.get("value", result.get("rule6_status")), default=str))
             return 0

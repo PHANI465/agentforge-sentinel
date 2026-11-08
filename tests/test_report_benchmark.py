@@ -137,7 +137,12 @@ def report(url, zones, report_id, scope=(T1, S1), **filters):
         filters["from_"], filters["to"] = WINDOW
     filters.setdefault("as_of", AS_OF)
     request = rb.normalize(zones, report_id, **filters)
-    outcome, body = rb.run_report(runtime(url), request, scope, zones)
+    # The snapshot read clock reads the fixture's read_at (R57: SQL and DTO use the
+    # snapshot-bound read_at, and a default as_of binds to it).
+    read_at = filters["read_at"]
+    outcome, body = rb.run_report(runtime(url, read_clock=lambda: read_at), request, scope,
+                                  zones)
+    assert body["provenance"]["read_at"] == rb.iso(read_at)
     assert outcome.kind == "ok", outcome.public()
     assert outcome.rollback == "answered" and not outcome.retired
     return body
@@ -770,24 +775,37 @@ def test_c1_refusal_before_submission(r2db, zones, total):
     assert seen == [] and out.rollback == "not_needed" and not out.retired
 
 
-def assert_submitted_control_outcome(out, rt, answered_kinds, sqlstates):
-    """A submitted, timed-out statement ends in exactly one of two design outcomes:
-    answered by the server (an error reply, ROLLBACK answered, closed normally, not
-    quarantined), or no reply by work_end (retired, then drained to zero reservations).
-    Which one occurs is the R-M1-1 timing race; phase C measures it and a miss fails that
-    cell. This test asserts the mechanism under either outcome, never the race result.
-    (Gate run 2 at cd3517d failed the earlier assertion that the reply is always noticed
-    before work_end: it was noticed at 151.27 ms against 150 ms.)"""
-    assert out.kind in (*answered_kinds, "no_reply"), out.public()
-    if out.kind == "no_reply":
+def assert_submitted_control_outcome(out, rt, answered_kinds, sqlstates, error_classes):
+    """MECHANISM, not timing. A submitted, timed-out statement ends in one of three design
+    outcomes, classified by when its reply ARRIVED against work_end (R55):
+    - answered on time: the expected SQLSTATE arrived by work_end, ROLLBACK answered with
+      its interval measured, closed normally once, not quarantined;
+    - late_reply: the server answered, but after work_end (the waiter may still have seen
+      it): retired, then drained, never counted as answered;
+    - no_reply by work_end: retired, then drained to zero reservations.
+    Which one occurs is the R-M1-1 race. Accepting all three here proves the mechanism
+    only; it does NOT demonstrate cancellation timing. The benchmark's phase C cells stay
+    strict (benchmark_reports.Worker.control) and the deterministic tests in
+    test_report_benchmark_review.py force each branch. (History: gate run 2 at cd3517d
+    failed when a reply was noticed at 151.27 ms against 150 ms, arrival unrecorded.)"""
+    assert out.kind in (*answered_kinds, "late_reply", "no_reply"), out.public()
+    if out.kind in ("no_reply", "late_reply"):
         assert out.retired and out.rollback == "not_needed" and out.sqlstate is None
+        assert out.close == "retired"
         assert _until(lambda: rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0)
         assert out.connection.events == ["retired", "final_close"]
+        if out.kind == "late_reply":
+            # None: the late reply was the arming statement's own (successful) answer.
+            assert out.reply_late_ms > 0 and out.late_reply_class in (*error_classes, None)
+            if out.late_reply_class is not None:
+                assert out.error_at_ms > out.work_end_ms
     else:
         assert out.sqlstate in sqlstates and out.rollback == "answered"
         assert not out.retired and rt.quarantine.count() == 0
         assert out.error_at_ms is not None and out.error_at_ms <= out.error_noticed_ms
-        assert out.connection.close_calls == 1
+        assert out.error_at_ms <= out.work_end_ms, "an answer after work_end is not on time"
+        assert out.rollback_ms is not None and out.rollback_ms >= 0
+        assert out.connection.close_calls == 1 and out.close == "closed"
         assert rt.resources.counts() == (0, 0)
 
 
@@ -800,7 +818,8 @@ def test_c2_submitted_and_cancelled_by_the_server(r2db, zones, total):
     seen = observer.stop()
     assert any(s["tag"] == "an01-m1:C2:S" and s["state"] == "active" for s in seen)
     assert out.sql_submitted == 1
-    assert_submitted_control_outcome(out, rt, ("server_cancelled",), ("57014",))
+    assert_submitted_control_outcome(out, rt, ("server_cancelled",), ("57014",),
+                                     ("QueryCanceled",))
 
 
 @pytest.mark.parametrize("total", [400, 700, 1250])
@@ -817,7 +836,7 @@ def test_c3_submitted_and_lock_timeout(r2db, zones, total):
     seen = observer.stop()
     assert any(s["tag"] == "an01-m1:totals:G" and s["wait"] == "Lock" for s in seen)
     assert_submitted_control_outcome(out, rt, ("lock_timeout", "server_cancelled"),
-                                     ("55P03", "57014"))
+                                     ("55P03", "57014"), ("LockNotAvailable", "QueryCanceled"))
 
 
 def test_reply_arrival_is_recorded_separately_from_when_it_is_noticed():
@@ -1011,7 +1030,11 @@ def _phase_a(medians: dict, seq_scan: bool) -> dict:
         for op in rb.OPERATIONS:
             scans = [["transactions", "Seq Scan" if seq_scan and variant == "A"
                       else "Index Scan"]]
-            cells[f"A:{variant}:{op}"] = {"status": "complete", "median_ms": by_op.get(op, 10),
+            # R54: a complete cell carries its 5 timed outcomes; the median alone is not
+            # evidence any more.
+            ms = by_op.get(op, 10)
+            cells[f"A:{variant}:{op}"] = {"status": "complete", "median_ms": ms,
+                                          "timed": [{"kind": "ok", "elapsed_ms": ms}] * 5,
                                           "explain": [{"plan": {"scans": scans}}]}
     return cells
 
