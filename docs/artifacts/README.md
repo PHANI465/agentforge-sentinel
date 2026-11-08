@@ -1,5 +1,7 @@
 # Project artifacts
 
+Current decisions and future chat context: [decision ledger](../decisions/PROJECT_DECISION_LEDGER.md), [START_HERE](../START_HERE.md) and [expansion research](../research/2026-11-08-expansion-research.md). New directions are planned, not implemented.
+
 ## Current complete project guide — November 8, 2026
 
 - [Complete Markdown guide: 23 chapters](AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md)

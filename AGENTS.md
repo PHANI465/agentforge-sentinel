@@ -1,5 +1,18 @@
 # AgentForge Sentinel: shared agent instructions
 
+Owner expansion decisions, November 8: read docs/START_HERE.md and
+docs/decisions/PROJECT_DECISION_LEDGER.md. The owner authorized a private GitHub repo
+PHANI465/agentforge-sentinel and accepted-main publication, public research-data acquisition,
+and tiny tests with verified included subscription usage/no paid overage. That work is
+recorded under docs/research/2026-11-08-expansion-research.md. Actions stay disabled;
+only accepted main is pushed, never raw/private data or unaccepted task branches.
+The research/decision/publication phase does not implement new app features. Claude's
+active R53–R57 corrections remain first; DOC01 is the prepared next isolated assignment.
+Future chats read the ledger and current queue, inspect Git/jobs, and preserve candidates,
+failures and Cursor edits. Add each new confirmed decision and any superseding evidence
+to the ledger; never claim that chats automatically share memory. Older no-remote/no-auth
+paragraphs below are superseded only for the explicitly authorized actions above.
+
 Current AN01 dispatch, November 8: independent review requests R53–R57 on preserved
 93583a. Read docs/reviews/AN01-M1-93583a.md and the concrete correction assignment
 docs/prompts/CLAUDE_AN01_M1_REVIEW_FIXES.md. Claude continues its existing prototype

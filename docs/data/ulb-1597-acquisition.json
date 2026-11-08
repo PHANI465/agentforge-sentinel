@@ -1,0 +1,31 @@
+{
+  "dataset": "ULB/Worldline credit card fraud",
+  "openml_id": 1597,
+  "openml_version": 1,
+  "source_url": "https://openml.org/data/v1/download/1673544/creditcard.arff",
+  "retrieved_date": "2026-11-08",
+  "original_listing": "https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud",
+  "license_as_observed": "Kaggle: Database Open Database + Contents Database Contents; OpenML field: Public",
+  "license_references": [
+    "https://opendatacommons.org/licenses/odbl/1-0/",
+    "https://opendatacommons.org/licenses/dbcl/1-0/"
+  ],
+  "purpose": "local research/benchmark acquisition; not trained or ingested",
+  "raw_data_relative_path": "data/private/external/ulb-creditcard-1597/creditcard.arff",
+  "bytes": 150829308,
+  "sha256": "fdaf12730dc1fc426f318b71349f24f5c5fd00aa1152940be7e7509ae3d89d2a",
+  "md5": "178bcf9bb1f31a3dfe12d0e577884add",
+  "rows": 284807,
+  "fraud": 492,
+  "legitimate": 284315,
+  "features": 30,
+  "columns_including_target": 31,
+  "time_seconds_range": [
+    0.0,
+    172792.0
+  ],
+  "account_identifiers_available": false,
+  "privacy": "anonymized PCA features; no account reconstruction",
+  "redistributed": false,
+  "p1_changed": false
+}

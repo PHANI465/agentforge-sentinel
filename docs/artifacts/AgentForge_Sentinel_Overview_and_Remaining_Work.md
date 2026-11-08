@@ -1,5 +1,18 @@
 # AgentForge Sentinel: project overview and remaining work
 
+## Owner expansion: decisions and private GitHub
+
+Read [the decision ledger](../decisions/PROJECT_DECISION_LEDGER.md) for every confirmed
+choice and [research](../research/2026-11-08-expansion-research.md) for sources/evidence.
+The private [GitHub repository](https://github.com/PHANI465/agentforge-sentinel) contains
+accepted main; PHANI465 is the sole listed contributor and Actions are disabled.
+ULB1597 is downloaded/checksummed privately, not trained. Included-access connectivity
+smokes passed for Claude Pro and Codex/ChatGPT; Cursor inference remains unverified.
+Local public/synthetic document feedback, provisional agent reviews and interpretable
+metrics are prepared directions, not app features. [DOC01 handoff](../prompts/CLAUDE_EXPANSION_AFTER_M1.md)
+follows the active M1 correction handoff in a separate worktree. New chats start with
+[START_HERE](../START_HERE.md); no automatic job/context synchronization is claimed.
+
 ## Latest review: R53–R57 corrections next
 
 Codex independently reviewed 93583a: the 66 existing focused tests pass; 14 additional

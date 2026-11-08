@@ -532,6 +532,40 @@ The instruction to read CLAUDE_AN01_M1_IMPLEMENTATION.md and implement the proto
 
 A fresh Claude chat is reasonable after the large idle context you reported. Use the saved resume prompt linked in the source map below. It restores the exact candidate and points to the correction dispatch. It does not authorize a full-size benchmark or replacement implementation.
 
+
+### New directions confirmed November 8
+
+The owner chose research/decisions/private GitHub first. Accepted main is now in the
+private PHANI465/agentforge-sentinel repository, with one listed contributor and Actions
+disabled. The [decision ledger](../decisions/PROJECT_DECISION_LEDGER.md) records each
+choice, status, source and revisit condition; [START_HERE](../START_HERE.md) restores context.
+
+ULB/OpenML1597 was downloaded and validated: 284,807 rows, 492 fraud labels, anonymous PCA
+features and no account IDs. It is a separate benchmark, not a p1 refresh or a source for
+reconstructing cardholders. Current synthetic generation already spans many accounts,
+currencies, activity patterns and fraud/lookalike scenarios. PaySim is a later licensed
+candidate for account/type replay. Historical replay is not a live bank feed.
+
+The first document feature will use local public/synthetic files. Microsoft MarkItDown
+is a proposed extraction dependency behind an owned file interface, not unrestricted
+URI access. Typed CSV/XLSX arithmetic, partial/OCR states and source locators are needed;
+conversion alone neither proves fraud nor guarantees fewer model tokens. No new upload
+route or parser dependency was added today.
+
+For now an agent may provide explicitly automated development review in a separate
+sidecar, with deterministic checks, a fixed evidence rubric, order/verbosity controls
+and recorded failures. It does not fill a human review sheet or establish human agreement.
+Claude Pro and Codex/ChatGPT passed fixed-response local connectivity smokes; that is not
+an investigation-quality result. Cursor's included third-party inference is not assumed.
+
+Metrics should explain precision, recall, false-positive burden, label/extraction coverage,
+reconciliation, atomic claim support, completion and latency with their denominators.
+No single invented fraud-confidence percentage. See [research](../research/2026-11-08-expansion-research.md),
+[document proposal](../documents/DOC01-local-upload-proposal.md), [judge proposal](../evals/agents/automated-review-proposal.md)
+and [metric vocabulary](../analytics/metric-explanations-proposal.md). Feature implementation
+is the next isolated assignment after the active M1 correction handoff, not a side edit
+to that branch.
+
 ## 23 What is complete, where we stopped, and what remains
 
 This is the status as of November 8, 2026. **Accepted** means reviewed and integrated for the stated scope. **Delivered for review** means a candidate exists and its author's evidence is recorded; it is not accepted merely because tests pass. **Planned** means work remains. Local readiness is distinct from public production readiness.
@@ -578,19 +612,24 @@ Earlier interrupted native tests have no usable result; the author reran the foc
 | 4 Extend analyst depth | S2 exports/label availability and separately scoped saved analysis, reconciliation/cohort tasks as needed. | Controlled export content, correct denominators, data/label availability and independent known answers. |
 | 5 Run agent development evaluation | Explicitly authorize the limited live pilot, record model/quota context and complete blinded reviews. | Attempt/failure accounting, security gates, supported/unsupported claims, quality and honest timing/usage. Exact workflow timing remains separately instrumented or not demonstrated. |
 | 6 Evaluate held-out cases | Freeze chosen behavior and authorize a final evaluation separate from development tuning. | No repeated tuning on final cases; retained negative outcomes and limitations. |
-| 7 Verify the release environment | Real GitHub Actions, Linux browser execution and chosen platform/session/retention/abuse policies. | Runner and deployment evidence tied to actual source/configuration; no assumption that WSL equals hosted CI. |
-| 8 Publish or host, if chosen | Package the replay and documentation; deploy a controlled service only after the host and budget are approved. | Reachable reviewed release, operational recovery, secret handling and realistic resource limits. Visitor BYOK needs its own accepted design and tests. |
+| 7 Verify the release environment | Private GitHub publication is done with Actions off; real GitHub Actions, Linux browser execution and chosen platform/session/retention/abuse policies remain. | Runner and deployment evidence tied to actual source/configuration; no assumption that WSL equals hosted CI. |
+| 8 Host, if chosen | Private source publication is done; package the replay for an audience and deploy a controlled service only after the host and budget are approved. | Reachable reviewed release, operational recovery, secret handling and realistic resource limits. Visitor BYOK needs its own accepted design and tests. |
 
 Steps can be split into isolated tasks, but resource-heavy verification stays sequential. Reports and evaluation are separate workstreams; completing one does not demonstrate the other. macOS remains unverified and is not automatically a mandatory release target unless we choose it.
+
+### Newly planned document and data work
+
+DOC01 adds bounded local extraction first, then a separately reviewed upload/feedback API and UI. JUDGE01 adds a provisional automated review sidecar. An external-data experiment needs its own protocol and model identity; downloaded data is not a trained model. These changes do not qualify AN01 limits or authorize protected final-case work.
 
 ### Optional improvements after the core milestones
 
 Currency-normalized features, calibration, drift monitoring, sequence models, entity graphs, retrieval/RAG, an isolated document reader, AML/scam modules and queues are worthwhile experiments when a measured weakness motivates them. They are optional extensions, not hidden requirements for declaring the present local investigation workflow complete. Each new domain needs its own labels, data rights, metrics, safety boundaries and comparison baseline.
 
-There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, measured live-agent value and a verified public release are the three substantial workstreams still ahead. The independent AN01-M1 review is complete and requests R53–R57; the next step is the focused correction task, not full-size measurement.
+There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, local document feedback, measured agent value and a verified public release are the four substantial workstreams still ahead. The independent AN01-M1 review is complete and requests R53–R57; the next step is the focused correction task, not full-size measurement.
 
 ### Source map and the next chat
 
+- [Decision ledger](../decisions/PROJECT_DECISION_LEDGER.md) and [new-chat entry](../START_HERE.md).
 - [Current project status](../STATUS.md) and [task queue](../TASK_QUEUE.md): current ownership and authorization.
 - [November 8 checkpoint](AgentForge_Sentinel_Session_2026-11-08.md): exact stopping point and preserved candidate.
 - [Claude new-chat resume prompt](../prompts/CLAUDE_RESUME_AN01_M1_REVIEW_2026-11-08.md): read the current correction dispatch without repeating the original implementation.

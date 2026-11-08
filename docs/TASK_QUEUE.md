@@ -1,5 +1,26 @@
 # Shared implementation queue
 
+## November 8 owner expansion decisions and private publication
+
+[Decision ledger](decisions/PROJECT_DECISION_LEDGER.md) and [START_HERE](START_HERE.md)
+are the durable new-chat entry points. Owner selected research/decisions/GitHub first,
+public research data, local public/synthetic document uploads and tiny verified included-
+quota tests. This narrowly supersedes earlier blanket no-remote/no-auth wording for
+the described private publication and two smoke calls; unrelated boundaries remain.
+
+Private repo PHANI465/agentforge-sentinel is created and accepted main is pushed. GitHub
+lists PHANI465 only; Actions are disabled and raw/private data excluded. See [publication](releases/GITHUB_PRIVATE_PUBLICATION_2026-11-08.md).
+ULB1597 is acquired/verified privately (284,807 rows, 492 fraud), not trained. Claude Pro
+and Codex/ChatGPT fixed-response access smokes pass; Cursor inference is unverified.
+
+[Research](research/2026-11-08-expansion-research.md), [datasets](data/external-dataset-register.md),
+[DOC01](documents/DOC01-local-upload-proposal.md), [agent review](evals/agents/automated-review-proposal.md)
+and [metrics](analytics/metric-explanations-proposal.md) distinguish verified facts from
+proposals. No upload/report feature, judge study, model retraining or full-size M1 run.
+Claude continues R53–R57; newly observed author commits are not accepted. The
+[next extraction assignment](prompts/CLAUDE_EXPANSION_AFTER_M1.md) uses a separate branch
+after that handoff. No production integration is performed by this research publication.
+
 ## November 8 independent review: AN01-M1 changes requested R53–R57
 
 [Independent review](reviews/AN01-M1-93583a.md): candidate 93583a remains unaccepted and

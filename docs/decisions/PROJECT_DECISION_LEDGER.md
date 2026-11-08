@@ -1,0 +1,73 @@
+# Sentinel decision ledger
+
+Updated November 8, 2026. This is the decision-to-decision entry point for future Codex
+and Claude chats. It complements numbered ADRs, STATUS and TASK_QUEUE; it is not a verbatim
+transcript or automatic shared memory. Read [START_HERE](../START_HERE.md) first when resuming.
+
+## How to maintain this record
+
+Each new decision records date, owner/source, exact choice, reason, status, affected task
+and what would change the decision. Keep confirmed choices distinct from research proposals,
+implemented behavior and verified results. Supersede a decision with a linked new entry;
+do not erase it or silently backfill an undocumented conversation. Evidence for a code
+acceptance names the reviewed SHA. Auth tokens, private outputs and raw datasets stay out.
+
+## Earlier decisions with recorded sources
+
+These are retrospective summaries of written project records, not reconstructed quotes.
+
+| ID | Decision and current meaning | Source |
+| --- | --- | --- |
+| H01 | Synthetic financial data and simulated actions are the local product foundation. A live bank connection is not implemented. | [Roadmap](../PROJECT_PLAN.md), [storage/API ADR](0002-thin-path-storage-and-api.md) |
+| H02 | Scorers rank risk; model roles cannot grant permissions or approve. Human approval and explicit execution stay separate. | [Contracts ADR](0001-domain-contracts.md), [agent ADR](0007-three-role-workflow.md) |
+| H03 | Preserve p1's frozen data/features/model/evaluation identity; new datasets or features need a separate experiment. | [Model-serving ADR](0006-controlled-model-serving.md), [ML protocol](../../ml/protocol.json) |
+| H04 | Codex is the local main integrator. New commits use PHANI465 <pgavara1@asu.edu> as sole author and committer; no attribution trailers or history rewriting. | AGENTS.md, owner's recorded October26 instruction |
+| H05 | Verification commands have an owner-approved 2700 s cap. Application deadlines, individual assertions and skip policy are not widened by it. | [ADR0009](0009-verification-command-budget.md) |
+| H06 | Held-out final cases are separate from development. Unknown usage/timing and missing evidence remain unknown/not demonstrated. | [Agent protocol](../evals/agents/protocol-v1.md), [accepted pilot plan](../artifacts/AgentForge_Sentinel_G3D-P4_Development_Evaluation_Plan_2026-11-06.md) |
+| H07 | Cursor delivered its contribution; its original seven saved edits remain preserved. Other tools work in isolated checkouts. | AGENTS.md and current [checkpoint](../artifacts/AgentForge_Sentinel_Session_2026-11-08.md) |
+| H08 | AN01-M1 is a measurement prototype, not production Reports. Full-size measurement and performance values are not qualified. R53–R57 remain changes-requested until a corrected delivery is independently reviewed. | [M1 review](../reviews/AN01-M1-93583a.md), [r3.2 acceptance](../reviews/AN01-r31-2db42ee.md) |
+
+## Owner decisions confirmed November 8
+
+Source: owner's five explicit answers in this session, following a request to ask before
+browsing, downloading, publishing or changing code.
+
+| ID | Confirmed choice | Reason / boundary | Status and evidence |
+| --- | --- | --- | --- |
+| D20261108-01 | New **private** GitHub repository named agentforge-sentinel. | Publish under PHANI465, retain history and source credit; no public release. | Created; accepted main first pushed. [Publication record](../releases/GITHUB_PRIVATE_PUBLICATION_2026-11-08.md). |
+| D20261108-02 | Public datasets for local research and benchmarking; check licenses/access/size first. | Supplement synthetic evidence without pretending every downloaded dataset is real or compatible. | ULB/OpenML1597 downloaded and verified in ignored private data. p1 unchanged. [Register](../data/external-dataset-register.md). |
+| D20261108-03 | First document feature: **local use with public/synthetic PDFs, CSVs and spreadsheets**. | Private customer files and hosted multi-user uploads are later scope. | Approved direction; extraction/upload feature not implemented. [DOC01 proposal](../documents/DOC01-local-upload-proposal.md). |
+| D20261108-04 | Plans reported, in the asked order: Claude Pro, ChatGPT Plus, Cursor Premium. Permit small live tests only within verified included quota, with no paid overage. | Subscription access is provider/product specific, not a pooled API budget. | Claude first-party Pro verified; Codex ChatGPT login verified. One tiny CLI smoke each passed. Cursor SDK inference not run. [Research](../research/2026-11-08-expansion-research.md). |
+| D20261108-05 | Research, decision log and GitHub **first**, then assign implementation. | Avoid mixing a new upload feature into Claude's active M1 correction branch. | This publication is docs/research/acquisition, not feature code. Next design/implementation handoff is [prepared](../prompts/CLAUDE_EXPANSION_AFTER_M1.md). |
+
+## Research decisions applied within that authorization
+
+| ID | Choice | Why and status | Revisit when |
+| --- | --- | --- | --- |
+| D20261108-06 | Push only accepted main; keep Actions disabled for the first private publication. | Existing push workflow would otherwise start runner work. No paid CI allowance was verified; no workflow file changed. | Included budget and an explicit CI dispatch are verified. |
+| D20261108-07 | Use ULB as a separate classification benchmark, not an account-profile source. | It has anonymous PCA features and no account IDs. Never reconstruct identities or invent account grouping from PCA. | Another licensed source provides valid entity/time semantics. |
+| D20261108-08 | Preserve synthetic multi-account profiles for controlled replay; investigate PaySim for typed entity replay later. | Current generator already has varied account activity/scenarios. An online historical replay is not a bank feed. | A dataset mapping and causal replay protocol are reviewed. |
+| D20261108-09 | Interim agent grading is **automated development review**, not human evaluation. | Separate sidecar records; no overwriting human review sheets or claiming human agreement without human labels. | A versioned judge design and later human calibration justify stronger claims. |
+| D20261108-10 | Favor deterministic numeric/authorization checks before LLM rubric judgement. | Arithmetic and permissions must not depend on a judge's opinion; disagreements and uncheckable claims stay visible. | Evidence shows a task needs an additional learned check. |
+| D20261108-11 | Use Microsoft MarkItDown behind an owned local-file extractor, not unrestricted URI access. | Its library/MCP capabilities differ. Default local text extraction needs no model; OCR/cloud routes can involve calls/cost. | DOC01's bounded worker/interface and dependency review are accepted. |
+| D20261108-12 | CSV/XLSX money and dates use typed parsers; Markdown supports narrative evidence, not authoritative arithmetic. | Formatting conversion can lose table semantics; ambiguous amounts need confirmation, not guessed values. | A documented parser demonstrates exact reconstruction. |
+| D20261108-13 | Reports show measures, counts, denominators and unknowns rather than one invented fraud-confidence percentage. | p1 scores are uncalibrated; extraction quality, model ranking and investigation quality are different quantities. | A separately validated calibration and decision policy supports a probability. |
+| D20261108-14 | Do not bulk-download BAF yet. | Its current listing and repository datasheet disagree on dataset terms; repository code license is not the data license. | Original provider resolves applicable terms/version. |
+| D20261108-15 | A fixed-response subscription smoke is connectivity evidence only. | Claude CLI reported two model identities; a single invocation is not necessarily one backend request. Codex's system overhead differs. | A registered, bounded evaluation records model/usage and comparable evidence. |
+
+## What this does not authorize
+
+No new production code, upload route, report contract freeze, full M1 grid, model training,
+paid fallback, public hosting or protected final-case evaluation is performed by this
+research publication. The latest explicit owner answers supersede older blanket no-remote/
+no-auth wording **only** for the private GitHub publication and verified tiny subscription
+checks described here. All unrelated safeguards and the active M1 correction scope remain.
+
+## Decision template for the next change
+
+Record: ID/date; exact owner request or accepted source; chosen behavior; alternatives
+and reason; status (proposed/confirmed/implemented/verified/superseded); task/path; evidence
+SHA and commands; remaining unknowns; supersedes/revisit trigger. Update START_HERE,
+STATUS/TASK_QUEUE and the latest checkpoint in the same publication. A new chat must read
+these files and inspect Git; the files do not automatically resume jobs or make old tests
+valid for a new commit.

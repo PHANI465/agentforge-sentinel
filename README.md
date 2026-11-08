@@ -1,19 +1,29 @@
 # AgentForge Sentinel
 
-A local fraud investigation workbench using synthetic financial transactions, rule or trained-model scoring, evidence review, bounded investigation, human approval, simulated actions and an audit trail.
+A local financial investigation workbench: synthetic transactions, temporal rule/trained
+ML scoring, bounded agent investigation, human approval, explicit simulated actions and
+an auditable trace. It connects to no bank account and moves no real money.
 
-The consolidated Windows-local codebase includes the React/TypeScript analyst UI, FastAPI/PostgreSQL API, reproducible scikit-learn baseline and model reports, persisted approval/replay workflow, operator backup/rollback tooling and backend CI configuration. The tested G3C foundation (`f788698`) includes: the trace API/UI and monotonic workflow deadlines on the accepted I03 and native Linux backend foundation. See the [G3C foundation](docs/releases/G3C-main-integration-2026-11-02.md) for exact platform verification records. GitHub Actions, macOS, Linux browser and hosted/public access are not verified. Model scores are uncalibrated rankings from a synthetic benchmark.
+**Start here:** [complete guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md),
+[offline HTML](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html),
+[decision ledger](docs/decisions/PROJECT_DECISION_LEDGER.md) and
+[current status](docs/STATUS.md). New assistant chats read [START_HERE](docs/START_HERE.md).
 
-G3D-P3 three-role operator selection is independently accepted and integrated at
-`495c7d3`: Windows then native Ubuntu backend gates pass666+one allowed skip, six commands,
-same-run JUnit/HTTP/package/ML. The helper preserves explicit adapter/model settings across
-restart, with deterministic defaults and human approval/replay boundaries. G3D-P2's
-populated workflow backup proof remains integrated. No frontend/browser rerun for this
-helper/tests/docs change; prior UI133/browser19+10 stay dated. The45-minute cap applies
-only to verification commands, not application deadlines. See the
-[current checkpoint](docs/artifacts/AgentForge_Sentinel_Session_2026-11-06.md) and
-[release record](docs/releases/G3D-P3-main-integration-2026-11-06.md).
-Study the [complete project guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-02.md).
+Accepted application/tooling is the tested 871e31d release plus documentation: independent
+Windows/native Ubuntu backend gates passed 810 + one allowed skip each. Earlier Windows
+UI evidence is 133 unit and 19 legacy + 10 trace browser cases, not rerun for later tooling.
+See [release evidence](docs/releases/Batch-r2-main-integration-2026-11-07.md).
+
+AN01-M1 reporting prototype has changes-requested findings R53–R57; corrections are in
+progress and not integrated. The downloaded ULB public dataset is a separate future
+benchmark; p1 is unchanged. Local document feedback, automated development grading and
+more readable metrics are [planned slices](docs/research/2026-11-08-expansion-research.md),
+not shipped functionality. Current scores are uncalibrated synthetic-benchmark rankings.
+
+This repository is private. GitHub lists PHANI465 as the sole contributor. Actions are
+disabled pending verified included budget and explicit CI dispatch. Real CI, Linux browser,
+macOS and hosted/public deployment remain unverified. Raw datasets, credentials and local
+evidence are excluded; download/source manifests provide provenance without redistribution.
 
 ## Run locally
 
