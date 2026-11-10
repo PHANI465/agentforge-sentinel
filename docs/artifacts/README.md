@@ -1,5 +1,7 @@
 # Project artifacts
 
+Latest checkpoint: [November 10](AgentForge_Sentinel_Session_2026-11-10.md). M1 re-review closes R54; one R56 close-interruption correction remains.
+
 Current decisions and future chat context: [decision ledger](../decisions/PROJECT_DECISION_LEDGER.md), [START_HERE](../START_HERE.md) and [expansion research](../research/2026-11-08-expansion-research.md). New directions are planned, not implemented.
 
 ## Current complete project guide — November 8, 2026

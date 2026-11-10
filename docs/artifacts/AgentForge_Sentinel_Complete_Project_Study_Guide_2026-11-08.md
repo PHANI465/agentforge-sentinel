@@ -1,6 +1,6 @@
 # AgentForge Sentinel: the complete project guide
 
-November 8, 2026 · Project idea, implementation, examples and remaining stages
+November 8 edition · Updated November 10, 2026 · Project idea, implementation and remaining stages
 
 Prepared for Phaneendra Gavara. This edition replaces the November 2 guide for current reading. That edition remains a preserved historical snapshot. The final chapter separates accepted work, delivered candidates, unmeasured claims and future plans. Product fixtures use synthetic financial data and simulated actions. The separately downloaded ULB research dataset is real anonymized data, ignored locally and not used by the product model.
 
@@ -528,7 +528,7 @@ Git commits, the coordination queue and handoff documents preserve context. A lo
 
 ### Your last Claude prompt was correct
 
-The instruction to read CLAUDE_AN01_M1_IMPLEMENTATION.md and implement the prototype and tiny proofs was the assigned task. Claude delivered that work as candidate 93583a. Do not send the original implementation prompt again as if nothing exists. Codex requested R53–R57, then re-reviewed corrected 5e0a578. R53/R55/R57 close, while R54/R56 need the current follow-up on that same branch. Preserve both candidates and every earlier failure.
+The instruction to read CLAUDE_AN01_M1_IMPLEMENTATION.md and implement the prototype and tiny proofs was the assigned task. Claude delivered that work as candidate 93583a. Do not send the original implementation prompt again as if nothing exists. Codex reviewed the corrections through b54de1a. R53/R54/R55/R57 and the post-rollback R56 case now close; only interruption inside close remains R56. Continue the final-close dispatch on the same branch, preserving every candidate and earlier failure.
 
 A fresh Claude chat is reasonable after the large idle context you reported. Use the saved resume prompt linked in the source map below. It restores the exact candidate and points to the correction dispatch. It does not authorize a full-size benchmark or replacement implementation.
 
@@ -589,27 +589,26 @@ The last applicable Windows product UI evidence is 133 unit tests and browser su
 
 ### Delivered candidate: changes requested
 
-Latest AN01-M1 candidate **5e0a578be91b7739e5d08fc315dc37504f0df188** is clean on task/claude-an01-m1-prototype. It preserves original 93583a and changes only the two prototype scripts, two test modules and write-up/handoff paths. Codex's corrected review closes R53/R55/R57; R54/R56 still block acceptance. It is not merged. The original 93583a review remains historical evidence; use the new follow-up rather than restarting the five-finding assignment.
+Latest candidate **b54de1a4ebb4401b2149035abaeac6678e95d64c** (code af6292f) is clean and independently reviewed. R54 closes, as does the earlier post-rollback interruption defect. R53/R55/R57 remain closed. One residual R56 path still blocks acceptance: interruption inside close can leave an unconfirmed connection with a reservation but no retained owner. Candidate code remains unmerged.
 
 | Evidence | Status and meaning |
 | --- | --- |
-| Latest candidate | Corrected 5e0a578, with code 73984b9 and a docs-only final commit. Independent review closes R53/R55/R57; R54/R56 remain open. No candidate code is integrated. |
-| Author gates | Windows/native exact clean 5e0a578 reports each contain 933 passed and one allowed skip, six exit 0 commands, HTTP and ML success. Codex validated saved JUnit reports; it did not rerun both full gates. |
-| Independent checks | Windows 123 focused tests pass. Original 14 probes pass with one disclosed read_at fake addition. Eight additional probes on Windows/native yield six assertion failures, two controls, zero errors. |
-| Remaining R54 | Contradictory medians/maxima and missing or contradictory control diagnostics still qualify evidence. |
-| Remaining R56 | Ctrl-C/SystemExit immediately after a ROLLBACK reply can leave an unclosed connection, reservation 1 and no quarantine owner. |
-| Corrected tiny smoke | At 73984b9 all stages completed once on both platforms; A, N*=80. This is tiny plumbing only, not qualified performance. Original f00df8c native timing failure remains failed. |
-| Timing/clock/disk | Keep B/R/work_end and provisional 30 ms policy. Production coarse clock and full-grid 4 GB/backing-space issues remain separate and unresolved. |
-| Full-size measurement | Not run or authorized. Row, budget, reserve and capacity values remain provisional. |
+| Author exact-commit gates | Windows/native each 960 passed + one allowed skip, six commands, clean trees. Codex validated their saved 961-case JUnit reports; these are author full gates, not independently rerun full suites. |
+| Independent focused suite | Windows 150/150 pass against real disposable PostgreSQL, zero skips. Ruff/diff checks pass. |
+| Independent probe checks | Original adapted 14 pass on both platforms. Twelve further checks give 10 passes and two assertion failures each. The positive synthetic evidence fixture has no failed C2 to mask its negative controls. |
+| R54 evidence | Contradictory summaries, missing control diagnostics and wrong EXPLAIN evidence are rejected. Invalid D evidence may show missing without a derived trigger after loader filtering; it does not qualify. |
+| R56 remaining | KeyboardInterrupt/SystemExit inside close bypasses except Exception: close_calls 1, closed false, reservation 1, quarantine 0. The original post-rollback cleanup now passes. |
+| Tiny measurement | At af6292f Windows C2:400 failed; S9=not demonstrated. All 14 stage records are preserved. No new tiny run is assigned for the close-only correction. Earlier timing misses also remain failed. |
+| Prior focused failure | Author Windows stall test failed once during slow startup, cause unestablished. Later gates and this review pass it; those passes do not explain or erase the failure. |
+| Still unqualified | 30 ms reply margin,200k cap,5000 ms budget,250 ms reserve, M/Q 2/2. Production clock and 4 GB/backing-space constraints remain separate; full-size grid is not authorized. |
 
-Read the [corrected review](../reviews/AN01-M1-5e0a578.md) and [current Claude follow-up](../prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md).
-The original review/candidates, interrupted run and failed gate/timing records remain history.
+Read [the latest review](../reviews/AN01-M1-b54de1a.md), [final-close dispatch](../prompts/CLAUDE_AN01_M1_FINAL_CLOSE.md) and [November 10 checkpoint](AgentForge_Sentinel_Session_2026-11-10.md). All prior candidate/failure records remain history.
 
 ### Remaining work in dependency order
 
 | Next stage | Work to do | Evidence needed before calling it done |
 | --- | --- | --- |
-| 1 Correct and re-review AN01-M1 | Close residual R54/R56 on corrected 5e0a578; preserve closed R53/R55/R57 and all candidates. | Failing-first regressions, corrected exact SHA, appropriate tiny/gate evidence and Codex re-review. |
+| 1 Correct and re-review AN01-M1 | Finish only R56 interruption inside close on b54de1a; preserve closed R54/R53/R55/R57 and all candidates. | Failing-first regressions, corrected exact SHA, appropriate tiny/gate evidence and Codex re-review. |
 | 2 Decide and measure reports | Resolve reply policy and realistic disk/workload bounds, then separately assign the full grid if resources permit. | Both platforms, common index choice, complete required cells, retained failures and qualified limits or an honest not-demonstrated result. |
 | 3 Ship AN01 S1 | Review/freeze v1.3, implement capability and curated read-only API, integrate the report UI and known-answer/browser tests. | Browser → production API → Postgres with scope, exact money/time semantics, capacity/error handling and secret-safe lifecycle. |
 | 4 Extend analyst depth | S2 exports/label availability and separately scoped saved analysis, reconciliation/cohort tasks as needed. | Controlled export content, correct denominators, data/label availability and independent known answers. |
@@ -628,13 +627,13 @@ DOC01 adds bounded local extraction first, then a separately reviewed upload/fee
 
 Currency-normalized features, calibration, drift monitoring, sequence models, entity graphs, retrieval/RAG, an isolated document reader, AML/scam modules and queues are worthwhile experiments when a measured weakness motivates them. They are optional extensions, not hidden requirements for declaring the present local investigation workflow complete. Each new domain needs its own labels, data rights, metrics, safety boundaries and comparison baseline.
 
-There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, local document feedback, measured agent value and a verified public release are the four substantial workstreams still ahead. The corrected AN01-M1 review closes R53/R55/R57 but still requests R54/R56 follow-up; the next step remains that focused correction, not full-size measurement.
+There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, local document feedback, measured agent value and a verified public release are the four substantial workstreams still ahead. The latest review also closes R54 and post-rollback cleanup; only the final-close R56 path remains before acceptance. Full-size measurement is still unassigned.
 
 ### Source map and the next chat
 
 - [Decision ledger](../decisions/PROJECT_DECISION_LEDGER.md) and [new-chat entry](../START_HERE.md).
 - [Current project status](../STATUS.md) and [task queue](../TASK_QUEUE.md): current ownership and authorization.
-- [November 8 checkpoint](AgentForge_Sentinel_Session_2026-11-08.md): exact stopping point and preserved candidate.
+- [November 10 checkpoint](AgentForge_Sentinel_Session_2026-11-10.md): current stopping point and preserved candidates.
 - [Claude new-chat resume prompt](../prompts/CLAUDE_RESUME_AN01_M1_REVIEW_2026-11-08.md): read the current correction dispatch without repeating the original implementation.
 - [AN01-M1 intake](../reviews/AN01-M1-93583a-intake.md): original delivery record; the completed review above requests corrections.
 - [Milestone roadmap](../PROJECT_PLAN.md): complete planned product; proposed technologies are not all installed dependencies.

@@ -1,6 +1,6 @@
 # Resume Sentinel from committed context
 
-Updated November 8, 2026. This is the durable entry point for a new Codex or Claude chat.
+Updated November 10, 2026. This is the durable entry point for a new Codex or Claude chat.
 Files supply context; they do not automatically synchronize sessions, authorize extra
 work or preserve a killed process. Inspect actual Git and job/recovery state before acting.
 
@@ -10,7 +10,7 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 2. [STATUS](STATUS.md) and [TASK_QUEUE](TASK_QUEUE.md): current acceptance and task ownership.
 3. [Decision ledger](decisions/PROJECT_DECISION_LEDGER.md): confirmed choices, sources,
    alternatives, implementation state and supersession. Add new decisions here.
-4. [Current checkpoint](artifacts/AgentForge_Sentinel_Session_2026-11-08.md) and the
+4. [Current checkpoint](artifacts/AgentForge_Sentinel_Session_2026-11-10.md) and the
    relevant branch handoff/review at its named SHA. Never treat author tests as acceptance.
 5. [Complete project guide](artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md)
    or [HTML](artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html)
@@ -19,10 +19,10 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 ## Current position
 
 - Accepted application/tooling remains exact tested 871e31d plus later documentation.
-- Corrected M1 candidate 5e0a578 is independently reviewed, still changes-requested for
-  R54/R56. R53/R55/R57 close for the scoped correction. Read the [new review](reviews/AN01-M1-5e0a578.md)
-  and [follow-up](prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md); preserve93583a and 5e0a578.
-  Author gates/tiny results do not override independent counterexamples.
+- Latest M1 candidate b54de1a is independently reviewed, still changes-requested only for
+  interruption inside close (R56). R54 and prior post-rollback cleanup close. Read the
+  [latest review](reviews/AN01-M1-b54de1a.md) and [current dispatch](prompts/CLAUDE_AN01_M1_FINAL_CLOSE.md).
+  Preserve every earlier candidate/failure. No new tiny timing pass or full-size grid.
 - Private GitHub repo: https://github.com/PHANI465/agentforge-sentinel. Only accepted main
   is published; Actions disabled. No force/mirror/all-branch push or private data upload.
 - ULB dataset is acquired privately, not trained. p1 and protected final cases unchanged.

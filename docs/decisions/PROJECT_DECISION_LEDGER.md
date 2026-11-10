@@ -1,6 +1,6 @@
 # Sentinel decision ledger
 
-Updated November 8, 2026. This is the decision-to-decision entry point for future Codex
+Updated November 10, 2026. This is the decision-to-decision entry point for future Codex
 and Claude chats. It complements numbered ADRs, STATUS and TASK_QUEUE; it is not a verbatim
 transcript or automatic shared memory. Read [START_HERE](../START_HERE.md) first when resuming.
 
@@ -81,3 +81,12 @@ qualification gaps. Preserve those records and all old failures. One newly regis
 tiny pair in the narrow follow-up validates changed code only, no timing-limit claim or
 full-size permission. DOC01 and live quality work stay separate. Revisit on the exact
 next corrected SHA with independent regression evidence.
+
+## November 10 review decision
+
+D20261110-01 — [Independent b54de1a review](../reviews/AN01-M1-b54de1a.md) closes R54
+and the post-rollback R56 defect. Interruption inside close still loses retained ownership;
+R56 therefore remains open and no source integration is accepted. This is a scoped review
+decision, not a new owner feature request. The final-close dispatch assigns no new tiny
+benchmark pass: retain both timing misses, all old identities and the unexplained focused
+startup failure. No numerical limit qualifies. Revisit after the narrow cleanup fix.

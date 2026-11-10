@@ -1,5 +1,25 @@
 # Shared implementation queue
 
+## November 10: b54de1a re-review, one residual R56 path
+
+Candidate **b54de1a4ebb4401b2149035abaeac6678e95d64c** is clean and reviewed, not accepted
+or merged. [Independent review](reviews/AN01-M1-b54de1a.md) closes R54 and the previous
+post-rollback R56 case. R53/R55/R57 stay closed. One R56 blocker remains: interruption
+inside conn.close bypasses its Exception guard and leaves an unconfirmed connection
+with reservation 1 and no retained quarantine owner.
+
+Independent Windows focused tests pass 150/150, zero skips. Adapted original probes pass
+14/14 on Windows/native. Twelve unmasked additional checks give 10 passes, two assertion
+failures and zero setup errors per platform. Positive synthetic evidence is complete;
+real C2 failure cannot mask the validation checks. Author gates960+one skip each are
+inspected/JUnit-validated, not independently rerun full suites.
+
+[Current final-close dispatch](prompts/CLAUDE_AN01_M1_FINAL_CLOSE.md), **Opus 5.5 / High**:
+continue the same branch with this one cleanup correction. No new tiny timing pass.
+Author af6292f smoke remains not demonstrated after Windows C2:400; earlier failures,
+unexplained startup stall,30 ms policy, production clock and 4 GB/full-size limits remain.
+DOC01 is prepared but separate/later. No candidate code integration or new qualification.
+
 ## November 8 independent re-review of corrected AN01-M1
 
 Corrected candidate **5e0a578be91b7739e5d08fc315dc37504f0df188** is reviewed, not accepted
@@ -122,7 +142,7 @@ boundary/arithmetic/injected-wait probes establish the gaps; no real SQL measure
 load, browser, live/auth/account/final-case work or spending. AN01-M1 and reporting
 implementation remain unassigned pending the corrected proposal's review.
 
-Main application/tooling remains tested871e31d plus documentation (810+one allowed skip
+Main application/tooling remains tested 871e31d plus documentation (810+one allowed skip
 per platform); this publication adds no runtime behavior or new full-gate claim. Preserve
 b436c5e, accepted/delivered worktrees, original evidence and Cursor's seven edits.
 

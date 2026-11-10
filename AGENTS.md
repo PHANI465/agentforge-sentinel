@@ -1,5 +1,13 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current November 10 M1 re-review: b54de1a is reviewed but still changes-requested for
+the residual R56 interruption INSIDE close. R54 closes; R53/R55/R57 stay closed and the
+post-rollback R56 case passes. Read docs/reviews/AN01-M1-b54de1a.md and current dispatch
+docs/prompts/CLAUDE_AN01_M1_FINAL_CLOSE.md. Continue that existing branch only; no new
+tiny timing pass, full grid, production change or DOC01 side edit. Preserve every candidate
+and failure. Independent 150 focused tests pass; two additional assertions per platform
+still fail. The later heading supersedes earlier residual-R54 dispatches below.
+
 Current M1 re-review: corrected 5e0a578 is changes-requested for remaining R54/R56;
 R53/R55/R57 close in scoped review docs/reviews/AN01-M1-5e0a578.md. The current dispatch
 is docs/prompts/CLAUDE_AN01_M1_R2_FOLLOWUP.md on the existing Claude branch. It supersedes
@@ -57,7 +65,7 @@ and stdlib checkers only. No SQL measurement/reporting implementation or live ev
 is assigned. Accepted runtime/tooling and owner identity instructions below remain intact.
 
 Current checkpoint (November7): corrected batch R46–R49 is accepted and locally
-integrated at tested871e31d. Read docs/artifacts/AgentForge_Sentinel_Session_2026-11-07.md
+integrated at tested 871e31d. Read docs/artifacts/AgentForge_Sentinel_Session_2026-11-07.md
 and docs/reviews/Batch-r2-10a65ee.md. AN01 is still a draft; live evaluation is unassigned.
 Older dispatch/status paragraphs below are historical where this update supersedes them.
 
@@ -106,7 +114,7 @@ Current I02 quota exception: the owner reports Cursor's allowance is exhausted. 
 ## November7 accepted batch update
 
 R46–R49 are closed under docs/reviews/Batch-r2-10a65ee.md. Corrected P4ab32f45c,
-DEMO011289b42 and PERF0159b0b54 are accepted/integrated in exact tested871e31d;
+DEMO011289b42 and PERF0159b0b54 are accepted/integrated in exact tested 871e31d;
 Windows/native full gates pass810+one allowed skip each with same-run811-case JUnit,
 six commands, HTTP/package/ML. See docs/releases/Batch-r2-main-integration-2026-11-07.md.
 Main publication adds documentation only; do not transfer the exact-head gate claim.

@@ -1,5 +1,7 @@
 # Next expansion: DOC01 design and bounded extraction Part A
 
+November 10: M1 candidate b54de1a still has [one final-close correction](CLAUDE_AN01_M1_FINAL_CLOSE.md). Finish that handoff first; this prepared expansion assignment is not the current task.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. Untrusted document bytes,
 dependency separation, exact financial fields and owned parser lifecycles require care.
 

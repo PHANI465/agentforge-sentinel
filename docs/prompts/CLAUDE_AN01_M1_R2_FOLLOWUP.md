@@ -1,5 +1,7 @@
 # AN01-M1 final focused follow-up: remaining R54 and R56
 
+Delivered at b54de1a; [re-review](../reviews/AN01-M1-b54de1a.md) closes R54 and post-rollback cleanup. Continue only [the final-close dispatch](CLAUDE_AN01_M1_FINAL_CLOSE.md). The original assignment below is history.
+
 Recommended coding assistant: **Claude Opus 5.5 / High**. Evidence qualification and
 interrupt-safe connection ownership need careful reasoning; no live model/provider usage
 is needed. Use existing allowance; no paid overage.
