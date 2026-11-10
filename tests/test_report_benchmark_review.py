@@ -1264,3 +1264,104 @@ def test_r56b_interrupt_while_rollback_still_runs_transfers_to_the_lease(
         gate.set()
     assert _until(lambda: rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0)
     assert conn.close_calls == 1
+
+
+# ---- R56 final close: an interrupt raised inside conn.close() itself ---------------------
+# Review AN01-M1-b54de1a: _do_close caught only Exception, so KeyboardInterrupt/SystemExit
+# from close() left close_state "closing", one held reservation and (on the request-owned
+# path) no retained owner. An interrupted close is NOT a confirmed close.
+
+def _close_raises(conn, error, times=1):
+    """conn.close() counts the call, then raises `error` `times` times (the socket is not
+    marked closed), then behaves normally."""
+    left = [times]
+    real = conn.close
+
+    def close():
+        if left[0]:
+            left[0] -= 1
+            conn.close_calls += 1
+            raise error()
+        real()
+    conn.close = close
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, SystemExit])
+def test_r56c_interrupt_raised_by_close_keeps_an_owner_and_the_reservation(
+        error, workflow_quarantine_unchanged):
+    """defect: the request-owned close raises the interrupt. It must propagate unchanged,
+    the reservation must stay held (no unconfirmed release) and the unclosed connection
+    must stay under an accountable owner in the report quarantine."""
+    conn = RConn()
+    _close_raises(conn, error)
+    rt = rt_for(conn)
+    with pytest.raises(error):
+        rb.run_statements(rt, SEQ[:1])
+    assert conn.close_calls == 1 and not conn.closed
+    assert rt.resources.counts() == (0, 1), "reservation released without an actual close"
+    assert rt.quarantine.count() == 1, "interrupted close left no accountable owner"
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, SystemExit])
+def test_r56c_interrupt_raised_by_a_retry_keeps_it_retryable(
+        error, workflow_quarantine_unchanged):
+    """defect: an ordinary failed close, then the explicit retry's close raises the
+    interrupt. The connection must stay failed/unconfirmed and owned, so a later retry
+    can still establish the close and release exactly once."""
+    conn = RConn(close_failures=1)
+    rt = rt_for(conn)
+    out = rb.run_statements(rt, SEQ[:1])
+    rc = out.connection
+    assert rc.close_state == "close_failed"
+    _close_raises(conn, error)
+    with pytest.raises(error):
+        rc.retry_close()
+    assert not conn.closed and conn.close_calls == 2
+    assert rc.close_state == "close_failed", "interrupted retry left an unretryable state"
+    assert rt.resources.counts() == (0, 1) and rt.quarantine.count() == 1
+    assert rc.retry_close() is True
+    assert conn.closed and conn.close_calls == 3
+    assert rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0
+    assert rc.admission.releases == 1
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, SystemExit])
+def test_r56c_interrupt_raised_by_the_final_close_keeps_it_retryable(
+        error, workflow_quarantine_unchanged):
+    """defect: the retired lease's final close raises the interrupt (here on the calling
+    thread). Its owner stays held with a failed/unconfirmed close, and a retry releases
+    once."""
+    conn = RConn()
+    _close_raises(conn, error)
+    resources, quarantine = rb.Resources(), rb.ReportQuarantine()
+    rc = rb.ReportConnection(conn, resources.admit(), quarantine)
+    with pytest.raises(error):
+        rc.retire()                          # no user: the retire performs the final close
+    assert not conn.closed and conn.close_calls == 1
+    assert rc.close_state == "close_failed"
+    assert resources.counts() == (1, 1) and quarantine.count() == 1
+    assert rc.retry_close() is True and conn.closed
+    assert resources.counts() == (1, 0) and quarantine.count() == 0
+    rc.admission.end_coordinator()
+    assert resources.counts() == (0, 0) and rc.admission.releases == 1
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, SystemExit])
+def test_r56c_the_retained_owner_is_reachable_and_private(
+        error, workflow_quarantine_unchanged):
+    """new behaviour (not failing-first evidence: owner() is a new entry point). After an
+    interrupted request-owned close the request returns no Outcome, so the quarantine
+    must name the owner; it records only the exception's class name."""
+    conn = RConn()
+    _close_raises(conn, error)
+    rt = rt_for(conn)
+    with pytest.raises(error):
+        rb.run_statements(rt, SEQ[:1])
+    rc = rt.quarantine.owner(conn)
+    assert isinstance(rc, rb.ReportConnection) and rc.conn is conn
+    assert rc.close_state == "close_failed" and rc.close_error == error.__name__
+    assert rc.users == set() and not rc.retired
+    assert rc.retry_close() is True and conn.closed and conn.close_calls == 2
+    assert rt.resources.counts() == (0, 0) and rt.quarantine.count() == 0
+    assert rt.quarantine.owner(conn) is None
+    assert rc.retry_close() is False and rc.admission.releases == 1

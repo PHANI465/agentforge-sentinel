@@ -648,24 +648,38 @@ def monotonic_ms() -> float:
 
 
 class ReportQuarantine:
-    """Retired report connections, separate from the workflow budget.QUARANTINE."""
+    """Report connections whose close is not yet confirmed (retired, closing or close
+    failed), each with its accountable ReportConnection owner. Separate from the workflow
+    budget.QUARANTINE."""
 
     def __init__(self):
         self._lock = threading.Lock()
         self._held: dict[int, object] = {}
+        self._owners: dict[int, object] = {}
 
-    def hold(self, conn) -> None:
+    def hold(self, conn, owner=None) -> None:
         with self._lock:
             self._held[id(conn)] = conn
+            if owner is not None:
+                self._owners[id(conn)] = owner
 
     def release(self, conn) -> None:
         with self._lock:
             if self._held.get(id(conn)) is conn:
                 del self._held[id(conn)]
+                self._owners.pop(id(conn), None)
 
     def holds(self, conn) -> bool:
         with self._lock:
             return self._held.get(id(conn)) is conn
+
+    def owner(self, conn):
+        """The ReportConnection accountable for a held connection (R56), else None. After an
+        interrupted close the request returns no Outcome, so this is how a retry reaches it."""
+        with self._lock:
+            if self._held.get(id(conn)) is conn:
+                return self._owners.get(id(conn))
+            return None
 
     def count(self) -> int:
         with self._lock:
@@ -809,11 +823,18 @@ _users = iter(range(1, 1 << 62))
 class ReportConnection:
     """One report request's connection, its admission and its single ACTUAL close.
 
-    close_state: open -> closing -> closed, or -> close_failed when conn.close() raised.
-    A failed close is not a close (R56): the reservation stays held and the connection stays
-    in the report quarantine under this owner, until retry_close() succeeds or the process
-    exits (which closes its sockets; decisions 5.2.6). A logical flag is never treated as
-    proof that the socket closed, so the reservation is released only after close() returned."""
+    close_state: open -> closing -> closed, or -> close_failed when conn.close() raised,
+    including KeyboardInterrupt/SystemExit raised inside it (an interrupted close is not a
+    confirmed close). A failed close is not a close (R56): the reservation stays held and
+    the connection stays in the report quarantine under this owner, until retry_close()
+    succeeds or the process exits (which closes its sockets; decisions 5.2.6). A logical
+    flag is never treated as proof that the socket closed, so the reservation is released
+    only after close() returned.
+
+    The owner is registered in the report quarantine when the state becomes "closing",
+    before conn.close() is called, so while the reservation is held an owner is always
+    registered. On a confirmed close the order is: state "closed", reservation released,
+    then the quarantine entry removed."""
 
     def __init__(self, conn, admission: Admission, quarantine: ReportQuarantine,
                  final_close_gate: Callable[[], None] | None = None):
@@ -849,7 +870,7 @@ class ReportConnection:
         with self.cond:
             if not self.retired:
                 self.retired = True
-                self.quarantine.hold(self.conn)
+                self.quarantine.hold(self.conn, self)
                 self.events.append("retired")
             close = self._closing()
         if close:
@@ -879,6 +900,7 @@ class ReportConnection:
                 return False
             self.closed = True
             self.close_state = "closing"
+            self.quarantine.hold(self.conn, self)   # owner registered before the close
         self._do_close("normal_close")
         return True
 
@@ -892,24 +914,28 @@ class ReportConnection:
         return self._do_close("retry_close")
 
     def _do_close(self, why: str) -> bool:
-        """The only path to conn.close(); callers hold close_state == "closing"."""
+        """The only path to conn.close(); callers hold close_state == "closing" with this
+        owner already registered in the report quarantine."""
         self.close_calls += 1
         self.events.append(why)
         try:
             self.conn.close()
-        except Exception as error:
-            # Not closed: keep the reservation and an accountable owner in the report
-            # registry (never the workflow QUARANTINE). KeyboardInterrupt/SystemExit
-            # propagate with the state left "closing" and the reservation held.
+        except BaseException as error:
+            # Not confirmed closed: keep the reservation and this accountable owner in the
+            # report registry (never the workflow QUARANTINE), with a retryable failed state
+            # and only the class name (no message). This is recorded BEFORE an interrupt
+            # (KeyboardInterrupt/SystemExit) propagates unchanged; it is never swallowed.
             with self.cond:
                 self.close_state, self.close_error = "close_failed", type(error).__name__
+            self.quarantine.hold(self.conn, self)
             self.events.append(f"{why}_failed")
-            self.quarantine.hold(self.conn)
-            return False
+            if isinstance(error, Exception):
+                return False
+            raise
         with self.cond:
             self.close_state = "closed"
-        self.quarantine.release(self.conn)
         self.admission.release_reservation(why)
+        self.quarantine.release(self.conn)
         return True
 
 
