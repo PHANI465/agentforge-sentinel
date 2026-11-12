@@ -55,6 +55,15 @@ def main():
                                      "probe": probe}))
         sys.stdout.flush()
         return 0  # exit, leaving any grandchild behind for the supervisor to stop
+    elif mode in ("complete_nonzero", "complete_minimal", "protocol_error"):
+        # R59: syntactically valid documents that must not become a successful extraction.
+        doc = {"protocol": header["protocol"], "request_id": header["request_id"],
+               "status": "error" if mode == "protocol_error" else "complete"}
+        if mode == "protocol_error":
+            doc["errors"] = [{"code": "integrity_mismatch", "detail": ""}]
+        sys.stdout.write(json.dumps(doc))
+        sys.stdout.flush()
+        os._exit({"complete_nonzero": 7, "complete_minimal": 0, "protocol_error": 2}[mode])
     elif mode == "file_write":
         import signal
         if hasattr(signal, "SIGXFSZ"):

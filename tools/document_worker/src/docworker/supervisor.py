@@ -33,10 +33,10 @@ from pathlib import Path
 from . import PROTOCOL
 from .handles import HandleStore, StoreError
 from .limits import Limits, Options
+from .validate import Invalid, validate
 
 _RUN_RE = re.compile(r"^r_[0-9a-f]{16}$")
 RUN_MARKER = ".docworker-run"
-STATUSES = ("complete", "partial", "unsupported", "error")
 
 
 # ---- platform containment ----------------------------------------------------------------------
@@ -226,11 +226,46 @@ else:
         return f"linux-start:{fields[19]}"
 
     def kill_pid(pid: int) -> None:
-        for fn in (lambda: os.killpg(pid, signal.SIGKILL), lambda: os.kill(pid, signal.SIGKILL)):
-            try:
-                fn()
-            except (ProcessLookupError, PermissionError):
-                pass
+        """Kill one verified process (not its group; see recover())."""
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+
+    def _stat_fields(pid: int) -> list[str] | None:
+        try:
+            raw = Path(f"/proc/{pid}/stat").read_text()
+        except OSError:
+            return None
+        return raw.rsplit(")", 1)[1].split()
+
+    def process_pgid(pid: int) -> int | None:
+        fields = _stat_fields(pid)
+        return None if fields is None or fields[0] == "Z" else int(fields[2])
+
+    def group_members(pgid: int) -> list[int] | None:
+        """Live (non-zombie) pids whose process group is pgid; None if it cannot be determined.
+
+        A process group id is never reused while any member exists, so a non-empty result
+        means the recorded group (or a later group that reused the id) is still populated.
+        """
+        proc = Path("/proc")
+        if not (proc / "self" / "stat").exists():
+            return None
+        members = []
+        for entry in proc.iterdir():
+            if not entry.name.isdigit():
+                continue
+            fields = _stat_fields(int(entry.name))
+            if fields is not None and fields[0] != "Z" and int(fields[2]) == pgid:
+                members.append(int(entry.name))
+        return sorted(members)
+
+    def kill_group(pgid: int) -> None:
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
 
 
 # ---- helpers -------------------------------------------------------------------------------------
@@ -308,7 +343,7 @@ class Supervisor:
         self.store = store
         self.limits = limits or store.limits
         self.child_argv = child_argv or default_child_argv()
-        self.hooks = hooks or {}  # test seams: after_spawn, confirm_stop
+        self.hooks = hooks or {}  # test seams: after_spawn, confirm_stop, child_output
 
     def _record_path(self, run_id: str) -> Path:
         return self.store.root / "recovery" / f"{run_id}.json"
@@ -378,7 +413,9 @@ class Supervisor:
             containment.attach(proc)
             sup["containment"] = ("windows_job_object" if os.name == "nt"
                                   else "posix_session_rlimits")
-            record.update(state="running", pid=proc.pid, identity=process_identity(proc.pid))
+            record.update(state="running", pid=proc.pid, identity=process_identity(proc.pid),
+                          pgid=None if os.name == "nt" else proc.pid,
+                          containment=sup["containment"])
             self._write_record(run_id, record)
             if "after_spawn" in self.hooks:
                 self.hooks["after_spawn"](proc)
@@ -427,12 +464,19 @@ class Supervisor:
         if out_reader is not None and out_reader.exceeded.is_set():
             outcome, outcome_code = "error", "output_limit_exceeded"
         result = None
+        reason = ""
         if outcome is None:
-            result, outcome_code = self._parse(out_reader.data(), request_id, proc.returncode)
+            raw = out_reader.data()
+            if "child_output" in self.hooks:
+                self.hooks["child_output"](raw)
+            expected = {"format": resolved.format, "sha256": resolved.sha256,
+                        "size": resolved.size, "max_records": self.limits.max_records}
+            result, outcome_code, reason = self._parse(raw, request_id, proc.returncode,
+                                                       expected)
             outcome = None if result is not None else "error"
         if result is None:
             result = {"protocol": PROTOCOL, "request_id": request_id, "status": "error",
-                      "errors": [{"code": outcome_code, "detail": ""}]}
+                      "errors": [{"code": outcome_code, "detail": reason}]}
         if not sup["stop"]["confirmed"]:
             result["status"] = "error"
             result.setdefault("errors", []).append(
@@ -444,15 +488,17 @@ class Supervisor:
                             "sha256": resolved.sha256, "size_bytes": resolved.size}
         return result
 
-    def _parse(self, raw: bytes, request_id: str, code: int | None):
+    def _parse(self, raw: bytes, request_id: str, code: int | None, expected: dict):
+        """(document, None, "") or (None, code, fixed reason token). Never echoes child text."""
+        failure = f"invalid_child_output:exit_{code}"
         try:
             doc = json.loads(raw.decode("utf-8"))
-        except (UnicodeDecodeError, ValueError):
-            return None, f"invalid_child_output:exit_{code}"
-        if not isinstance(doc, dict) or doc.get("protocol") != PROTOCOL \
-                or doc.get("request_id") != request_id or doc.get("status") not in STATUSES:
-            return None, f"invalid_child_output:exit_{code}"
-        return doc, None
+        except (UnicodeDecodeError, ValueError, RecursionError):
+            return None, failure, "not_json"
+        try:
+            return validate(doc, request_id, code, expected), None, ""
+        except Invalid as exc:
+            return None, failure, str(exc)
 
     def _stop(self, proc, containment) -> dict:
         info = {"requested": False, "confirmed": True, "method": None}
@@ -486,6 +532,41 @@ class Supervisor:
         return info
 
     # ---- recovery ------------------------------------------------------------------------------
+    def _group_empty(self, pgid: int | None) -> bool | None:
+        if os.name == "nt" or pgid is None:
+            return True  # Windows: one-process job, killed on close; no group to track
+        members = group_members(pgid)
+        return None if members is None else not members
+
+    def _stop_recorded(self, pid: int, identity: str, rec: dict) -> tuple[str, int | None]:
+        """Stop a recorded child only when its identity is proven; confirm its group is empty.
+
+        Returns ("stopped_or_gone" | a *_kept reason, pid signalled or None). Never signals a process or group whose
+        ownership cannot be proven: an exited leader is not proof that its group is empty.
+        """
+        terminated = None
+        pgid = None if os.name == "nt" else int(rec.get("pgid") or pid)
+        if process_identity(pid) == identity:
+            # The verified leader is alive. If it is still in the recorded group, that group
+            # is ours (its id cannot be reused while the leader exists): stop the group.
+            if os.name != "nt" and process_pgid(pid) == pgid:
+                kill_group(pgid)
+            else:
+                kill_pid(pid)
+            terminated = pid
+            deadline = time.monotonic() + self.limits.stop_confirm_seconds
+            while time.monotonic() < deadline and (
+                    process_identity(pid) == identity or self._group_empty(pgid) is False):
+                time.sleep(0.05)
+            if process_identity(pid) == identity:
+                return "still_running_kept", terminated
+        empty = self._group_empty(pgid)
+        if empty is None:
+            return "group_state_unknown_kept", terminated
+        if not empty:
+            return "group_members_alive_kept", terminated
+        return "stopped_or_gone", terminated
+
     def recover(self) -> dict:
         self.store.verify()
         report = []
@@ -507,16 +588,14 @@ class Supervisor:
                 entry["result"] = "identity_unknown_kept"  # cannot prove which process it was
                 report.append(entry)
                 continue
-            if pid is not None and process_identity(int(pid)) == identity:
-                kill_pid(int(pid))
-                deadline = time.monotonic() + self.limits.stop_confirm_seconds
-                while time.monotonic() < deadline and process_identity(int(pid)) == identity:
-                    time.sleep(0.05)
-                if process_identity(int(pid)) == identity:
-                    entry["result"] = "still_running_kept"
+            if pid is not None:
+                outcome, terminated = self._stop_recorded(int(pid), identity, rec)
+                if terminated is not None:
+                    entry["terminated_pid"] = terminated
+                if outcome != "stopped_or_gone":
+                    entry["result"] = outcome  # record and run dir retained (R58)
                     report.append(entry)
                     continue
-                entry["terminated_pid"] = int(pid)
             if not self._remove_run_dir(run_id, nonce):
                 entry["result"] = "run_dir_not_owned_kept"
                 report.append(entry)

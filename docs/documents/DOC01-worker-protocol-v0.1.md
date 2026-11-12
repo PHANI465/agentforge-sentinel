@@ -54,9 +54,32 @@ Request on stdin: one UTF-8 JSON header line (≤ 64 KiB, newline-terminated) fo
 
 Response on stdout: exactly one UTF-8 JSON document. Exit 0 means a result was written (any
 extraction status); exit 2 means a protocol error document (`bad_header`, `bad_options`,
-`input_too_large`, `framing_mismatch`, `integrity_mismatch`). The supervisor accepts a
-response only if it parses, names this protocol, echoes the `request_id` and carries a valid
-status; otherwise it reports `invalid_child_output:exit_<code>` and discards the bytes.
+`input_too_large`, `framing_mismatch`, `integrity_mismatch`).
+
+The supervisor treats the response as untrusted and accepts it only under these conditions
+(`validate.py`, review R59):
+
+* **Exit 2:** accepted only as an `error` document whose codes are all protocol-error codes.
+  Only the envelope (`protocol`, `request_id`, `status`, `errors`) is returned.
+* **Any exit other than 0 or 2:** always an error, whatever the document claims.
+* **Exit 0:**
+  * The document must name this protocol and echo the `request_id`.
+  * Error codes must be short lowercase tokens; details must be strings of at most 200
+    characters.
+  * `unsupported`/`error` documents must carry at least one error and no records.
+  * `complete`/`partial` documents must carry every result field in section 3. `format`,
+    `source.sha256` and `source.size_bytes` must equal the supervisor's own handle, and the
+    guard must be installed.
+  * Every record must be well-formed: its evidence id carries the source prefix, its kind is
+    known, and a value is `known` exactly when its value or minor units are present (minor
+    units being an integer string).
+  * PDF results carry no records, and at least one unit is parsed.
+  * `complete` additionally requires no errors, no unparsed items, units that are only
+    `parsed`/`empty`, and a narrative that is absent or `ok`.
+
+A failure is reported as `invalid_child_output:exit_<code>`, with a fixed reason token as its
+detail (for example `nonzero_exit` or `records`). The child's bytes are discarded and never
+echoed.
 
 ## 3. Result document
 
@@ -174,6 +197,21 @@ kept as not owned. Unreadable records are kept. When the supervisor itself is ki
 Windows job's kill-on-close stops the child and the record is recovered later; on POSIX the
 child survives in its session until `recover` kills it after verifying its identity. Both
 paths are tested.
+
+On POSIX, recovery also requires the recorded **process group** (the child is its session and
+group leader) to be empty before it reports `recovered` (review R58):
+
+* **Verified leader alive and still in that group:** a group id cannot be reused while its
+  leader exists, so recovery signals the group, then waits until the leader is gone and no
+  live member remains.
+* **Leader already exited:** that is not proof the group is empty, and the group can no
+  longer be proven ours, so recovery never signals it. Any live member yields
+  `group_members_alive_kept`; an undeterminable `/proc` yields `group_state_unknown_kept`.
+  Either way the record and owned run directory are kept for a later retry or manual
+  recovery.
+
+On Windows no group exists: one-process jobs are killed on close, and reused-pid refusal is
+unchanged.
 
 **In-child guard.** After the parser libraries are imported and before the first document
 byte is parsed, a PEP 578 audit hook denies Python-level sockets, HTTP/URL requests, process

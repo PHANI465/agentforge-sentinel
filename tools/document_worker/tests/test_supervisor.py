@@ -55,10 +55,20 @@ def test_memory_cap(store, ingest, make_supervisor):
     assert leftovers(store) == {"runs": [], "recovery": []}
 
 
+def _probe_run(make_supervisor, ingest, argv):
+    """Test children report a probe in a deliberately incomplete document. Since R59 the
+    supervisor rejects that document; the probe is read through the raw-output test seam."""
+    seen = []
+    result = make_supervisor(child_argv=argv, hooks={"child_output": seen.append}).extract(
+        ingest("csv_statement_usd.csv"), SESSION)
+    assert result["status"] == "error" and "probe" not in result
+    assert "invalid_child_output:exit_0" in _codes(result)
+    return result, json.loads(seen[0])
+
+
 def test_grandchild_cannot_outlive_supervision(store, ingest, make_supervisor):
-    sup = make_supervisor(child_argv=fake_argv("spawn"))
-    result = sup.extract(ingest("csv_statement_usd.csv"), SESSION)
-    info = result["probe"]
+    result, doc = _probe_run(make_supervisor, ingest, fake_argv("spawn"))
+    info = doc["probe"]
     assert result["supervisor"]["stop"]["confirmed"] is True
     if sys.platform == "win32":
         assert info["spawned"] is False  # job object: one active process
@@ -77,13 +87,12 @@ def test_os_level_file_write_bound_is_platform_specific(store, ingest, make_supe
     object does NOT restrict files; only the in-child guard does (see the guard probe). This
     test records the actual behaviour instead of skipping either platform."""
     target = tmp_path / "escape.bin"
-    result = make_supervisor(child_argv=fake_argv("file_write", str(target))).extract(
-        ingest("csv_statement_usd.csv"), SESSION)
+    _result, doc = _probe_run(make_supervisor, ingest, fake_argv("file_write", str(target)))
     if os.name == "nt":
-        assert result["probe"] == {"wrote": True}
+        assert doc["probe"] == {"wrote": True}
         assert target.stat().st_size == 4096
     else:
-        assert result["probe"] == {"wrote": False, "error": "OSError"}
+        assert doc["probe"] == {"wrote": False, "error": "OSError"}
         assert not target.exists() or target.stat().st_size == 0
 
 
@@ -100,16 +109,16 @@ def test_invalid_child_results_rejected(store, ingest, make_supervisor, mode, co
 def test_guard_in_contained_child(store, ingest, make_supervisor, tmp_path):
     canary = tmp_path / "canary.txt"
     canary.write_text("SECRET-CANARY-7731")
-    result = make_supervisor(child_argv=fake_argv("guard_probe", str(tmp_path / "r.json"))
-                             ).extract(ingest("csv_statement_usd.csv"), SESSION)
-    probe = result["probe"]
+    result, doc = _probe_run(make_supervisor, ingest,
+                             fake_argv("guard_probe", str(tmp_path / "r.json")))
+    probe = doc["probe"]
     for name in ("socket_connect", "read_outside", "write_cwd", "subprocess", "os_system",
                  "remove", "urlopen"):
         assert probe[name] == "denied", name
     assert probe["stdlib_read"] == "allowed"
     assert "SECRET-CANARY-7731" not in json.dumps(result)
     assert canary.exists()
-    assert result["guard"]["denied_events"]
+    assert doc["guard"]["denied_events"]
 
 
 def test_interrupt_during_run_stops_and_cleans(store, ingest, make_supervisor):
