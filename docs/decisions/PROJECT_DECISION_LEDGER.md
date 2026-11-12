@@ -26,6 +26,7 @@ These are retrospective summaries of written project records, not reconstructed 
 | H06 | Held-out final cases are separate from development. Unknown usage/timing and missing evidence remain unknown/not demonstrated. | [Agent protocol](../evals/agents/protocol-v1.md), [accepted pilot plan](../artifacts/AgentForge_Sentinel_G3D-P4_Development_Evaluation_Plan_2026-11-06.md) |
 | H07 | Cursor delivered its contribution; its original seven saved edits remain preserved. Other tools work in isolated checkouts. | AGENTS.md and current [checkpoint](../artifacts/AgentForge_Sentinel_Session_2026-11-08.md) |
 | H08 | AN01-M1 is a measurement prototype, not production Reports. Full-size measurement and performance values are not qualified. Final candidate 28dfcef is accepted for prototype behavior: R53–R57 close; numerical limits and full-size performance remain unqualified. | [M1 review](../reviews/AN01-M1-93583a.md), [r3.2 acceptance](../reviews/AN01-r31-2db42ee.md) |
+| H09 | DOC01 Part A `cecccad` is delivered but changes-requested for R58/R59. A separate locked local worker is not yet an accepted upload/feedback feature; recovery must retain uncertain POSIX group state and a failed/incomplete child response must not become a successful extraction. | [DOC01 review](../reviews/DOC01-cecccad.md) |
 
 ## Owner decisions confirmed November 8
 

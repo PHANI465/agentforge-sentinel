@@ -1,5 +1,15 @@
 # Shared implementation queue
 
+## November 12: DOC01 R58/R59 correction
+
+DOC01 Part A at **cecccad** is [changes-requested](reviews/DOC01-cecccad.md).
+Claude owns only the existing `task/claude-doc01-extractor` branch and the
+[R58/R59 correction](prompts/CLAUDE_DOC01_REVIEW_FIXES.md) (**Opus 5.5 / High**).
+Codex re-reviews the corrected exact SHA before Part A is accepted or any
+upload/feedback slice is assigned. Preserve the original commit, worker
+reports, accepted AN01-M1 branch and Cursor edits. No DOC01 main merge, AN01
+full-size measurement, live evaluator or new-data model training is assigned.
+
 ## November 12: AN01-M1 prototype accepted at 28dfcef, unmerged
 
 [Independent final-close review](reviews/AN01-M1-28dfcef.md) accepts exact **28dfcefb301b4657522181a400354f4c90d4abb7** for the measurement-prototype scope and closes R56. R53/R54/R55/R57 remain closed. The original 12-case Codex probe passes 12/12 on this SHA; saved clean-commit Windows and native gates each report 968 passed plus the one allowed skip, and their JUnit reports validate independently. The accepted source is **not yet merged into main**; main's application/tooling remains at accepted 871e31d plus documentation.

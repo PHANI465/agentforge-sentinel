@@ -1,5 +1,14 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current November 12 DOC01 review: Part A at exact cecccadfaad6f2cde0cd42543517685fa0235ea8
+is **changes-requested**, not accepted or merged. Read docs/reviews/DOC01-cecccad.md
+and the current correction dispatch docs/prompts/CLAUDE_DOC01_REVIEW_FIXES.md.
+R58 is POSIX recovery deleting a record while a group member survives; R59 is
+acceptance of an incomplete child success with exit code 7. The existing
+supervisor tests pass but miss both cases. Claude corrects the preserved DOC01
+branch only; no app upload, AN01 full grid or live model work is assigned.
+The November 12 M1 acceptance paragraph below remains current for AN01-M1.
+
 Current November 12 M1 review: exact 28dfcefb301b4657522181a400354f4c90d4abb7
 is independently accepted for the measurement-prototype scope under
 docs/reviews/AN01-M1-28dfcef.md. R53–R57 close; the candidate remains unmerged.

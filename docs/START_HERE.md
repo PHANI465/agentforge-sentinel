@@ -20,6 +20,7 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 
 - Accepted application/tooling remains exact tested 871e31d plus later documentation.
 - AN01-M1 measurement prototype is independently accepted at exact `28dfcef` for its reviewed behavior; R56 is closed. [Review](reviews/AN01-M1-28dfcef.md). It remains unmerged, and the tiny timing controls are not demonstrated. The prior b54de1a review is preserved as history.
+- DOC01 Part A was delivered at `cecccad` and is [changes-requested](reviews/DOC01-cecccad.md) for R58/R59. The [current Claude correction](prompts/CLAUDE_DOC01_REVIEW_FIXES.md) continues its existing branch. No document upload/API/UI has been accepted or merged.
 - Private GitHub repo: https://github.com/PHANI465/agentforge-sentinel. Only accepted main
   is published; Actions disabled. No force/mirror/all-branch push or private data upload.
 - ULB dataset is acquired privately, not trained. p1 and protected final cases unchanged.
@@ -27,8 +28,8 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
   Cursor inference or app provider configuration change is implied.
 - New local document feedback, automated dev review and readable metrics are approved
   directions with research/proposals. No new production feature is implemented here.
-- [Next DOC01 handoff](prompts/CLAUDE_EXPANSION_AFTER_M1.md) waits until the active M1
-  correction handoff; it uses a separate worktree from accepted main.
+- [Original DOC01 handoff](prompts/CLAUDE_EXPANSION_AFTER_M1.md) is delivered
+  history; use the current review and correction dispatch above.
 
 ## Safe new-chat prompt
 

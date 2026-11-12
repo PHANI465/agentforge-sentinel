@@ -1,5 +1,20 @@
 # Project status
 
+## November 12: DOC01 Part A changes requested at cecccad
+
+The separately locked local document worker was delivered on the clean task
+branch at **cecccadfaad6f2cde0cd42543517685fa0235ea8**, based on accepted
+main 4d60c53. [Independent review](reviews/DOC01-cecccad.md) found two blocking
+gaps: R58 can discard a POSIX recovery record while a parser-group member is
+alive, and R59 can accept a child `complete` result despite exit 7 and missing
+required fields. Real native probes reproduce both. The existing supervisor
+tests pass 15/15 on Windows and native, showing the missing coverage. DOC01 is
+not accepted or merged. [Focused correction](prompts/CLAUDE_DOC01_REVIEW_FIXES.md)
+continues the existing branch; app upload and feedback integration remain later.
+
+AN01-M1 remains accepted for prototype scope at 28dfcef and unmerged. Its tiny
+timing controls are still not demonstrated; no full-size run was assigned.
+
 ## November 12: AN01-M1 prototype accepted at 28dfcef, unmerged
 
 [Independent final-close review](reviews/AN01-M1-28dfcef.md) accepts exact **28dfcefb301b4657522181a400354f4c90d4abb7** for the measurement-prototype scope and closes R56. R53/R54/R55/R57 remain closed. The original 12-case Codex probe passes 12/12 on this SHA; saved clean-commit Windows and native gates each report 968 passed plus the one allowed skip, and their JUnit reports validate independently. The accepted source is **not yet merged into main**; main's application/tooling remains at accepted 871e31d plus documentation.
