@@ -1,5 +1,14 @@
 # Shared implementation queue
 
+## November 12: DOC01 remaining R58 follow-up
+
+Claude continues the existing `task/claude-doc01-extractor` branch at
+`69b51fe` under [the focused follow-up](prompts/CLAUDE_DOC01_R58_FOLLOWUP.md)
+(**Opus 5.5 / High**). [Re-review](reviews/DOC01-69b51fe.md) closes R59 but
+keeps R58 open for unreadable `/proc` members; make the reused-PID test
+independent of process-group layout. Codex re-reviews the next exact SHA.
+No DOC01 main merge or upload/API/UI slice is assigned yet.
+
 ## November 12: DOC01 R58/R59 correction
 
 DOC01 Part A at **cecccad** is [changes-requested](reviews/DOC01-cecccad.md).

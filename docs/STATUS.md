@@ -1,5 +1,17 @@
 # Project status
 
+## November 12: DOC01 69b51fe re-review, R58 remains
+
+Exact candidate **69b51fe5dfaea68275e0c9463edceb5f2525bf15** is
+[changes-requested](reviews/DOC01-69b51fe.md), not accepted or merged. R59's
+invalid-child-success issue closes. A native real-process probe with an
+injected permission error on one live `/proc` member still made R58 recovery
+report success and delete its record while that member survived. Independent
+focused worker runs: Windows 57 passed/4 POSIX skips; native 60 passed/1
+failure in the older reused-PID test, whose expectation depends on whether
+pytest leads its group. The [current Claude follow-up](prompts/CLAUDE_DOC01_R58_FOLLOWUP.md)
+addresses both. Author full gates are evidence, not acceptance of this path.
+
 ## November 12: DOC01 Part A changes requested at cecccad
 
 The separately locked local document worker was delivered on the clean task

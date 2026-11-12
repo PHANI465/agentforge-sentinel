@@ -1,5 +1,14 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current November 12 DOC01 re-review: exact 69b51fe5dfaea68275e0c9463edceb5f2525bf15
+is still changes-requested. R59 closes, but R58 remains open because unreadable
+live `/proc` members can be skipped and recovery can erase their records.
+Read docs/reviews/DOC01-69b51fe.md and the current correction dispatch
+docs/prompts/CLAUDE_DOC01_R58_FOLLOWUP.md. An existing reused-PID test also
+depends on pytest's process-group layout; correct it without weakening the
+fail-closed recovery rule. The earlier cecccad review and R58/R59 dispatch
+below remain history. No DOC01 app upload or AN01 full-size run is assigned.
+
 Current November 12 DOC01 review: Part A at exact cecccadfaad6f2cde0cd42543517685fa0235ea8
 is **changes-requested**, not accepted or merged. Read docs/reviews/DOC01-cecccad.md
 and the current correction dispatch docs/prompts/CLAUDE_DOC01_REVIEW_FIXES.md.
