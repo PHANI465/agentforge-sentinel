@@ -1,13 +1,12 @@
 # Next expansion: DOC01 design and bounded extraction Part A
 
-November 10: M1 candidate b54de1a still has [one final-close correction](CLAUDE_AN01_M1_FINAL_CLOSE.md). Finish that handoff first; this prepared expansion assignment is not the current task.
+November 12: AN01-M1 final-close is [accepted for prototype scope](../reviews/AN01-M1-28dfcef.md) at 28dfcef, still unmerged. DOC01 is the next prepared separate assignment; confirm the current queue before starting.
 
 Recommended coding assistant: **Claude Opus 5.5 / High**. Untrusted document bytes,
 dependency separation, exact financial fields and owned parser lifecycles require care.
 
-This is the next prepared assignment, **not a request to abandon or concurrently edit
-the active R53–R57 branch**. Finish that handoff first. Read current coordination and
-confirm no newer task supersedes this one. Start a separate task/claude-doc01-extractor
+This is a separate assignment after the AN01-M1 handoff. Read current coordination and
+confirm no newer task supersedes it. Keep the accepted M1 candidate untouched. Start a separate task/claude-doc01-extractor
 worktree from then-current accepted main; do not base it on unaccepted M1 code.
 
 Read docs/START_HERE.md, docs/decisions/PROJECT_DECISION_LEDGER.md,

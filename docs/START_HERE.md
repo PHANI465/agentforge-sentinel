@@ -1,6 +1,6 @@
 # Resume Sentinel from committed context
 
-Updated November 10, 2026. This is the durable entry point for a new Codex or Claude chat.
+Updated November 12, 2026. This is the durable entry point for a new Codex or Claude chat.
 Files supply context; they do not automatically synchronize sessions, authorize extra
 work or preserve a killed process. Inspect actual Git and job/recovery state before acting.
 
@@ -19,10 +19,7 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 ## Current position
 
 - Accepted application/tooling remains exact tested 871e31d plus later documentation.
-- Latest M1 candidate b54de1a is independently reviewed, still changes-requested only for
-  interruption inside close (R56). R54 and prior post-rollback cleanup close. Read the
-  [latest review](reviews/AN01-M1-b54de1a.md) and [current dispatch](prompts/CLAUDE_AN01_M1_FINAL_CLOSE.md).
-  Preserve every earlier candidate/failure. No new tiny timing pass or full-size grid.
+- AN01-M1 measurement prototype is independently accepted at exact `28dfcef` for its reviewed behavior; R56 is closed. [Review](reviews/AN01-M1-28dfcef.md). It remains unmerged, and the tiny timing controls are not demonstrated. The prior b54de1a review is preserved as history.
 - Private GitHub repo: https://github.com/PHANI465/agentforge-sentinel. Only accepted main
   is published; Actions disabled. No force/mirror/all-branch push or private data upload.
 - ULB dataset is acquired privately, not trained. p1 and protected final cases unchanged.

@@ -1,6 +1,6 @@
 # Sentinel decision ledger
 
-Updated November 10, 2026. This is the decision-to-decision entry point for future Codex
+Updated November 12, 2026. This is the decision-to-decision entry point for future Codex
 and Claude chats. It complements numbered ADRs, STATUS and TASK_QUEUE; it is not a verbatim
 transcript or automatic shared memory. Read [START_HERE](../START_HERE.md) first when resuming.
 
@@ -25,7 +25,7 @@ These are retrospective summaries of written project records, not reconstructed 
 | H05 | Verification commands have an owner-approved 2700 s cap. Application deadlines, individual assertions and skip policy are not widened by it. | [ADR0009](0009-verification-command-budget.md) |
 | H06 | Held-out final cases are separate from development. Unknown usage/timing and missing evidence remain unknown/not demonstrated. | [Agent protocol](../evals/agents/protocol-v1.md), [accepted pilot plan](../artifacts/AgentForge_Sentinel_G3D-P4_Development_Evaluation_Plan_2026-11-06.md) |
 | H07 | Cursor delivered its contribution; its original seven saved edits remain preserved. Other tools work in isolated checkouts. | AGENTS.md and current [checkpoint](../artifacts/AgentForge_Sentinel_Session_2026-11-08.md) |
-| H08 | AN01-M1 is a measurement prototype, not production Reports. Full-size measurement and performance values are not qualified. Corrected 5e0a578 is reviewed: R53/R55/R57 close, while residual R54/R56 still block acceptance. | [M1 review](../reviews/AN01-M1-93583a.md), [r3.2 acceptance](../reviews/AN01-r31-2db42ee.md) |
+| H08 | AN01-M1 is a measurement prototype, not production Reports. Full-size measurement and performance values are not qualified. Final candidate 28dfcef is accepted for prototype behavior: R53–R57 close; numerical limits and full-size performance remain unqualified. | [M1 review](../reviews/AN01-M1-93583a.md), [r3.2 acceptance](../reviews/AN01-r31-2db42ee.md) |
 
 ## Owner decisions confirmed November 8
 
@@ -90,3 +90,7 @@ R56 therefore remains open and no source integration is accepted. This is a scop
 decision, not a new owner feature request. The final-close dispatch assigns no new tiny
 benchmark pass: retain both timing misses, all old identities and the unexplained focused
 startup failure. No numerical limit qualifies. Revisit after the narrow cleanup fix.
+
+## November 12 review decision
+
+D20261112-01 — [Independent 28dfcef review](../reviews/AN01-M1-28dfcef.md) accepts the measurement prototype and closes final R56. Saved exact-commit Windows/native gates each have 968 passes and one allowed skip; the original 12-case Codex probe passes independently. This is a scoped code review, not a qualification of the 30 ms margin or provisional row/time/capacity limits. The branch remains unmerged. Revisit production reporting only after separate integration and timing/disk decisions.

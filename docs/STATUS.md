@@ -1,5 +1,11 @@
 # Project status
 
+## November 12: AN01-M1 prototype accepted at 28dfcef, unmerged
+
+[Independent final-close review](reviews/AN01-M1-28dfcef.md) accepts exact **28dfcefb301b4657522181a400354f4c90d4abb7** for the measurement-prototype scope and closes R56. R53/R54/R55/R57 remain closed. The original 12-case Codex probe passes 12/12 on this SHA; saved clean-commit Windows and native gates each report 968 passed plus the one allowed skip, and their JUnit reports validate independently. The accepted source is **not yet merged into main**; main's application/tooling remains at accepted 871e31d plus documentation.
+
+The registered tiny timing pair remains **not demonstrated** after Windows C2:400; an earlier native C2:1250 miss is preserved. No new tiny/full-size run occurred. The 30 ms margin, production clock, disk estimate and provisional numerical limits remain unresolved. Next: separate main integration if assigned, and DOC01 in its own branch from accepted main. No production Reports, v1.3 freeze or live/final-case evaluation is authorized.
+
 ## November 10: b54de1a re-review, one residual R56 path
 
 Candidate **b54de1a4ebb4401b2149035abaeac6678e95d64c** is clean and reviewed, not accepted

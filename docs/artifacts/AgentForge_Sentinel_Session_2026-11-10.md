@@ -1,9 +1,13 @@
 # Sentinel checkpoint — November 10, 2026
 
-The missing Claude chat was recovered from committed handoff and ignored reports.
-Latest delivered candidate is b54de1a4ebb4401b2149035abaeac6678e95d64c, code af6292f,
-on task/claude-an01-m1-prototype. It is clean, unaccepted and unmerged. Main application
-remains tested 871e31d plus later documentation. No source integration occurred today.
+This November 10 checkpoint records the then-current b54de1a candidate and its open
+R56 finding. The November 12 update below supersedes that status: 28dfcef is accepted for
+measurement-prototype behavior, but remains unmerged. Main application/tooling remains
+accepted 871e31d plus later documentation.
+
+## November 12 update: final-close review
+
+Exact `28dfcefb301b4657522181a400354f4c90d4abb7` is accepted for the AN01-M1 measurement-prototype scope under [review](../reviews/AN01-M1-28dfcef.md). R56 closes with the other reviewed corrections. Author Windows/native clean gates each report 968 passed plus one allowed skip; both saved JUnit reports independently validate. The original Codex 12-case probe passes on the candidate. Main has **not** integrated this branch. Tiny timing remains not demonstrated, provisional limits stay provisional and the full-size grid remains unassigned. The November 10 sections below are preserved history.
 
 ## November 10: b54de1a re-review, one residual R56 path
 

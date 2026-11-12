@@ -1,6 +1,8 @@
 # AgentForge Sentinel: the complete project guide
 
-November 8 edition · Updated November 10, 2026 · Project idea, implementation and remaining stages
+November 8 edition · Updated November 12, 2026 · Project idea, implementation and remaining stages
+
+**Current review update (November 12, 2026):** AN01-M1 candidate [28dfcef](../reviews/AN01-M1-28dfcef.md) is accepted for its measurement-prototype behavior, with R53–R57 closed. It remains unmerged. Its earlier tiny timing controls still do not demonstrate the provisional performance limits. The November 10 review narrative later in this edition records the earlier b54de1a state as history. Read the linked review and [START_HERE](../START_HERE.md) for the next task.
 
 Prepared for Phaneendra Gavara. This edition replaces the November 2 guide for current reading. That edition remains a preserved historical snapshot. The final chapter separates accepted work, delivered candidates, unmeasured claims and future plans. Product fixtures use synthetic financial data and simulated actions. The separately downloaded ULB research dataset is real anonymized data, ignored locally and not used by the product model.
 
@@ -587,28 +589,25 @@ The latest accepted application/tooling integration is 871e31d40e93306cfde6617e8
 
 The last applicable Windows product UI evidence is 133 unit tests and browser suites of 19 legacy plus 10 trace tests on the trace/clock release. Those suites were not rerun for later tooling-only work. A test count is evidence tied to a specific code state, not a universal completeness score.
 
-### Delivered candidate: changes requested
+### Delivered candidate: accepted for measurement-prototype scope
 
-Latest candidate **b54de1a4ebb4401b2149035abaeac6678e95d64c** (code af6292f) is clean and independently reviewed. R54 closes, as does the earlier post-rollback interruption defect. R53/R55/R57 remain closed. One residual R56 path still blocks acceptance: interruption inside close can leave an unconfirmed connection with a reservation but no retained owner. Candidate code remains unmerged.
+Exact **28dfcefb301b4657522181a400354f4c90d4abb7** is [independently accepted](../reviews/AN01-M1-28dfcef.md) for the AN01-M1 measurement prototype; R53–R57 are closed. It remains unmerged. No production Reports API, v1.3 contract or full-size benchmark was delivered by this candidate.
 
 | Evidence | Status and meaning |
 | --- | --- |
-| Author exact-commit gates | Windows/native each 960 passed + one allowed skip, six commands, clean trees. Codex validated their saved 961-case JUnit reports; these are author full gates, not independently rerun full suites. |
-| Independent focused suite | Windows 150/150 pass against real disposable PostgreSQL, zero skips. Ruff/diff checks pass. |
-| Independent probe checks | Original adapted 14 pass on both platforms. Twelve further checks give 10 passes and two assertion failures each. The positive synthetic evidence fixture has no failed C2 to mask its negative controls. |
-| R54 evidence | Contradictory summaries, missing control diagnostics and wrong EXPLAIN evidence are rejected. Invalid D evidence may show missing without a derived trigger after loader filtering; it does not qualify. |
-| R56 remaining | KeyboardInterrupt/SystemExit inside close bypasses except Exception: close_calls 1, closed false, reservation 1, quarantine 0. The original post-rollback cleanup now passes. |
-| Tiny measurement | At af6292f Windows C2:400 failed; S9=not demonstrated. All 14 stage records are preserved. No new tiny run is assigned for the close-only correction. Earlier timing misses also remain failed. |
-| Prior focused failure | Author Windows stall test failed once during slow startup, cause unestablished. Later gates and this review pass it; those passes do not explain or erase the failure. |
-| Still unqualified | 30 ms reply margin,200k cap,5000 ms budget,250 ms reserve, M/Q 2/2. Production clock and 4 GB/backing-space constraints remain separate; full-size grid is not authorized. |
+| Exact-commit gates | Saved clean-tree Windows/native six-command gates each report 968 passed and one allowed live-Claude skip. Codex validated both 969-case JUnit reports; the full suites were not independently rerun. |
+| Independent probe | The original unmasked 12-case Codex probe passes 12/12 on 28dfcef, including the two inside-close cases that failed on b54de1a. |
+| Resource ownership | A close that raises an interruption retains its owner and reservation with a retryable failed state. A confirmed retry releases once. Async bytecode windows remain documented prototype limits. |
+| Tiny measurement | The earlier af6292f Windows C2:400 miss and f00df8c native C2:1250 miss remain failed. S9 is not demonstrated; no new tiny run was made for the close correction. |
+| Still unqualified | 30 ms margin, 200k row cap, 5000 ms budget, 250 ms reserve and M/Q 2/2; production clock and 4 GB/backing-space constraints remain separate decisions. |
 
-Read [the latest review](../reviews/AN01-M1-b54de1a.md), [final-close dispatch](../prompts/CLAUDE_AN01_M1_FINAL_CLOSE.md) and [November 10 checkpoint](AgentForge_Sentinel_Session_2026-11-10.md). All prior candidate/failure records remain history.
+Read [the current review](../reviews/AN01-M1-28dfcef.md) and [START_HERE](../START_HERE.md). Earlier failed candidates and reports remain preserved.
 
 ### Remaining work in dependency order
 
 | Next stage | Work to do | Evidence needed before calling it done |
 | --- | --- | --- |
-| 1 Correct and re-review AN01-M1 | Finish only R56 interruption inside close on b54de1a; preserve closed R54/R53/R55/R57 and all candidates. | Failing-first regressions, corrected exact SHA, appropriate tiny/gate evidence and Codex re-review. |
+| 1 Integrate accepted AN01-M1 prototype | Review the exact merge against main, preserve reviewed source and all earlier evidence. | Clean integrated Windows/native gates; record separately from the candidate gates. |
 | 2 Decide and measure reports | Resolve reply policy and realistic disk/workload bounds, then separately assign the full grid if resources permit. | Both platforms, common index choice, complete required cells, retained failures and qualified limits or an honest not-demonstrated result. |
 | 3 Ship AN01 S1 | Review/freeze v1.3, implement capability and curated read-only API, integrate the report UI and known-answer/browser tests. | Browser → production API → Postgres with scope, exact money/time semantics, capacity/error handling and secret-safe lifecycle. |
 | 4 Extend analyst depth | S2 exports/label availability and separately scoped saved analysis, reconciliation/cohort tasks as needed. | Controlled export content, correct denominators, data/label availability and independent known answers. |
@@ -627,7 +626,7 @@ DOC01 adds bounded local extraction first, then a separately reviewed upload/fee
 
 Currency-normalized features, calibration, drift monitoring, sequence models, entity graphs, retrieval/RAG, an isolated document reader, AML/scam modules and queues are worthwhile experiments when a measured weakness motivates them. They are optional extensions, not hidden requirements for declaring the present local investigation workflow complete. Each new domain needs its own labels, data rights, metrics, safety boundaries and comparison baseline.
 
-There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, local document feedback, measured agent value and a verified public release are the four substantial workstreams still ahead. The latest review also closes R54 and post-rollback cleanup; only the final-close R56 path remains before acceptance. Full-size measurement is still unassigned.
+There is no defensible single percentage for this open-ended roadmap. The local investigation product and preparation tooling are built. Reporting, local document feedback, measured agent value and a verified public release are the four substantial workstreams still ahead. The final-close R56 path is accepted for the prototype scope; integration and numerical qualification remain separate work. Full-size measurement is still unassigned.
 
 ### Source map and the next chat
 

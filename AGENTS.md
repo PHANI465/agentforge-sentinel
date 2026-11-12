@@ -1,5 +1,14 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current November 12 M1 review: exact 28dfcefb301b4657522181a400354f4c90d4abb7
+is independently accepted for the measurement-prototype scope under
+docs/reviews/AN01-M1-28dfcef.md. R53–R57 close; the candidate remains unmerged.
+Author clean-commit Windows/native gates each report 968 passes and one allowed skip;
+the original 12-case Codex probe passes on that SHA. The tiny timing controls remain
+not demonstrated, no numerical limits qualify and no full-size grid or production Reports
+is assigned. DOC01 is the next separate prepared task from accepted main. The November 10
+changes-requested heading below is preserved history and is superseded by this paragraph.
+
 Current November 10 M1 re-review: b54de1a is reviewed but still changes-requested for
 the residual R56 interruption INSIDE close. R54 closes; R53/R55/R57 stay closed and the
 post-rollback R56 case passes. Read docs/reviews/AN01-M1-b54de1a.md and current dispatch
