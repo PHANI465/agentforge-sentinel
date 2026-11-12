@@ -1,0 +1,6 @@
+Date,Description,Amount,Currency
+2026-03-01,Opening balance,,EUR
+2026-03-02,Supplier invoice,"1,234.56",EUR
+2026-03-03,Supplier invoice,"1.234,56",EUR
+2026-03-04,Bank fee,-7,EUR
+2026-03-05,Wire,"2,500",EUR

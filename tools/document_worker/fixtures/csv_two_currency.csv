@@ -1,0 +1,8 @@
+Date,Description,Amount,Currency,Balance,Reference
+2026-02-01,Opening balance,,USD,200.00,
+2026-02-01,Opening balance,,EUR,80.00,
+2026-02-02,Card purchase,-25.00,USD,175.00,A1
+2026-02-03,Card purchase,-12.50,EUR,67.50,A2
+2026-02-04,Transfer in,100.00,USD,275.00,A3
+2026-02-05,Transfer in,20.00,EUR,87.50,A4
+2026-02-28,Closing balance,,USD,275.00,

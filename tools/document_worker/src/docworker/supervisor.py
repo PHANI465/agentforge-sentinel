@@ -1,0 +1,534 @@
+"""Owned, bounded parser child lifecycle with verified stop and recovery.
+
+Lifecycle per extraction (concepts reused from the accepted local-stack/benchmark lifecycles:
+ownership marker, verified-owned termination, explicit unconfirmed-stop recovery):
+
+1. resolve the handle (session-scoped) and re-verify the stored bytes' SHA-256;
+2. create an owned run directory (marker + nonce) and a recovery record BEFORE spawning;
+3. spawn the base interpreter in isolated mode with a minimal environment and cwd = run dir;
+4. contain it: Windows job object (kill-on-close, one active process, per-process committed
+   memory, CPU time, UI restrictions); POSIX new session + RLIMIT_AS/CPU/FSIZE/NOFILE/CORE;
+5. only then write the framed request; read stdout/stderr with byte caps; enforce a deadline;
+6. always stop and CONFIRM the stop (job has no active process / process group is gone);
+   confirmed -> remove the run dir and recovery record; unconfirmed -> keep both and report
+   ``stop_unconfirmed``; ``recover()`` later re-verifies identity before acting.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import secrets
+import shutil
+import signal
+import subprocess
+import sys
+import sysconfig
+import threading
+import time
+from pathlib import Path
+
+from . import PROTOCOL
+from .handles import HandleStore, StoreError
+from .limits import Limits, Options
+
+_RUN_RE = re.compile(r"^r_[0-9a-f]{16}$")
+RUN_MARKER = ".docworker-run"
+STATUSES = ("complete", "partial", "unsupported", "error")
+
+
+# ---- platform containment ----------------------------------------------------------------------
+
+if os.name == "nt":
+    import ctypes
+    from ctypes import wintypes
+
+    _k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+    class _BASIC(ctypes.Structure):
+        _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64),
+                    ("PerJobUserTimeLimit", ctypes.c_int64), ("LimitFlags", wintypes.DWORD),
+                    ("MinimumWorkingSetSize", ctypes.c_size_t),
+                    ("MaximumWorkingSetSize", ctypes.c_size_t),
+                    ("ActiveProcessLimit", wintypes.DWORD), ("Affinity", ctypes.c_size_t),
+                    ("PriorityClass", wintypes.DWORD), ("SchedulingClass", wintypes.DWORD)]
+
+    class _IO(ctypes.Structure):
+        _fields_ = [(n, ctypes.c_uint64) for n in ("ReadOps", "WriteOps", "OtherOps",
+                                                   "ReadBytes", "WriteBytes", "OtherBytes")]
+
+    class _EXTENDED(ctypes.Structure):
+        _fields_ = [("Basic", _BASIC), ("Io", _IO), ("ProcessMemoryLimit", ctypes.c_size_t),
+                    ("JobMemoryLimit", ctypes.c_size_t),
+                    ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                    ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+    class _ACCOUNTING(ctypes.Structure):
+        _fields_ = [("TotalUserTime", ctypes.c_int64), ("TotalKernelTime", ctypes.c_int64),
+                    ("ThisPeriodTotalUserTime", ctypes.c_int64),
+                    ("ThisPeriodTotalKernelTime", ctypes.c_int64),
+                    ("TotalPageFaultCount", wintypes.DWORD), ("TotalProcesses", wintypes.DWORD),
+                    ("ActiveProcesses", wintypes.DWORD),
+                    ("TotalTerminatedProcesses", wintypes.DWORD)]
+
+    class _UI(ctypes.Structure):
+        _fields_ = [("UIRestrictionsClass", wintypes.DWORD)]
+
+    _k32.CreateJobObjectW.restype = wintypes.HANDLE
+    _k32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+    _k32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
+                                             wintypes.DWORD]
+    _k32.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
+                                               wintypes.DWORD, ctypes.c_void_p]
+    _k32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+    _k32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    _k32.CloseHandle.argtypes = [wintypes.HANDLE]
+    _k32.OpenProcess.restype = wintypes.HANDLE
+    _k32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    _k32.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(ctypes.c_uint64)] * 4
+    _k32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+    _k32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+
+    _LIMIT_PROCESS_TIME, _LIMIT_ACTIVE_PROCESS = 0x2, 0x8
+    _LIMIT_PROCESS_MEMORY, _LIMIT_DIE_ON_EXCEPTION, _LIMIT_KILL_ON_CLOSE = 0x100, 0x400, 0x2000
+    _QUERY_LIMITED, _TERMINATE, _STILL_ACTIVE = 0x1000, 0x1, 259
+
+    class Containment:
+        def __init__(self, limits: Limits):
+            self.job = _k32.CreateJobObjectW(None, None)
+            if not self.job:
+                raise OSError(ctypes.get_last_error(), "CreateJobObject failed")
+            info = _EXTENDED()
+            info.Basic.LimitFlags = (_LIMIT_KILL_ON_CLOSE | _LIMIT_ACTIVE_PROCESS
+                                     | _LIMIT_PROCESS_MEMORY | _LIMIT_DIE_ON_EXCEPTION
+                                     | _LIMIT_PROCESS_TIME)
+            info.Basic.ActiveProcessLimit = 1
+            info.Basic.PerProcessUserTimeLimit = int(limits.deadline_seconds * 2 * 10_000_000)
+            info.ProcessMemoryLimit = int(limits.memory_bytes)
+            if not _k32.SetInformationJobObject(self.job, 9, ctypes.byref(info),
+                                                ctypes.sizeof(info)):
+                err = ctypes.get_last_error()
+                self.close()
+                raise OSError(err, "SetInformationJobObject failed")
+            ui = _UI(0xFF)  # no desktop, clipboard, global atoms, display/system settings
+            _k32.SetInformationJobObject(self.job, 4, ctypes.byref(ui), ctypes.sizeof(ui))
+
+        def popen_kwargs(self) -> dict:
+            return {"creationflags": 0x08000000 | 0x00000200}  # NO_WINDOW | NEW_PROCESS_GROUP
+
+        def attach(self, proc: subprocess.Popen) -> None:
+            if not _k32.AssignProcessToJobObject(self.job, int(proc._handle)):
+                raise OSError(ctypes.get_last_error(), "AssignProcessToJobObject failed")
+
+        def terminate(self, proc: subprocess.Popen) -> None:
+            if self.job:
+                _k32.TerminateJobObject(self.job, 1)
+
+        def active(self, proc: subprocess.Popen) -> int:
+            acct = _ACCOUNTING()
+            if not self.job or not _k32.QueryInformationJobObject(
+                    self.job, 1, ctypes.byref(acct), ctypes.sizeof(acct), None):
+                return -1
+            return int(acct.ActiveProcesses)
+
+        def peak_memory(self) -> int | None:
+            info = _EXTENDED()
+            if self.job and _k32.QueryInformationJobObject(
+                    self.job, 9, ctypes.byref(info), ctypes.sizeof(info), None):
+                return int(info.PeakProcessMemoryUsed)
+            return None
+
+        def close(self) -> None:
+            if self.job:
+                _k32.CloseHandle(self.job)  # kill-on-close: a last-resort stop
+                self.job = None
+
+    def process_identity(pid: int) -> str | None:
+        handle = _k32.OpenProcess(_QUERY_LIMITED, False, pid)
+        if not handle:
+            return None
+        try:
+            code = wintypes.DWORD()
+            if not _k32.GetExitCodeProcess(handle, ctypes.byref(code)) \
+                    or code.value != _STILL_ACTIVE:
+                return None
+            times = [ctypes.c_uint64() for _ in range(4)]
+            if not _k32.GetProcessTimes(handle, *[ctypes.byref(t) for t in times]):
+                return None
+            return f"win-created:{times[0].value}"
+        finally:
+            _k32.CloseHandle(handle)
+
+    def kill_pid(pid: int) -> None:
+        handle = _k32.OpenProcess(_TERMINATE, False, pid)
+        if handle:
+            _k32.TerminateProcess(handle, 1)
+            _k32.CloseHandle(handle)
+
+else:
+    import resource
+
+    class Containment:
+        def __init__(self, limits: Limits):
+            self.limits = limits
+
+        def popen_kwargs(self) -> dict:
+            limits = self.limits
+
+            def preexec() -> None:
+                os.setsid()
+                aspace = int(limits.posix_address_space_bytes)
+                cpu = int(limits.deadline_seconds * 2) + 1
+                resource.setrlimit(resource.RLIMIT_AS, (aspace, aspace))
+                resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu))
+                resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))
+                resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+                resource.setrlimit(resource.RLIMIT_NOFILE, (256, 256))
+            return {"preexec_fn": preexec}
+
+        def attach(self, proc: subprocess.Popen) -> None:
+            return None  # limits applied in the child before exec
+
+        def terminate(self, proc: subprocess.Popen) -> None:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                pass
+
+        def active(self, proc: subprocess.Popen) -> int:
+            if proc.poll() is None:
+                return 1
+            try:
+                os.killpg(proc.pid, 0)
+            except ProcessLookupError:
+                return 0
+            except PermissionError:
+                return -1
+            return 1  # a group member (e.g. a grandchild) is still alive
+
+        def peak_memory(self) -> int | None:
+            kib = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+            return int(kib) * 1024 if kib else None  # max over children of this process
+
+        def close(self) -> None:
+            return None
+
+    def process_identity(pid: int) -> str | None:
+        try:
+            raw = Path(f"/proc/{pid}/stat").read_text()
+        except OSError:
+            return None
+        fields = raw.rsplit(")", 1)[1].split()
+        if fields[0] == "Z":
+            return None
+        return f"linux-start:{fields[19]}"
+
+    def kill_pid(pid: int) -> None:
+        for fn in (lambda: os.killpg(pid, signal.SIGKILL), lambda: os.kill(pid, signal.SIGKILL)):
+            try:
+                fn()
+            except (ProcessLookupError, PermissionError):
+                pass
+
+
+# ---- helpers -------------------------------------------------------------------------------------
+
+def default_child_argv() -> list[str]:
+    """Base interpreter, isolated mode, explicit import path (no venv redirector process)."""
+    base = getattr(sys, "_base_executable", None) or sys.executable
+    src = str(Path(__file__).resolve().parent.parent)
+    paths = [src]
+    for key in ("purelib", "platlib"):
+        p = sysconfig.get_paths()[key]
+        if p not in paths:
+            paths.append(p)
+    boot = ("import sys; sys.path[:0] = " + repr(paths) + "; "
+            "from docworker.child import main; sys.exit(main())")
+    return [base, "-I", "-c", boot]
+
+
+def _child_env(run_dir: Path) -> dict:
+    env = {"TEMP": str(run_dir), "TMP": str(run_dir), "TMPDIR": str(run_dir),
+           "HOME": str(run_dir), "PYTHONIOENCODING": "utf-8", "PYTHONHASHSEED": "0",
+           "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
+    if os.name == "nt":
+        root = os.environ.get("SYSTEMROOT", r"C:\Windows")
+        env.update(SYSTEMROOT=root, WINDIR=root,
+                   PATH=os.pathsep.join([os.path.dirname(default_child_argv()[0]),
+                                         os.path.join(root, "System32")]))
+    else:
+        env.update(PATH="/usr/bin:/bin", LANG="C.UTF-8", LC_ALL="C.UTF-8")
+    return env
+
+
+class _CappedReader(threading.Thread):
+    def __init__(self, stream, cap: int):
+        super().__init__(daemon=True)
+        self.stream, self.cap = stream, cap
+        self.chunks: list[bytes] = []
+        self.size = 0
+        self.exceeded = threading.Event()
+
+    def run(self) -> None:
+        try:
+            while True:
+                chunk = self.stream.read(65536)
+                if not chunk:
+                    return
+                self.size += len(chunk)
+                if self.size > self.cap:
+                    self.exceeded.set()
+                    continue  # drain and discard so the child cannot block on a full pipe
+                self.chunks.append(chunk)
+        except (OSError, ValueError):
+            return
+
+    def data(self) -> bytes:
+        return b"".join(self.chunks)
+
+
+def _writer(stream, header: bytes, data: bytes, failed: list) -> None:
+    try:
+        stream.write(header)
+        view = memoryview(data)
+        for start in range(0, len(view), 1 << 20):
+            stream.write(view[start:start + (1 << 20)])
+        stream.close()
+    except (OSError, ValueError) as exc:  # the child exited or closed stdin early
+        failed.append(type(exc).__name__)
+
+
+# ---- supervisor ------------------------------------------------------------------------------------
+
+class Supervisor:
+    def __init__(self, store: HandleStore, limits: Limits | None = None,
+                 child_argv: list[str] | None = None, hooks: dict | None = None):
+        self.store = store
+        self.limits = limits or store.limits
+        self.child_argv = child_argv or default_child_argv()
+        self.hooks = hooks or {}  # test seams: after_spawn, confirm_stop
+
+    def _record_path(self, run_id: str) -> Path:
+        return self.store.root / "recovery" / f"{run_id}.json"
+
+    def _write_record(self, run_id: str, data: dict) -> None:
+        path = self._record_path(run_id)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data))
+        os.replace(tmp, path)
+
+    def _new_run(self) -> tuple[str, str, Path]:
+        run_id = "r_" + secrets.token_hex(8)
+        nonce = secrets.token_hex(16)
+        run_dir = self.store.root / "runs" / run_id
+        run_dir.mkdir()
+        (run_dir / RUN_MARKER).write_text(json.dumps({"run_id": run_id, "nonce": nonce,
+                                                      "owner": self.store.owner()}))
+        return run_id, nonce, run_dir
+
+    def _remove_run_dir(self, run_id: str, nonce: str) -> bool:
+        run_dir = self.store.root / "runs" / run_id
+        if not run_dir.exists():
+            return True
+        base = os.path.normcase(os.path.realpath(self.store.root / "runs")) + os.sep
+        if os.path.islink(run_dir) or not os.path.normcase(
+                os.path.realpath(run_dir)).startswith(base):
+            return False
+        try:
+            marker = json.loads((run_dir / RUN_MARKER).read_text())
+        except (OSError, ValueError):
+            return False
+        if not secrets.compare_digest(str(marker.get("nonce")), nonce):
+            return False
+        shutil.rmtree(run_dir, ignore_errors=True)
+        return not run_dir.exists()
+
+    def extract(self, handle_id: str, session_token: str, options: Options | None = None,
+                narrative: bool = True) -> dict:
+        options = options or Options()
+        resolved = self.store.resolve(handle_id, session_token)
+        data = self.store.read_verified(resolved)
+        request_id = "q_" + secrets.token_hex(8)
+        header = (json.dumps({"protocol": PROTOCOL, "request_id": request_id,
+                              "format": resolved.format, "size": len(data),
+                              "sha256": resolved.sha256, "limits": self.limits.to_dict(),
+                              "options": options.to_dict(), "narrative": narrative})
+                  + "\n").encode("utf-8")
+        run_id, nonce, run_dir = self._new_run()
+        record = {"run_id": run_id, "nonce": nonce, "state": "starting", "pid": None,
+                  "identity": None, "created_at": time.time(), "handle_id": handle_id}
+        self._write_record(run_id, record)
+        sup = {"run_id": run_id, "request_id": request_id, "exit_code": None,
+               "stdout_bytes": 0, "stderr_bytes": 0, "elapsed_ms": None,
+               "peak_memory_bytes": None, "containment": None, "stop": None,
+               "outcome": None}
+        started = time.monotonic()
+        proc = None
+        containment = None
+        outcome, outcome_code = None, None
+        out_reader = err_reader = None
+        try:
+            containment = Containment(self.limits)
+            proc = subprocess.Popen(self.child_argv, stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    cwd=str(run_dir), env=_child_env(run_dir),
+                                    close_fds=True, **containment.popen_kwargs())
+            containment.attach(proc)
+            sup["containment"] = ("windows_job_object" if os.name == "nt"
+                                  else "posix_session_rlimits")
+            record.update(state="running", pid=proc.pid, identity=process_identity(proc.pid))
+            self._write_record(run_id, record)
+            if "after_spawn" in self.hooks:
+                self.hooks["after_spawn"](proc)
+            out_reader = _CappedReader(proc.stdout, self.limits.max_stdout_bytes)
+            err_reader = _CappedReader(proc.stderr, self.limits.max_stderr_bytes)
+            out_reader.start()
+            err_reader.start()
+            write_failed: list = []
+            threading.Thread(target=_writer, args=(proc.stdin, header, data, write_failed),
+                             daemon=True).start()
+            deadline = started + self.limits.deadline_seconds
+            while True:
+                try:
+                    proc.wait(timeout=0.05)
+                    break
+                except subprocess.TimeoutExpired:
+                    pass
+                if out_reader.exceeded.is_set():
+                    outcome, outcome_code = "error", "output_limit_exceeded"
+                    break
+                if time.monotonic() >= deadline:
+                    outcome, outcome_code = "error", "deadline_exceeded"
+                    break
+        except OSError as exc:
+            outcome, outcome_code = "error", f"containment_failed:{exc.__class__.__name__}"
+        finally:
+            stop = self._stop(proc, containment)
+            sup["stop"] = stop
+            sup["elapsed_ms"] = round((time.monotonic() - started) * 1000, 1)
+            if containment is not None:
+                sup["peak_memory_bytes"] = containment.peak_memory()
+                containment.close()
+            for reader in (out_reader, err_reader):
+                if reader is not None:
+                    reader.join(timeout=2)
+            if stop["confirmed"]:
+                stop["run_dir_removed"] = self._remove_run_dir(run_id, nonce)
+                if stop["run_dir_removed"]:
+                    self._record_path(run_id).unlink(missing_ok=True)
+            else:
+                record.update(state="stop_unconfirmed", stopped_at=time.time())
+                self._write_record(run_id, record)
+        sup["exit_code"] = proc.returncode if proc is not None else None
+        sup["stdout_bytes"] = out_reader.size if out_reader else 0
+        sup["stderr_bytes"] = err_reader.size if err_reader else 0
+        if out_reader is not None and out_reader.exceeded.is_set():
+            outcome, outcome_code = "error", "output_limit_exceeded"
+        result = None
+        if outcome is None:
+            result, outcome_code = self._parse(out_reader.data(), request_id, proc.returncode)
+            outcome = None if result is not None else "error"
+        if result is None:
+            result = {"protocol": PROTOCOL, "request_id": request_id, "status": "error",
+                      "errors": [{"code": outcome_code, "detail": ""}]}
+        if not sup["stop"]["confirmed"]:
+            result["status"] = "error"
+            result.setdefault("errors", []).append(
+                {"code": "stop_unconfirmed",
+                 "detail": "recovery record retained; run `recover` to re-verify"})
+        sup["outcome"] = outcome_code or "child_result"
+        result["supervisor"] = sup
+        result["handle"] = {"handle_id": resolved.handle_id, "format": resolved.format,
+                            "sha256": resolved.sha256, "size_bytes": resolved.size}
+        return result
+
+    def _parse(self, raw: bytes, request_id: str, code: int | None):
+        try:
+            doc = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
+            return None, f"invalid_child_output:exit_{code}"
+        if not isinstance(doc, dict) or doc.get("protocol") != PROTOCOL \
+                or doc.get("request_id") != request_id or doc.get("status") not in STATUSES:
+            return None, f"invalid_child_output:exit_{code}"
+        return doc, None
+
+    def _stop(self, proc, containment) -> dict:
+        info = {"requested": False, "confirmed": True, "method": None}
+        if proc is None:
+            return info
+        if containment is not None and containment.active(proc) != 0 or proc.poll() is None:
+            info["requested"] = True
+            info["method"] = "terminate_job" if os.name == "nt" else "killpg_sigkill"
+            if containment is not None:
+                containment.terminate(proc)
+            else:
+                proc.kill()
+        deadline = time.monotonic() + self.limits.stop_confirm_seconds
+        confirmed = False
+        while time.monotonic() < deadline:
+            exited = proc.poll() is not None
+            group_empty = containment is None or containment.active(proc) == 0
+            if exited and group_empty:
+                confirmed = True
+                break
+            time.sleep(0.05)
+        if "confirm_stop" in self.hooks:
+            confirmed = self.hooks["confirm_stop"](confirmed)
+        info["confirmed"] = confirmed
+        for stream in (proc.stdin, proc.stdout, proc.stderr):
+            try:
+                if stream and confirmed:
+                    stream.close()
+            except OSError:
+                pass
+        return info
+
+    # ---- recovery ------------------------------------------------------------------------------
+    def recover(self) -> dict:
+        self.store.verify()
+        report = []
+        for path in sorted((self.store.root / "recovery").glob("r_*.json")):
+            entry = {"record": path.name}
+            try:
+                rec = json.loads(path.read_text())
+                run_id, nonce = str(rec["run_id"]), str(rec["nonce"])
+            except (OSError, ValueError, KeyError):
+                entry["result"] = "unreadable_record_kept"
+                report.append(entry)
+                continue
+            if not _RUN_RE.match(run_id) or path.name != f"{run_id}.json":
+                entry["result"] = "invalid_record_kept"
+                report.append(entry)
+                continue
+            pid, identity = rec.get("pid"), rec.get("identity")
+            if pid is not None and identity is None:
+                entry["result"] = "identity_unknown_kept"  # cannot prove which process it was
+                report.append(entry)
+                continue
+            if pid is not None and process_identity(int(pid)) == identity:
+                kill_pid(int(pid))
+                deadline = time.monotonic() + self.limits.stop_confirm_seconds
+                while time.monotonic() < deadline and process_identity(int(pid)) == identity:
+                    time.sleep(0.05)
+                if process_identity(int(pid)) == identity:
+                    entry["result"] = "still_running_kept"
+                    report.append(entry)
+                    continue
+                entry["terminated_pid"] = int(pid)
+            if not self._remove_run_dir(run_id, nonce):
+                entry["result"] = "run_dir_not_owned_kept"
+                report.append(entry)
+                continue
+            path.unlink(missing_ok=True)
+            entry["result"] = "recovered"
+            report.append(entry)
+        return {"records": report}
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+__all__ = ["Supervisor", "StoreError", "default_child_argv", "process_identity"]

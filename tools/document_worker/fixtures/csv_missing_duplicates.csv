@@ -1,0 +1,8 @@
+Posting Date,Details,Debit,Credit,Ref
+2026-05-01,Card purchase,19.99,,D1
+2026-05-01,Card purchase,19.99,,D1
+2026-05-02,Deposit,,250.00,D2
+2026-02-30,Bad date row,5.00,,D3
+2026-05-04,No amount row,,,D4
+,No date row,1.00,,D5
+2026-05-06,Both sides,3.00,4.00,D6

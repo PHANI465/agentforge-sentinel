@@ -1,0 +1,11 @@
+Date,Description,Amount,Currency,Balance,Reference
+2026-01-01,Opening balance,,USD,1500.00,
+2026-01-02,Grocery market,-54.20,USD,1445.80,T001
+2026-01-03,Payroll deposit,2100.00,USD,3545.80,T002
+2026-01-05,Electric utility,-120.35,USD,3425.45,T003
+2026-01-09,Transfer to savings,-500.00,USD,2925.45,T004
+2026-01-12,Coffee shop,-4.75,USD,2920.70,T005
+2026-01-15,Refund online store,39.99,USD,2960.69,T006
+2026-01-20,Rent payment,-1250.00,USD,1710.69,T007
+2026-01-28,Interest,0.31,USD,1711.00,T008
+2026-01-31,Closing balance,,USD,1712.00,
