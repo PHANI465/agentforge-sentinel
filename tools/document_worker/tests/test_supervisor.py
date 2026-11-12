@@ -182,10 +182,15 @@ def test_recover_kills_only_a_verified_owned_process(store):
 
 
 def test_recover_never_touches_a_reused_pid(store):
+    """Forged identity for this test process. The expected result depends on whether the
+    runner leads its own process group (review DOC01-69b51fe), so the layout is asserted
+    explicitly; test_review_r58_followup.py covers both layouts with dedicated processes."""
     me = os.getpid()
     _plant_record(store, me, "win-created:1" if os.name == "nt" else "linux-start:1")
     report = Supervisor(store).recover()
-    assert [r["result"] for r in report["records"]] == ["recovered"]
+    leads_group = os.name != "nt" and os.getpgrp() == me
+    assert [r["result"] for r in report["records"]] == (
+        ["group_members_alive_kept"] if leads_group else ["recovered"])
     assert "terminated_pid" not in report["records"][0]
     assert _alive(me)
 

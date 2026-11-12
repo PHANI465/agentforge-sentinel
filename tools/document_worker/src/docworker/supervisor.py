@@ -215,13 +215,46 @@ else:
         def close(self) -> None:
             return None
 
-    def process_identity(pid: int) -> str | None:
+    class _StatUnknown(Exception):
+        """/proc/<pid>/stat exists but cannot be read or parsed: state is unknown (R58)."""
+
+    def _read_stat(pid: int) -> str:
+        return Path(f"/proc/{pid}/stat").read_text()
+
+    def _proc_pids() -> list[int]:
+        return [int(name) for name in os.listdir("/proc") if name.isdigit()]
+
+    def _stat_fields(pid: int) -> list[str] | None:
+        """Fields after the comm, or None only when the process has genuinely disappeared.
+
+        ENOENT/ESRCH mean the entry vanished (the process exited and was reaped). Any other
+        error (permission, I/O) or malformed content raises _StatUnknown: an unreadable entry
+        may be a live process and is never treated as absent.
+        """
         try:
-            raw = Path(f"/proc/{pid}/stat").read_text()
-        except OSError:
+            raw = _read_stat(pid)
+        except (FileNotFoundError, ProcessLookupError):
             return None
-        fields = raw.rsplit(")", 1)[1].split()
-        if fields[0] == "Z":
+        except OSError as exc:
+            raise _StatUnknown(type(exc).__name__) from None
+        _, sep, tail = raw.rpartition(")")
+        fields = tail.split()
+        if (not sep or len(fields) < 20 or not fields[2].lstrip("-").isdigit()
+                or not fields[19].isdigit()):
+            raise _StatUnknown("malformed")
+        return fields
+
+    def process_identity(pid: int) -> str | None:
+        """Start-time identity of a live process; None if gone, a zombie or unreadable.
+
+        None never proves a process group empty: recovery checks the group separately and
+        fails closed when any /proc entry is unreadable.
+        """
+        try:
+            fields = _stat_fields(pid)
+        except _StatUnknown:
+            return None
+        if fields is None or fields[0] == "Z":
             return None
         return f"linux-start:{fields[19]}"
 
@@ -232,15 +265,11 @@ else:
         except (ProcessLookupError, PermissionError):
             pass
 
-    def _stat_fields(pid: int) -> list[str] | None:
-        try:
-            raw = Path(f"/proc/{pid}/stat").read_text()
-        except OSError:
-            return None
-        return raw.rsplit(")", 1)[1].split()
-
     def process_pgid(pid: int) -> int | None:
-        fields = _stat_fields(pid)
+        try:
+            fields = _stat_fields(pid)
+        except _StatUnknown:
+            return None
         return None if fields is None or fields[0] == "Z" else int(fields[2])
 
     def group_members(pgid: int) -> list[int] | None:
@@ -248,17 +277,23 @@ else:
 
         A process group id is never reused while any member exists, so a non-empty result
         means the recorded group (or a later group that reused the id) is still populated.
+        Fails closed (None) if /proc cannot be listed or any listed entry, other than one
+        that genuinely disappeared, cannot be read or parsed: that entry might be a member.
         """
-        proc = Path("/proc")
-        if not (proc / "self" / "stat").exists():
+        try:
+            if not Path("/proc/self/stat").exists():
+                return None
+            pids = _proc_pids()
+        except OSError:
             return None
         members = []
-        for entry in proc.iterdir():
-            if not entry.name.isdigit():
-                continue
-            fields = _stat_fields(int(entry.name))
+        for pid in pids:
+            try:
+                fields = _stat_fields(pid)
+            except _StatUnknown:
+                return None
             if fields is not None and fields[0] != "Z" and int(fields[2]) == pgid:
-                members.append(int(entry.name))
+                members.append(pid)
         return sorted(members)
 
     def kill_group(pgid: int) -> None:

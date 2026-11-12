@@ -209,6 +209,20 @@ group leader) to be empty before it reports `recovered` (review R58):
   `group_members_alive_kept`; an undeterminable `/proc` yields `group_state_unknown_kept`.
   Either way the record and owned run directory are kept for a later retry or manual
   recovery.
+* **Group state is determined fail-closed** (follow-up review of 69b51fe). Only a `/proc`
+  entry that genuinely disappeared (`ENOENT`/`ESRCH` on its `stat`) is skipped. If `/proc`
+  cannot be listed, or any listed entry's `stat` raises another error (permission, I/O) or
+  is malformed, membership is unknown and the result is `group_state_unknown_kept`; nothing
+  is signalled, and repeated retries stay kept until the entry is readable and no member
+  remains.
+* **Process-group layout of a reused pid.** A recorded pid whose identity does not match is
+  never signalled. If that stranger happens to lead a live group with the recorded id, the
+  group cannot be proved empty and the record is kept (`group_members_alive_kept`);
+  otherwise the record is recovered.
+* **Platform limit.** Recovery sees only what `/proc` shows. With a `hidepid` mount, other
+  users' processes are invisible rather than unreadable; the parser's group runs as the
+  supervisor's user, so its members remain visible, but no claim is made for a group whose
+  members changed user.
 
 On Windows no group exists: one-process jobs are killed on close, and reused-pid refusal is
 unchanged.
