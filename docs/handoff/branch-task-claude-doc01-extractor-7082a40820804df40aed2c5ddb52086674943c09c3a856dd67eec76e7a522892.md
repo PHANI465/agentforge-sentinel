@@ -9,15 +9,73 @@
   from accepted main `4d60c53dafa0ca478f32270fa83944d1d7363ef6`. The native clone is WSL
   user `sentinel` at `~/doc01-native`, fast-forwarded from Git bundles of this branch.
 - **Updated:** 2026-11-12 (local time).
-- **State:** ready for Codex review. Part A only; upload, feedback integration and the LLM
-  narrative are not implemented.
-- **Code reference tested before this note:** `1ce9a84c8dce53ab0f7024bd762e503d87ac4b44`
-  (clean tree, Windows and native).
+- **State:** R58/R59 correction ready for Codex re-review (dispatch
+  `docs/prompts/CLAUDE_DOC01_REVIEW_FIXES.md`, review `docs/reviews/DOC01-cecccad.md` on
+  task/coordination c280bd9). Part A only; upload, feedback integration and the LLM
+  narrative are not implemented. The reviewed candidate `cecccad` is preserved unchanged
+  as an ancestor; there was no reset, rebase or amend.
+- **Code reference tested before this note:** `436e50b30d0b84b9eebc390f9b6ac9f6062d41cf`
+  (clean tree, Windows and native). The earlier Part A sections below describe `1ce9a84`.
 - **Final check evidence:** rerun on the final commit (this note's commit) and reported in chat.
   This note cannot name its own commit.
 - **Owned/changed paths:** `tools/document_worker/**`, `docs/documents/DOC01-worker-protocol-v0.1.md`
   and this note. No other path differs from 4d60c53. The AN01-M1 worktree (`28dfcef`), all other
   worktrees and Cursor's edits are untouched.
+
+## R58/R59 correction (436e50b)
+
+- **R58, POSIX recovery** (`supervisor.py`): records now carry `pgid` and `containment`.
+  Recovery reports `recovered` only when the recorded process group is confirmed empty.
+  - A verified live leader that is still in the recorded group has the group signalled,
+    then recovery waits for the leader to exit and the group to empty.
+  - An exited leader is not proof of an empty group. In that case any live member gives
+    `group_members_alive_kept`, and an unreadable `/proc` gives `group_state_unknown_kept`.
+    No signal is sent, and the record and owned run dir are kept.
+  - Old records without `pgid` use the pid, because the child was its own session/group
+    leader.
+  - `kill_pid` now signals only the verified pid. Group signalling happens only through the
+    proven-group path above.
+  - Windows job behaviour and reused-pid refusal are unchanged.
+- **R59, child output** (new `validate.py`): an exit other than 0 or 2 is always an error.
+  Exit 2 is accepted only as a protocol-error envelope with protocol-error codes, stripped
+  to protocol/request_id/status/errors. Exit-0 `complete`/`partial` documents must contain
+  every result field. Format, source sha256 and size must match the supervisor's own handle,
+  and the guard must be installed. Records must satisfy the evidence-id prefix, the allowed
+  kinds and the rule that a value is known exactly when it is present (minor units being an
+  integer string). PDF results have no records, and at least one unit is parsed. `complete`
+  additionally needs no errors, no unparsed items, only parsed/empty units and an absent or
+  ok narrative. `unsupported`/`error` need at least one error and no records. Error codes
+  are short tokens and details are at most 200 characters. A rejection is
+  `invalid_child_output:exit_<n>` with a fixed reason token; child bytes are never echoed.
+- **Tests:** new `tests/test_review_r58_r59.py` (46 cases).
+  - Real-process R58 regressions use a fresh `Supervisor(HandleStore(root))`:
+    - leader exited, member alive: kept, unsignalled; after the test stops its verified
+      member, a retry reports `recovered`;
+    - leader and member alive: both stopped and confirmed;
+    - a seam-forced surviving member, and unknown group state: both kept.
+  - R59 coverage: nonzero-exit `complete`, a minimal `complete` with fields missing, and a
+    protocol-error envelope through the real supervisor.
+  - Genuine-child positive controls for complete, partial, unsupported and error results.
+  - Validator unit tests: 8 genuine results accepted, 12 required-field deletions and 14
+    inconsistency mutations rejected, plus exit-code cases.
+  - The four R58 tests are POSIX-only and are reported as skips on Windows.
+  - The three existing probe tests still pass. Their deliberately minimal documents are now
+    rejected, and they read the probe through the new `child_output` test seam.
+- **Failing-first evidence** (`.agent/doc01-r2/failing-first/`, new tests against unchanged
+  `cecccad` source):
+  - Windows: 2 failed (both R59 cases returned `complete`), 5 passed, 2 skipped.
+  - Native: 3 failed (R58 leader-exited/member-alive returned `recovered`, plus both R59
+    cases), 6 passed.
+  - Investigation: the live-leader/member case already passed, because the group kill
+    reached the member. It is now additionally confirmed by the group-empty check.
+- **Verified at 436e50b** (clean, `.agent/doc01-r2/at-436e50b/`):
+  - Worker tests: Windows 170 passed + 4 skipped (the POSIX-only R58 tests); native
+    **174 passed, 0 skipped**. This includes the original 15 supervisor tests on both.
+  - Smoke `ok` on both: 259/259 field checks, 101/101 behaviour checks, cap probes partial
+    and complete, no leftovers or worker processes.
+  - Native app checks: root ruff, HTTP, ML reproduction and contracts pass.
+  - The protocol document's response-acceptance and recovery wording is clarified. The
+    OS-isolation gaps are unchanged.
 
 ## Implemented
 
@@ -113,8 +171,8 @@
 
 ## Next action
 
-Codex independently reviews DOC01 Part A at this branch's final commit (protocol v0.1, worker
-behaviour and gaps) before any API/UI upload or feedback integration is assigned.
+Codex independently re-reviews R58/R59 at this branch's final commit before any API/UI upload
+or feedback integration is assigned.
 
 ## Coordination and provenance
 
