@@ -55,11 +55,10 @@ def test_memory_cap(store, ingest, make_supervisor):
     assert leftovers(store) == {"runs": [], "recovery": []}
 
 
-def test_grandchild_cannot_outlive_supervision(store, ingest, make_supervisor, tmp_path):
-    report = tmp_path / "spawn.json"
-    sup = make_supervisor(child_argv=fake_argv("spawn", str(report)))
+def test_grandchild_cannot_outlive_supervision(store, ingest, make_supervisor):
+    sup = make_supervisor(child_argv=fake_argv("spawn"))
     result = sup.extract(ingest("csv_statement_usd.csv"), SESSION)
-    info = json.loads(report.read_text())
+    info = result["probe"]
     assert result["supervisor"]["stop"]["confirmed"] is True
     if sys.platform == "win32":
         assert info["spawned"] is False  # job object: one active process
@@ -70,6 +69,22 @@ def test_grandchild_cannot_outlive_supervision(store, ingest, make_supervisor, t
             time.sleep(0.05)
         assert not _alive(info["pid"])  # the whole session/process group was stopped
     assert leftovers(store) == {"runs": [], "recovery": []}
+
+
+def test_os_level_file_write_bound_is_platform_specific(store, ingest, make_supervisor,
+                                                       tmp_path):
+    """POSIX: RLIMIT_FSIZE 0 stops any non-empty file write at the OS level. Windows: the job
+    object does NOT restrict files; only the in-child guard does (see the guard probe). This
+    test records the actual behaviour instead of skipping either platform."""
+    target = tmp_path / "escape.bin"
+    result = make_supervisor(child_argv=fake_argv("file_write", str(target))).extract(
+        ingest("csv_statement_usd.csv"), SESSION)
+    if os.name == "nt":
+        assert result["probe"] == {"wrote": True}
+        assert target.stat().st_size == 4096
+    else:
+        assert result["probe"] == {"wrote": False, "error": "OSError"}
+        assert not target.exists() or target.stat().st_size == 0
 
 
 @pytest.mark.parametrize("mode,code", [("crash", "invalid_child_output:exit_3"),

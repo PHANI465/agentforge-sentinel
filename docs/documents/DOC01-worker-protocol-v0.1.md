@@ -142,7 +142,7 @@ defaulted to zero.
 | Memory | Windows 1 GiB committed per process; POSIX RLIMIT_AS 4 GiB | job object / rlimit |
 | CPU | 2 × deadline | job per-process user time / RLIMIT_CPU |
 | Processes | Windows: exactly 1 active process; POSIX: own session, killed as a group | job / setsid + killpg |
-| Files | POSIX RLIMIT_FSIZE 0, NOFILE 256, CORE 0; cwd and TEMP = owned run dir | rlimits / env |
+| Files | POSIX RLIMIT_FSIZE 0, NOFILE 256, CORE 0; cwd and TEMP = owned run dir (Windows: no OS file bound, see gaps) | rlimits / env |
 | Stop confirmation | 5 s | job ActiveProcesses = 0 / process group gone |
 | Handle lease | 3,600 s | store |
 
@@ -191,6 +191,12 @@ zero denials, and a probe child shows each class denied while stdlib reads stay 
   which also imports `requests`, `magika` and `onnxruntime`) runs before the guard. That is
   locked installed code, not document bytes. On Windows a sub-millisecond window exists
   between process start and job assignment, but the child only waits on stdin during it.
+* File writes are bounded at the OS level only on POSIX. There, `RLIMIT_FSIZE 0` stops any
+  non-empty write but still allows creating or deleting empty files. The Windows job object
+  does not restrict the filesystem at all: a test child without the guard wrote 4 KiB outside
+  its run directory. In the real child only the audit-hook guard blocks writes, and on Windows
+  the child runs with the owner's file permissions. A restricted token or AppContainer would
+  be needed to close this gap; that is a system/policy change, so it is not made here.
 * The POSIX memory figure is `RUSAGE_CHILDREN` max RSS, an upper bound across children. The
   POSIX grandchild and hard-kill recovery paths are untested on macOS (identity uses `/proc`;
   without it records are kept, not acted on).

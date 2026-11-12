@@ -44,13 +44,32 @@ def main():
             os._exit(7)
         os._exit(8)
     elif mode == "spawn":
+        # Reported on stdout: the POSIX child has RLIMIT_FSIZE 0 and cannot write files.
         try:
             proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"])
+            probe = {"spawned": True, "pid": proc.pid}
         except OSError as exc:
-            report(path, {"spawned": False, "error": type(exc).__name__})
-            return 0
-        report(path, {"spawned": True, "pid": proc.pid})
-        return 0  # exit, leaving the grandchild behind for the supervisor to stop
+            probe = {"spawned": False, "error": type(exc).__name__}
+        sys.stdout.write(json.dumps({"protocol": header["protocol"],
+                                     "request_id": header["request_id"], "status": "complete",
+                                     "probe": probe}))
+        sys.stdout.flush()
+        return 0  # exit, leaving any grandchild behind for the supervisor to stop
+    elif mode == "file_write":
+        import signal
+        if hasattr(signal, "SIGXFSZ"):
+            signal.signal(signal.SIGXFSZ, signal.SIG_IGN)  # get EFBIG instead of a kill
+        try:
+            with open(path, "wb") as fh:
+                fh.write(b"x" * 4096)
+                fh.flush()
+            probe = {"wrote": True}
+        except OSError as exc:
+            probe = {"wrote": False, "error": type(exc).__name__}
+        sys.stdout.write(json.dumps({"protocol": header["protocol"],
+                                     "request_id": header["request_id"], "status": "complete",
+                                     "probe": probe}))
+        return 0
     elif mode == "guard_probe":
         sys.path[:0] = [p for p in header.get("paths", [])]
         from docworker import guard
