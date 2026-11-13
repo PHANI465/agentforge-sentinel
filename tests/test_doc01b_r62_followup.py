@@ -19,6 +19,11 @@ posix_only = pytest.mark.skipif(os.name == "nt", reason="POSIX /proc lookup")
 windows_only = pytest.mark.skipif(os.name != "nt", reason="Windows OpenProcess lookup")
 
 
+def _live(pid) -> bool:
+    """Running (a zombie on POSIX is exited, not running), unlike `kill(pid, 0)`."""
+    return bool(pid) and docs.process_state(pid)[0] == docs.LIVE
+
+
 def _records(store):
     folder = store / docs.BRIDGE_RECORD_DIR
     return sorted(p.name for p in folder.iterdir()) if folder.is_dir() else []
@@ -231,7 +236,7 @@ def test_failed_evidence_write_is_never_forgotten_after_restart(database_url, cl
         restarted = Stack(database_url, clock, stack.store)
         restarted.fake(modes={})
         second = restarted.analyze(token, handle)
-        alive = [p for pid, ppid in hung for p in (pid, ppid) if p and _pid_alive(p)
+        alive = [p for pid, ppid in hung for p in (pid, ppid) if p and _live(p)
                  and p != os.getpid()]
         # Never a success while the unconfirmed bridge from the first request lives.
         assert not (second.status_code == 200 and alive), (second.status_code, alive)
@@ -265,13 +270,13 @@ def test_transient_write_failure_is_retried_and_the_evidence_recovers(database_u
     try:
         assert first.json() == {"error": "document_worker_timeout"}
         assert any(name.startswith("bridge-") for name in _records(stack.store))
-        assert any(_pid_alive(p) for pid, ppid in hung for p in (pid, ppid)
+        assert any(_live(p) for pid, ppid in hung for p in (pid, ppid)
                    if p != os.getpid())
         restarted = Stack(database_url, clock, stack.store)  # API restart
         restarted.fake(modes={})
         result = restarted.analyze(token, handle)
         assert result.status_code == 200
-        assert not any(_pid_alive(p) for pid, ppid in hung for p in (pid, ppid)
+        assert not any(_live(p) for pid, ppid in hung for p in (pid, ppid)
                        if p != os.getpid())
         assert _records(stack.store) == []
     finally:
