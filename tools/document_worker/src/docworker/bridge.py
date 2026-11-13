@@ -44,12 +44,9 @@ class Refused(Exception):
         self.code = code
 
 
-def _cap_ids(item: dict, key: str = "evidence_ids") -> dict:
-    ids = item.get(key) or []
-    out = dict(item)
-    out[key] = ids[:MAX_EVIDENCE_IDS]
-    out[f"{key}_total"] = len(ids)
-    return out
+def _cap_ids(item: dict) -> dict:
+    """Duplicate groups keep their full `count`; only the listed ids are capped."""
+    return dict(item, evidence_ids=(item.get("evidence_ids") or [])[:MAX_EVIDENCE_IDS])
 
 
 def page(records: list[dict], offset: int, limit: int) -> dict:
@@ -80,7 +77,7 @@ def compact(doc: dict, page_limit: int) -> dict:
         "truncated": bool(narrative.get("truncated"))}
     unparsed = doc.get("unparsed") or []
     out["unparsed"] = unparsed[:MAX_UNPARSED_SHOWN]
-    out["findings"] = [_cap_ids(f) for f in doc.get("findings") or []]
+    # Findings arrive already capped at 50 ids by the worker, with evidence_count.
     measures = doc.get("measures")
     if isinstance(measures, dict):
         measures = dict(measures)

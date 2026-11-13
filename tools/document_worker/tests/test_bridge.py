@@ -147,17 +147,18 @@ def test_large_documents_are_paged_and_byte_bounded(store):
 
 def test_long_evidence_lists_are_capped_with_totals():
     doc = {"records": [], "units": [], "unparsed": [{"x": i} for i in range(300)],
-           "findings": [{"finding_id": "F1", "evidence_ids": [f"e{i}" for i in range(80)]}],
-           "measures": {"duplicates": {"groups": [{"evidence_ids": ["a", "b"], "count": 2}]
+           "findings": [{"finding_id": "F1", "evidence_ids": ["e"] * 50, "evidence_count": 80}],
+           "measures": {"duplicates": {"groups": [{"evidence_ids": ["a"] * 70, "count": 70}]
                                        * 150},
                         "running_balance": {"mismatches": [{}] * 120}},
            "narrative": {"status": "ok", "text": "secret page text", "chars": 16}}
     out = bridge.compact(doc, 10)
     assert len(out["unparsed"]) == 100
-    assert out["findings"][0]["evidence_ids_total"] == 80
-    assert len(out["findings"][0]["evidence_ids"]) == 50
+    assert out["findings"] == doc["findings"]  # already capped by the worker
     assert out["measures"]["duplicates"]["groups_total"] == 150
     assert len(out["measures"]["duplicates"]["groups"]) == 100
+    group = out["measures"]["duplicates"]["groups"][0]
+    assert (len(group["evidence_ids"]), group["count"]) == (50, 70)
     assert out["measures"]["running_balance"]["mismatches_total"] == 120
     assert out["narrative"] == {"status": "ok", "chars": 16, "truncated": False}
 
