@@ -99,6 +99,27 @@ class Api:
                 return err.code, body.decode("latin-1")[:200]
 
 
+def declared_oversize(api: "Api", token: str, size: int) -> tuple[int, object]:
+    """Send only the request head, declaring `size` bytes, and read the answer: the API must
+    refuse a declared oversize body without reading any of it (a client that kept sending
+    the body would instead see the connection reset once the server has answered)."""
+    with socket.create_connection(("127.0.0.1", api.port), timeout=30) as conn:
+        crlf = "\r\n"
+        lines = ["POST /v1/documents?format=csv HTTP/1.1", "Host: 127.0.0.1",
+                 f"Authorization: Bearer {token}", "Content-Type: text/csv",
+                 f"Content-Length: {size}", "Connection: close", "", ""]
+        conn.sendall(crlf.join(lines).encode("latin-1"))
+        raw = b""
+        while chunk := conn.recv(65536):
+            raw += chunk
+    head, _, body = raw.partition(b"\r\n\r\n")
+    status = int(head.split(b" ", 2)[1])
+    try:
+        return status, json.loads(body)
+    except ValueError:
+        return status, body[:200].decode("latin-1")
+
+
 def _normalise(analysis: dict) -> dict:
     """Fields that legitimately differ between runs: the handle and the run's own timing."""
     out = json.loads(json.dumps(analysis))
@@ -213,9 +234,9 @@ def main() -> int:
             check("refused_format_mismatch", (status, body) == (415, {"error": "format_mismatch"}))
             (status, body), _ = upload("xlsx_ole_container.xlsx")
             check("refused_ole", (status, body) == (415, {"error": "unsupported_container"}))
-            status, body = api.request("POST", "/v1/documents?format=csv", token,
-                                       data=b"a" * (10 * 1024 * 1024 + 1), media="text/csv")
-            check("refused_oversize", (status, body) == (413, {"error": "body_too_large"}))
+            status, body = declared_oversize(api, token, 10 * 1024 * 1024 + 1)
+            check("refused_declared_oversize_unread",
+                  (status, body) == (413, {"error": "body_too_large"}), status=status)
             (status, body), _ = upload("csv_statement_usd.csv", who=plain)
             check("default_session_403", status == 403)
             status, body = api.request("POST", f"/v1/documents/{handle}/analysis", other,
