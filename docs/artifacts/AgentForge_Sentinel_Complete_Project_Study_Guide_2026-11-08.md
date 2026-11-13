@@ -4,6 +4,8 @@ November 8 edition · Updated November 12, 2026 · Project idea, implementation 
 
 **Current review update (November 12, 2026):** AN01-M1 candidate [28dfcef](../reviews/AN01-M1-28dfcef.md) is accepted for its measurement-prototype behavior, with R53–R57 closed. It remains unmerged. Its earlier tiny timing controls still do not demonstrate the provisional performance limits. The November 10 review narrative later in this edition records the earlier b54de1a state as history. Read the linked review and [START_HERE](../START_HERE.md) for the next task.
 
+**Later November 12 DOC01 update:** The [local document worker](../reviews/DOC01-8f7bd87.md) is accepted at `8f7bd87` and integrated in source merge `662572e`. It parses public/synthetic text-layer PDF, CSV and XLSX with bounded child processes and typed feedback measures; it does not yet provide a browser upload or API. The [next backend assignment](../prompts/CLAUDE_DOC01_PART_B_BACKEND.md) is prepared. AN01-M1 remains accepted but unmerged, and its provisional limits are unchanged. The stage table below is the November 8 snapshot; use [current status](../STATUS.md) for subsequent changes.
+
 Prepared for Phaneendra Gavara. This edition replaces the November 2 guide for current reading. That edition remains a preserved historical snapshot. The final chapter separates accepted work, delivered candidates, unmeasured claims and future plans. Product fixtures use synthetic financial data and simulated actions. The separately downloaded ULB research dataset is real anonymized data, ignored locally and not used by the product model.
 
 ## 1 The complete project we are building

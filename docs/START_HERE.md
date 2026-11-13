@@ -18,18 +18,20 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 
 ## Current position
 
-- Accepted application/tooling remains exact tested 871e31d plus later documentation.
+- The core application remains the exact tested 871e31d code. Main also includes the accepted DOC01 Part A worker through source merge `662572e`; its integration checks are recorded separately.
+- DOC01 Part A [local worker is accepted](reviews/DOC01-8f7bd87.md) at `8f7bd87` and integrated in source merge `662572e`; [release evidence](releases/DOC01-Part-A-main-integration-2026-11-12.md). It is not an upload API or UI. The [next backend assignment](prompts/CLAUDE_DOC01_PART_B_BACKEND.md) is current.
 - AN01-M1 measurement prototype is independently accepted at exact `28dfcef` for its reviewed behavior; R56 is closed. [Review](reviews/AN01-M1-28dfcef.md). It remains unmerged, and the tiny timing controls are not demonstrated. The prior b54de1a review is preserved as history.
 - DOC01 Part A was delivered at `cecccad`; its [first review](reviews/DOC01-cecccad.md) requested R58/R59. The original [two-finding correction](prompts/CLAUDE_DOC01_REVIEW_FIXES.md) is delivered history.
 - DOC01 re-review at `69b51fe` [closes R59](reviews/DOC01-69b51fe.md); its [unreadable-member correction](prompts/CLAUDE_DOC01_R58_FOLLOWUP.md) is delivered history.
-- DOC01 `7ec46ae` [still needs one R58 group-race fix](reviews/DOC01-7ec46ae.md). The current [Claude follow-up](prompts/CLAUDE_DOC01_R58_RACE_FOLLOWUP.md) continues the existing branch. Part A and document upload/API/UI remain unmerged.
+- DOC01 `7ec46ae` [required one R58 group-race fix](reviews/DOC01-7ec46ae.md). Its [correction prompt](prompts/CLAUDE_DOC01_R58_RACE_FOLLOWUP.md) is delivered history.
 - Private GitHub repo: https://github.com/PHANI465/agentforge-sentinel. Only accepted main
   is published; Actions disabled. No force/mirror/all-branch push or private data upload.
 - ULB dataset is acquired privately, not trained. p1 and protected final cases unchanged.
 - Small Claude Pro and Codex/ChatGPT connectivity smokes passed. No live quality study,
   Cursor inference or app provider configuration change is implied.
-- New local document feedback, automated dev review and readable metrics are approved
-  directions with research/proposals. No new production feature is implemented here.
+- Local document extraction is implemented as a separate worker. Browser upload,
+  feedback API/UI, automated development review and expanded report metrics
+  remain separate work.
 - [Original DOC01 handoff](prompts/CLAUDE_EXPANSION_AFTER_M1.md) is delivered
   history; use the current review and correction dispatch above.
 

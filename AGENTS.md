@@ -1,5 +1,16 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current November 12 DOC01 review: exact 8f7bd87226418acaed6c4436d3122d4a60d9ff94
+is independently accepted for **Part A local-worker scope** under
+docs/reviews/DOC01-8f7bd87.md; R58/R59 close. Integrated source merge
+662572e250807d6bbb26e4cb0d37d572e51aed7f is checked separately under
+docs/releases/DOC01-Part-A-main-integration-2026-11-12.md. The worker is not a
+browser upload or feedback API. The current next assignment is
+docs/prompts/CLAUDE_DOC01_PART_B_BACKEND.md: local opt-in upload/feedback
+backend from accepted main, with a frozen additive contract. Keep the observed
+Windows record-replacement reliability issue as a required pre-API fix. The
+earlier DOC01 changes-requested paragraphs below are historical.
+
 Current November 12 DOC01 re-review: exact 7ec46aea258501389c0ce39b6315e0eed88f26f0
 is still changes-requested. R59 and the unreadable-`/proc` R58 path close,
 but a real member can fork after `/proc` is listed and exit before recovery

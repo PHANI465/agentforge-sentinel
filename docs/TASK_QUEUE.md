@@ -1,5 +1,17 @@
 # Shared implementation queue
 
+## November 12: DOC01 backend upload and feedback next
+
+DOC01 Part A is [accepted](reviews/DOC01-8f7bd87.md) at `8f7bd87` and
+integrated into reviewed merge `662572e` for the local-worker scope. The
+[next Claude assignment](prompts/CLAUDE_DOC01_PART_B_BACKEND.md) is an isolated
+backend/contract slice from accepted main, **Opus 5.5 / High**. It includes a
+pre-API correction for the Windows recovery-record replacement race. UI comes
+after Codex reviews the backend contract and implementation. Keep AN01-M1
+`28dfcef` preserved and unmerged; its full-size grid and production Reports
+remain separate. No live provider, private customer files or hosting is
+authorized by DOC01 Part A.
+
 ## November 12: DOC01 final R58 group-race follow-up
 
 Claude continues `task/claude-doc01-extractor` from `7ec46ae` under

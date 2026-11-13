@@ -1,5 +1,19 @@
 # Project status
 
+## November 12: DOC01 Part A local worker accepted and integrated
+
+Exact **8f7bd87226418acaed6c4436d3122d4a60d9ff94** is
+[independently accepted](reviews/DOC01-8f7bd87.md) for bounded local extraction
+of public/synthetic PDF, CSV and XLSX files. R58/R59 close. The source is in
+the automatic merge **662572e250807d6bbb26e4cb0d37d572e51aed7f**;
+[integration evidence](releases/DOC01-Part-A-main-integration-2026-11-12.md)
+records exact checks. This is a separately locked local worker, not an HTTP
+upload or feedback UI. Its OS-isolation limits and one intermittent Windows
+crash-test failure remain documented. The [next backend assignment](prompts/CLAUDE_DOC01_PART_B_BACKEND.md)
+must resolve the Windows record-replacement follow-up before API exposure.
+AN01-M1 remains accepted but unmerged; no full-size report measurement or
+live/final-case evaluation is assigned.
+
 ## November 12: DOC01 7ec46ae review, one R58 race remains
 
 Exact candidate **7ec46aea258501389c0ce39b6315e0eed88f26f0** is

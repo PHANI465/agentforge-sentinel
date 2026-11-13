@@ -29,6 +29,17 @@ These are retrospective summaries of written project records, not reconstructed 
 | H09 | DOC01 Part A `cecccad` is delivered but changes-requested for R58/R59. A separate locked local worker is not yet an accepted upload/feedback feature; recovery must retain uncertain POSIX group state and a failed/incomplete child response must not become a successful extraction. | [DOC01 review](../reviews/DOC01-cecccad.md) |
 | H10 | DOC01 candidate `69b51fe` closes R59's invalid-child-success finding but remains changes-requested for R58. An unreadable live `/proc` member must mean unknown/kept, never an empty group. No worker or upload integration is accepted yet. | [DOC01 re-review](../reviews/DOC01-69b51fe.md) |
 | H11 | DOC01 candidate `7ec46ae` closes the unreadable-`/proc` case but remains changes-requested for R58: a PID-list snapshot can miss a group descendant forked after enumeration. Confirm group absence after the scan; no worker or upload integration is accepted yet. | [DOC01 re-review](../reviews/DOC01-7ec46ae.md) |
+| H12 | DOC01 Part A `8f7bd87` closes R58/R59 and is accepted for a local, separately locked worker over public/synthetic files. Source integration is `662572e`. The Windows recovery-record replacement issue is a required follow-up before API exposure; browser upload, feedback UI and OS network isolation are not delivered by Part A. | [Final review](../reviews/DOC01-8f7bd87.md), [release evidence](../releases/DOC01-Part-A-main-integration-2026-11-12.md) |
+
+**D20261112-02 — contract order for the next local feature.** The active HTTP
+snapshot is v1.2. DOC01's opt-in upload/feedback backend takes the next
+additive v1.3 because the owner prioritized completing the document feature
+and AN01's public Reports API is still unassigned with unqualified limits.
+AN01's accepted design used *provisional* v1.3 wording; only that version
+label is superseded, and its eventual contract becomes v1.4 or later. Neither
+route is implemented by this decision. Revisit only if an AN01 HTTP contract
+is frozen before DOC01's v1.3 commit. See the [DOC01 Part B assignment](../prompts/CLAUDE_DOC01_PART_B_BACKEND.md)
+and the [AN01 design](../analytics/AN01-decisions-r3.md).
 
 ## Owner decisions confirmed November 8
 
