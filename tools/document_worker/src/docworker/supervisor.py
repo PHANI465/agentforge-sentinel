@@ -36,6 +36,28 @@ from .limits import Limits, Options
 from .validate import Invalid, validate
 
 _RUN_RE = re.compile(r"^r_[0-9a-f]{16}$")
+# Temporary record names: r_<id>.<8 hex>.tmp (unique per write), or the pre-fix r_<id>.tmp.
+_TMP_RE = re.compile(r"^(r_[0-9a-f]{16})(?:\.[0-9a-f]{8})?\.tmp$")
+# Windows reports a sharing violation (a reader holding the file open) as PermissionError;
+# it is transient, so record replacement and removal retry for this long before failing.
+RECORD_IO_RETRY_SECONDS = 2.0
+
+
+class RecordWriteError(OSError):
+    """A recovery record could not be written; the run must not be reported as a success."""
+
+
+def _retry_sharing(operation, seconds: float = RECORD_IO_RETRY_SECONDS):
+    deadline = time.monotonic() + seconds
+    delay = 0.01
+    while True:
+        try:
+            return operation()
+        except PermissionError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.2)
 RUN_MARKER = ".docworker-run"
 
 
@@ -403,10 +425,40 @@ class Supervisor:
         return self.store.root / "recovery" / f"{run_id}.json"
 
     def _write_record(self, run_id: str, data: dict) -> None:
+        """Atomically replace the run's record, retrying transient sharing violations.
+
+        Each write uses its own temporary name, so concurrent or failed writes never collide.
+        If the replace still fails, a temporary that carries the child's pid is kept, since it
+        may be the only copy recovery can use; a pid-less one is removed. RecordWriteError is
+        raised either way, so the caller cannot report the run as a success.
+        """
         path = self._record_path(run_id)
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(data))
-        os.replace(tmp, path)
+        tmp = path.with_name(f"{run_id}.{secrets.token_hex(4)}.tmp")
+        try:
+            tmp.write_text(json.dumps(data))
+            _retry_sharing(lambda: os.replace(tmp, path))
+        except OSError as exc:
+            if data.get("pid") is None:
+                try:
+                    _retry_sharing(lambda: tmp.unlink(missing_ok=True))
+                except OSError:
+                    pass
+            raise RecordWriteError(exc.errno, f"recovery record write failed: "
+                                              f"{type(exc).__name__}") from None
+
+    def _remove_records(self, run_id: str) -> bool:
+        """Remove the run's record and any temporary records; True when none remain."""
+        folder = self.store.root / "recovery"
+        paths = [self._record_path(run_id)] + [
+            p for p in folder.glob(f"{run_id}*.tmp") if _TMP_RE.match(p.name)
+            and _TMP_RE.match(p.name).group(1) == run_id]
+        ok = True
+        for p in paths:
+            try:
+                _retry_sharing(lambda p=p: p.unlink(missing_ok=True))
+            except OSError:
+                ok = False
+        return ok
 
     def _new_run(self) -> tuple[str, str, Path]:
         run_id = "r_" + secrets.token_hex(8)
@@ -448,7 +500,6 @@ class Supervisor:
         run_id, nonce, run_dir = self._new_run()
         record = {"run_id": run_id, "nonce": nonce, "state": "starting", "pid": None,
                   "identity": None, "created_at": time.time(), "handle_id": handle_id}
-        self._write_record(run_id, record)
         sup = {"run_id": run_id, "request_id": request_id, "exit_code": None,
                "stdout_bytes": 0, "stderr_bytes": 0, "elapsed_ms": None,
                "peak_memory_bytes": None, "containment": None, "stop": None,
@@ -459,6 +510,7 @@ class Supervisor:
         outcome, outcome_code = None, None
         out_reader = err_reader = None
         try:
+            self._write_record(run_id, record)  # before any child exists
             containment = Containment(self.limits)
             proc = subprocess.Popen(self.child_argv, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -493,6 +545,9 @@ class Supervisor:
                 if time.monotonic() >= deadline:
                     outcome, outcome_code = "error", "deadline_exceeded"
                     break
+        except RecordWriteError:
+            # No durable record of this child: stop it now; never report the run a success.
+            outcome, outcome_code = "error", f"recovery_record_write_failed:{record['state']}"
         except OSError as exc:
             outcome, outcome_code = "error", f"containment_failed:{exc.__class__.__name__}"
         finally:
@@ -508,10 +563,18 @@ class Supervisor:
             if stop["confirmed"]:
                 stop["run_dir_removed"] = self._remove_run_dir(run_id, nonce)
                 if stop["run_dir_removed"]:
-                    self._record_path(run_id).unlink(missing_ok=True)
+                    # A failed removal leaves a record whose child is confirmed gone; a
+                    # later recover() re-verifies and removes it. Never raised from here.
+                    stop["record_removed"] = self._remove_records(run_id)
             else:
                 record.update(state="stop_unconfirmed", stopped_at=time.time())
-                self._write_record(run_id, record)
+                try:
+                    self._write_record(run_id, record)
+                    stop["record_written"] = True
+                except RecordWriteError:
+                    # The earlier 'running' record (or its kept temporary) still names the
+                    # child, so recovery can re-verify it.
+                    stop["record_written"] = False
         sup["exit_code"] = proc.returncode if proc is not None else None
         sup["stdout_bytes"] = out_reader.size if out_reader else 0
         sup["stderr_bytes"] = err_reader.size if err_reader else 0
@@ -630,9 +693,24 @@ class Supervisor:
         return "stopped_or_gone", terminated
 
     def recover(self) -> dict:
+        """Re-verify every recorded run; remove only what is proven stopped and owned.
+
+        Temporary records are part of the evidence (review DOC01-8f7bd87): a failed replace
+        can leave the only copy of a child's pid in r_<id>.<hex>.tmp. Every pid named by the
+        record or a temporary of the same run must be proven stopped before anything is
+        removed; an unreadable temporary beside a record keeps the run.
+        """
         self.store.verify()
+        folder = self.store.root / "recovery"
         report = []
-        for path in sorted((self.store.root / "recovery").glob("r_*.json")):
+        temporaries: dict[str, list[Path]] = {}
+        for path in sorted(folder.glob("r_*.tmp")):
+            match = _TMP_RE.match(path.name)
+            if match is None:
+                report.append({"record": path.name, "result": "invalid_record_kept"})
+                continue
+            temporaries.setdefault(match.group(1), []).append(path)
+        for path in sorted(folder.glob("r_*.json")):
             entry = {"record": path.name}
             try:
                 rec = json.loads(path.read_text())
@@ -645,27 +723,65 @@ class Supervisor:
                 entry["result"] = "invalid_record_kept"
                 report.append(entry)
                 continue
-            pid, identity = rec.get("pid"), rec.get("identity")
-            if pid is not None and identity is None:
-                entry["result"] = "identity_unknown_kept"  # cannot prove which process it was
+            extra, torn = self._read_temporaries(temporaries.pop(run_id, []), run_id)
+            if torn:
+                entry["result"] = "temporary_record_unreadable_kept"
                 report.append(entry)
                 continue
-            if pid is not None:
-                outcome, terminated = self._stop_recorded(int(pid), identity, rec)
-                if terminated is not None:
-                    entry["terminated_pid"] = terminated
-                if outcome != "stopped_or_gone":
-                    entry["result"] = outcome  # record and run dir retained (R58)
-                    report.append(entry)
-                    continue
-            if not self._remove_run_dir(run_id, nonce):
-                entry["result"] = "run_dir_not_owned_kept"
+            report.append(self._recover_run(entry, run_id, nonce, [rec, *extra]))
+        for run_id, paths in sorted(temporaries.items()):
+            entry = {"record": paths[0].name}
+            extra, torn = self._read_temporaries(paths, run_id)
+            live = [r for r in extra if r.get("pid") is not None]
+            run_dir = self.store.root / "runs" / run_id
+            if not live and not run_dir.exists():
+                # No record, no run dir and no pid: the run was already cleaned up after a
+                # confirmed stop (or never spawned); the temporary proves nothing outstanding.
+                entry["result"] = ("orphan_temporary_removed" if self._remove_records(run_id)
+                                   else "orphan_temporary_kept")
                 report.append(entry)
                 continue
-            path.unlink(missing_ok=True)
-            entry["result"] = "recovered"
-            report.append(entry)
+            if torn or not live:
+                entry["result"] = "temporary_record_unreadable_kept"
+                report.append(entry)
+                continue
+            report.append(self._recover_run(entry, run_id, str(live[0].get("nonce", "")),
+                                            live))
         return {"records": report}
+
+    def _read_temporaries(self, paths: list[Path], run_id: str) -> tuple[list[dict], bool]:
+        records, torn = [], False
+        for path in paths:
+            try:
+                data = json.loads(path.read_text())
+                if not isinstance(data, dict) or data.get("run_id") != run_id:
+                    raise ValueError
+                records.append(data)
+            except (OSError, ValueError):
+                torn = True
+        return records, torn
+
+    def _recover_run(self, entry: dict, run_id: str, nonce: str, records: list[dict]) -> dict:
+        seen = set()
+        for rec in records:
+            pid, identity = rec.get("pid"), rec.get("identity")
+            if pid is None or (pid, identity) in seen:
+                continue
+            seen.add((pid, identity))
+            if identity is None:
+                entry["result"] = "identity_unknown_kept"  # cannot prove which process it was
+                return entry
+            outcome, terminated = self._stop_recorded(int(pid), identity, rec)
+            if terminated is not None:
+                entry["terminated_pid"] = terminated
+            if outcome != "stopped_or_gone":
+                entry["result"] = outcome  # record and run dir retained (R58)
+                return entry
+        if not self._remove_run_dir(run_id, nonce):
+            entry["result"] = "run_dir_not_owned_kept"
+            return entry
+        entry["result"] = "recovered" if self._remove_records(run_id) else "record_removal_kept"
+        return entry
 
 
 def file_sha256(path: Path) -> str:
