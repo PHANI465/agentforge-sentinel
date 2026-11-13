@@ -120,11 +120,25 @@ def declared_oversize(api: "Api", token: str, size: int) -> tuple[int, object]:
         return status, body[:200].decode("latin-1")
 
 
+def _diff(a, b, path="") -> list[str]:
+    """JSON paths where a and b differ (paths only; no values are reported)."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        out = []
+        for key in sorted(set(a) | set(b)):
+            out += _diff(a.get(key), b.get(key), f"{path}.{key}")
+        return out
+    if isinstance(a, list) and isinstance(b, list) and len(a) == len(b):
+        return [d for i, (x, y) in enumerate(zip(a, b)) for d in _diff(x, y, f"{path}[{i}]")]
+    return [] if a == b else [path or "."]
+
+
 def _normalise(analysis: dict) -> dict:
-    """Fields that legitimately differ between runs: the handle and the run's own timing."""
+    """Fields that legitimately differ between runs: the handle, the run's own timing and the
+    platform's containment kind (checked separately)."""
     out = json.loads(json.dumps(analysis))
     out.pop("handle_id", None)
     out["worker_run"].pop("elapsed_ms", None)
+    out["worker_run"].pop("containment", None)
     return out
 
 
@@ -144,7 +158,9 @@ def main() -> int:
         checks.append({"check": name, "ok": bool(ok), **detail})
         return ok
 
-    worker_python = Path(args.worker_python).resolve()
+    # absolute(), not resolve(): a POSIX venv's bin/python is a symlink to the base
+    # interpreter, and resolving it would lose the venv (and docworker) entirely.
+    worker_python = Path(args.worker_python).absolute()
     if not worker_python.is_file():
         print(f"worker interpreter not found: {worker_python}", file=sys.stderr)
         return 2
@@ -167,7 +183,8 @@ def main() -> int:
             store = tmp / "doc-store"
             init = subprocess.run([str(worker_python), "-I", "-m", "docworker", "init",
                                    "--store", str(store)], capture_output=True, timeout=120)
-            check("store_initialised", init.returncode == 0)
+            check("store_initialised", init.returncode == 0 and (store / "handles").is_dir(),
+                  returncode=init.returncode)
             service = Sentinel(url, DeterministicInvestigator())
             token = service.create_session(frozenset(ANALYST | {"analyze_document"}),
                                            ttl=timedelta(hours=1))[0]
@@ -189,7 +206,8 @@ def main() -> int:
                                    media=media), hashlib.sha256(data).hexdigest()
 
             (status, body), sha = upload("csv_statement_usd.csv", media="text/csv")
-            check("upload_csv_201", status == 201 and body.get("sha256") == sha, status=status)
+            check("upload_csv_201", status == 201 and body.get("sha256") == sha, status=status,
+                  body=body if status != 201 else None)
             handle = body.get("handle_id")
             status, analysis = api.request("POST", f"/v1/documents/{handle}/analysis", token,
                                            json_body={"records_limit": 5})
@@ -197,8 +215,12 @@ def main() -> int:
                   status=status)
             frozen = json.loads((EXAMPLES / "document_analysis_complete_paged.json")
                                 .read_text(encoding="utf-8"))["response"]
-            same = status == 200 and _normalise(analysis) == _normalise(frozen)
-            check("real_worker_matches_frozen_example", same,
+            differences = _diff(_normalise(analysis), _normalise(frozen)) if status == 200                 else ["<no analysis>"]
+            expected_containment = ("windows_job_object" if os.name == "nt"
+                                    else "posix_session_rlimits")
+            check("containment_matches_platform",
+                  analysis.get("worker_run", {}).get("containment") == expected_containment)
+            check("real_worker_matches_frozen_example", not differences, differences=differences,
                   worker_source_sha256=analysis.get("parser", {}).get("worker_source_sha256"))
             recon = (analysis.get("measures") or {}).get("reconciliation", {}).get(
                 "currencies", [])
@@ -264,6 +286,7 @@ def main() -> int:
             check("recover_clean", recover.returncode == 0 and
                   json.loads(recover.stdout or b"{}").get("records") == [])
             leftovers = {sub: sorted(p.name for p in (store / sub).iterdir())
+                         if (store / sub).is_dir() else ["<missing directory>"]
                          for sub in ("handles", "runs", "recovery")}
             check("store_empty", leftovers == {"handles": [], "runs": [], "recovery": []},
                   leftovers=leftovers)
@@ -275,7 +298,7 @@ def main() -> int:
                 check(f"no_{label}_in_api_output_or_store",
                       secret not in log_text and secret not in stored)
             check("no_traceback_in_api_output", "Traceback" not in log_text)
-            check("handles_not_logged", handle not in log_text)
+            check("handles_not_logged", handle is not None and handle not in log_text)
             if os.name != "nt":
                 left = subprocess.run(["pgrep", "-f", "docworker"], capture_output=True)
                 check("no_worker_processes_left", left.returncode == 1)
@@ -284,6 +307,11 @@ def main() -> int:
                 check("no_worker_processes_left",
                       b"docworker" not in left.stdout, note="tasklist window titles")
             report["api_log_lines"] = len(log_text.splitlines())
+            # The API's own safe-log events (route templates and codes only), for diagnosis.
+            report["api_log_events"] = [line for line in log_text.splitlines()
+                                        if line.startswith('{"event"')][-40:]
+        except Exception as exc:  # noqa: BLE001 - recorded as a failed check, never hidden
+            check("unexpected_exception", False, error_type=type(exc).__name__)
         finally:
             if api is not None:
                 api.stop()

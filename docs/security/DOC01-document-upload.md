@@ -22,6 +22,10 @@ uv run --locked sentinel create-session --with-document-analysis
 Without steps 3 and 4, every document route answers `503 document_worker_unavailable` or
 `403 permission_denied`.
 
+Configure the venv's own interpreter path exactly, without resolving symlinks. On POSIX,
+`.venv/bin/python` is a symlink to the base interpreter, and the resolved target cannot
+import `docworker`; the API would then answer 503 because its status check fails.
+
 ## Boundary
 
 - **No HTTP caller controls the worker.** The interpreter, store and pin are read from the
