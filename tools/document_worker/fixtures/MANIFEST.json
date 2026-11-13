@@ -1,0 +1,79 @@
+{
+ "fixtures": {
+  "csv_ambiguous_decimal.csv": {
+   "sha256": "9a90de1ce7b25ea8f551ddf37821c788620409664e1f2632dee67316c2cbcb52",
+   "size": 212
+  },
+  "csv_comma_decimal.csv": {
+   "sha256": "6cbaf0029bc8d33f66e65e45f04af346d31360dfb752a42fa846e3037848b1e6",
+   "size": 243
+  },
+  "csv_hostile_note.csv": {
+   "sha256": "21e8980bea7fdf11d6961d6ae078c5ebe2464757b12bbee2e8b4643ec0b51274",
+   "size": 363
+  },
+  "csv_missing_duplicates.csv": {
+   "sha256": "15302258e76b5283bfe44d61b4c0327554cbbf47814310342643a4b014b6e09e",
+   "size": 266
+  },
+  "csv_statement_mismatch.csv": {
+   "sha256": "0a3e931710cd7dac21d9539ce2f37507621570bc068b2fb2a47b8fb99c9544aa",
+   "size": 547
+  },
+  "csv_statement_usd.csv": {
+   "sha256": "db20a3e8c3cc8aed35fa2c456f034c1770c2e521fb225466c9f9e04ed5c3e5e4",
+   "size": 547
+  },
+  "csv_two_currency.csv": {
+   "sha256": "ba00d6b3d4f10ea95d2ddd7e74eb65537dd9d810f9877f36325b5093410f9082",
+   "size": 355
+  },
+  "pdf_encrypted.pdf": {
+   "sha256": "f8bf6bdf89efdb89e6df981d271c54615eff374b92624b2a23c489485fb240d4",
+   "size": 1891
+  },
+  "pdf_hostile_text.pdf": {
+   "sha256": "107e6007a5adccf5524b7104faebf4ad11173ca1b7ee635d08efb5839d38b5e5",
+   "size": 1281
+  },
+  "pdf_image_only.pdf": {
+   "sha256": "552fc5e250751924865d6b1fb59d69b3807bffc5d8fdbb4a74bf0873563f3414",
+   "size": 1109
+  },
+  "pdf_not_really.pdf": {
+   "sha256": "d15a44942028efa82e59a2880c530c5d3bdec4b0de17e14abdba5a8be410315c",
+   "size": 30
+  },
+  "pdf_scanned_mixed.pdf": {
+   "sha256": "06a0414c689099c9c778638bcb3f1ff60428f7d1cb94e61eef7fbf7802c04a7c",
+   "size": 1572
+  },
+  "pdf_text_statement.pdf": {
+   "sha256": "ca6f3b03164fe6c1735963f8e22684961b8fac7f25026d299628f2c9b4a6e1fc",
+   "size": 1658
+  },
+  "pdf_truncated.pdf": {
+   "sha256": "5e6baa3eeb57a2b1eac0bada8f34a6e180f918ad9d2fecedb683628d7c4d8192",
+   "size": 994
+  },
+  "xlsx_hostile.xlsx": {
+   "sha256": "df6fedb8c1544b9291c6677ae058779dbc4819e074e9aec14eee90da4c996538",
+   "size": 5262
+  },
+  "xlsx_macro.xlsx": {
+   "sha256": "9025b8a0c32e0eb08d487922a895e06f1804c803aa05f9e158f9cc4fd3b25ab6",
+   "size": 4309
+  },
+  "xlsx_ole_container.xlsx": {
+   "sha256": "a899fb4496afa7230c378d5be03cf3461990994993110fd2dad3257111081275",
+   "size": 512
+  },
+  "xlsx_statement.xlsx": {
+   "sha256": "f8153ea16e7f21d0c177bf736eec1bb02c53609f45d2c124f1792f097d4eb655",
+   "size": 5340
+  }
+ },
+ "generator": "fixtures/generate.py",
+ "labels_sha256": "b63772e96e655a58a4b2b442d4e9f34be0d594aeb10558d71c9c895b7347a4ee",
+ "provenance": "synthetic, invented for Sentinel DOC01; public-safe"
+}

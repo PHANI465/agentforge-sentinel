@@ -1,0 +1,4 @@
+fixtures/*.csv -text
+fixtures/*.pdf binary
+fixtures/*.xlsx binary
+fixtures/*.json -text

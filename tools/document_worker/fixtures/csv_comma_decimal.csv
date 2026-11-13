@@ -1,0 +1,7 @@
+Kontoauszug,SYNTH-0003
+,
+Date,Description,Amount,Currency,Balance
+01.04.2026,Opening balance,,EUR,"1.000,00"
+02.04.2026,Miete,"-750,00",EUR,"250,00"
+15.04.2026,Gehalt,"1.980,25",EUR,"2.230,25"
+30.04.2026,Closing balance,,EUR,"2.230,25"
