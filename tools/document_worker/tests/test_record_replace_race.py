@@ -10,8 +10,6 @@ use any temporary record that carries the only copy of a child's pid.
 import errno
 import json
 import os
-import subprocess
-import sys
 import threading
 import time
 
@@ -20,6 +18,7 @@ import pytest
 from conftest import SESSION, leftovers
 from docworker.handles import HandleStore
 from docworker.supervisor import Supervisor, process_identity
+from test_supervisor import _sleeper  # orphaned on POSIX, so init reaps it once stopped
 
 import docworker.supervisor as sv
 
@@ -101,11 +100,6 @@ def test_real_windows_reader_holding_the_record_open(store, ingest, make_supervi
 
 
 # ---- recovery of temporary records ------------------------------------------------------------
-
-def _sleeper():
-    kw = {"start_new_session": True} if os.name != "nt" else {}
-    return subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"], **kw)
-
 
 def _plant_run(store, run_id, nonce="n" * 32):
     run_dir = store.root / "runs" / run_id
