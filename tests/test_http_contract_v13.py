@@ -150,3 +150,77 @@ def test_analysis_request_defaults_never_guess():
         http_v13.AnalysisRequest(records_limit=501)
     with pytest.raises(ValueError):
         http_v13.AnalysisRequest.model_validate({"decimal_style": "dot", "file_path": "/x"})
+
+
+# ---- OpenAPI: v1.3 is v1.2 plus the document routes ---------------------------------------
+
+V12 = json.loads((HTTP / "openapi.v1.2.json").read_text(encoding="utf-8"))
+ACTIVE = json.loads((HTTP / "openapi.v1.3.json").read_text(encoding="utf-8"))
+DOC_PATHS = {"/v1/documents", "/v1/documents/{handle_id}", "/v1/documents/{handle_id}/analysis",
+             "/v1/documents/{handle_id}/records"}
+
+
+def test_v1_v11_and_v12_snapshots_are_frozen():
+    import hashlib
+    for name, digest in (("openapi.v1.json", exporter.LEGACY_V1_SHA256),
+                         ("openapi.v1.1.json", exporter.V11_SHA256),
+                         ("openapi.v1.2.json", exporter.V12_SHA256)):
+        assert hashlib.sha256((HTTP / name).read_bytes()).hexdigest() == digest, name
+    assert (V12["info"]["version"], ACTIVE["info"]["version"]) == ("1.2.0", "1.3.0")
+    assert exporter.legacy_problems() == []
+
+
+def test_active_snapshot_matches_code():
+    assert (HTTP / "openapi.v1.3.json").read_bytes() == exporter.dumps(exporter.openapi())
+
+
+def test_v13_is_v12_plus_document_routes_and_one_capability_value():
+    assert set(ACTIVE["paths"]) - set(V12["paths"]) == DOC_PATHS
+    for path, operations in V12["paths"].items():
+        assert ACTIVE["paths"][path] == operations, path
+    old, new = V12["components"]["schemas"], ACTIVE["components"]["schemas"]
+    for name, schema in old.items():
+        if name == "SessionView":
+            continue
+        assert new[name] == schema, name  # byte-for-byte identical
+    old_caps = old["SessionView"]["properties"]["capabilities"]["items"]["enum"]
+    new_caps = new["SessionView"]["properties"]["capabilities"]["items"]["enum"]
+    assert set(new_caps) - set(old_caps) == {"analyze_document"} and set(old_caps) <= set(new_caps)
+    sv_old = dict(old["SessionView"], properties={k: v for k, v in
+                                                   old["SessionView"]["properties"].items()
+                                                   if k != "capabilities"})
+    sv_new = dict(new["SessionView"], properties={k: v for k, v in
+                                                   new["SessionView"]["properties"].items()
+                                                   if k != "capabilities"})
+    assert sv_old == sv_new
+    assert ACTIVE["components"]["securitySchemes"] == V12["components"]["securitySchemes"]
+
+
+def test_document_routes_are_bearer_typed_and_upload_is_raw_bytes():
+    upload = ACTIVE["paths"]["/v1/documents"]["post"]
+    content = upload["requestBody"]["content"]
+    assert "multipart/form-data" not in content
+    assert set(content) == {"application/octet-stream", "application/pdf", "text/csv",
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+    assert all(c["schema"] == {"type": "string", "format": "binary"} for c in content.values())
+    params = {(p["in"], p["name"]): p for p in upload["parameters"]}
+    assert set(params) == {("query", "format")} and params[("query", "format")]["required"]
+    for path in DOC_PATHS:
+        for method, op in ACTIVE["paths"][path].items():
+            assert op["security"] == [{"bearer": []}], (path, method)
+            for status in ("401", "403", "404", "503"):
+                schema = op["responses"][status]["content"]["application/json"]["schema"]
+                assert schema == {"$ref": "#/components/schemas/ErrorResponse"}, (path, status)
+    analysis = ACTIVE["paths"]["/v1/documents/{handle_id}/analysis"]["post"]
+    assert analysis["requestBody"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/AnalysisRequest"}
+
+
+def test_new_components_carry_no_identity_or_secret_fields():
+    forbidden = {"scope", "tenant_id", "session_id", "principal_id", "token", "password",
+                 "prompt", "api_key", "authorization", "path", "filename", "uri", "url"}
+    new = set(ACTIVE["components"]["schemas"]) - set(V12["components"]["schemas"])
+    assert {"DocumentAnalysis", "DocumentUpload", "RecordPage", "AnalysisRequest"} <= new
+    for name in new:
+        properties = set(ACTIVE["components"]["schemas"][name].get("properties", {}))
+        assert not properties & forbidden, (name, properties & forbidden)

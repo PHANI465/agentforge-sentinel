@@ -76,7 +76,7 @@ def main(out_dir: str) -> int:
                 data)
     (out / "bridge_recorded.json").write_text(
         json.dumps(recorded, indent=1, sort_keys=True, ensure_ascii=False) + "\n",
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
     print(f"recorded {len(CASES)} fixtures with worker {status['worker_source_sha256'][:12]}")
     return 0
 

@@ -1,12 +1,13 @@
 """HTTP boundary. Bodies are validated here with code-only errors; identity comes only from
 the bearer token lookup, never from a request or model payload. Response shapes are the
 typed HTTP v1 contract (sentinel.contracts.http_v1, docs/api/README.md) and its additive
-revisions (http_v12: docs/api/investigation-trace-v1.2.md).
+revisions (http_v12: docs/api/investigation-trace-v1.2.md; http_v13: docs/api/documents-v1.3.md).
 """
 from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 import uuid
 
@@ -21,11 +22,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.routing import Match
 
 from sentinel import investigators, model_results, scorers, trace
+from sentinel.contracts import http_v13
 from sentinel.contracts.http_v1 import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, CaseDetail, CasePage, CaseState, ErrorResponse,
     ExecuteResponse, Health, IngestResponse, ModelResults, Overview, ScorerInfo, SessionView,
 )
 from sentinel.contracts.http_v12 import InvestigationTrace
+from sentinel.documents import DocumentService
 from sentinel.contracts.v1 import (
     Approval, ApprovalDecisionInput, AuditEvent, ExecuteActionInput, InvestigationRequestInput,
     TransactionInput, TrustedContext, safe_validation_errors,
@@ -38,25 +41,40 @@ from sentinel.service import MAX_CURSOR_LENGTH, Sentinel, ServiceError
 HTTP_LOG = logging.getLogger("sentinel.http")
 
 MAX_BODY_BYTES = 16_384
-# v1.2 (G3C-A): additive investigation trace; v1 and v1.1 snapshots frozen in contracts/http
-API_VERSION = "1.2.0"
+# v1.3 (DOC01 Part B): additive local document upload/analysis; v1, v1.1 and v1.2 snapshots
+# are frozen in contracts/http (decision 0010).
+API_VERSION = "1.3.0"
 _ERRORS = {status: {"model": ErrorResponse} for status in (401, 403, 404, 409, 413, 422)}
+_DOC_ERRORS = {status: {"model": ErrorResponse}
+               for status in (401, 403, 404, 413, 415, 422, 502, 503, 504)}
 # operation_id -> request model; bodies are read manually (size limit, code-only errors).
 REQUEST_BODIES: dict[str, type[BaseModel]] = {
     "ingest_transaction": TransactionInput, "investigate_case": InvestigationRequestInput,
     "record_approval": ApprovalDecisionInput, "execute_action": ExecuteActionInput,
+    "analyze_document": http_v13.AnalysisRequest,
 }
+# Raw-byte upload: the format's own media type or a generic octet stream; never multipart.
+DOCUMENT_MEDIA_TYPES = {
+    "csv": {"text/csv"}, "pdf": {"application/pdf"},
+    "xlsx": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}}
+GENERIC_MEDIA_TYPE = "application/octet-stream"
 
 
-def create_app(service: Sentinel | None = None) -> FastAPI:
+def create_app(service: Sentinel | None = None,
+               documents: DocumentService | None = None) -> FastAPI:
     if service is None:
         service = Sentinel(os.environ["SENTINEL_DATABASE_URL"], investigators.from_environment(),
                            scorer=scorers.from_environment())
+    if documents is None:
+        # Opt-in: without a registered worker and store every document route answers 503.
+        documents = DocumentService.from_environment()
     app = FastAPI(title="AgentForge Sentinel", version=API_VERSION, docs_url=None,
                   redoc_url=None)
     app.state.service = service
+    app.state.documents = documents
     app.state.metrics = Metrics()
     service.metrics = app.state.metrics
+    documents.metrics = app.state.metrics
     configure_logging()
     app.add_middleware(RequestContext, metrics=app.state.metrics, router=app.router)
 
@@ -180,8 +198,69 @@ def create_app(service: Sentinel | None = None) -> FastAPI:
         return await run_in_threadpool(service.execute_action, ctx,
                                        await body(request, ExecuteActionInput))
 
+    # ---- v1.3: local documents (DOC01 Part B; docs/api/documents-v1.3.md) ----------------
+
+    def authenticated(token: str = Depends(bearer)) -> tuple[TrustedContext, str]:
+        # The token is needed only to derive the per-session document owner key in memory.
+        return service.authenticate(token), token
+
+    @app.post("/v1/documents", status_code=201, response_model=http_v13.DocumentUpload,
+              responses=_DOC_ERRORS, operation_id="upload_document",
+              openapi_extra={"requestBody": {"required": True, "content": {
+                  media: {"schema": {"type": "string", "format": "binary"}}
+                  for media in sorted({GENERIC_MEDIA_TYPE}.union(*DOCUMENT_MEDIA_TYPES.values()))
+              }}})
+    async def upload_document(request: Request,
+                              format: http_v13.DocumentFormat = Query(),  # noqa: A002
+                              auth: tuple[TrustedContext, str] = Depends(authenticated)):
+        """Raw file bytes; the format is declared, never inferred from a filename."""
+        ctx, token = auth
+        if "analyze_document" not in ctx.capabilities:
+            raise ServiceError("permission_denied", 403)
+        media = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+        if media != GENERIC_MEDIA_TYPE and media not in DOCUMENT_MEDIA_TYPES[format]:
+            raise ServiceError("unsupported_media_type", 415)
+        data = await read_limited(request, http_v13.MAX_UPLOAD_BYTES)
+        if not data:
+            raise ServiceError("invalid_request", 422)
+        return await run_in_threadpool(documents.upload, ctx, token, format, data)
+
+    @app.post("/v1/documents/{handle_id}/analysis", response_model=http_v13.DocumentAnalysis,
+              responses=_DOC_ERRORS, operation_id="analyze_document")
+    async def analyze_document(handle_id: str, request: Request,
+                               auth: tuple[TrustedContext, str] = Depends(authenticated)):
+        """Runs the registered worker's bounded parser; the parser may block, so this runs
+        off the event loop. A document that cannot be read is a 200 with status error."""
+        ctx, token = auth
+        if "analyze_document" not in ctx.capabilities:
+            raise ServiceError("permission_denied", 403)
+        if not DOCUMENT_HANDLE.match(handle_id):
+            raise ServiceError("not_found", 404)
+        data = await body(request, http_v13.AnalysisRequest)
+        return await run_in_threadpool(documents.analyze, ctx, token, handle_id, data)
+
+    @app.get("/v1/documents/{handle_id}/records", response_model=http_v13.RecordPage,
+             responses=_DOC_ERRORS, operation_id="get_document_records")
+    def get_document_records(handle_id: str,
+                             offset: int = Query(0, ge=0, le=10_000_000),
+                             limit: int = Query(http_v13.DEFAULT_RECORDS_LIMIT, ge=1,
+                                                le=http_v13.MAX_RECORDS_LIMIT),
+                             auth: tuple[TrustedContext, str] = Depends(authenticated)):
+        ctx, token = auth
+        return documents.records(ctx, token, handle_id, offset, limit)
+
+    @app.delete("/v1/documents/{handle_id}", response_model=http_v13.DocumentDeleted,
+                responses=_DOC_ERRORS, operation_id="delete_document")
+    def delete_document(handle_id: str,
+                        auth: tuple[TrustedContext, str] = Depends(authenticated)):
+        ctx, token = auth
+        return documents.delete(ctx, token, handle_id)
+
     app.openapi = lambda: openapi_document(app)
     return app
+
+
+DOCUMENT_HANDLE = re.compile(r"^h_[A-Za-z0-9_-]{22}$")
 
 
 def openapi_document(app: FastAPI) -> dict:

@@ -73,6 +73,14 @@ class AnalysisRequest(HttpBody):
     records_limit: Annotated[int, Field(ge=1, le=MAX_RECORDS_LIMIT)] = DEFAULT_RECORDS_LIMIT
 
 
+class AppliedOptions(HttpBody):
+    """The assumptions an analysis actually used (all present; nothing defaulted here)."""
+    decimal_style: Literal["unspecified", "dot", "comma"]
+    date_order: Literal["iso_only", "dmy", "mdy"]
+    default_currency: CurrencyCode | None
+    records_limit: Annotated[int, Field(ge=1, le=MAX_RECORDS_LIMIT)]
+
+
 # ---- evidence and records --------------------------------------------------------------------
 
 class Locator(HttpBody):
@@ -161,7 +169,7 @@ class ParserIdentity(HttpBody):
                               Annotated[str, Field(max_length=64)] | None],
                          Field(max_length=16)] = Field(description=(
         "Installed parser library versions in the registered worker environment."))
-    options: AnalysisRequest = Field(description="The assumptions this analysis used.")
+    options: AppliedOptions = Field(description="The assumptions this analysis used.")
 
 
 class DocumentUnit(HttpBody):

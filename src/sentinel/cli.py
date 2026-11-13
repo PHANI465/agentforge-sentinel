@@ -13,6 +13,8 @@ from sentinel.service import Sentinel
 
 ALL_CAPABILITIES = ("ingest_transaction", "read_case", "approve_action",
                     "execute_simulated_action")
+# Opt-in only (DOC01 Part B): never part of the default grant above.
+DOCUMENT_CAPABILITY = "analyze_document"
 DEV_DIR = Path(".agent/devdb")
 
 
@@ -23,6 +25,9 @@ def main(argv: list[str] | None = None) -> int:
     session = commands.add_parser("create-session", help="issue a local analyst bearer token")
     session.add_argument("--capability", action="append", choices=ALL_CAPABILITIES,
                          help="repeatable; defaults to all analyst capabilities")
+    session.add_argument("--with-document-analysis", action="store_true",
+                         help="also grant the opt-in analyze_document capability (local "
+                              "synthetic/public files only; needs a registered worker)")
     session.add_argument("--hours", type=int, default=8)
     grant = commands.add_parser("grant-runtime", help="create/refresh the least-privilege "
                                 "API role (run as the schema owner)")
@@ -73,8 +78,10 @@ def main(argv: list[str] | None = None) -> int:
         print("Applied: " + (", ".join(applied) if applied else "nothing pending"))
         return 0
     service = Sentinel(url, from_environment())
-    token, ctx = service.create_session(frozenset(args.capability or ALL_CAPABILITIES),
-                                        ttl=timedelta(hours=args.hours))
+    grants = set(args.capability or ALL_CAPABILITIES)
+    if args.with_document_analysis:
+        grants.add(DOCUMENT_CAPABILITY)
+    token, ctx = service.create_session(frozenset(grants), ttl=timedelta(hours=args.hours))
     print(f"tenant={ctx.scope.tenant_id} session={ctx.scope.session_id} actor={ctx.actor_id}")
     print(f"token={token}")
     return 0
