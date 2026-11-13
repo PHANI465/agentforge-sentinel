@@ -48,9 +48,10 @@ SCHEMA = "sentinel.demo01.recorded-replay.v1"
 DATABASE = "sentinel_demo01"
 RUNTIME_ROLE = "sentinel_demo01_runtime"
 # The application the capture was taken from; the capture records whether src/ equals it.
-# Was accepted G3D-P3 495c7d3. DOC01 Part B candidate 1754128 changes src/ (v1.3 document
-# routes), so the capture is retaken against it; pending Codex review and integration.
-TESTED_APPLICATION = "17541281dcf59b1c6134420cd672c9c05018bd73"
+# Was accepted G3D-P3 495c7d3. DOC01 Part B changes src/ (v1.3 document routes, then the
+# R60-R63 corrections at cfa94ab), so the capture is retaken against that source; pending
+# Codex review and integration.
+TESTED_APPLICATION = "cfa94abc16d60daa922a2216669a30cb54f0fb4d"
 # Paths whose working-tree state must be committed for a capture to name its source commit.
 GENERATOR_PATHS = ("src", "scripts", "contracts", "pyproject.toml", "uv.lock")
 # Freshness inputs (R48): the generator and the application whose behaviour the capture
