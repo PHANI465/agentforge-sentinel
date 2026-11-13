@@ -296,6 +296,25 @@ else:
                 members.append(pid)
         return sorted(members)
 
+    def _group_exists(pgid: int) -> bool | None:
+        """Kernel answer, taken after the /proc scan, to whether any process (live or zombie)
+        is in the group. Signal 0 is an existence/permission query only: nothing is sent.
+
+        A /proc snapshot alone cannot prove emptiness: a member can fork a new member after
+        the listing and then exit (review DOC01-7ec46ae). ESRCH proves the group empty;
+        EPERM means a process exists that we may not signal (inaccessible or reused id);
+        any other error is unknown.
+        """
+        try:
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        except OSError:
+            return None
+        return True
+
     def kill_group(pgid: int) -> None:
         try:
             os.killpg(pgid, signal.SIGKILL)
@@ -571,7 +590,15 @@ class Supervisor:
         if os.name == "nt" or pgid is None:
             return True  # Windows: one-process job, killed on close; no group to track
         members = group_members(pgid)
-        return None if members is None else not members
+        if members is None:
+            return None
+        if members:
+            return False
+        # The scan saw no live member. Confirm at the kernel boundary, after the scan, so a
+        # member forked after the listing still counts. A zombie-only group also answers
+        # "exists" and is kept conservatively until it is reaped.
+        exists = _group_exists(pgid)
+        return None if exists is None else not exists
 
     def _stop_recorded(self, pid: int, identity: str, rec: dict) -> tuple[str, int | None]:
         """Stop a recorded child only when its identity is proven; confirm its group is empty.

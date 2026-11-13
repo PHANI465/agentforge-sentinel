@@ -11,7 +11,7 @@ import pytest
 from conftest import SESSION, fake_argv, leftovers
 from docworker.handles import HandleStore
 from docworker.supervisor import Supervisor, process_identity
-from test_supervisor import _plant_record
+from test_supervisor import Orphan, _plant_record
 
 posix_only = pytest.mark.skipif(
     os.name == "nt", reason="POSIX process groups; on Windows the parser runs in a job with one "
@@ -40,10 +40,16 @@ def _pgid(pid):
         return None
 
 
-def _start_group(leader_seconds: float):
-    leader = subprocess.Popen([sys.executable, "-c", LEADER, str(leader_seconds)],
-                              start_new_session=True, stdout=subprocess.PIPE, text=True)
-    member = int(leader.stdout.readline())
+def _start_group(leader_seconds: float, orphan: bool = False):
+    """orphan=True reparents the leader to init (as after a supervisor crash) so that once it
+    dies it is reaped and its group can really empty; otherwise it is the test's child."""
+    if orphan:
+        leader, out = Orphan.spawn([sys.executable, "-c", LEADER, str(leader_seconds)])
+    else:
+        leader = subprocess.Popen([sys.executable, "-c", LEADER, str(leader_seconds)],
+                                  start_new_session=True, stdout=subprocess.PIPE, text=True)
+        out = leader.stdout
+    member = int(out.readline())
     assert _wait(lambda: process_identity(leader.pid) and process_identity(member))
     return leader, member
 
@@ -83,7 +89,7 @@ def test_r58_leader_exited_member_alive_is_kept_not_recovered(store):
 
 @posix_only
 def test_r58_live_leader_and_member_are_stopped_and_confirmed(store):
-    leader, member = _start_group(120)
+    leader, member = _start_group(120, orphan=True)
     member_identity = process_identity(member)
     try:
         _plant_record(store, leader.pid, process_identity(leader.pid))
@@ -146,7 +152,7 @@ def test_r58_member_surviving_the_group_kill_keeps_the_record(store, monkeypatch
     """If the group cannot be confirmed empty after stopping a verified leader, nothing is
     reported recovered and the record and owned run dir stay for a later retry."""
     import docworker.supervisor as sv
-    leader, member = _start_group(120)
+    leader, member = _start_group(120, orphan=True)
     member_identity = process_identity(member)
     try:
         run_id = _plant_record(store, leader.pid, process_identity(leader.pid))

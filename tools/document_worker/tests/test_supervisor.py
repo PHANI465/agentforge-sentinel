@@ -1,6 +1,7 @@
 """Bounded child lifecycle: limits, verified stop, cleanup, unconfirmed stop and recovery."""
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -162,8 +163,57 @@ def _plant_record(store, pid, identity, nonce="n" * 32, marker_nonce=None):
 
 
 def _sleeper():
-    kw = {"start_new_session": True} if os.name != "nt" else {}
-    return subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"], **kw)
+    if os.name != "nt":
+        return Orphan.spawn([sys.executable, "-c", "import time; time.sleep(120)"])[0]
+    return subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"])
+
+
+# A short-lived intermediate starts argv as a new session leader, reports its pid and exits,
+# so the leader is reparented to init exactly as after a supervisor crash. Init reaps it when
+# it dies, so its group really empties; an unreaped zombie child of the test process would
+# (correctly) keep its group in existence (review DOC01-7ec46ae).
+_SPAWN = ("import subprocess, sys\n"
+          "p = subprocess.Popen(sys.argv[1:], start_new_session=True)\n"
+          "print('leader', p.pid, file=sys.stderr, flush=True)\n")
+
+
+class Orphan:
+    """Handle for an orphaned process: identity-checked, never signalled once reused."""
+
+    def __init__(self, pid):
+        self.pid = pid
+        deadline = time.monotonic() + 10
+        while process_identity(pid) is None and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.identity = process_identity(pid)
+        assert self.identity is not None
+
+    @classmethod
+    def spawn(cls, argv):
+        """Start argv orphaned; return (Orphan, the pipe the leader may write lines to)."""
+        # The intermediate reports on stderr; the leader's own lines arrive on stdout, so the
+        # two can never interleave.
+        mid = subprocess.Popen([sys.executable, "-c", _SPAWN, *argv], stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, text=True)
+        line = mid.stderr.readline().split()
+        assert line[0] == "leader", line
+        mid.wait(timeout=10)
+        return cls(int(line[1])), mid.stdout
+
+    def poll(self):
+        return None if process_identity(self.pid) == self.identity else 0
+
+    def wait(self, timeout=10):
+        deadline = time.monotonic() + timeout
+        while self.poll() is None:
+            if time.monotonic() > deadline:
+                raise subprocess.TimeoutExpired(str(self.pid), timeout)
+            time.sleep(0.02)
+        return 0
+
+    def kill(self):
+        if self.poll() is None:
+            os.kill(self.pid, signal.SIGKILL)
 
 
 def test_recover_kills_only_a_verified_owned_process(store):
@@ -176,6 +226,7 @@ def test_recover_kills_only_a_verified_owned_process(store):
         report = Supervisor(store).recover()
         assert [r["result"] for r in report["records"]] == ["recovered"]
         assert proc.wait(timeout=10) is not None
+        assert proc.poll() is not None
     finally:
         if proc.poll() is None:
             proc.kill()
