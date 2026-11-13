@@ -309,8 +309,11 @@ def main() -> int:
             leftovers = {sub: sorted(p.name for p in (store / sub).iterdir())
                          if (store / sub).is_dir() else ["<missing directory>"]
                          for sub in ("handles", "runs", "recovery")}
-            check("store_empty", leftovers == {"handles": [], "runs": [], "recovery": []},
-                  leftovers=leftovers)
+            bridge_dir = store / "api-bridge"  # the API's own bridge evidence (R62)
+            leftovers["api-bridge"] = (sorted(p.name for p in bridge_dir.iterdir())
+                                       if bridge_dir.is_dir() else [])
+            check("store_empty", leftovers == {"handles": [], "runs": [], "recovery": [],
+                                               "api-bridge": []}, leftovers=leftovers)
             log_text = api_log.read_text(encoding="utf-8", errors="replace")
             stored = "".join(p.read_text(errors="ignore") for p in store.rglob("*")
                              if p.is_file())

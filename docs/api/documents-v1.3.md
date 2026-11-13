@@ -122,14 +122,40 @@ unregistered worker. The API therefore also marks recovery pending, and the next
 is refused until a recovery pass keeps nothing. Restarting the API registers again: it
 fails closed with a pin, and without one it registers the worker now on disk.
 
-**Uncertain bridge stop.** When a bridge exceeds its bound, the API kills that bridge
-process and waits to confirm its exit.
+**Durable bridge evidence and uncertain stops** (R62; follow-up to review aca58f2). Every
+bridge call keeps a record, `<store>/api-bridge/bridge-<nonce>.json`. It holds no token or
+path, only:
 
-- If the kill fails, or exit cannot be confirmed, the API writes the bridge's pid and its
-  creation identity to `<store>/api-bridge/bridge-<pid>.json`. That file holds no token or
-  path. The API marks recovery pending and answers `504 document_worker_timeout`.
-- Recovery runs on the next analysis, including after an API restart. It stops the process
-  only while its identity still matches the record, and confirms the exit.
-- A reused pid, which now names another process, is never signalled; the record is
-  cleared. An unreadable record, or a live process without a recorded identity, keeps
-  analysis refused (`503 document_worker_recovery_pending`).
+- the operation;
+- the owning API process's pid and creation identity;
+- after launch, the bridge's own pid and creation identity.
+
+The record moves through these steps:
+
+1. A *launch intent* (no pid) is written atomically before the bridge starts. If it cannot
+   be written, nothing is launched and the request fails closed with
+   `503 document_worker_unavailable`.
+2. The bridge's pid and creation identity are written right after launch. A failed write or
+   replace is retried once under a fresh temporary name. A temporary that holds the pid is
+   kept as evidence if its replace fails.
+3. If no complete pid record can be written, the bridge is stopped before the request
+   returns. If that stop cannot be confirmed, the launch intent and any pid temporary stay,
+   and recovery is pending. The answer is `503 document_worker_unavailable`.
+4. A bridge that exceeds its bound is killed and its exit confirmed. If that cannot be
+   confirmed, the record stays (marked `stop_unconfirmed`), recovery is pending and the
+   answer is `504 document_worker_timeout`.
+5. A completed or confirmed-stopped call removes its record.
+
+**Recovery** reads records **and** their temporaries, grouped per call, before the next
+analysis and after an API restart. It skips this process's running calls, and calls owned
+by another API process that is verifiably still alive. Then:
+
+- A process lookup is one of four states: confirmed gone; live with the recorded identity;
+  live with a different identity (the pid was reused); or unknown.
+- Unknown covers an inaccessible Windows process, a Linux permission or I/O error,
+  malformed `/proc` data, and no `/proc` at all (for example macOS).
+- Only "confirmed gone" or "reused" clears a record. A process still verified as the
+  recorded one is stopped and its exit confirmed.
+- Unknown state, an unreadable file, or a launch intent without any pid evidence keeps the
+  record. Analysis stays `503 document_worker_recovery_pending`, and nothing is signalled.
+  An operator may remove such a record after confirming no bridge from it is running.

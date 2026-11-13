@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import subprocess
+import secrets
 import threading
 import time
 from dataclasses import dataclass
@@ -70,7 +71,11 @@ class _BridgeFault(Exception):
         self.kind = kind  # timeout | crashed | invalid | launch | identity
 
 
-# ---- process identity (R62): a pid is acted on only while its creation identity matches ----
+# ---- process state (R62): a pid is acted on only while its creation identity matches ------
+# GONE is confirmed absence. LIVE comes with the creation identity, so a different identity
+# means the pid was reused. UNKNOWN (inaccessible, unreadable, malformed or unsupported) is
+# never treated as gone and never signalled.
+GONE, LIVE, UNKNOWN = "gone", "live", "unknown"
 
 if os.name == "nt":
     import ctypes
@@ -80,26 +85,33 @@ if os.name == "nt":
     _k32.OpenProcess.restype = wintypes.HANDLE
     _k32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
     _QUERY, _TERMINATE, _STILL_ACTIVE = 0x1000, 0x0001, 259
+    _ERROR_INVALID_PARAMETER = 87  # OpenProcess: no process has this id
 
-    def process_identity(pid: int) -> str | None:
-        """Creation time of a live process; None if it is gone or cannot be opened."""
-        handle = _k32.OpenProcess(_QUERY, False, pid)
+    def _open_process(pid: int, access: int):
+        handle = _k32.OpenProcess(access, False, pid)
+        return (handle, 0) if handle else (None, ctypes.get_last_error())
+
+    def process_state(pid: int) -> tuple[str, str | None]:
+        handle, error = _open_process(pid, _QUERY)
         if not handle:
-            return None
+            # Only "no such process" is absence; access denied and anything else are unknown.
+            return (GONE, None) if error == _ERROR_INVALID_PARAMETER else (UNKNOWN, None)
         try:
             code = wintypes.DWORD()
-            if not _k32.GetExitCodeProcess(handle, ctypes.byref(code)) \
-                    or code.value != _STILL_ACTIVE:
-                return None
+            if not _k32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return UNKNOWN, None
+            if code.value != _STILL_ACTIVE:
+                return GONE, None  # exited (the object outlives it only while referenced)
             times = [wintypes.FILETIME() for _ in range(4)]
             if not _k32.GetProcessTimes(handle, *[ctypes.byref(t) for t in times]):
-                return None
-            return f"win-created:{(times[0].dwHighDateTime << 32) | times[0].dwLowDateTime}"
+                return UNKNOWN, None
+            created = (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
+            return LIVE, f"win-created:{created}"
         finally:
             _k32.CloseHandle(handle)
 
     def _terminate_pid(pid: int) -> None:
-        handle = _k32.OpenProcess(_TERMINATE, False, pid)
+        handle, _error = _open_process(pid, _TERMINATE)
         if handle:
             try:
                 _k32.TerminateProcess(handle, 1)
@@ -108,22 +120,40 @@ if os.name == "nt":
 else:
     import signal
 
-    def process_identity(pid: int) -> str | None:
-        """Start time from /proc; None if gone, a zombie, or unreadable/unsupported."""
+    PROC_ROOT = "/proc"
+
+    def _read_proc_stat(pid: int) -> str:
+        with open(f"{PROC_ROOT}/{pid}/stat", encoding="ascii", errors="replace") as fh:
+            return fh.read()
+
+    def process_state(pid: int) -> tuple[str, str | None]:
+        if not os.path.isdir(PROC_ROOT):
+            return UNKNOWN, None  # no /proc (macOS and others): cannot tell, so keep
         try:
-            raw = open(f"/proc/{pid}/stat", encoding="ascii", errors="replace").read()
-            fields = raw.rpartition(")")[2].split()
+            raw = _read_proc_stat(pid)
+        except (FileNotFoundError, ProcessLookupError):
+            return GONE, None
         except OSError:
-            return None
-        if len(fields) < 20 or fields[0] == "Z":
-            return None
-        return f"linux-start:{fields[19]}"
+            return UNKNOWN, None  # permission or I/O error: maybe alive
+        _head, sep, tail = raw.rpartition(")")
+        fields = tail.split()
+        if not sep or len(fields) < 20 or not fields[19].isdigit():
+            return UNKNOWN, None
+        if fields[0] == "Z":
+            return GONE, None  # exited; a zombie's pid cannot be reused until it is reaped
+        return LIVE, f"linux-start:{fields[19]}"
 
     def _terminate_pid(pid: int) -> None:
         try:
             os.kill(pid, signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
             pass
+
+
+def process_identity(pid: int) -> str | None:
+    """The creation identity of a live process, or None when gone or unknown."""
+    state, identity = process_state(pid)
+    return identity if state == LIVE else None
 
 
 @dataclass(frozen=True)
@@ -183,6 +213,17 @@ def _handle(handle_id: str) -> str:
     return handle_id
 
 
+_OPS = ("status", "ingest", "analyze", "records", "delete", "recover")
+
+
+def _unlink(path) -> bool:
+    try:
+        path.unlink(missing_ok=True)
+        return True
+    except OSError:
+        return False
+
+
 class DocumentService:
     def __init__(self, config: WorkerConfig | None, metrics=None):
         self.config = config
@@ -192,6 +233,8 @@ class DocumentService:
         self._identity: dict | None = None
         self._registered: str | None = None  # worker source digest bound at registration
         self._recovery_pending = True  # recover once before the first analysis
+        self._inflight: set[str] = set()  # this process's own running bridge calls
+        self._owner = {"owner_pid": os.getpid(), "owner_identity": process_identity(os.getpid())}
 
     @classmethod
     def from_environment(cls) -> "DocumentService":
@@ -207,14 +250,46 @@ class DocumentService:
             # The bridge refuses before doing anything if it is not this worker (R63).
             header = dict(header, expect_source_sha256=expected)
         line = (json.dumps({"protocol": BRIDGE_PROTOCOL, **header}) + "\n").encode("utf-8")
+        nonce = secrets.token_hex(8)
+        with self._state_lock:
+            self._inflight.add(nonce)
+        try:
+            return self._run_bridge(config, nonce, header.get("op"), line, body, owner,
+                                    timeout, expected)
+        finally:
+            with self._state_lock:
+                self._inflight.discard(nonce)
+
+    def _run_bridge(self, config, nonce, op, line, body, owner, timeout, expected) -> dict:
+        """One bridge process with durable evidence (R62). A launch intent is written before
+        the process starts, and its pid and creation identity right after; if no durable
+        evidence can be kept, the process is stopped before the request returns."""
+        base = {"nonce": nonce, "op": op if op in _OPS else "unknown", **self._owner}
+        if not self._write_record(nonce, dict(base, state="launching", pid=None,
+                                              identity=None)):
+            raise _BridgeFault("evidence")  # nothing launched
         try:
             proc = subprocess.Popen([*config.argv, "--store", config.store],
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, env=_bridge_env(owner),
                                     cwd=config.store, close_fds=True)
         except OSError:
+            self._remove_records(nonce)
             raise _BridgeFault("launch") from None
         launched = process_identity(proc.pid)  # before any reuse of the pid is possible
+        running = dict(base, state="running", pid=proc.pid, identity=launched)
+        if not self._write_record(nonce, running):
+            # No durable pid evidence: stop it now so it cannot outlive this request.
+            for stream in (proc.stdin, proc.stdout, proc.stderr):
+                try:
+                    stream.close()
+                except OSError:
+                    pass
+            if self._stop_bridge(proc):
+                self._remove_records(nonce)
+            else:
+                self._mark_pending("bridge")  # launch intent (and any pid temporary) stays
+            raise _BridgeFault("evidence")
         out, err, exceeded = bytearray(), bytearray(), threading.Event()
 
         def read(stream, buffer, cap, flag=None):
@@ -246,12 +321,17 @@ class DocumentService:
         try:
             proc.wait(timeout=timeout or config.call_timeout_seconds)
         except subprocess.TimeoutExpired:
-            if not self._stop_bridge(proc):
-                self._record_bridge(proc.pid, launched, header.get("op"))
+            if self._stop_bridge(proc):
+                self._remove_records(nonce)
+            else:
+                # The running record already holds the pid; mark it best effort.
+                self._write_record(nonce, dict(running, state="stop_unconfirmed"))
+                self._mark_pending("bridge")
             raise _BridgeFault("timeout") from None
         finally:
             for thread in threads:
                 thread.join(timeout=5)
+        self._remove_records(nonce)  # exited and reaped: a leftover is cleared by recovery
         if exceeded.is_set():
             raise _BridgeFault("invalid")
         if proc.returncode != 0:
@@ -287,23 +367,41 @@ class DocumentService:
         from pathlib import Path
         return Path(self.config.store) / BRIDGE_RECORD_DIR
 
-    def _record_bridge(self, pid: int, identity: str | None, op) -> None:
-        """Keep the exact process identity so recovery, even after an API restart, can
-        verify it before acting; analysis stays refused until it is confirmed gone."""
+    def _mark_pending(self, outcome: str) -> None:
         with self._state_lock:
             self._recovery_pending = True
-        try:
-            folder = self._record_folder()
-            folder.mkdir(exist_ok=True)
-            tmp = folder / f"bridge-{pid}.json.tmp"
-            tmp.write_text(json.dumps({"pid": pid, "identity": identity,
-                                       "op": op if op in ("status", "ingest", "analyze",
-                                                          "records", "delete", "recover")
-                                       else "unknown", "recorded_at": time.time()}))
-            os.replace(tmp, folder / f"bridge-{pid}.json")
-        except OSError:
-            pass  # still pending in memory; nothing else can be done safely here
-        self._event("document_worker_stop_uncertain", outcome="bridge")
+        self._event("document_worker_stop_uncertain", outcome=outcome)
+
+    def _write_record(self, nonce: str, data: dict) -> bool:
+        """Atomically write bridge-<nonce>.json; two attempts with fresh temporary names.
+        A temporary that carries a pid is kept if its replace fails: recovery reads it as
+        evidence. Returns False if no complete record could be made durable."""
+        folder = self._record_folder()
+        target = folder / f"bridge-{nonce}.json"
+        payload = json.dumps(dict(data, recorded_at=time.time()))
+        for _attempt in range(2):
+            tmp = folder / f"bridge-{nonce}.json.{secrets.token_hex(4)}.tmp"
+            try:
+                folder.mkdir(exist_ok=True)
+                tmp.write_text(payload)
+            except OSError:
+                _unlink(tmp)
+                continue
+            try:
+                os.replace(tmp, target)
+                return True
+            except OSError:
+                if data.get("pid") is None:
+                    _unlink(tmp)
+        return False
+
+    def _remove_records(self, nonce: str) -> bool:
+        folder = self._record_folder()
+        ok = True
+        for path in [folder / f"bridge-{nonce}.json",
+                     *folder.glob(f"bridge-{nonce}.json.*.tmp")]:
+            ok = _unlink(path) and ok
+        return ok
 
     def _event(self, event: str, outcome: str, failure_code: str | None = None) -> None:
         """Safe-log fields only (observability allowlist): fixed or sanitised tokens."""
@@ -321,7 +419,7 @@ class DocumentService:
             with self._state_lock:
                 self._recovery_pending = True
         return ServiceError(*(TIMEOUT if fault.kind == "timeout" else
-                              UNAVAILABLE if fault.kind == "launch" else
+                              UNAVAILABLE if fault.kind in ("launch", "evidence") else
                               IDENTITY_CHANGED if fault.kind == "identity" else FAILED))
 
     # ---- readiness and recovery ------------------------------------------------------------
@@ -349,37 +447,85 @@ class DocumentService:
         self._registered = answer["worker_source_sha256"]  # every later call must match
 
     def _recover_bridges(self) -> int:
-        """Verify recorded bridge processes; returns how many must still be kept."""
+        """Verify recorded bridge processes; returns how many groups must still be kept.
+
+        Records and their temporaries are grouped per call. A group is skipped while it is
+        this process's own running call, or owned by another API process that is verifiably
+        still alive. Otherwise every recorded pid must be confirmed gone (or reused by a
+        different process) before the group is removed. A pid still verified as the recorded
+        process is stopped, and its exit confirmed. Unknown state, an unreadable file or a
+        launch intent with no pid evidence keeps the group and sends no signal.
+        """
         folder = self._record_folder()
         if not folder.is_dir():
             return 0
+        groups: dict[str, list] = {}
+        for path in sorted(folder.glob("bridge-*")):
+            key = path.name.split(".json", 1)[0]
+            groups.setdefault(key, []).append(path)
         kept = 0
-        for path in sorted(folder.glob("bridge-*.json")):
-            try:
-                rec = json.loads(path.read_text())
-                pid, identity = int(rec["pid"]), rec.get("identity")
-            except (OSError, ValueError, KeyError, TypeError):
-                kept += 1  # unreadable: cannot prove which process it was
+        for key, paths in groups.items():
+            records, unreadable = [], False
+            for path in paths:
+                try:
+                    data = json.loads(path.read_text())
+                    if not isinstance(data, dict):
+                        raise ValueError
+                    records.append(data)
+                except (OSError, ValueError):
+                    unreadable = True
+            if unreadable:
+                kept += 1  # cannot prove which process it named
                 continue
-            current = process_identity(pid)
-            if current is not None and identity is not None and current == identity:
-                _terminate_pid(pid)  # exactly the recorded process: ours to stop
-                deadline = time.monotonic() + STOP_CONFIRM_SECONDS
-                while process_identity(pid) == identity and time.monotonic() < deadline:
-                    time.sleep(0.05)
-                current = process_identity(pid)
-                if current == identity:
-                    kept += 1
-                    continue
-            elif current is not None and identity is None:
-                kept += 1  # alive, but its identity was never captured: not provably ours
+            nonce = next((r.get("nonce") for r in records if r.get("nonce")), None)
+            with self._state_lock:
+                if nonce in self._inflight:
+                    continue  # this process's own call, still running
+            if self._owned_by_another_live_api(records):
                 continue
-            # Gone, or the pid now names a different process (reused): never signalled.
-            try:
-                path.unlink()
-            except OSError:
+            if not self._confirm_stopped(records):
+                kept += 1
+                continue
+            if not all(_unlink(path) for path in paths):
                 kept += 1
         return kept
+
+    def _owned_by_another_live_api(self, records) -> bool:
+        owner = next(((r.get("owner_pid"), r.get("owner_identity")) for r in records
+                      if r.get("owner_pid") is not None), None)
+        if owner is None or owner[0] == os.getpid():
+            return False
+        state, identity = process_state(int(owner[0]))
+        if state == UNKNOWN:
+            return True  # cannot tell: leave it to its owner or to a later pass
+        return state == LIVE and identity is not None and identity == owner[1]
+
+    def _confirm_stopped(self, records) -> bool:
+        pids = {}
+        for rec in records:
+            if rec.get("pid") is not None:
+                try:
+                    pids[int(rec["pid"])] = rec.get("identity")
+                except (TypeError, ValueError):
+                    return False
+        if not pids:
+            return False  # launch intent only: a bridge may exist without known pid
+        for pid, recorded in pids.items():
+            state, current = process_state(pid)
+            if state == LIVE and recorded is not None and current == recorded:
+                _terminate_pid(pid)  # exactly the recorded process: ours to stop
+                deadline = time.monotonic() + STOP_CONFIRM_SECONDS
+                while time.monotonic() < deadline:
+                    state, current = process_state(pid)
+                    if not (state == LIVE and current == recorded):
+                        break
+                    time.sleep(0.05)
+            if state == GONE:
+                continue
+            if state == LIVE and recorded is not None and current != recorded:
+                continue  # the pid now names a different process (reused): not signalled
+            return False  # unknown, still the recorded process, or never identified
+        return True
 
     def recover(self) -> dict:
         """Re-verify recorded runs; clears the pending flag only when nothing is kept."""

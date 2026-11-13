@@ -68,11 +68,19 @@ import `docworker`; the API would then answer 503 because its status check fails
   source digest and every answer is checked against it, as is each analysis's `parser`
   digest. A worker that changes after registration cannot return a report:
   `503 document_worker_identity_changed`.
-- **An uncertain stop is durable** (R62). A bridge whose kill fails, or whose exit cannot be
-  confirmed, is recorded by pid and creation identity under `<store>/api-bridge/`.
-  Analysis stays refused until recovery, possibly after an API restart, verifies that
-  exact process gone. Recovery signals it only while the identity matches, and never
-  signals a reused pid.
+- **Bridge evidence is durable before any uncertainty** (R62). Each bridge call writes a
+  launch intent before it starts, and its pid and creation identity right after, under
+  `<store>/api-bridge/`.
+  - If no durable pid evidence can be kept, the bridge is stopped before the request
+    returns. If it cannot be stopped, the request fails closed and analysis stays blocked.
+  - Recovery reads records and their temporaries, and survives an API restart.
+  - It acts only on a confirmed process state: it stops a process verified as the recorded
+    one and confirms the exit. Confirmed absence, or a pid reused by a different process,
+    clears the record.
+  - Unknown state (an inaccessible process, an unreadable or malformed `/proc`, or no
+    `/proc` at all) keeps the record and is never signalled. So is a launch intent without
+    a pid.
+  - Calls of another live API process sharing the store are left alone.
 - **Logging.** Events use the safe-log allowlist: route templates, never handle ids, plus
   fixed or sanitised outcome codes. Bridge stderr is never logged or echoed.
 
