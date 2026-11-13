@@ -21,7 +21,8 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 - Accepted application/tooling remains exact tested 871e31d plus later documentation.
 - AN01-M1 measurement prototype is independently accepted at exact `28dfcef` for its reviewed behavior; R56 is closed. [Review](reviews/AN01-M1-28dfcef.md). It remains unmerged, and the tiny timing controls are not demonstrated. The prior b54de1a review is preserved as history.
 - DOC01 Part A was delivered at `cecccad`; its [first review](reviews/DOC01-cecccad.md) requested R58/R59. The original [two-finding correction](prompts/CLAUDE_DOC01_REVIEW_FIXES.md) is delivered history.
-- DOC01 re-review at `69b51fe` [closes R59 but keeps R58 open](reviews/DOC01-69b51fe.md). The current [R58 follow-up](prompts/CLAUDE_DOC01_R58_FOLLOWUP.md) continues the existing branch. Part A and the document upload/API/UI remain unmerged.
+- DOC01 re-review at `69b51fe` [closes R59](reviews/DOC01-69b51fe.md); its [unreadable-member correction](prompts/CLAUDE_DOC01_R58_FOLLOWUP.md) is delivered history.
+- DOC01 `7ec46ae` [still needs one R58 group-race fix](reviews/DOC01-7ec46ae.md). The current [Claude follow-up](prompts/CLAUDE_DOC01_R58_RACE_FOLLOWUP.md) continues the existing branch. Part A and document upload/API/UI remain unmerged.
 - Private GitHub repo: https://github.com/PHANI465/agentforge-sentinel. Only accepted main
   is published; Actions disabled. No force/mirror/all-branch push or private data upload.
 - ULB dataset is acquired privately, not trained. p1 and protected final cases unchanged.

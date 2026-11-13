@@ -1,5 +1,17 @@
 # Project status
 
+## November 12: DOC01 7ec46ae review, one R58 race remains
+
+Exact candidate **7ec46aea258501389c0ce39b6315e0eed88f26f0** is
+[changes-requested](reviews/DOC01-7ec46ae.md), not accepted or merged. R59
+and unreadable-`/proc` handling close for their reviewed cases. A native
+real-process probe showed that a member can fork after the `/proc` PID list is
+captured, then exit; recovery missed the new descendant and deleted its record
+while that descendant survived. Independent focused tests otherwise passed:
+Windows 60 plus 12 POSIX skips, native 72/72. The [current follow-up](prompts/CLAUDE_DOC01_R58_RACE_FOLLOWUP.md)
+asks for a kernel group-existence check after scanning. No upload/API/UI slice
+is assigned yet.
+
 ## November 12: DOC01 69b51fe re-review, R58 remains
 
 Exact candidate **69b51fe5dfaea68275e0c9463edceb5f2525bf15** is

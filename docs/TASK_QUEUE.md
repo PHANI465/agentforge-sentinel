@@ -1,5 +1,15 @@
 # Shared implementation queue
 
+## November 12: DOC01 final R58 group-race follow-up
+
+Claude continues `task/claude-doc01-extractor` from `7ec46ae` under
+[the focused race follow-up](prompts/CLAUDE_DOC01_R58_RACE_FOLLOWUP.md)
+(**Opus 5.5 / High**). [Re-review](reviews/DOC01-7ec46ae.md) keeps R58 open
+for a fork-after-list race; R59 and unreadable-member handling stay closed.
+Codex re-reviews the next exact SHA before Part A is accepted or any DOC01
+upload integration is assigned. Preserve candidates, failed evidence, AN01-M1
+and Cursor's edits.
+
 ## November 12: DOC01 remaining R58 follow-up
 
 Claude continues the existing `task/claude-doc01-extractor` branch at

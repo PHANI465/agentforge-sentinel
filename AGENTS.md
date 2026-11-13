@@ -1,5 +1,13 @@
 # AgentForge Sentinel: shared agent instructions
 
+Current November 12 DOC01 re-review: exact 7ec46aea258501389c0ce39b6315e0eed88f26f0
+is still changes-requested. R59 and the unreadable-`/proc` R58 path close,
+but a real member can fork after `/proc` is listed and exit before recovery
+reads the snapshot; recovery then deletes the record with a descendant alive.
+Read docs/reviews/DOC01-7ec46ae.md and current Claude dispatch
+docs/prompts/CLAUDE_DOC01_R58_RACE_FOLLOWUP.md. Prior DOC01 paragraphs below
+are preserved review history. No DOC01 app upload or AN01 full grid is assigned.
+
 Current November 12 DOC01 re-review: exact 69b51fe5dfaea68275e0c9463edceb5f2525bf15
 is still changes-requested. R59 closes, but R58 remains open because unreadable
 live `/proc` members can be skipped and recovery can erase their records.

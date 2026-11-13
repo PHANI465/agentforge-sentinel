@@ -28,6 +28,7 @@ These are retrospective summaries of written project records, not reconstructed 
 | H08 | AN01-M1 is a measurement prototype, not production Reports. Full-size measurement and performance values are not qualified. Final candidate 28dfcef is accepted for prototype behavior: R53–R57 close; numerical limits and full-size performance remain unqualified. | [M1 review](../reviews/AN01-M1-93583a.md), [r3.2 acceptance](../reviews/AN01-r31-2db42ee.md) |
 | H09 | DOC01 Part A `cecccad` is delivered but changes-requested for R58/R59. A separate locked local worker is not yet an accepted upload/feedback feature; recovery must retain uncertain POSIX group state and a failed/incomplete child response must not become a successful extraction. | [DOC01 review](../reviews/DOC01-cecccad.md) |
 | H10 | DOC01 candidate `69b51fe` closes R59's invalid-child-success finding but remains changes-requested for R58. An unreadable live `/proc` member must mean unknown/kept, never an empty group. No worker or upload integration is accepted yet. | [DOC01 re-review](../reviews/DOC01-69b51fe.md) |
+| H11 | DOC01 candidate `7ec46ae` closes the unreadable-`/proc` case but remains changes-requested for R58: a PID-list snapshot can miss a group descendant forked after enumeration. Confirm group absence after the scan; no worker or upload integration is accepted yet. | [DOC01 re-review](../reviews/DOC01-7ec46ae.md) |
 
 ## Owner decisions confirmed November 8
 
