@@ -9,18 +9,68 @@
   from accepted main `4d60c53dafa0ca478f32270fa83944d1d7363ef6`. The native clone is WSL
   user `sentinel` at `~/doc01-native`, fast-forwarded from Git bundles of this branch.
 - **Updated:** 2026-11-12 (local time).
-- **State:** R58/R59 correction ready for Codex re-review (dispatch
-  `docs/prompts/CLAUDE_DOC01_REVIEW_FIXES.md`, review `docs/reviews/DOC01-cecccad.md` on
-  task/coordination c280bd9). Part A only; upload, feedback integration and the LLM
-  narrative are not implemented. The reviewed candidate `cecccad` is preserved unchanged
-  as an ancestor; there was no reset, rebase or amend.
-- **Code reference tested before this note:** `436e50b30d0b84b9eebc390f9b6ac9f6062d41cf`
-  (clean tree, Windows and native). The earlier Part A sections below describe `1ce9a84`.
+- **State:** R58 follow-up ready for Codex re-review (dispatch
+  `docs/prompts/CLAUDE_DOC01_R58_FOLLOWUP.md`, review `docs/reviews/DOC01-69b51fe.md` on
+  task/coordination f004cd3). Part A only; upload, feedback integration and the LLM
+  narrative are not implemented. `cecccad` and `69b51fe` are preserved unchanged as
+  ancestors; there was no reset, rebase or amend. R59 is untouched.
+- **Code reference tested before this note:** `b3c37d319d88c050c15b6aced65e056f3613cac0`
+  (clean tree, Windows and native). The R58/R59 section describes `436e50b`; the earlier
+  Part A sections describe `1ce9a84`.
 - **Final check evidence:** rerun on the final commit (this note's commit) and reported in chat.
   This note cannot name its own commit.
 - **Owned/changed paths:** `tools/document_worker/**`, `docs/documents/DOC01-worker-protocol-v0.1.md`
   and this note. No other path differs from 4d60c53. The AN01-M1 worktree (`28dfcef`), all other
   worktrees and Cursor's edits are untouched.
+
+## R58 follow-up (b3c37d3)
+
+- **Unreadable `/proc` entries fail closed** (`supervisor.py`). `_stat_fields` returns None
+  only when an entry genuinely disappeared (`FileNotFoundError`/`ProcessLookupError`). A
+  permission error, any other `OSError`, or malformed content (no comm terminator, too few
+  fields, non-numeric pgrp/start time) raises an internal `_StatUnknown`. `group_members`
+  returns None (unknown) when `/proc` cannot be listed or any entry is unknown, so recovery
+  reports `group_state_unknown_kept`, keeps the record and run dir, and sends no signal.
+  `process_identity`/`process_pgid` treat unknown as "not verified", so they never enable a
+  signal; the separate group check still fails closed. Test seams `_read_stat` and
+  `_proc_pids` are module functions.
+- **Tests:** new `tests/test_review_r58_followup.py` (13 cases).
+  - Real owned session leader plus live member. After the leader exits, only the member's
+    `/proc/<pid>/stat` read is faulted: permission, EIO and three malformed forms. Three
+    fresh-supervisor retries each give `group_state_unknown_kept`, record and run dir kept,
+    no signal recorded, and the member's identity unchanged. With the fault removed the
+    record is still kept (`group_members_alive_kept`). After the test stops its own member
+    and its `/proc` entry is gone, a retry reports `recovered`.
+  - A faulted member while the verified leader is alive: the leader's group is stopped,
+    and the record is recovered only once the member's entry is gone.
+  - A vanished entry (ENOENT and ESRCH) is skipped; an unlistable `/proc` fails closed.
+  - Reused pid in both layouts, using dedicated processes: a stranger that leads a live
+    group with the recorded id gives `group_members_alive_kept`; a stranger that is not a
+    group leader gives `recovered`. Windows always gives `recovered`. In both cases the
+    signal functions are replaced by recorders, so no signal can be sent, and none is.
+  - The existing `test_recover_never_touches_a_reused_pid` now asserts its layout
+    explicitly: `group_members_alive_kept` when pytest leads its process group, otherwise
+    `recovered`. The safety check is unchanged.
+- **Failing-first** (`.agent/doc01-r3/failing-first/native.log`, new tests against unchanged
+  69b51fe source, native): 7 failed, 5 passed. Permission and EIO faults returned
+  `recovered`. The malformed forms crashed with IndexError/ValueError. The two seam tests
+  failed because the seam did not exist. On Windows these cases are POSIX-only skips.
+- **Verified at b3c37d3** (`.agent/doc01-r3/at-b3c37d3/`):
+  - Windows worker suite: the first full run had **1 failure**,
+    `test_crashed_supervisor_is_recoverable` ("supervisor never recorded a running child"
+    within 60 s). That run took 186 s against 117 s normally, while the host was heavily
+    loaded. The test passed alone 3/3, and the full rerun gives **173 passed, 12 skipped**
+    (the POSIX-only R58 tests). This change touches only the POSIX branch. The cause is not
+    proven; the failed log is kept as `worker_tests-run1-FAILED.log`.
+  - Native worker suite: **185 passed, 0 skipped**. The focused suites also pass with
+    pytest itself as session/group leader (`setsid`): 72 passed.
+  - Smoke `ok` on both: 259/259 field checks, 101/101 behaviour checks, no leftovers.
+  - Native root ruff, HTTP, ML reproduction and contracts all pass. No worker processes
+    were left.
+- **Platform limit:** recovery sees what `/proc` shows. Under `hidepid`, other users'
+  processes are invisible rather than unreadable. The parser's group runs as the
+  supervisor's user, so its members stay visible, but no claim is made for a member that
+  changed user.
 
 ## R58/R59 correction (436e50b)
 
