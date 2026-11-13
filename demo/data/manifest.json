@@ -1,8 +1,8 @@
 {
- "bytes": 49538,
+ "bytes": 49537,
  "data_file": "recorded-case.json",
  "generator": "scripts/build_recorded_demo.py",
- "generator_commit": "cd8f0f447c8d6ce9ee173140e87bbfc251626ebc",
+ "generator_commit": "5d0f0dafb2a46eb1d591d6073fa1c96b98fabd21",
  "schema": "sentinel.demo01.recorded-replay.v1",
- "sha256": "f35e7ab94b25733dfdeb75a13e830112599b6c9861312be2e774aede87639756"
+ "sha256": "a80c013c16ec08fd98e9f0c73d36eed6082ef46995c8166de879659b5f1c0b1e"
 }
