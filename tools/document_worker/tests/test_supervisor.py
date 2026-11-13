@@ -271,19 +271,27 @@ def test_crashed_supervisor_is_recoverable(store, ingest, tmp_path):
         f"s = HandleStore({str(store.root)!r})\n"
         "Supervisor(s, Limits(deadline_seconds=300), child_argv=fake_argv('slow'))"
         f".extract({handle!r}, SESSION)\n")
-    parent = subprocess.Popen([sys.executable, str(script)])
+    err_path = tmp_path / "sup.stderr"
+    with open(err_path, "wb") as err:
+        parent = subprocess.Popen([sys.executable, str(script)], stderr=err)
     try:
-        record = None
+        record, states = None, []
         deadline = time.monotonic() + 60
-        while time.monotonic() < deadline:
+        while time.monotonic() < deadline and parent.poll() is None:
             records = list((store.root / "recovery").glob("r_*.json"))
             if records:
                 data = json.loads(records[0].read_text())
+                states.append(data.get("state"))
                 if data.get("state") == "running":
                     record = data
                     break
             time.sleep(0.1)
-        assert record is not None, "supervisor never recorded a running child"
+        # Diagnostics for an intermittent Windows failure under load: say whether the
+        # supervising process exited early, how long it took, and what it printed.
+        assert record is not None, (
+            "supervisor never recorded a running child: exit="
+            f"{parent.poll()} states={sorted(set(map(str, states)))} "
+            f"stderr={err_path.read_bytes()[-2000:]!r}")
         parent.kill()
         parent.wait(timeout=10)
     finally:

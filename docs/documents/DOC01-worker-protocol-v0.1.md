@@ -215,6 +215,14 @@ group leader) to be empty before it reports `recovered` (review R58):
   is malformed, membership is unknown and the result is `group_state_unknown_kept`; nothing
   is signalled, and repeated retries stay kept until the entry is readable and no member
   remains.
+* **Kernel confirmation after the scan** (review of 7ec46ae). A `/proc` snapshot alone cannot
+  prove a group empty: a member can fork a new member after the listing and then exit. When
+  the scan finds no live member, recovery asks the kernel with a non-signalling
+  `killpg(pgid, 0)`. Only `ESRCH` (no process at all in the group) lets it report
+  `recovered`. A live, zombie-only, inaccessible (`EPERM`) or reused group gives
+  `group_members_alive_kept`, and any other error gives `group_state_unknown_kept`. The record
+  and run directory are kept and nothing is signalled. A zombie-only group is kept on purpose
+  until its parent reaps it; after a supervisor crash that parent is init.
 * **Process-group layout of a reused pid.** A recorded pid whose identity does not match is
   never signalled. If that stranger happens to lead a live group with the recorded id, the
   group cannot be proved empty and the record is kept (`group_members_alive_kept`);

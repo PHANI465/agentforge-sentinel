@@ -9,19 +9,80 @@
   from accepted main `4d60c53dafa0ca478f32270fa83944d1d7363ef6`. The native clone is WSL
   user `sentinel` at `~/doc01-native`, fast-forwarded from Git bundles of this branch.
 - **Updated:** 2026-11-12 (local time).
-- **State:** R58 follow-up ready for Codex re-review (dispatch
-  `docs/prompts/CLAUDE_DOC01_R58_FOLLOWUP.md`, review `docs/reviews/DOC01-69b51fe.md` on
-  task/coordination f004cd3). Part A only; upload, feedback integration and the LLM
-  narrative are not implemented. `cecccad` and `69b51fe` are preserved unchanged as
-  ancestors; there was no reset, rebase or amend. R59 is untouched.
-- **Code reference tested before this note:** `b3c37d319d88c050c15b6aced65e056f3613cac0`
-  (clean tree, Windows and native). The R58/R59 section describes `436e50b`; the earlier
-  Part A sections describe `1ce9a84`.
+- **State:** R58 race follow-up ready for Codex re-review (dispatch
+  `docs/prompts/CLAUDE_DOC01_R58_RACE_FOLLOWUP.md`, review `docs/reviews/DOC01-7ec46ae.md` on
+  task/coordination 28330b2). Part A only; upload, feedback integration and the LLM
+  narrative are not implemented. `cecccad`, `69b51fe` and `7ec46ae` are preserved unchanged
+  as ancestors; there was no reset, rebase or amend. R59 and the unreadable-entry fix are
+  kept.
+- **Code reference:** the race fix is `84da4dc809c4c177abc8d88d9735a40d63628391`. This
+  note's commit adds only a test diagnostic (`test_crashed_supervisor_is_recoverable`), the
+  protocol note and this file. Exact-commit results for the final commit are reported in
+  chat. Earlier sections describe `b3c37d3`, `436e50b` and `1ce9a84`.
 - **Final check evidence:** rerun on the final commit (this note's commit) and reported in chat.
   This note cannot name its own commit.
 - **Owned/changed paths:** `tools/document_worker/**`, `docs/documents/DOC01-worker-protocol-v0.1.md`
   and this note. No other path differs from 4d60c53. The AN01-M1 worktree (`28dfcef`), all other
   worktrees and Cursor's edits are untouched.
+
+## R58 race follow-up (84da4dc)
+
+- **Fix** (`supervisor.py`): when the `/proc` scan finds no live member, `_group_empty` now
+  asks the kernel afterwards through the new `_group_exists(pgid)`, a non-signalling
+  `os.killpg(pgid, 0)`:
+  - `ESRCH` means the group is empty, and only then is the record reported `recovered`;
+  - success or `EPERM` means the group exists (live, zombie-only, inaccessible or reused),
+    giving `group_members_alive_kept`;
+  - any other error is unknown, giving `group_state_unknown_kept`.
+
+  The record and run dir are kept, and nothing is signalled. The unreadable-entry handling,
+  leader-alive group stop and Windows path are unchanged.
+- **Race test** (`tests/test_review_r58_race.py`, 10 cases): a real session leader starts a
+  member that blocks on a gate FIFO, and the leader exits. Recovery's real `/proc` listing
+  runs first, through a wrapper around `_proc_pids`. The test then opens the gate, and the
+  member forks a descendant and reports its pid on a second FIFO. The test checks:
+  - the descendant was absent from the snapshot and is in the recorded group;
+  - the member exits before recovery consumes the list.
+
+  Blocking FIFO opens order these steps, not sleeps. Recovery keeps the record with no
+  signal sent, the descendant's identity is unchanged, and two more fresh retries stay kept.
+  After the test kills its own verified descendant and its entry is gone, a retry reports
+  `recovered`.
+- **Other new cases:**
+  - a real live group that the scan was forced to miss is still kept by the kernel check;
+  - the answer mapping (`False`, `True`, `None`) and the error mapping (`ESRCH`, `EPERM`,
+    other) each have a test, the latter asserting signal 0 only;
+  - real kernel answers for an existing group and an emptied, reaped group;
+  - a zombie-only group: a verified leader that is the recovering process's own child is
+    stopped but stays an unreaped zombie, so the record is kept until the test reaps it.
+- **Existing tests adjusted for realistic parentage.** Three tests recorded a leader that was
+  pytest's own child. Once stopped it stays a zombie, so the kernel correctly still counts
+  it in the group:
+  - `test_recover_kills_only_a_verified_owned_process`;
+  - `test_r58_live_leader_and_member_are_stopped_and_confirmed`;
+  - `test_r58_member_surviving_the_group_kill_keeps_the_record`.
+
+  They now start the leader through a short-lived intermediate (`Orphan` in
+  `test_supervisor.py`), so it is reparented to init as after a supervisor crash. Their
+  assertions are unchanged. The zombie case keeps its own explicit test above. The failing
+  run is kept as `.agent/doc01-r4/native-wip-run1-3failed.log`.
+- **Failing-first** (`.agent/doc01-r4/failing-first/native.log`, against unchanged 7ec46ae
+  source, native): 9 failed. The race test returned `recovered` while the descendant lived;
+  the forced-miss live-group test returned `recovered`; the other 7 failed because the
+  `_group_exists` seam did not exist.
+- **Before commit** (working-tree patch, native): full worker suite 195 passed; the focused
+  suites with pytest as session/group leader (`setsid`) 82 passed; the race file 10/10
+  repeated runs pass; no sleepers left. Windows focused: 60 passed, 22 POSIX-only skips.
+- **At 84da4dc, Windows** (`.agent/doc01-r4/at-84da4dc/`): smoke ok (259/259, 101/101, no
+  leftovers). The first full worker run had **1 failure**, the same
+  `test_crashed_supervisor_is_recoverable` "never recorded a running child" seen once at
+  b3c37d3. It took 168 s against about 115 s, which is consistent with the helper
+  supervisor exiting early and the test waiting out its 60 s. The log is kept as
+  `worker_tests-run1-FAILED.log`.
+
+  The test now stops waiting once that process exits, and reports its exit code, the
+  record states seen and its stderr. Two further full runs pass (173 passed, 22 skipped).
+  The cause is still unproven: the race change touches only the POSIX branch.
 
 ## R58 follow-up (b3c37d3)
 
