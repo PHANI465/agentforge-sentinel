@@ -1,0 +1,21 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "fixture": "xlsx_statement.xlsx",
+      "sha256": "f8153ea16e7f21d0c177bf736eec1bb02c53609f45d2c124f1792f097d4eb655",
+      "size_bytes": 5340
+    },
+    "method": "POST",
+    "path": "/v1/documents?format=xlsx"
+  },
+  "response": {
+    "expires_at": "2026-10-23T18:00:00Z",
+    "format": "xlsx",
+    "handle_id": "h_0000000000000000000008",
+    "sha256": "f8153ea16e7f21d0c177bf736eec1bb02c53609f45d2c124f1792f097d4eb655",
+    "size_bytes": 5340
+  },
+  "status": 201
+}

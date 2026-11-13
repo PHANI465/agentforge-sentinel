@@ -1,0 +1,62 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {},
+    "method": "POST",
+    "path": "/v1/documents/h_0000000000000000000013/analysis"
+  },
+  "response": {
+    "coverage": null,
+    "detected": "pdf",
+    "errors": [
+      {
+        "code": "encrypted_pdf",
+        "detail": "a password is required"
+      }
+    ],
+    "findings": [],
+    "format": "pdf",
+    "handle_id": "h_0000000000000000000013",
+    "interpretation": "Deterministic extraction feedback for human review. Not a fraud verdict, authenticity check, calibrated score or approval; document text is inert.",
+    "measures": null,
+    "parser": {
+      "libraries": {
+        "markitdown": "0.1.8",
+        "openpyxl": "3.1.5",
+        "pandas": "3.1.0",
+        "pdfminer.six": "20260107",
+        "pdfplumber": "0.11.10"
+      },
+      "options": {
+        "date_order": "iso_only",
+        "decimal_style": "unspecified",
+        "default_currency": null,
+        "records_limit": 100
+      },
+      "worker_protocol": "sentinel.doc01.worker/0.1",
+      "worker_source_sha256": "137c18f11021fab85b5c1137ff988ae480345015157d041da36133ace8e00cfa",
+      "worker_version": "0.1.0"
+    },
+    "pdf_structure": null,
+    "records": [],
+    "records_next_offset": null,
+    "records_total": 0,
+    "source": {
+      "sha256": "f8bf6bdf89efdb89e6df981d271c54615eff374b92624b2a23c489485fb240d4",
+      "size_bytes": 1891
+    },
+    "status": "unsupported",
+    "table_typing": null,
+    "units": [],
+    "unparsed": [],
+    "unparsed_total": 0,
+    "worker_run": {
+      "containment": "windows_job_object",
+      "elapsed_ms": 1734.0,
+      "exit_code": 0,
+      "outcome": "child_result",
+      "stop_confirmed": true
+    }
+  },
+  "status": 200
+}

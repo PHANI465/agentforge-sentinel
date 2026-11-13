@@ -30,6 +30,9 @@ OUT = ROOT / "contracts" / "http"
 EXAMPLES = OUT / "examples"
 EXAMPLES_V11 = OUT / "examples-v1.1"
 EXAMPLES_V12 = OUT / "examples-v1.2"
+EXAMPLES_V13 = OUT / "examples-v1.3"
+DOC_FIXTURES = ROOT / "tools" / "document_worker" / "fixtures"
+DOC_RECORDED = ROOT / "tests" / "fixtures" / "doc01" / "bridge_recorded.json"
 LEGACY_V1 = OUT / "openapi.v1.json"
 LEGACY_V1_SHA256 = "35b4448dd3d4c0e9b5cdaf5b0ac24dd6f90df773aaf8cab9fd217f8739851196"
 FROZEN_V11 = OUT / "openapi.v1.1.json"
@@ -389,6 +392,128 @@ EXAMPLE_MODELS_V12 = {name: "InvestigationTrace" for name in (
     "trace_retry_latest", "trace_retry_prior", "trace_legacy_investigator")}
 
 
+# ---- v1.3 documents (DOC01 Part B) -------------------------------------------------------------
+# Upload/analysis sequence of the scripted v1.3 run. Each successful upload takes the next
+# handle id; refused uploads never reach a handle.
+DOC_SEQUENCE = [
+    # (analysis example name, fixture, analysis request body, upload example name or None)
+    ("document_analysis_complete_paged", "csv_statement_usd.csv", {"records_limit": 5},
+     "document_upload_csv"),
+    ("document_analysis_difference", "csv_statement_mismatch.csv", {}, None),
+    ("document_analysis_two_currency", "csv_two_currency.csv", {}, None),
+    ("document_analysis_missing_values", "csv_missing_duplicates.csv", {}, None),
+    ("document_analysis_ambiguous_decimal", "csv_ambiguous_decimal.csv", {}, None),
+    ("document_analysis_partial_comma_decimal", "csv_comma_decimal.csv", {}, None),
+    ("document_analysis_hostile_note", "csv_hostile_note.csv", {}, None),
+    ("document_analysis_xlsx", "xlsx_statement.xlsx", {}, "document_upload_xlsx"),
+    ("document_analysis_xlsx_partial", "xlsx_hostile.xlsx", {}, None),
+    ("document_analysis_xlsx_macro_unsupported", "xlsx_macro.xlsx", {}, None),
+    ("document_analysis_pdf_text", "pdf_text_statement.pdf", {}, "document_upload_pdf"),
+    ("document_analysis_pdf_scanned_partial", "pdf_scanned_mixed.pdf", {}, None),
+    ("document_analysis_pdf_encrypted_unsupported", "pdf_encrypted.pdf", {}, None),
+    ("document_analysis_pdf_truncated_error", "pdf_truncated.pdf", {}, None),
+]
+DOC_MEDIA = {"csv": "text/csv", "pdf": "application/pdf",
+             "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+
+
+def doc_handle(n: int) -> str:
+    return "h_" + str(n).rjust(22, "0")
+
+
+def doc_body(fixture: str, content_type: str | None = None) -> dict:
+    import hashlib
+    data = (DOC_FIXTURES / fixture).read_bytes()
+    fmt = fixture.rsplit(".", 1)[1]
+    return {"content_type": content_type or DOC_MEDIA[fmt], "fixture": fixture,
+            "sha256": hashlib.sha256(data).hexdigest(), "size_bytes": len(data)}
+
+
+def doc_record(method, path, status, response, body=None):
+    return {"request": {"method": method, "path": path, "authenticated": True, "body": body},
+            "status": status, "response": response}
+
+
+def examples_v13_expected() -> dict[str, dict]:
+    """The frozen v1.3 examples, derived only from the DTOs and the recorded bridge answers
+    (no route). The HTTP run that implements the routes must reproduce them exactly."""
+    from pydantic import ValidationError
+
+    from sentinel.contracts import http_v13
+    from sentinel.contracts.v1 import safe_validation_errors
+
+    recorded = json.loads(DOC_RECORDED.read_text(encoding="utf-8"))["fixtures"]
+    expires = (START + timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+    out: dict[str, dict] = {}
+
+    def dump(model) -> dict:
+        return model.model_dump(mode="json")
+
+    for n, (name, fixture, request, upload_name) in enumerate(DOC_SEQUENCE, start=1):
+        handle, body = doc_handle(n), doc_body(fixture)
+        fmt = fixture.rsplit(".", 1)[1]
+        upload = dump(http_v13.DocumentUpload(handle_id=handle, format=fmt,
+                                              sha256=body["sha256"],
+                                              size_bytes=body["size_bytes"],
+                                              expires_at=expires))
+        if upload_name:
+            out[upload_name] = doc_record("POST", f"/v1/documents?format={fmt}", 201, upload,
+                                          body)
+        analysis = http_v13.project_analysis(handle, recorded[fixture]["analyze"]["analysis"])
+        out[name] = doc_record("POST", f"/v1/documents/{handle}/analysis", 200,
+                               dump(analysis), request)
+    first = doc_handle(1)
+    page = recorded["csv_statement_usd.csv"]["records"]
+    out["document_records_page"] = doc_record(
+        "GET", f"/v1/documents/{first}/records?offset=5&limit=100", 200,
+        dump(http_v13.RecordPage(handle_id=first, status=page["status"],
+                                 source_sha256=page["source"]["sha256"],
+                                 **page["records_page"])))
+    out["document_deleted"] = doc_record("DELETE", f"/v1/documents/{first}", 200,
+                                         {"deleted": True, "handle_id": first})
+    out["error_document_not_found"] = doc_record(
+        "GET", f"/v1/documents/{first}/records?offset=0&limit=100", 404, {"error": "not_found"})
+    out["error_document_malformed_handle"] = doc_record(
+        "POST", "/v1/documents/not-a-handle/analysis", 404, {"error": "not_found"}, {})
+    try:
+        http_v13.AnalysisRequest.model_validate_json('{"decimal_style": "roman"}')
+    except ValidationError as error:
+        details = safe_validation_errors(error)
+    out["error_document_invalid_options"] = doc_record(
+        "POST", f"/v1/documents/{doc_handle(2)}/analysis", 422,
+        {"details": details, "error": "invalid_request"}, {"decimal_style": "roman"})
+    out["error_document_format_mismatch"] = doc_record(
+        "POST", "/v1/documents?format=pdf", 415, {"error": "format_mismatch"},
+        doc_body("pdf_not_really.pdf"))
+    out["error_document_unsupported_container"] = doc_record(
+        "POST", "/v1/documents?format=xlsx", 415, {"error": "unsupported_container"},
+        doc_body("xlsx_ole_container.xlsx"))
+    out["error_document_media_type"] = doc_record(
+        "POST", "/v1/documents?format=csv", 415, {"error": "unsupported_media_type"},
+        doc_body("csv_statement_usd.csv", "application/json"))
+    out["error_document_invalid_format"] = doc_record(
+        "POST", "/v1/documents?format=docx", 422, {"error": "invalid_request"},
+        doc_body("csv_statement_usd.csv", "application/octet-stream"))
+    out["error_document_too_large"] = doc_record(
+        "POST", "/v1/documents?format=csv", 413, {"error": "body_too_large"},
+        {"content_type": "text/csv", "fixture": None, "sha256": None,
+         "size_bytes": http_v13.MAX_UPLOAD_BYTES + 1})
+    out["error_document_permission"] = doc_record(
+        "POST", "/v1/documents?format=csv", 403, {"error": "permission_denied"},
+        doc_body("csv_statement_usd.csv"))
+    out["error_document_worker_unavailable"] = doc_record(
+        "POST", "/v1/documents?format=csv", 503, {"error": "document_worker_unavailable"},
+        doc_body("csv_statement_usd.csv"))
+    return out
+
+
+EXAMPLE_MODELS_V13 = {
+    **{name: "DocumentAnalysis" for name, *_ in DOC_SEQUENCE},
+    "document_upload_csv": "DocumentUpload", "document_upload_xlsx": "DocumentUpload",
+    "document_upload_pdf": "DocumentUpload", "document_records_page": "RecordPage",
+    "document_deleted": "DocumentDeleted"}
+
+
 def expected_files(database_url: str) -> dict[Path, bytes]:
     files = {OUT / "openapi.v1.2.json": dumps(openapi())}
     for name, record in examples(database_url).items():
@@ -397,6 +522,8 @@ def expected_files(database_url: str) -> dict[Path, bytes]:
         files[EXAMPLES_V11 / f"{name}.json"] = dumps(record)
     for name, record in examples_v12(database_url).items():
         files[EXAMPLES_V12 / f"{name}.json"] = dumps(record)
+    for name, record in examples_v13_expected().items():
+        files[EXAMPLES_V13 / f"{name}.json"] = dumps(record)
     return files
 
 
@@ -421,7 +548,7 @@ def compare_or_write(files: dict[Path, bytes], check: bool) -> list[str]:
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
-    for directory in (EXAMPLES, EXAMPLES_V11, EXAMPLES_V12):
+    for directory in (EXAMPLES, EXAMPLES_V11, EXAMPLES_V12, EXAMPLES_V13):
         present = set(directory.glob("*.json")) if directory.exists() else set()
         stale.extend(sorted(p.relative_to(ROOT).as_posix() for p in present - files.keys()))
     return stale + legacy_problems()

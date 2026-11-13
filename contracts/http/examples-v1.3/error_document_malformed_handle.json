@@ -1,0 +1,12 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {},
+    "method": "POST",
+    "path": "/v1/documents/not-a-handle/analysis"
+  },
+  "response": {
+    "error": "not_found"
+  },
+  "status": 404
+}

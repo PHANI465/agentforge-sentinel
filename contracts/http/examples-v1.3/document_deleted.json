@@ -1,0 +1,13 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "DELETE",
+    "path": "/v1/documents/h_0000000000000000000001"
+  },
+  "response": {
+    "deleted": true,
+    "handle_id": "h_0000000000000000000001"
+  },
+  "status": 200
+}

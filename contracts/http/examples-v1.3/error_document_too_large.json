@@ -1,0 +1,17 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "content_type": "text/csv",
+      "fixture": null,
+      "sha256": null,
+      "size_bytes": 10485761
+    },
+    "method": "POST",
+    "path": "/v1/documents?format=csv"
+  },
+  "response": {
+    "error": "body_too_large"
+  },
+  "status": 413
+}

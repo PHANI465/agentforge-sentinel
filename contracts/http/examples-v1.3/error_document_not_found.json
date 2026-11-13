@@ -1,0 +1,12 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": null,
+    "method": "GET",
+    "path": "/v1/documents/h_0000000000000000000001/records?offset=0&limit=100"
+  },
+  "response": {
+    "error": "not_found"
+  },
+  "status": 404
+}
