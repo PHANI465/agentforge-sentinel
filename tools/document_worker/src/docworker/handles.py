@@ -173,6 +173,38 @@ class HandleStore:
             raise StoreError("integrity_mismatch", "stored bytes changed after ingest")
         return data
 
+    # ---- persisted analysis (bridge, Part B) -------------------------------------------------
+    ANALYSIS = "analysis.json"
+
+    def save_analysis(self, handle_id: str, session_token: str, doc: dict) -> None:
+        """Store the full validated result beside the handle's bytes, owned by the same
+        session, so records can be paged without re-running the parser."""
+        folder, _meta = self._load(handle_id, session_token)
+        tmp = folder / f"{self.ANALYSIS}.{secrets.token_hex(4)}.tmp"
+        try:
+            tmp.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+            for attempt in range(40):  # Windows sharing violations are transient
+                try:
+                    os.replace(tmp, folder / self.ANALYSIS)
+                    break
+                except PermissionError:
+                    if attempt == 39:
+                        raise
+                    time.sleep(0.05)
+        finally:
+            if tmp.exists():
+                tmp.unlink(missing_ok=True)
+
+    def load_analysis(self, handle_id: str, session_token: str) -> dict | None:
+        folder, _meta = self._load(handle_id, session_token)
+        path = folder / self.ANALYSIS
+        if not path.is_file() or not self._inside(path, "handles"):
+            return None
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            raise StoreError("analysis_unreadable") from None
+
     def delete(self, handle_id: str, session_token: str) -> dict:
         folder, _meta = self._load(handle_id, session_token)
         shutil.rmtree(folder)
