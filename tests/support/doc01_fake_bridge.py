@@ -31,7 +31,8 @@ def main() -> int:
     op = header.get("op")
     owner = os.environ.get("SENTINEL_DOC_SESSION")
     with open(store / "calls.jsonl", "a", encoding="utf-8") as log:
-        log.write(json.dumps({"op": op, "pid": os.getpid(), "env": sorted(os.environ),
+        log.write(json.dumps({"op": op, "pid": os.getpid(), "ppid": os.getppid(),
+                              "env": sorted(os.environ),
                               "owner": owner is not None,
                               "cwd_is_store": Path.cwd().resolve() == store.resolve()}) + "\n")
     mode = (config.get("modes") or {}).get(op)
@@ -52,8 +53,22 @@ def main() -> int:
     if mode == "wrong_protocol":
         sys.stdout.write(json.dumps({"protocol": "other/1", "ok": True}) + "\n")
         return 0
-    answer = handle(op, header, store, config, recorded, owner, mode)
-    sys.stdout.write(json.dumps({"protocol": PROTOCOL, **answer}, ensure_ascii=False) + "\n")
+    # Identity of "this worker" (R63): the recorded worker unless the test simulates a
+    # changed worker on disk. Every answer carries it; a mismatched expectation is refused
+    # before any operation runs, as the real bridge does.
+    identity = {"worker_protocol": recorded["status"]["worker_protocol"],
+                "worker_source_sha256": recorded["status"]["worker_source_sha256"]}
+    identity.update({k: v for k, v in (config.get("status_override") or {}).items()
+                     if k in identity})
+    expected = header.get("expect_source_sha256")
+    if expected is not None and expected != identity["worker_source_sha256"]:
+        answer = {"ok": False, "code": "identity_mismatch"}
+    else:
+        answer = handle(op, header, store, config, recorded, owner, mode)
+    if mode == "omit_identity":
+        identity = {}
+    sys.stdout.write(json.dumps({"protocol": PROTOCOL, **answer, **identity},
+                                ensure_ascii=False) + "\n")
     return 0
 
 
@@ -130,6 +145,13 @@ def handle(op, header, store, config, recorded, owner, mode) -> dict:
                                    "retained; run `recover` to re-verify"}]
         if mode == "invalid_shape":
             analysis["records_page"]["records"][0]["amount"]["minor_units"] = "12.5"
+        if mode == "drop_totals":  # R61: counts missing from an otherwise valid answer
+            del analysis["records_page"]["total"]
+            del analysis["unparsed_total"]
+        if mode == "zero_total":
+            analysis["records_page"]["total"] = 0
+        if mode == "parser_digest_changed":  # R63: the run reports another worker source
+            analysis["parser"]["worker_source_sha256"] = "1" * 64
         entry["analyzed"] = True
         _save(store, state)
         return {"ok": True, "analysis": analysis}
@@ -145,6 +167,8 @@ def handle(op, header, store, config, recorded, owner, mode) -> dict:
             records = first["records"] if offset == 0 else []
             page = {"offset": offset, "limit": limit, "total": first["total"],
                     "records": records[:limit], "next_offset": None}
+        if mode == "bad_page":  # R61: more records than the stated total
+            page = dict(page, total=0)
         return {"ok": True, "records_page": page, "status": rec["analyze"]["analysis"]["status"],
                 "source": {"sha256": entry["sha"], "size_bytes": entry["size"]}}
     return {"ok": False, "code": "bad_header"}

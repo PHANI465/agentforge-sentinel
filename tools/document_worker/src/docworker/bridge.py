@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -36,6 +37,7 @@ MAX_UNPARSED_SHOWN = 100
 MAX_GROUPS_SHOWN = 100
 OPS = ("status", "ingest", "analyze", "records", "delete", "recover")
 EXPECTED_CONTENT = {"pdf": "pdf", "xlsx": "zip", "csv": "text"}
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
 class Refused(Exception):
@@ -175,14 +177,26 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     store = HandleStore(Path(args.store), Limits())
     stdin = sys.stdin.buffer
+    # This process's own worker identity, computed per request (review R63): every answer
+    # carries it, and a request that names another registered digest is refused before any
+    # operation runs, so a worker changed on disk never parses under an old registration.
+    identity = source_identity()
     try:
         header = _read_header(stdin)
+        expected = header.get("expect_source_sha256")
+        if expected is not None and (not isinstance(expected, str)
+                                     or not _HEX64.match(expected)):
+            raise Refused("bad_header")
+        if expected is not None and expected != identity["worker_source_sha256"]:
+            raise Refused("identity_mismatch")
         body = handle(header, stdin, store, os.environ.get(SESSION_ENV) or None)
         response = {"protocol": BRIDGE_PROTOCOL, "ok": True, **body}
     except Refused as exc:
         response = {"protocol": BRIDGE_PROTOCOL, "ok": False, "code": exc.code}
     except StoreError as exc:
         response = {"protocol": BRIDGE_PROTOCOL, "ok": False, "code": exc.code}
+    response.update(worker_protocol=PROTOCOL,
+                    worker_source_sha256=identity["worker_source_sha256"])
     sys.stdout.write(json.dumps(response, ensure_ascii=False) + "\n")
     sys.stdout.flush()
     return 0

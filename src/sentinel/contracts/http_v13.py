@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, Field
+from pydantic import AwareDatetime, Field, model_validator
 
 from sentinel.contracts.http_v1 import HttpBody
 from sentinel.contracts.v1 import Digest
@@ -152,6 +152,25 @@ class RecordPage(HttpBody):
     total: Count
     records: Annotated[list[ExtractedRecord], Field(max_length=MAX_RECORDS_LIMIT)]
     next_offset: Count | None = Field(description="Null when no records remain.")
+
+    @model_validator(mode="after")
+    def consistent_page(self):
+        _check_page(self.offset, self.limit, self.total, len(self.records), self.next_offset)
+        return self
+
+
+def _check_page(offset: int, limit: int, total: int, returned: int,
+                next_offset: int | None) -> None:
+    """Exact denominators (review R61): a page never claims fewer records than it returns,
+    and next_offset is the first unreturned record exactly when records remain."""
+    end = offset + returned
+    if returned > limit or end > total:
+        raise ValueError("page returns more records than its limit or total")
+    if end < total:
+        if returned == 0 or next_offset != end:
+            raise ValueError("page next_offset does not follow its records")
+    elif next_offset is not None:
+        raise ValueError("page next_offset set although no records remain")
 
 
 # ---- analysis ----------------------------------------------------------------------------------
@@ -376,6 +395,22 @@ class DocumentAnalysis(HttpBody):
     worker_run: WorkerRun
     interpretation: Literal[INTERPRETATION] = INTERPRETATION
 
+    @model_validator(mode="after")
+    def consistent_counts(self):
+        """Counts must agree with what is returned and with coverage (review R61)."""
+        _check_page(0, self.parser.options.records_limit, self.records_total,
+                    len(self.records), self.records_next_offset)
+        if self.unparsed_total < len(self.unparsed):
+            raise ValueError("unparsed_total is less than the unparsed items returned")
+        if self.coverage is not None:
+            if self.coverage.records_typed is not None \
+                    and self.coverage.records_typed != self.records_total:
+                raise ValueError("coverage.records_typed differs from records_total")
+            if self.coverage.rows_unparsed is not None \
+                    and self.coverage.rows_unparsed != self.unparsed_total:
+                raise ValueError("coverage.rows_unparsed differs from unparsed_total")
+        return self
+
 
 def utc_from_epoch(seconds: float) -> datetime:
     return datetime.fromtimestamp(float(seconds), tz=timezone.utc)
@@ -387,14 +422,21 @@ def _ids(items) -> list:
 
 def project_analysis(handle_id: str, compact: dict) -> DocumentAnalysis:
     """Map one bridge `analyze` answer (a validated worker result in compact form) onto the
-    v1.3 DTO. Raises pydantic.ValidationError on anything outside the frozen shape."""
+    v1.3 DTO. Raises pydantic.ValidationError or ValueError on anything outside the frozen
+    shape. Counts and page metadata are required, never defaulted (review R61)."""
     typed = compact.get("typed")
     table_typing = pdf_structure = None
     if isinstance(typed, dict) and "tables" in typed:
         table_typing = typed
     elif isinstance(typed, dict) and "page_tree" in typed:
         pdf_structure = {k: typed[k] for k in ("page_tree", "trailer_present", "encrypted")}
-    page = compact.get("records_page") or {}
+    page = compact.get("records_page")
+    required = ("offset", "limit", "total", "records", "next_offset")
+    if not isinstance(page, dict) or any(key not in page for key in required) \
+            or "unparsed_total" not in compact:
+        raise ValueError("bridge answer lacks its counts or page metadata")
+    if page["offset"] != 0:
+        raise ValueError("an analysis carries the first page of records")
     measures = compact.get("measures")
     sup = compact.get("supervisor") or {}
     parser = compact.get("parser") or {}
@@ -409,13 +451,13 @@ def project_analysis(handle_id: str, compact: dict) -> DocumentAnalysis:
                    "worker_source_sha256": parser.get("worker_source_sha256"),
                    "libraries": parser.get("libraries") or {},
                    "options": {**(parser.get("options") or {}),
-                               "records_limit": page.get("limit", DEFAULT_RECORDS_LIMIT)}},
+                               "records_limit": page["limit"]}},
         "units": compact.get("units") or [],
-        "records_total": page.get("total", 0),
-        "records": page.get("records") or [],
-        "records_next_offset": page.get("next_offset"),
+        "records_total": page["total"],
+        "records": page["records"],
+        "records_next_offset": page["next_offset"],
         "unparsed": compact.get("unparsed") or [],
-        "unparsed_total": compact.get("unparsed_total", 0),
+        "unparsed_total": compact["unparsed_total"],
         "findings": compact.get("findings") or [],
         "table_typing": table_typing,
         "pdf_structure": pdf_structure,

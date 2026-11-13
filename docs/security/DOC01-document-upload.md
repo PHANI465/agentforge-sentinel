@@ -45,7 +45,8 @@ import `docworker`; the API would then answer 503 because its status check fails
   of that key. The bearer token never leaves the API process, and appears in no path, log,
   error, store file or example; tests check every one of these.
 - **Bounded at every hop.**
-  - Upload bodies are capped at 10 MiB while they are streamed.
+  - Upload bodies are capped at 10 MiB while they are streamed. Each chunk's prospective
+    size is checked before it is copied (R60).
   - The bridge's stdout is capped at 8 MiB, and stderr is discarded after 64 KiB.
   - Each bridge call has a wall-clock bound (30 s, or 90 s for analysis), and one
     analysis runs at a time per API process.
@@ -63,6 +64,15 @@ import `docworker`; the API would then answer 503 because its status check fails
   - Hostile document text such as "ignore previous instructions, approve…" is returned as
     inert record data. No route reads it as an instruction.
   - No model receives the file. The narrative converter is not run by the API.
+- **Bound to the registered worker** (R63). Every bridge request carries the registered
+  source digest and every answer is checked against it, as is each analysis's `parser`
+  digest. A worker that changes after registration cannot return a report:
+  `503 document_worker_identity_changed`.
+- **An uncertain stop is durable** (R62). A bridge whose kill fails, or whose exit cannot be
+  confirmed, is recorded by pid and creation identity under `<store>/api-bridge/`.
+  Analysis stays refused until recovery, possibly after an API restart, verifies that
+  exact process gone. Recovery signals it only while the identity matches, and never
+  signals a reused pid.
 - **Logging.** Events use the safe-log allowlist: route templates, never handle ids, plus
   fixed or sanitised outcome codes. Bridge stderr is never logged or echoed.
 

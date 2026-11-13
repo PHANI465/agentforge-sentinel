@@ -133,13 +133,28 @@ def _diff(a, b, path="") -> list[str]:
 
 
 def _normalise(analysis: dict) -> dict:
-    """Fields that legitimately differ between runs: the handle, the run's own timing and the
-    platform's containment kind (checked separately)."""
+    """Fields that legitimately differ between runs: the handle, the run's own timing, the
+    platform's containment kind and the worker source digest. The digest is provenance that
+    changes with any worker source change, so the frozen example keeps the one it was
+    recorded with; the containment and the digest are each checked separately."""
     out = json.loads(json.dumps(analysis))
     out.pop("handle_id", None)
     out["worker_run"].pop("elapsed_ms", None)
     out["worker_run"].pop("containment", None)
+    out["parser"].pop("worker_source_sha256", None)
     return out
+
+
+def registered_digest(worker_python: Path, store: Path) -> str | None:
+    """The worker's own status answer: the digest the API registers and must enforce."""
+    header = json.dumps({"protocol": "sentinel.doc01.bridge/0.1", "op": "status"}) + "\n"
+    proc = subprocess.run([str(worker_python), "-I", "-m", "docworker.bridge", "--store",
+                           str(store)], input=header.encode(), capture_output=True,
+                          timeout=120)
+    try:
+        return json.loads(proc.stdout)["worker_source_sha256"]
+    except (ValueError, KeyError):
+        return None
 
 
 def main() -> int:
@@ -215,13 +230,19 @@ def main() -> int:
                   status=status)
             frozen = json.loads((EXAMPLES / "document_analysis_complete_paged.json")
                                 .read_text(encoding="utf-8"))["response"]
-            differences = _diff(_normalise(analysis), _normalise(frozen)) if status == 200                 else ["<no analysis>"]
+            if status == 200:
+                differences = _diff(_normalise(analysis), _normalise(frozen))
+            else:
+                differences = ["<no analysis>"]
             expected_containment = ("windows_job_object" if os.name == "nt"
                                     else "posix_session_rlimits")
             check("containment_matches_platform",
                   analysis.get("worker_run", {}).get("containment") == expected_containment)
-            check("real_worker_matches_frozen_example", not differences, differences=differences,
-                  worker_source_sha256=analysis.get("parser", {}).get("worker_source_sha256"))
+            check("real_worker_matches_frozen_example", not differences, differences=differences)
+            digest = analysis.get("parser", {}).get("worker_source_sha256")
+            check("analysis_bound_to_registered_worker",
+                  digest is not None and digest == registered_digest(worker_python, store),
+                  worker_source_sha256=digest)
             recon = (analysis.get("measures") or {}).get("reconciliation", {}).get(
                 "currencies", [])
             check("reconciliation_usd_zero", [(c["currency"], c["difference_minor"])

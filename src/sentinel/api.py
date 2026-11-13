@@ -369,9 +369,11 @@ async def read_limited(request: Request, limit: int) -> bytes:
             raise ServiceError("body_too_large", 413)
     raw = bytearray()
     async for chunk in request.stream():
-        raw += chunk
-        if len(raw) > limit:
+        # Check the prospective size before copying: one oversize chunk is refused without
+        # ever being appended (review R60).
+        if len(raw) + len(chunk) > limit:
             raise ServiceError("body_too_large", 413)
+        raw += chunk
     return bytes(raw)
 
 

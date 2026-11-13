@@ -99,6 +99,37 @@ only its own session can see.
 | 503 | `document_worker_busy` | Another analysis is running in this API process. |
 | 503 | `document_worker_recovery_pending` | An earlier run's stop was not confirmed; recovery has not yet cleared it. |
 | 504 | `document_worker_timeout` | The bridge exceeded its wall-clock bound; the API stopped it and recovery is pending. |
-| 502 | `document_worker_failed` | The bridge crashed or returned an answer outside the contract. |
+| 503 | `document_worker_identity_changed` | The worker answering is not the registered one (see "Worker identity"). |
+| 502 | `document_worker_failed` | The bridge crashed or returned an answer outside the contract, including counts or page metadata that are missing or contradict the returned records. |
 
 Error bodies are `{"error": code}` only. No token, path or document text is echoed.
+
+## Worker identity and uncertain stops (review 612934b)
+
+**Worker identity.** The API registers the worker's protocol and source digest from its first
+`status` answer. With `SENTINEL_DOC_WORKER_SHA256` set, that answer must equal the pin, or
+the routes stay `503 document_worker_unavailable`. After registration:
+
+- Every bridge request names the registered digest. A worker whose own digest differs
+  refuses before doing anything.
+- Every answer carries the bridge's digest, and the API rejects an answer whose digest
+  differs or is absent.
+- Every analysis must report the registered digest in its `parser` block.
+
+A mismatch gives `503 document_worker_identity_changed`, and no report is returned. If the
+mismatch shows up in an analysis result, parsing may already have run under an
+unregistered worker. The API therefore also marks recovery pending, and the next analysis
+is refused until a recovery pass keeps nothing. Restarting the API registers again: it
+fails closed with a pin, and without one it registers the worker now on disk.
+
+**Uncertain bridge stop.** When a bridge exceeds its bound, the API kills that bridge
+process and waits to confirm its exit.
+
+- If the kill fails, or exit cannot be confirmed, the API writes the bridge's pid and its
+  creation identity to `<store>/api-bridge/bridge-<pid>.json`. That file holds no token or
+  path. The API marks recovery pending and answers `504 document_worker_timeout`.
+- Recovery runs on the next analysis, including after an API restart. It stops the process
+  only while its identity still matches the record, and confirms the exit.
+- A reused pid, which now names another process, is never signalled; the record is
+  cleared. An unreadable record, or a live process without a recorded identity, keeps
+  analysis refused (`503 document_worker_recovery_pending`).

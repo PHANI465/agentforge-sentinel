@@ -42,7 +42,8 @@ def test_status_reports_identity_and_refuses_an_unowned_store(store, tmp_path):
     assert out["worker_protocol"] == "sentinel.doc01.worker/0.1"
     assert len(out["worker_source_sha256"]) == 64
     (tmp_path / "plain").mkdir()
-    assert call(tmp_path / "plain", {"op": "status"}, session=None) == {
+    refused = call(tmp_path / "plain", {"op": "status"}, session=None)
+    assert {k: refused[k] for k in ("protocol", "ok", "code")} == {
         "protocol": HEADER, "ok": False, "code": "not_owned"}
 
 
@@ -178,3 +179,41 @@ def test_expired_handles_are_not_found_and_purged(tmp_path):
 def test_recover_reports_nothing_kept_on_a_clean_store(store):
     out = call(store.root, {"op": "recover"}, session=None)
     assert out["ok"] and out["recovery"] == {"results": {}, "kept": 0}
+
+
+# ---- review R63: identity on every answer; a different registered digest is refused first ----
+
+def test_every_answer_carries_this_worker_identity(store):
+    from docworker.extract import source_identity
+    digest = source_identity()["worker_source_sha256"]
+    for header, session in (({"op": "status"}, None), ({"op": "recover"}, None),
+                            ({"op": "records", "handle": "h_" + "A" * 22, "offset": 0,
+                              "limit": 1}, SESSION), ({"op": "nope"}, None)):
+        out = call(store.root, header, session=session)
+        assert (out["worker_protocol"], out["worker_source_sha256"]) == (
+            "sentinel.doc01.worker/0.1", digest), header
+
+
+def test_a_mismatched_registered_digest_is_refused_before_any_operation(store):
+    data = (FIXTURES / "csv_statement_usd.csv").read_bytes()
+    out = call(store.root, {"op": "ingest", "format": "csv", "size": len(data),
+                            "expect_source_sha256": "0" * 64}, data)
+    assert (out["ok"], out["code"]) == (False, "identity_mismatch")
+    assert list((store.root / "handles").iterdir()) == []  # nothing was ingested
+    h = ingest(store, "csv_statement_usd.csv")
+    out = call(store.root, {"op": "analyze", "handle": h["handle_id"], "page_limit": 5,
+                            "options": {}, "expect_source_sha256": "0" * 64})
+    assert out["code"] == "identity_mismatch"
+    assert call(store.root, {"op": "records", "handle": h["handle_id"], "offset": 0,
+                             "limit": 1})["code"] == "analysis_not_found"  # never parsed
+    assert call(store.root, {"op": "status", "expect_source_sha256": "zz"},
+                session=None)["code"] == "bad_header"
+
+
+def test_the_matching_registered_digest_is_accepted(store):
+    from docworker.extract import source_identity
+    digest = source_identity()["worker_source_sha256"]
+    data = (FIXTURES / "csv_statement_usd.csv").read_bytes()
+    out = call(store.root, {"op": "ingest", "format": "csv", "size": len(data),
+                            "expect_source_sha256": digest}, data)
+    assert out["ok"] and out["worker_source_sha256"] == digest
