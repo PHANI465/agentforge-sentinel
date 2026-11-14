@@ -18,8 +18,9 @@ from sentinel.contracts.v1 import (
 
 CaseState = Literal["open", "investigating", "awaiting_approval", "closed", "inconclusive"]
 CASE_STATES: tuple[str, ...] = CaseState.__args__
+# analyze_document is the v1.3 opt-in (DOC01 Part B); it is never a default grant.
 Capability = Literal["ingest_transaction", "read_case", "approve_action",
-                     "execute_simulated_action"]
+                     "execute_simulated_action", "analyze_document"]
 MAX_PAGE_SIZE = 100
 DEFAULT_PAGE_SIZE = 25
 

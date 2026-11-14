@@ -97,7 +97,7 @@ echoed.
 | `measures`, `coverage` | Section 6. |
 | `narrative` | `{status: ok\|truncated\|failed, format: markdown, text, chars, truncated, producer, authority}`. |
 | `guard` | Audit-hook summary including every denied event (section 5). |
-| `supervisor` | Run/request ids, exit code, stdout/stderr bytes, elapsed ms, peak memory, containment kind, `stop {requested, confirmed, method, run_dir_removed}`, outcome. |
+| `supervisor` | Run/request ids, exit code, stdout/stderr bytes, elapsed ms, peak memory, containment kind, `stop {requested, confirmed, method, run_dir_removed, record_removed}` (`record_written` instead when the stop is unconfirmed), outcome. |
 
 Locators are 1-based: `{row}` for CSV records, `{sheet,row}` for XLSX, `{page}` for PDF and
 `{part}` for an OOXML package part. `evidence_id = <sha256[:12]>:<sheet=…!>row=N` (sheet names
@@ -189,6 +189,26 @@ then wait until the process has exited **and** the job/group has no live member.
 confirmed stop removes the run directory (after its marker nonce is verified) and the record.
 An unconfirmed stop keeps both, marks the record `stop_unconfirmed` and makes the result
 `error` with code `stop_unconfirmed`.
+
+**Record writes** (follow-up to the Part A acceptance, before API exposure). Each record
+update writes its own temporary file, `r_<id>.<8 hex>.tmp`, then replaces the record. On
+Windows a reader holding the record open makes that replace fail with a sharing violation
+(`PermissionError`). The supervisor retries replace and removal for up to 2 s. If a record
+write still fails, the run is an `error` with code
+`recovery_record_write_failed:<starting|running>`. The child is stopped, and it is never
+reported as a successful extraction.
+
+A temporary record that names the child's pid is kept, because it may be the only copy
+recovery can use. A pid-less one is removed. Removal after a confirmed stop also removes the
+run's temporaries, and a removal failure is reported in `stop.record_removed`; it is never
+raised.
+
+Recovery treats temporaries as evidence:
+
+* every pid named by the record or any temporary of that run must be proven stopped;
+* an unreadable temporary beside a record keeps the run (`temporary_record_unreadable_kept`);
+* a pid-less or torn temporary with no record and no run directory is removed
+  (`orphan_temporary_removed`).
 
 **Recovery** (`sentinel-docworker recover`) re-reads each record. It terminates a pid only if
 its current identity equals the recorded one; a reused pid is left untouched. A record with a

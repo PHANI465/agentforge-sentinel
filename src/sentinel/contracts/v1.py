@@ -70,6 +70,7 @@ class TrustedContext(Contract):
     actor_kind: Literal["human", "system"]
     capabilities: frozenset[Literal[
         "ingest_transaction", "read_case", "approve_action", "execute_simulated_action",
+        "analyze_document",  # v1.3 opt-in only (DOC01 Part B); never a default grant
     ]]
 
 

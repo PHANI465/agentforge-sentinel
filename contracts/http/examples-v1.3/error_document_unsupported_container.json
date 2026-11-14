@@ -1,0 +1,17 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "fixture": "xlsx_ole_container.xlsx",
+      "sha256": "a899fb4496afa7230c378d5be03cf3461990994993110fd2dad3257111081275",
+      "size_bytes": 512
+    },
+    "method": "POST",
+    "path": "/v1/documents?format=xlsx"
+  },
+  "response": {
+    "error": "unsupported_container"
+  },
+  "status": 415
+}

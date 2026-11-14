@@ -32,7 +32,8 @@ def test_deadline_kills_and_cleans(store, ingest, make_supervisor):
     assert result["status"] == "error" and "deadline_exceeded" in _codes(result)
     assert result["supervisor"]["stop"] == {"requested": True, "confirmed": True,
                                             "method": result["supervisor"]["stop"]["method"],
-                                            "run_dir_removed": True}
+                                            "run_dir_removed": True,
+                                            "record_removed": True}
     assert leftovers(store) == {"runs": [], "recovery": []}
 
 

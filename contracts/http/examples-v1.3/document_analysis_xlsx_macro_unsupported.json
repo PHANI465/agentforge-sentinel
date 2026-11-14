@@ -1,0 +1,62 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {},
+    "method": "POST",
+    "path": "/v1/documents/h_0000000000000000000010/analysis"
+  },
+  "response": {
+    "coverage": null,
+    "detected": "zip",
+    "errors": [
+      {
+        "code": "macro_content",
+        "detail": "macro-enabled workbooks are refused, never executed"
+      }
+    ],
+    "findings": [],
+    "format": "xlsx",
+    "handle_id": "h_0000000000000000000010",
+    "interpretation": "Deterministic extraction feedback for human review. Not a fraud verdict, authenticity check, calibrated score or approval; document text is inert.",
+    "measures": null,
+    "parser": {
+      "libraries": {
+        "markitdown": "0.1.8",
+        "openpyxl": "3.1.5",
+        "pandas": "3.1.0",
+        "pdfminer.six": "20260107",
+        "pdfplumber": "0.11.10"
+      },
+      "options": {
+        "date_order": "iso_only",
+        "decimal_style": "unspecified",
+        "default_currency": null,
+        "records_limit": 100
+      },
+      "worker_protocol": "sentinel.doc01.worker/0.1",
+      "worker_source_sha256": "137c18f11021fab85b5c1137ff988ae480345015157d041da36133ace8e00cfa",
+      "worker_version": "0.1.0"
+    },
+    "pdf_structure": null,
+    "records": [],
+    "records_next_offset": null,
+    "records_total": 0,
+    "source": {
+      "sha256": "9025b8a0c32e0eb08d487922a895e06f1804c803aa05f9e158f9cc4fd3b25ab6",
+      "size_bytes": 4309
+    },
+    "status": "unsupported",
+    "table_typing": null,
+    "units": [],
+    "unparsed": [],
+    "unparsed_total": 0,
+    "worker_run": {
+      "containment": "windows_job_object",
+      "elapsed_ms": 2000.0,
+      "exit_code": 0,
+      "outcome": "child_result",
+      "stop_confirmed": true
+    }
+  },
+  "status": 200
+}

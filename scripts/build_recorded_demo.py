@@ -47,8 +47,11 @@ PRIVATE_DIR = ROOT / ".agent" / "demo01"
 SCHEMA = "sentinel.demo01.recorded-replay.v1"
 DATABASE = "sentinel_demo01"
 RUNTIME_ROLE = "sentinel_demo01_runtime"
-# The tested application on current main (G3D-P3); the capture records whether src/ equals it.
-TESTED_APPLICATION = "495c7d33424054d27d68d08004191d4be37adaf9"
+# The application the capture was taken from; the capture records whether src/ equals it.
+# Was accepted G3D-P3 495c7d3. DOC01 Part B changes src/ (v1.3 document routes, the
+# R60-R63 corrections at cfa94ab, the R62 follow-ups at 097eb77 and 89c34ea), so the
+# capture is retaken against that source; pending Codex review and integration.
+TESTED_APPLICATION = "89c34ea4960322891faa89c0e003a6ff164e6cd6"
 # Paths whose working-tree state must be committed for a capture to name its source commit.
 GENERATOR_PATHS = ("src", "scripts", "contracts", "pyproject.toml", "uv.lock")
 # Freshness inputs (R48): the generator and the application whose behaviour the capture

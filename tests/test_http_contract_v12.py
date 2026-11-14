@@ -30,8 +30,11 @@ def test_v1_and_v11_snapshots_are_frozen():
     assert exporter.legacy_problems() == []
 
 
-def test_active_snapshot_matches_code():
-    assert (HTTP / "openapi.v1.2.json").read_bytes() == exporter.dumps(exporter.openapi())
+def test_v12_snapshot_is_frozen():
+    # v1.2 was the live schema until DOC01 Part B; v1.3 is now (test_http_contract_v13) and
+    # v1.2 is a frozen snapshot, checked by hash like legacy v1 and v1.1.
+    digest = hashlib.sha256((HTTP / "openapi.v1.2.json").read_bytes()).hexdigest()
+    assert digest == exporter.V12_SHA256
 
 
 def test_v12_is_v11_plus_one_read_route():

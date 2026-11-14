@@ -1,0 +1,17 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "content_type": "text/csv",
+      "fixture": "csv_statement_usd.csv",
+      "sha256": "db20a3e8c3cc8aed35fa2c456f034c1770c2e521fb225466c9f9e04ed5c3e5e4",
+      "size_bytes": 547
+    },
+    "method": "POST",
+    "path": "/v1/documents?format=csv"
+  },
+  "response": {
+    "error": "permission_denied"
+  },
+  "status": 403
+}
