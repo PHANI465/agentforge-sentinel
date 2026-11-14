@@ -13,4 +13,7 @@ assert.deepEqual(stackStartArgs("trace", "D"), [...legacy, "--app", TRACE_APP]);
 assert.equal(TRACE_APP, "g3c_trace_browser:create_app");
 assert.equal(testMatchFor("legacy"), "**/workbench.pw.ts");
 assert.equal(testMatchFor("trace"), "**/trace.pw.ts");
-console.log("Browser suite switch checks passed (legacy start unchanged; trace adds only --app).");
+assert.equal(resolveSuite("documents"), "documents");
+assert.deepEqual(stackStartArgs("documents", "D"), legacy); // documents: the legacy start
+assert.equal(testMatchFor("documents"), "**/documents.pw.ts");
+console.log("Browser suite switch checks passed (legacy start unchanged; trace adds only --app; documents reuses the legacy start).");
