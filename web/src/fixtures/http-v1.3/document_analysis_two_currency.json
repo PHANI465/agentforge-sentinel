@@ -1,0 +1,584 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {},
+    "method": "POST",
+    "path": "/v1/documents/h_0000000000000000000003/analysis"
+  },
+  "response": {
+    "coverage": {
+      "note": "coverage counts what was read; it is not a calibrated confidence",
+      "records_typed": 7,
+      "rows_unparsed": 0,
+      "text_chars": null,
+      "unit": "sheet_or_file",
+      "unit_status_counts": {
+        "parsed": 1
+      },
+      "units_total": 1
+    },
+    "detected": "text",
+    "errors": [],
+    "findings": [],
+    "format": "csv",
+    "handle_id": "h_0000000000000000000003",
+    "interpretation": "Deterministic extraction feedback for human review. Not a fraud verdict, authenticity check, calibrated score or approval; document text is inert.",
+    "measures": {
+      "duplicates": {
+        "checked_records": 4,
+        "groups": [],
+        "groups_total": 0,
+        "interpretation": "possible duplicate rows; not evidence of fraud",
+        "not_checkable_records": 0,
+        "rows_in_duplicate_groups": 0,
+        "rule": "identical date, minor-unit amount, currency, whitespace/case-normalised description and reference"
+      },
+      "missingness": {
+        "count": 4,
+        "fields": {
+          "amount": {
+            "known": 4,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            },
+            "population": 4,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            }
+          },
+          "balance": {
+            "known": 4,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            },
+            "population": 4,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            }
+          },
+          "currency": {
+            "known": 4,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            },
+            "population": 4,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            }
+          },
+          "date": {
+            "known": 4,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            },
+            "population": 4,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            }
+          },
+          "description": {
+            "known": 4,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            },
+            "population": 4,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            }
+          },
+          "reference": {
+            "known": 4,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            },
+            "population": 4,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 4,
+              "numerator": 0
+            }
+          }
+        },
+        "population": "transaction records"
+      },
+      "reconciliation": {
+        "currencies": [
+          {
+            "closing": null,
+            "credits_minor": "2000",
+            "currency": "EUR",
+            "debits_minor": "1250",
+            "difference_minor": null,
+            "exponent": 2,
+            "opening": {
+              "evidence_ids": [
+                "ba00d6b3d4f1:row=3"
+              ],
+              "minor_units": "8000"
+            },
+            "reason": "closing_balance_absent",
+            "sign_convention": "credits positive, debits negative",
+            "status": "not_checkable",
+            "transaction_count": 2,
+            "unknown_amount_count": 0,
+            "unknown_amount_evidence_ids": []
+          },
+          {
+            "closing": {
+              "evidence_ids": [
+                "ba00d6b3d4f1:row=8"
+              ],
+              "minor_units": "27500"
+            },
+            "credits_minor": "10000",
+            "currency": "USD",
+            "debits_minor": "2500",
+            "difference_minor": "0",
+            "exponent": 2,
+            "opening": {
+              "evidence_ids": [
+                "ba00d6b3d4f1:row=2"
+              ],
+              "minor_units": "20000"
+            },
+            "reason": null,
+            "sign_convention": "credits positive, debits negative",
+            "status": "reconciled",
+            "transaction_count": 2,
+            "unknown_amount_count": 0,
+            "unknown_amount_evidence_ids": []
+          }
+        ],
+        "reason": null,
+        "rule": "opening + credits - debits - closing, per currency; currencies are never merged; any unknown amount makes the currency not checkable",
+        "status": null,
+        "unknown_currency_evidence_ids": [],
+        "unknown_currency_records": 0
+      },
+      "running_balance": {
+        "checked_transitions": 4,
+        "mismatches": [],
+        "mismatches_total": 0
+      }
+    },
+    "parser": {
+      "libraries": {
+        "markitdown": "0.1.8",
+        "openpyxl": "3.1.5",
+        "pandas": "3.1.0",
+        "pdfminer.six": "20260107",
+        "pdfplumber": "0.11.10"
+      },
+      "options": {
+        "date_order": "iso_only",
+        "decimal_style": "unspecified",
+        "default_currency": null,
+        "records_limit": 100
+      },
+      "worker_protocol": "sentinel.doc01.worker/0.1",
+      "worker_source_sha256": "137c18f11021fab85b5c1137ff988ae480345015157d041da36133ace8e00cfa",
+      "worker_version": "0.1.0"
+    },
+    "pdf_structure": null,
+    "records": [
+      {
+        "amount": null,
+        "balance": {
+          "decimal": "200.00",
+          "exponent": 2,
+          "minor_units": "20000",
+          "raw": "200.00",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "USD",
+          "source": "row",
+          "status": "known",
+          "value": "USD"
+        },
+        "date": {
+          "raw": "2026-02-01",
+          "status": "known",
+          "value": "2026-02-01"
+        },
+        "description": {
+          "raw": "Opening balance",
+          "status": "known"
+        },
+        "evidence_id": "ba00d6b3d4f1:row=2",
+        "kind": "opening_balance",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 2,
+          "sheet": null
+        },
+        "reference": {
+          "raw": null,
+          "status": "missing"
+        }
+      },
+      {
+        "amount": null,
+        "balance": {
+          "decimal": "80.00",
+          "exponent": 2,
+          "minor_units": "8000",
+          "raw": "80.00",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "EUR",
+          "source": "row",
+          "status": "known",
+          "value": "EUR"
+        },
+        "date": {
+          "raw": "2026-02-01",
+          "status": "known",
+          "value": "2026-02-01"
+        },
+        "description": {
+          "raw": "Opening balance",
+          "status": "known"
+        },
+        "evidence_id": "ba00d6b3d4f1:row=3",
+        "kind": "opening_balance",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 3,
+          "sheet": null
+        },
+        "reference": {
+          "raw": null,
+          "status": "missing"
+        }
+      },
+      {
+        "amount": {
+          "decimal": "-25.00",
+          "exponent": 2,
+          "minor_units": "-2500",
+          "raw": "-25.00",
+          "source": "amount",
+          "status": "known"
+        },
+        "balance": {
+          "decimal": "175.00",
+          "exponent": 2,
+          "minor_units": "17500",
+          "raw": "175.00",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "USD",
+          "source": "row",
+          "status": "known",
+          "value": "USD"
+        },
+        "date": {
+          "raw": "2026-02-02",
+          "status": "known",
+          "value": "2026-02-02"
+        },
+        "description": {
+          "raw": "Card purchase",
+          "status": "known"
+        },
+        "evidence_id": "ba00d6b3d4f1:row=4",
+        "kind": "transaction",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 4,
+          "sheet": null
+        },
+        "reference": {
+          "raw": "A1",
+          "status": "known"
+        }
+      },
+      {
+        "amount": {
+          "decimal": "-12.50",
+          "exponent": 2,
+          "minor_units": "-1250",
+          "raw": "-12.50",
+          "source": "amount",
+          "status": "known"
+        },
+        "balance": {
+          "decimal": "67.50",
+          "exponent": 2,
+          "minor_units": "6750",
+          "raw": "67.50",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "EUR",
+          "source": "row",
+          "status": "known",
+          "value": "EUR"
+        },
+        "date": {
+          "raw": "2026-02-03",
+          "status": "known",
+          "value": "2026-02-03"
+        },
+        "description": {
+          "raw": "Card purchase",
+          "status": "known"
+        },
+        "evidence_id": "ba00d6b3d4f1:row=5",
+        "kind": "transaction",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 5,
+          "sheet": null
+        },
+        "reference": {
+          "raw": "A2",
+          "status": "known"
+        }
+      },
+      {
+        "amount": {
+          "decimal": "100.00",
+          "exponent": 2,
+          "minor_units": "10000",
+          "raw": "100.00",
+          "source": "amount",
+          "status": "known"
+        },
+        "balance": {
+          "decimal": "275.00",
+          "exponent": 2,
+          "minor_units": "27500",
+          "raw": "275.00",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "USD",
+          "source": "row",
+          "status": "known",
+          "value": "USD"
+        },
+        "date": {
+          "raw": "2026-02-04",
+          "status": "known",
+          "value": "2026-02-04"
+        },
+        "description": {
+          "raw": "Transfer in",
+          "status": "known"
+        },
+        "evidence_id": "ba00d6b3d4f1:row=6",
+        "kind": "transaction",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 6,
+          "sheet": null
+        },
+        "reference": {
+          "raw": "A3",
+          "status": "known"
+        }
+      },
+      {
+        "amount": {
+          "decimal": "20.00",
+          "exponent": 2,
+          "minor_units": "2000",
+          "raw": "20.00",
+          "source": "amount",
+          "status": "known"
+        },
+        "balance": {
+          "decimal": "87.50",
+          "exponent": 2,
+          "minor_units": "8750",
+          "raw": "87.50",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "EUR",
+          "source": "row",
+          "status": "known",
+          "value": "EUR"
+        },
+        "date": {
+          "raw": "2026-02-05",
+          "status": "known",
+          "value": "2026-02-05"
+        },
+        "description": {
+          "raw": "Transfer in",
+          "status": "known"
+        },
+        "evidence_id": "ba00d6b3d4f1:row=7",
+        "kind": "transaction",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 7,
+          "sheet": null
+        },
+        "reference": {
+          "raw": "A4",
+          "status": "known"
+        }
+      },
+      {
+        "amount": null,
+        "balance": {
+          "decimal": "275.00",
+          "exponent": 2,
+          "minor_units": "27500",
+          "raw": "275.00",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "USD",
+          "source": "row",
+          "status": "known",
+          "value": "USD"
+        },
+        "date": {
+          "raw": "2026-02-28",
+          "status": "known",
+          "value": "2026-02-28"
+        },
+        "description": {
+          "raw": "Closing balance",
+          "status": "known"
+        },
+        "evidence_id": "ba00d6b3d4f1:row=8",
+        "kind": "closing_balance",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 8,
+          "sheet": null
+        },
+        "reference": {
+          "raw": null,
+          "status": "missing"
+        }
+      }
+    ],
+    "records_next_offset": null,
+    "records_total": 7,
+    "source": {
+      "sha256": "ba00d6b3d4f10ea95d2ddd7e74eb65537dd9d810f9877f36325b5093410f9082",
+      "size_bytes": 355
+    },
+    "status": "complete",
+    "table_typing": {
+      "decimal_style": {
+        "evidence_counts": {
+          "ambiguous": 0,
+          "comma": 0,
+          "dot": 11
+        },
+        "source": "inferred_from_unambiguous_tokens",
+        "value": "dot"
+      },
+      "document_currency": {
+        "source": null,
+        "value": null
+      },
+      "sign_conventions": [
+        "signed_amount_column"
+      ],
+      "tables": [
+        {
+          "columns": {
+            "amount": "Amount",
+            "balance": "Balance",
+            "currency": "Currency",
+            "date": "Date",
+            "description": "Description",
+            "reference": "Reference"
+          },
+          "locator": {
+            "column": null,
+            "file": null,
+            "page": null,
+            "part": null,
+            "row": 1,
+            "sheet": null
+          },
+          "sign_convention": "signed_amount_column",
+          "unmapped_columns": []
+        }
+      ]
+    },
+    "units": [
+      {
+        "chars": null,
+        "evidence_id": null,
+        "images": null,
+        "locator": {
+          "column": null,
+          "file": "csv",
+          "page": null,
+          "part": null,
+          "row": null,
+          "sheet": null
+        },
+        "reason": null,
+        "rows_non_empty": 8,
+        "status": "parsed"
+      }
+    ],
+    "unparsed": [],
+    "unparsed_total": 0,
+    "worker_run": {
+      "containment": "windows_job_object",
+      "elapsed_ms": 1719.0,
+      "exit_code": 0,
+      "outcome": "child_result",
+      "stop_confirmed": true
+    }
+  },
+  "status": 200
+}

@@ -1,0 +1,128 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {},
+    "method": "POST",
+    "path": "/v1/documents/h_0000000000000000000012/analysis"
+  },
+  "response": {
+    "coverage": {
+      "note": "pages with a text layer; not a calibrated confidence or fidelity",
+      "records_typed": null,
+      "rows_unparsed": null,
+      "text_chars": 167,
+      "unit": "page",
+      "unit_status_counts": {
+        "parsed": 1,
+        "unsupported": 1
+      },
+      "units_total": 2
+    },
+    "detected": "pdf",
+    "errors": [],
+    "findings": [
+      {
+        "detail": "Image-only pages are unsupported (no OCR in Part A); they are not counted as extracted and are not empty evidence.",
+        "evidence_count": 1,
+        "evidence_ids": [
+          "06a0414c6890:page=2"
+        ],
+        "finding_id": "F0001",
+        "kind": "pages_without_text_layer",
+        "severity": "warning"
+      }
+    ],
+    "format": "pdf",
+    "handle_id": "h_0000000000000000000012",
+    "interpretation": "Deterministic extraction feedback for human review. Not a fraud verdict, authenticity check, calibrated score or approval; document text is inert.",
+    "measures": {
+      "duplicates": null,
+      "missingness": null,
+      "reconciliation": {
+        "currencies": [],
+        "reason": "pdf_tables_not_typed_in_part_a",
+        "rule": null,
+        "status": "not_checkable",
+        "unknown_currency_evidence_ids": null,
+        "unknown_currency_records": null
+      },
+      "running_balance": null
+    },
+    "parser": {
+      "libraries": {
+        "markitdown": "0.1.8",
+        "openpyxl": "3.1.5",
+        "pandas": "3.1.0",
+        "pdfminer.six": "20260107",
+        "pdfplumber": "0.11.10"
+      },
+      "options": {
+        "date_order": "iso_only",
+        "decimal_style": "unspecified",
+        "default_currency": null,
+        "records_limit": 100
+      },
+      "worker_protocol": "sentinel.doc01.worker/0.1",
+      "worker_source_sha256": "137c18f11021fab85b5c1137ff988ae480345015157d041da36133ace8e00cfa",
+      "worker_version": "0.1.0"
+    },
+    "pdf_structure": {
+      "encrypted": false,
+      "page_tree": "complete",
+      "trailer_present": true
+    },
+    "records": [],
+    "records_next_offset": null,
+    "records_total": 0,
+    "source": {
+      "sha256": "06a0414c689099c9c778638bcb3f1ff60428f7d1cb94e61eef7fbf7802c04a7c",
+      "size_bytes": 1572
+    },
+    "status": "partial",
+    "table_typing": null,
+    "units": [
+      {
+        "chars": 167,
+        "evidence_id": "06a0414c6890:page=1",
+        "images": 0,
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": 1,
+          "part": null,
+          "row": null,
+          "sheet": null
+        },
+        "reason": null,
+        "rows_non_empty": null,
+        "status": "parsed"
+      },
+      {
+        "chars": 0,
+        "evidence_id": "06a0414c6890:page=2",
+        "images": 1,
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": 2,
+          "part": null,
+          "row": null,
+          "sheet": null
+        },
+        "reason": "no_text_layer_image_only",
+        "rows_non_empty": null,
+        "status": "unsupported"
+      }
+    ],
+    "unparsed": [],
+    "unparsed_total": 0,
+    "worker_run": {
+      "containment": "windows_job_object",
+      "elapsed_ms": 1781.0,
+      "exit_code": 0,
+      "outcome": "child_result",
+      "stop_confirmed": true
+    }
+  },
+  "status": 200
+}

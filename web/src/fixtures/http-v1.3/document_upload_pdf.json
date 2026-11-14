@@ -1,0 +1,21 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "content_type": "application/pdf",
+      "fixture": "pdf_text_statement.pdf",
+      "sha256": "ca6f3b03164fe6c1735963f8e22684961b8fac7f25026d299628f2c9b4a6e1fc",
+      "size_bytes": 1658
+    },
+    "method": "POST",
+    "path": "/v1/documents?format=pdf"
+  },
+  "response": {
+    "expires_at": "2026-10-23T18:00:00Z",
+    "format": "pdf",
+    "handle_id": "h_0000000000000000000011",
+    "sha256": "ca6f3b03164fe6c1735963f8e22684961b8fac7f25026d299628f2c9b4a6e1fc",
+    "size_bytes": 1658
+  },
+  "status": 201
+}

@@ -11,7 +11,9 @@ export type Capability =
   | "ingest_transaction"
   | "read_case"
   | "approve_action"
-  | "execute_simulated_action";
+  | "execute_simulated_action"
+  // v1.3 opt-in (DOC01): never part of the default grant.
+  | "analyze_document";
 
 export type Currency = "USD" | "INR" | "GBP" | "JPY";
 

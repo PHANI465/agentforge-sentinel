@@ -434,6 +434,145 @@ tr.selected-record {
   }
 }
 
+/* DOC01 Part C: Document review */
+.documents {
+  padding: 0.85rem 1.25rem 1.25rem;
+  background: var(--sheet);
+  border-top: 2px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.documents h2 {
+  margin: 0.2rem 0 0.4rem;
+}
+
+.documents h3 {
+  margin: 1rem 0 0.4rem;
+}
+
+.documents h4 {
+  margin: 1rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.documents h5 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.doc-step {
+  margin: 0.8rem 0;
+  max-width: 72ch;
+}
+
+.doc-step label {
+  display: block;
+  margin: 0.35rem 0;
+}
+
+.doc-format,
+.doc-options {
+  margin: 0.6rem 0;
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.8rem 0.6rem;
+}
+
+.doc-format label {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  margin-right: 1.2rem;
+}
+
+.doc-options label {
+  display: grid;
+  gap: 0.15rem;
+  max-width: 30rem;
+}
+
+.doc-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem 1.2rem;
+  margin: 0.4rem 0;
+}
+
+.doc-facts dt {
+  font-weight: 700;
+}
+
+.doc-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.doc-result {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.doc-status {
+  font-weight: 700;
+}
+
+.doc-error {
+  color: var(--alert);
+}
+
+.doc-currency {
+  margin: 0.6rem 0;
+  padding: 0.55rem 0.75rem;
+  background: white;
+  border-left: 3px solid var(--stamp);
+}
+
+.doc-confirm {
+  margin: 0.6rem 0;
+  padding: 0.55rem 0.75rem;
+  border-left: 3px solid var(--hold);
+  background: white;
+}
+
+.doc-list {
+  margin: 0.3rem 0;
+  padding-left: 1.3rem;
+}
+
+.doc-list li {
+  margin: 0.25rem 0;
+  overflow-wrap: anywhere;
+}
+
+.evidence code,
+.doc-list code {
+  overflow-wrap: anywhere;
+}
+
+button.linkish {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--stamp);
+  text-decoration: underline;
+  cursor: pointer;
+  font-family: monospace;
+}
+
+table.data tr:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+@media (max-width: 800px) {
+  .documents {
+    padding: 0.85rem 0.75rem 1rem;
+  }
+
+  .doc-facts {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;

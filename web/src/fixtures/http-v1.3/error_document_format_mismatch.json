@@ -1,0 +1,17 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "content_type": "application/pdf",
+      "fixture": "pdf_not_really.pdf",
+      "sha256": "d15a44942028efa82e59a2880c530c5d3bdec4b0de17e14abdba5a8be410315c",
+      "size_bytes": 30
+    },
+    "method": "POST",
+    "path": "/v1/documents?format=pdf"
+  },
+  "response": {
+    "error": "format_mismatch"
+  },
+  "status": 415
+}

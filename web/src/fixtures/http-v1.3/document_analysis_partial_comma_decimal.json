@@ -1,0 +1,460 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {},
+    "method": "POST",
+    "path": "/v1/documents/h_0000000000000000000006/analysis"
+  },
+  "response": {
+    "coverage": {
+      "note": "coverage counts what was read; it is not a calibrated confidence",
+      "records_typed": 4,
+      "rows_unparsed": 1,
+      "text_chars": null,
+      "unit": "sheet_or_file",
+      "unit_status_counts": {
+        "partial": 1
+      },
+      "units_total": 1
+    },
+    "detected": "text",
+    "errors": [],
+    "findings": [
+      {
+        "detail": "Non-ISO dates need a declared day/month order; they are left unknown.",
+        "evidence_count": 4,
+        "evidence_ids": [
+          "6cbaf0029bc8:row=4",
+          "6cbaf0029bc8:row=5",
+          "6cbaf0029bc8:row=6",
+          "6cbaf0029bc8:row=7"
+        ],
+        "finding_id": "F0001",
+        "kind": "date_order_not_declared",
+        "severity": "warning"
+      }
+    ],
+    "format": "csv",
+    "handle_id": "h_0000000000000000000006",
+    "interpretation": "Deterministic extraction feedback for human review. Not a fraud verdict, authenticity check, calibrated score or approval; document text is inert.",
+    "measures": {
+      "duplicates": {
+        "checked_records": 0,
+        "groups": [],
+        "groups_total": 0,
+        "interpretation": "possible duplicate rows; not evidence of fraud",
+        "not_checkable_records": 2,
+        "rows_in_duplicate_groups": 0,
+        "rule": "identical date, minor-unit amount, currency, whitespace/case-normalised description and reference"
+      },
+      "missingness": {
+        "count": 2,
+        "fields": {
+          "amount": {
+            "known": 2,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            },
+            "population": 2,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            }
+          },
+          "balance": {
+            "known": 2,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            },
+            "population": 2,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            }
+          },
+          "currency": {
+            "known": 2,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            },
+            "population": 2,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            }
+          },
+          "date": {
+            "known": 0,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            },
+            "population": 2,
+            "unknown": 2,
+            "unknown_ratio": {
+              "denominator": 2,
+              "numerator": 2
+            }
+          },
+          "description": {
+            "known": 2,
+            "missing": 0,
+            "missing_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            },
+            "population": 2,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            }
+          },
+          "reference": {
+            "known": 0,
+            "missing": 2,
+            "missing_ratio": {
+              "denominator": 2,
+              "numerator": 2
+            },
+            "population": 2,
+            "unknown": 0,
+            "unknown_ratio": {
+              "denominator": 2,
+              "numerator": 0
+            }
+          }
+        },
+        "population": "transaction records"
+      },
+      "reconciliation": {
+        "currencies": [
+          {
+            "closing": {
+              "evidence_ids": [
+                "6cbaf0029bc8:row=7"
+              ],
+              "minor_units": "223025"
+            },
+            "credits_minor": "198025",
+            "currency": "EUR",
+            "debits_minor": "75000",
+            "difference_minor": "0",
+            "exponent": 2,
+            "opening": {
+              "evidence_ids": [
+                "6cbaf0029bc8:row=4"
+              ],
+              "minor_units": "100000"
+            },
+            "reason": null,
+            "sign_convention": "credits positive, debits negative",
+            "status": "reconciled",
+            "transaction_count": 2,
+            "unknown_amount_count": 0,
+            "unknown_amount_evidence_ids": []
+          }
+        ],
+        "reason": null,
+        "rule": "opening + credits - debits - closing, per currency; currencies are never merged; any unknown amount makes the currency not checkable",
+        "status": null,
+        "unknown_currency_evidence_ids": [],
+        "unknown_currency_records": 0
+      },
+      "running_balance": {
+        "checked_transitions": 2,
+        "mismatches": [],
+        "mismatches_total": 0
+      }
+    },
+    "parser": {
+      "libraries": {
+        "markitdown": "0.1.8",
+        "openpyxl": "3.1.5",
+        "pandas": "3.1.0",
+        "pdfminer.six": "20260107",
+        "pdfplumber": "0.11.10"
+      },
+      "options": {
+        "date_order": "iso_only",
+        "decimal_style": "unspecified",
+        "default_currency": null,
+        "records_limit": 100
+      },
+      "worker_protocol": "sentinel.doc01.worker/0.1",
+      "worker_source_sha256": "137c18f11021fab85b5c1137ff988ae480345015157d041da36133ace8e00cfa",
+      "worker_version": "0.1.0"
+    },
+    "pdf_structure": null,
+    "records": [
+      {
+        "amount": null,
+        "balance": {
+          "decimal": "1000.00",
+          "exponent": 2,
+          "minor_units": "100000",
+          "raw": "1.000,00",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "EUR",
+          "source": "row",
+          "status": "known",
+          "value": "EUR"
+        },
+        "date": {
+          "raw": "01.04.2026",
+          "status": "ambiguous",
+          "value": null
+        },
+        "description": {
+          "raw": "Opening balance",
+          "status": "known"
+        },
+        "evidence_id": "6cbaf0029bc8:row=4",
+        "kind": "opening_balance",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 4,
+          "sheet": null
+        },
+        "reference": {
+          "raw": null,
+          "status": "missing"
+        }
+      },
+      {
+        "amount": {
+          "decimal": "-750.00",
+          "exponent": 2,
+          "minor_units": "-75000",
+          "raw": "-750,00",
+          "source": "amount",
+          "status": "known"
+        },
+        "balance": {
+          "decimal": "250.00",
+          "exponent": 2,
+          "minor_units": "25000",
+          "raw": "250,00",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "EUR",
+          "source": "row",
+          "status": "known",
+          "value": "EUR"
+        },
+        "date": {
+          "raw": "02.04.2026",
+          "status": "ambiguous",
+          "value": null
+        },
+        "description": {
+          "raw": "Miete",
+          "status": "known"
+        },
+        "evidence_id": "6cbaf0029bc8:row=5",
+        "kind": "transaction",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 5,
+          "sheet": null
+        },
+        "reference": {
+          "raw": null,
+          "status": "missing"
+        }
+      },
+      {
+        "amount": {
+          "decimal": "1980.25",
+          "exponent": 2,
+          "minor_units": "198025",
+          "raw": "1.980,25",
+          "source": "amount",
+          "status": "known"
+        },
+        "balance": {
+          "decimal": "2230.25",
+          "exponent": 2,
+          "minor_units": "223025",
+          "raw": "2.230,25",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "EUR",
+          "source": "row",
+          "status": "known",
+          "value": "EUR"
+        },
+        "date": {
+          "raw": "15.04.2026",
+          "status": "ambiguous",
+          "value": null
+        },
+        "description": {
+          "raw": "Gehalt",
+          "status": "known"
+        },
+        "evidence_id": "6cbaf0029bc8:row=6",
+        "kind": "transaction",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 6,
+          "sheet": null
+        },
+        "reference": {
+          "raw": null,
+          "status": "missing"
+        }
+      },
+      {
+        "amount": null,
+        "balance": {
+          "decimal": "2230.25",
+          "exponent": 2,
+          "minor_units": "223025",
+          "raw": "2.230,25",
+          "status": "known"
+        },
+        "currency": {
+          "raw": "EUR",
+          "source": "row",
+          "status": "known",
+          "value": "EUR"
+        },
+        "date": {
+          "raw": "30.04.2026",
+          "status": "ambiguous",
+          "value": null
+        },
+        "description": {
+          "raw": "Closing balance",
+          "status": "known"
+        },
+        "evidence_id": "6cbaf0029bc8:row=7",
+        "kind": "closing_balance",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 7,
+          "sheet": null
+        },
+        "reference": {
+          "raw": null,
+          "status": "missing"
+        }
+      }
+    ],
+    "records_next_offset": null,
+    "records_total": 4,
+    "source": {
+      "sha256": "6cbaf0029bc8d33f66e65e45f04af346d31360dfb752a42fa846e3037848b1e6",
+      "size_bytes": 243
+    },
+    "status": "partial",
+    "table_typing": {
+      "decimal_style": {
+        "evidence_counts": {
+          "ambiguous": 0,
+          "comma": 6,
+          "dot": 0
+        },
+        "source": "inferred_from_unambiguous_tokens",
+        "value": "comma"
+      },
+      "document_currency": {
+        "source": null,
+        "value": null
+      },
+      "sign_conventions": [
+        "signed_amount_column"
+      ],
+      "tables": [
+        {
+          "columns": {
+            "amount": "Amount",
+            "balance": "Balance",
+            "currency": "Currency",
+            "date": "Date",
+            "description": "Description"
+          },
+          "locator": {
+            "column": null,
+            "file": null,
+            "page": null,
+            "part": null,
+            "row": 3,
+            "sheet": null
+          },
+          "sign_convention": "signed_amount_column",
+          "unmapped_columns": []
+        }
+      ]
+    },
+    "units": [
+      {
+        "chars": null,
+        "evidence_id": null,
+        "images": null,
+        "locator": {
+          "column": null,
+          "file": "csv",
+          "page": null,
+          "part": null,
+          "row": null,
+          "sheet": null
+        },
+        "reason": null,
+        "rows_non_empty": 6,
+        "status": "partial"
+      }
+    ],
+    "unparsed": [
+      {
+        "evidence_id": "6cbaf0029bc8:row=1",
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": null,
+          "part": null,
+          "row": 1,
+          "sheet": null
+        },
+        "raw_excerpt": "Kontoauszug | SYNTH-0003",
+        "reason": "unrecognised_row"
+      }
+    ],
+    "unparsed_total": 1,
+    "worker_run": {
+      "containment": "windows_job_object",
+      "elapsed_ms": 1719.0,
+      "exit_code": 0,
+      "outcome": "child_result",
+      "stop_confirmed": true
+    }
+  },
+  "status": 200
+}

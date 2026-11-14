@@ -1,0 +1,19 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {
+      "decimal_style": "roman"
+    },
+    "method": "POST",
+    "path": "/v1/documents/h_0000000000000000000002/analysis"
+  },
+  "response": {
+    "details": [
+      {
+        "code": "literal_error"
+      }
+    ],
+    "error": "invalid_request"
+  },
+  "status": 422
+}

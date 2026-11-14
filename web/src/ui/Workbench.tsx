@@ -1,5 +1,6 @@
 import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { SentinelClient } from "../api/client";
+import { createDocumentClient, type DocumentClient } from "../api/documents";
 import { allows } from "../api/case";
 import { investigatorLabel } from "../api/format";
 import { ModelSection, ScorerStrip, useAnalysis } from "./AnalysisPanel";
@@ -15,6 +16,7 @@ import type {
   SessionView,
 } from "../api/types";
 import { CaseFile } from "./CaseFile";
+import { DocumentReview } from "./DocumentReview";
 import { IngestForm } from "./IngestForm";
 import { Queue } from "./Queue";
 import { TracePanel, useTrace } from "./TracePanel";
@@ -44,20 +46,25 @@ function capabilityLine(session: SessionView): string {
     allows(session, "ingest_transaction") ? "record transactions" : "",
     allows(session, "approve_action", true) ? "approve or reject" : "",
     allows(session, "execute_simulated_action", true) ? "execute simulated actions" : "",
+    allows(session, "analyze_document") ? "review local documents" : "",
   ].filter(Boolean);
   return granted.length > 0 ? `Can ${granted.join(", ")}.` : "This session has no case permissions.";
 }
+
+const defaultDocuments = createDocumentClient();
 
 export function Workbench({
   client,
   token,
   session,
   onSignOut,
+  documents = defaultDocuments,
 }: {
   client: SentinelClient;
   token: string;
   session: SessionView;
   onSignOut: () => void;
+  documents?: DocumentClient;
 }) {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [page, setPage] = useState<CasePage | null>(null);
@@ -393,6 +400,10 @@ export function Workbench({
         )}
         </CasePaneBoundary>
       </div>
+      {allows(session, "analyze_document") ? (
+        // Separate from casework: no path from here into cases, investigations or actions.
+        <DocumentReview key={session.session_id} documents={documents} token={token} sessionId={session.session_id} />
+      ) : null}
       <ModelSection state={analysis} />
     </>
   );

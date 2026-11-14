@@ -1,0 +1,116 @@
+{
+  "request": {
+    "authenticated": true,
+    "body": {},
+    "method": "POST",
+    "path": "/v1/documents/h_0000000000000000000011/analysis"
+  },
+  "response": {
+    "coverage": {
+      "note": "pages with a text layer; not a calibrated confidence or fidelity",
+      "records_typed": null,
+      "rows_unparsed": null,
+      "text_chars": 256,
+      "unit": "page",
+      "unit_status_counts": {
+        "parsed": 2
+      },
+      "units_total": 2
+    },
+    "detected": "pdf",
+    "errors": [],
+    "findings": [],
+    "format": "pdf",
+    "handle_id": "h_0000000000000000000011",
+    "interpretation": "Deterministic extraction feedback for human review. Not a fraud verdict, authenticity check, calibrated score or approval; document text is inert.",
+    "measures": {
+      "duplicates": null,
+      "missingness": null,
+      "reconciliation": {
+        "currencies": [],
+        "reason": "pdf_tables_not_typed_in_part_a",
+        "rule": null,
+        "status": "not_checkable",
+        "unknown_currency_evidence_ids": null,
+        "unknown_currency_records": null
+      },
+      "running_balance": null
+    },
+    "parser": {
+      "libraries": {
+        "markitdown": "0.1.8",
+        "openpyxl": "3.1.5",
+        "pandas": "3.1.0",
+        "pdfminer.six": "20260107",
+        "pdfplumber": "0.11.10"
+      },
+      "options": {
+        "date_order": "iso_only",
+        "decimal_style": "unspecified",
+        "default_currency": null,
+        "records_limit": 100
+      },
+      "worker_protocol": "sentinel.doc01.worker/0.1",
+      "worker_source_sha256": "137c18f11021fab85b5c1137ff988ae480345015157d041da36133ace8e00cfa",
+      "worker_version": "0.1.0"
+    },
+    "pdf_structure": {
+      "encrypted": false,
+      "page_tree": "complete",
+      "trailer_present": true
+    },
+    "records": [],
+    "records_next_offset": null,
+    "records_total": 0,
+    "source": {
+      "sha256": "ca6f3b03164fe6c1735963f8e22684961b8fac7f25026d299628f2c9b4a6e1fc",
+      "size_bytes": 1658
+    },
+    "status": "complete",
+    "table_typing": null,
+    "units": [
+      {
+        "chars": 167,
+        "evidence_id": "ca6f3b03164f:page=1",
+        "images": 0,
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": 1,
+          "part": null,
+          "row": null,
+          "sheet": null
+        },
+        "reason": null,
+        "rows_non_empty": null,
+        "status": "parsed"
+      },
+      {
+        "chars": 89,
+        "evidence_id": "ca6f3b03164f:page=2",
+        "images": 0,
+        "locator": {
+          "column": null,
+          "file": null,
+          "page": 2,
+          "part": null,
+          "row": null,
+          "sheet": null
+        },
+        "reason": null,
+        "rows_non_empty": null,
+        "status": "parsed"
+      }
+    ],
+    "unparsed": [],
+    "unparsed_total": 0,
+    "worker_run": {
+      "containment": "windows_job_object",
+      "elapsed_ms": 1781.0,
+      "exit_code": 0,
+      "outcome": "child_result",
+      "stop_confirmed": true
+    }
+  },
+  "status": 200
+}
