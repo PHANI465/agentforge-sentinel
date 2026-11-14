@@ -367,6 +367,19 @@ describe("worker failures are not document results", () => {
 });
 
 describe("delete and fencing", () => {
+  it("clears an unavailable handle without claiming deletion", async () => {
+    const user = userEvent.setup();
+    const documents = fakeClient({ remove: vi.fn(async () => failure("refused", 404, "not_found")) });
+    render(<DocumentReview documents={documents} token="tok" recordsLimit={5} sessionId="s1" />);
+    await uploadCsv(user);
+    await analyse(user);
+    await screen.findByRole("heading", { name: "Extraction result: complete" });
+    await user.click(screen.getByRole("button", { name: "Delete document" }));
+    await waitFor(() => expect(screen.queryByText("Uploaded document")).not.toBeInTheDocument());
+    expect(screen.queryByText(/^Deleted\./)).not.toBeInTheDocument();
+    expect(screen.getByText(/no longer available here/)).toBeInTheDocument();
+  });
+
   it("delete clears every piece of local content", async () => {
     const user = userEvent.setup();
     const documents = fakeClient();

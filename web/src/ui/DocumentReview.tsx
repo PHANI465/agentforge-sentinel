@@ -329,7 +329,7 @@ export function DocumentReview({
       setNotice({ tone: "error", text: "The server did not confirm the deletion. The document may still be stored; try deleting it again." });
       return;
     }
-    if (result.ok || (result.kind === "refused" && result.code === "not_found")) {
+    if (result.ok) {
       clearAll();
       setNotice({ tone: "info", text: "Deleted. Nothing from that document is shown any more." });
       return;
