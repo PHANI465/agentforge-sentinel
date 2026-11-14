@@ -613,7 +613,7 @@ export function DocumentReview({
                 <p>
                   Possible duplicate rows: {analysis.measures.duplicates.groups_total} group(s) covering{" "}
                   {analysis.measures.duplicates.rows_in_duplicate_groups} row(s); {analysis.measures.duplicates.checked_records} checked,{" "}
-                  {analysis.measures.duplicates.not_checkable_records} not checkable. {analysis.measures.duplicates.interpretation}.
+                  {analysis.measures.duplicates.not_checkable_records} not checkable ({analysis.measures.duplicates.interpretation}).
                 </p>
               ) : null}
             </>
