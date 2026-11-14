@@ -1,6 +1,6 @@
 # Resume Sentinel from committed context
 
-Updated November 12, 2026. This is the durable entry point for a new Codex or Claude chat.
+Updated November 13, 2026. This is the durable entry point for a new Codex or Claude chat.
 Files supply context; they do not automatically synchronize sessions, authorize extra
 work or preserve a killed process. Inspect actual Git and job/recovery state before acting.
 
@@ -18,8 +18,9 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 
 ## Current position
 
-- The core application remains the exact tested 871e31d code. Main also includes the accepted DOC01 Part A worker through source merge `662572e`; its integration checks are recorded separately.
-- DOC01 Part A [local worker is accepted](reviews/DOC01-8f7bd87.md) at `8f7bd87` and integrated in source merge `662572e`; [release evidence](releases/DOC01-Part-A-main-integration-2026-11-12.md). It is not an upload API or UI. The [next backend assignment](prompts/CLAUDE_DOC01_PART_B_BACKEND.md) is current.
+- DOC01 Part B is [accepted](reviews/DOC01-B-d6d509e.md) at `d6d509e` and [integrated locally](releases/DOC01-Part-B-main-integration-2026-11-13.md) in source merge `e51f47a`. HTTP v1.3 now exposes opt-in local upload, typed extraction feedback, record paging and deletion for public/synthetic files. The browser document UI is next, with its dispatch on `task/coordination`; it is not yet delivered. No remote push or deployment occurred.
+- The casework and scoring paths retain their tested 871e31d baseline. Main also includes the accepted DOC01 Part A worker through source merge `662572e`; its integration checks are recorded separately.
+- DOC01 Part A [local worker is accepted](reviews/DOC01-8f7bd87.md) at `8f7bd87` and integrated in source merge `662572e`; [release evidence](releases/DOC01-Part-A-main-integration-2026-11-12.md). The [Part B backend assignment](prompts/CLAUDE_DOC01_PART_B_BACKEND.md) is delivered history.
 - AN01-M1 measurement prototype is independently accepted at exact `28dfcef` for its reviewed behavior; R56 is closed. [Review](reviews/AN01-M1-28dfcef.md). It remains unmerged, and the tiny timing controls are not demonstrated. The prior b54de1a review is preserved as history.
 - DOC01 Part A was delivered at `cecccad`; its [first review](reviews/DOC01-cecccad.md) requested R58/R59. The original [two-finding correction](prompts/CLAUDE_DOC01_REVIEW_FIXES.md) is delivered history.
 - DOC01 re-review at `69b51fe` [closes R59](reviews/DOC01-69b51fe.md); its [unreadable-member correction](prompts/CLAUDE_DOC01_R58_FOLLOWUP.md) is delivered history.

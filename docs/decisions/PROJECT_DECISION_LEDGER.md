@@ -30,6 +30,15 @@ These are retrospective summaries of written project records, not reconstructed 
 | H10 | DOC01 candidate `69b51fe` closes R59's invalid-child-success finding but remains changes-requested for R58. An unreadable live `/proc` member must mean unknown/kept, never an empty group. No worker or upload integration is accepted yet. | [DOC01 re-review](../reviews/DOC01-69b51fe.md) |
 | H11 | DOC01 candidate `7ec46ae` closes the unreadable-`/proc` case but remains changes-requested for R58: a PID-list snapshot can miss a group descendant forked after enumeration. Confirm group absence after the scan; no worker or upload integration is accepted yet. | [DOC01 re-review](../reviews/DOC01-7ec46ae.md) |
 | H12 | DOC01 Part A `8f7bd87` closes R58/R59 and is accepted for a local, separately locked worker over public/synthetic files. Source integration is `662572e`. The Windows recovery-record replacement issue is a required follow-up before API exposure; browser upload, feedback UI and OS network isolation are not delivered by Part A. | [Final review](../reviews/DOC01-8f7bd87.md), [release evidence](../releases/DOC01-Part-A-main-integration-2026-11-12.md) |
+| H13 | DOC01 Part B candidates `612934b`, `aca58f2` and `a3d1a6c` went through R60-R63 corrections. The last gap was a cross-process bridge record counted as zero kept while its owner was live. | [Final candidate review](../reviews/DOC01-B-d6d509e.md) |
+| H14 | DOC01 Part B `d6d509e` closes R60-R63 for the local upload API. It is integrated on main at source merge `e51f47a` after sequential Windows/native full gates and the unchanged 19+10 browser suites. The document UI, private-customer use and hosting remain separate work. | [Final review](../reviews/DOC01-B-d6d509e.md), [integration evidence](../releases/DOC01-Part-B-main-integration-2026-11-13.md) |
+
+**D20261113-01 — active document contract.** HTTP v1.3 is accepted for the
+opt-in local DOC01 API at source merge `e51f47a`; v1/v1.1/v1.2 stay frozen.
+This supersedes only the implementation status and active-version wording
+in the November 12 contract-order decision below. AN01 Reports remains a
+later v1.4-or-higher proposal, without production endpoints or qualified
+full-size limits.
 
 **D20261112-02 — contract order for the next local feature.** The active HTTP
 snapshot is v1.2. DOC01's opt-in upload/feedback backend takes the next

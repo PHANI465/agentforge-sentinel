@@ -1,6 +1,17 @@
 # Shared implementation queue
 
-## November 12: DOC01 backend upload and feedback next
+## November 13: document review UI next
+
+DOC01 Part B is [accepted](reviews/DOC01-B-d6d509e.md) and
+[integrated](releases/DOC01-Part-B-main-integration-2026-11-13.md) on main
+at source merge `e51f47a`. The next isolated task is a typed, read-only
+document feedback panel with real browser → production API → registered
+DOC01 worker → disposable PostgreSQL proof. The detailed Claude dispatch
+is on `task/coordination`. Keep old browser suites and the human action
+boundary intact. Do not start AN01 production Reports, live provider calls
+or a private-document hosted service as part of this UI slice.
+
+## November 12: DOC01 backend upload and feedback (delivered history)
 
 DOC01 Part A is [accepted](reviews/DOC01-8f7bd87.md) at `8f7bd87` and
 integrated into reviewed merge `662572e` for the local-worker scope. The

@@ -1,6 +1,6 @@
 # Project artifacts
 
-Latest checkpoint: [November 10](AgentForge_Sentinel_Session_2026-11-10.md). M1 re-review closes R54; one R56 close-interruption correction remains.
+Latest integrated release: [DOC01 Part B local document API, November 13](../releases/DOC01-Part-B-main-integration-2026-11-13.md). The [current status](../STATUS.md) and [START_HERE](../START_HERE.md) supersede dated checkpoint text. AN01-M1 is accepted for its prototype behavior but remains unmerged; the full-size limits are not demonstrated.
 
 Current decisions and future chat context: [decision ledger](../decisions/PROJECT_DECISION_LEDGER.md), [START_HERE](../START_HERE.md) and [expansion research](../research/2026-11-08-expansion-research.md). New directions are planned, not implemented.
 
@@ -12,8 +12,9 @@ Current decisions and future chat context: [decision ledger](../decisions/PROJEC
 - [Short overview and remaining work](AgentForge_Sentinel_Overview_and_Remaining_Work.md)
 
 Read the project idea and full implementation pipeline first; completed and remaining
-stages are at the end of the guide. AN01-M1 is delivered for review at 93583a, not accepted;
-its tiny benchmark is not demonstrated. Older Word/Markdown documents below remain dated
+stages are at the end of the guide. Its November 8 stage table is a dated
+snapshot; the current DOC01 integration and remaining work are linked above.
+The AN01-M1 tiny benchmark is not demonstrated. Older Word/Markdown documents below remain dated
 historical snapshots. No updated Word file is claimed by this Markdown/HTML publication.
 
 ## Earlier complete project study guide (November 2 snapshot)

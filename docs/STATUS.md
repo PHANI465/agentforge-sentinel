@@ -1,5 +1,18 @@
 # Project status
 
+## November 13: DOC01 Part B local upload API accepted and integrated
+
+Exact candidate **d6d509e555d41638e24050f99bd8e53e1d7f3732** is
+[independently accepted](reviews/DOC01-B-d6d509e.md) for the local,
+opt-in public/synthetic document API. R60-R63 close. The automatic source
+merge **e51f47aa21606425e132afc05ac19a3bd145099d** is on main;
+[integration evidence](releases/DOC01-Part-B-main-integration-2026-11-13.md)
+records sequential clean Windows/native gates, 941/945 backend passes plus
+one allowed skip each, and the existing 19+10 browser suites. HTTP v1.3
+is active. The document UI, OCR, private-customer use, hosting and live
+provider are not delivered. AN01-M1 remains accepted for prototype scope
+but unmerged, with full-size limits not demonstrated. Nothing was pushed.
+
 ## November 12: DOC01 Part A local worker accepted and integrated
 
 Exact **8f7bd87226418acaed6c4436d3122d4a60d9ff94** is

@@ -1,6 +1,6 @@
 # 0010: Local document upload and feedback contract (HTTP v1.3, DOC01 Part B)
 
-- Status: proposed (candidate for Codex review; not accepted)
+- Status: accepted for the local DOC01 Part B API at `d6d509e`; source merge `e51f47a`. The browser UI remains a separate task.
 - Date: 2026-11-12
 - Decided by: pending Codex review; proposed by Claude Code under
   `docs/prompts/CLAUDE_DOC01_PART_B_BACKEND.md`

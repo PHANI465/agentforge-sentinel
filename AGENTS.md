@@ -1,11 +1,22 @@
 # AgentForge Sentinel: shared agent instructions
 
-Current November 12 DOC01 review: exact 8f7bd87226418acaed6c4436d3122d4a60d9ff94
+Current November 13 DOC01 position: Part B is independently accepted at
+d6d509e555d41638e24050f99bd8e53e1d7f3732 and integrated on main in
+source merge e51f47aa21606425e132afc05ac19a3bd145099d. Read
+docs/reviews/DOC01-B-d6d509e.md and
+docs/releases/DOC01-Part-B-main-integration-2026-11-13.md. HTTP v1.3 is
+active for local, opt-in document analysis. The browser document UI is the
+next separate assignment on task/coordination. AN01-M1 remains accepted for
+prototype scope but unmerged. No remote push, private-customer documents,
+live provider or deployment is included. Earlier DOC01 paragraphs below
+are historical.
+
+Earlier November 12 DOC01 review: exact 8f7bd87226418acaed6c4436d3122d4a60d9ff94
 is independently accepted for **Part A local-worker scope** under
 docs/reviews/DOC01-8f7bd87.md; R58/R59 close. Integrated source merge
 662572e250807d6bbb26e4cb0d37d572e51aed7f is checked separately under
 docs/releases/DOC01-Part-A-main-integration-2026-11-12.md. The worker is not a
-browser upload or feedback API. The current next assignment is
+browser upload or feedback API. The historical next assignment was
 docs/prompts/CLAUDE_DOC01_PART_B_BACKEND.md: local opt-in upload/feedback
 backend from accepted main, with a frozen additive contract. Keep the observed
 Windows record-replacement reliability issue as a required pre-API fix. The
