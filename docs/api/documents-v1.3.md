@@ -147,8 +147,18 @@ The record moves through these steps:
 5. A completed or confirmed-stopped call removes its record.
 
 **Recovery** reads records **and** their temporaries, grouped per call, before the next
-analysis and after an API restart. It skips this process's running calls, and calls owned
-by another API process that is verifiably still alive. Then:
+analysis and after an API restart.
+
+- **Left untouched but counted as pending.** These calls are never signalled, yet they keep
+  recovery pending, so analysis is refused (`503 document_worker_recovery_pending`):
+  - this process's own running calls;
+  - calls owned by another API process that is verifiably alive, or whose state is unknown.
+
+  A recovery pass that runs while such a call is in progress therefore refuses that one
+  analysis. Steady-state analyses do not run recovery. A record clears only by verified
+  absence, verified pid reuse, or an identity-checked stop after its owner is gone.
+
+For the remaining calls:
 
 - A process lookup is one of four states: confirmed gone; live with the recorded identity;
   live with a different identity (the pid was reused); or unknown.

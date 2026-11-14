@@ -449,9 +449,9 @@ class DocumentService:
     def _recover_bridges(self) -> int:
         """Verify recorded bridge processes; returns how many groups must still be kept.
 
-        Records and their temporaries are grouped per call. A group is skipped while it is
-        this process's own running call, or owned by another API process that is verifiably
-        still alive. Otherwise every recorded pid must be confirmed gone (or reused by a
+        Records and their temporaries are grouped per call. A group is left untouched, but
+        still counted as kept, while it is this process's own running call or is owned by
+        another API process that is verifiably alive (or whose state is unknown). Otherwise every recorded pid must be confirmed gone (or reused by a
         different process) before the group is removed. A pid still verified as the recorded
         process is stopped, and its exit confirmed. Unknown state, an unreadable file or a
         launch intent with no pid evidence keeps the group and sends no signal.
@@ -479,9 +479,13 @@ class DocumentService:
                 continue
             nonce = next((r.get("nonce") for r in records if r.get("nonce")), None)
             with self._state_lock:
-                if nonce in self._inflight:
-                    continue  # this process's own call, still running
-            if self._owned_by_another_live_api(records):
+                running_here = nonce in self._inflight
+            if running_here or self._owned_by_another_live_api(records):
+                # Left untouched (never signalled): this process's own running call, or a
+                # call of another API process that is verifiably alive or of unknown state.
+                # Its bridge may still be live, so it counts as pending until it is cleaned
+                # up by verified absence, verified pid reuse or identity-checked stop (R62).
+                kept += 1
                 continue
             if not self._confirm_stopped(records):
                 kept += 1

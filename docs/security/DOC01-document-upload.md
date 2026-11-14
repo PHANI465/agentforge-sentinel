@@ -80,7 +80,10 @@ import `docworker`; the API would then answer 503 because its status check fails
   - Unknown state (an inaccessible process, an unreadable or malformed `/proc`, or no
     `/proc` at all) keeps the record and is never signalled. So is a launch intent without
     a pid.
-  - Calls of another live API process sharing the store are left alone.
+  - Calls of another live API process sharing the store, and this process's own running
+    calls, are left alone (never signalled). They still count as recovery pending until
+    verified cleanup, so a second API instance cannot report a clean recovery while such a
+    bridge may be live.
 - **Logging.** Events use the safe-log allowlist: route templates, never handle ids, plus
   fixed or sanitised outcome codes. Bridge stderr is never logged or echoed.
 
