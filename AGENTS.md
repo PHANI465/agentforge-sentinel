@@ -1,5 +1,10 @@
 # AgentForge Sentinel: shared agent instructions
 
+November 14 DOC01 Part C is integrated locally at the verified source commit
+3dfbc0054fa34d457f292a3ec916ee0d452b59a2. R64–R66 are closed. Read
+docs/releases/DOC01-Part-C-main-integration-2026-11-14.md and
+docs/ui/DOC01-document-review.md. The current queue is on task/coordination.
+
 Current November 13 DOC01 position: Part B is independently accepted at
 d6d509e555d41638e24050f99bd8e53e1d7f3732 and integrated on main in
 source merge e51f47aa21606425e132afc05ac19a3bd145099d. Read

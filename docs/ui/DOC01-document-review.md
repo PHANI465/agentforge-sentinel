@@ -1,10 +1,7 @@
 # DOC01 Part C: Document review in the analyst workbench
 
-**Status:** candidate for Codex re-review after the R64–R66 corrections
-([review](../reviews/DOC01-C-8bee376.md) on task/coordination); not accepted and not merged.
-It is built on main
-`813b0db3f5e5b289428ea03dc249518f589bf0c2` (DOC01 Part B accepted at `d6d509e`, integrated in
-`e51f47a`).
+The Document Review UI is integrated on local main at verified source commit
+`3dfbc00`. [Release verification](../releases/DOC01-Part-C-main-integration-2026-11-14.md)
 
 The contract it uses is HTTP v1.3, unchanged:
 [documents-v1.3.md](../api/documents-v1.3.md) and
@@ -49,8 +46,9 @@ case pane, its human approval and its idempotency key are unchanged.
 5. **Page records** with `GET .../records`, using the returned `next_offset`. The total and
    the current range are always shown. Previous pages are revisited from a stack of offsets
    that were actually returned.
-6. **Delete** uses the accepted DELETE route and clears all local content. A 404 on delete
-   also clears it.
+6. **Delete** uses the accepted DELETE route. A matching confirmation clears local
+   content and reports deletion. A 404 also clears local content and reports that
+   the handle is unavailable.
 
 ## States and what they mean
 

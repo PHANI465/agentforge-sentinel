@@ -1,5 +1,13 @@
 # Project status
 
+## November 14 DOC01 Part C integrated
+
+Local main includes the Document Review UI at verified source commit
+`3dfbc0054fa34d457f292a3ec916ee0d452b59a2`. R64–R66 are closed.
+Windows and Ubuntu passed all six backend checks with 941 and 945 tests
+respectively and one allowed skip each. Windows passed 266 frontend tests
+and 41 browser cases. [Part C release](releases/DOC01-Part-C-main-integration-2026-11-14.md)
+
 ## November 13: DOC01 Part B local upload API accepted and integrated
 
 Exact candidate **d6d509e555d41638e24050f99bd8e53e1d7f3732** is

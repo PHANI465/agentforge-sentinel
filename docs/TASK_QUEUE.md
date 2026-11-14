@@ -1,6 +1,13 @@
 # Shared implementation queue
 
-## November 13: document review UI next
+## November 14 DOC01 Part C complete
+
+The local Document Review UI is integrated at verified source commit
+`3dfbc00`. AN01-M1 remains an accepted prototype awaiting its separate
+integration. Its provisional limits remain recorded in the
+[AN01 review](reviews/AN01-M1-28dfcef.md).
+
+## November 13 document review UI assignment (delivered history)
 
 DOC01 Part B is [accepted](reviews/DOC01-B-d6d509e.md) and
 [integrated](releases/DOC01-Part-B-main-integration-2026-11-13.md) on main

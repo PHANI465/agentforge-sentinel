@@ -1,6 +1,6 @@
 # Project artifacts
 
-Latest integrated release: [DOC01 Part B local document API, November 13](../releases/DOC01-Part-B-main-integration-2026-11-13.md). The [current status](../STATUS.md) and [START_HERE](../START_HERE.md) supersede dated checkpoint text. AN01-M1 is accepted for its prototype behavior but remains unmerged; the full-size limits are not demonstrated.
+The latest local release adds Document Review to the analyst workbench. AN01-M1 remains an accepted prototype awaiting integration, with its full-size limits unqualified. [DOC01 Part C release](../releases/DOC01-Part-C-main-integration-2026-11-14.md) · [Current status](../STATUS.md) · [START_HERE](../START_HERE.md)
 
 Current decisions and future chat context: [decision ledger](../decisions/PROJECT_DECISION_LEDGER.md), [START_HERE](../START_HERE.md) and [expansion research](../research/2026-11-08-expansion-research.md). New directions are planned, not implemented.
 
