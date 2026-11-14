@@ -1,6 +1,8 @@
 # DOC01 Part C: Document review in the analyst workbench
 
-**Status:** candidate for Codex review; not accepted and not merged. It is built on main
+**Status:** candidate for Codex re-review after the R64–R66 corrections
+([review](../reviews/DOC01-C-8bee376.md) on task/coordination); not accepted and not merged.
+It is built on main
 `813b0db3f5e5b289428ea03dc249518f589bf0c2` (DOC01 Part B accepted at `d6d509e`, integrated in
 `e51f47a`).
 
@@ -85,6 +87,24 @@ case pane, its human approval and its idempotency key are unchanged.
 - **Wording.** It is extraction and consistency checking only: not fraud detection,
   authenticity, a calibrated score or an approval.
 
+## Every success must describe the current document (R64)
+
+Each v1.3 response can be valid on its own and still describe another document. The UI
+therefore checks each success against what it already holds (`web/src/api/documents.ts`:
+`uploadMatches`, `analysisMatches`, `pageMatches`, `deletionConfirmed`):
+
+| Response | Must agree with | On disagreement |
+| --- | --- | --- |
+| Upload receipt | the chosen file's size and the format it was sent as | The handle is not adopted and nothing from the receipt is shown. The file stays selected so it can be uploaded again. |
+| Analysis | the current handle, the receipt's SHA-256, size and format, and every submitted option (decimal style, date order, default currency, records per page) | No result is shown as current, including an earlier one, because the stored result may have changed. The state is *unconfirmed*, and a retry is offered. |
+| Records page | the current handle, the analysis shown (source digest, status and records total), the requested offset and limit, and the page rule (`next_offset` follows the returned records exactly) | The page is refused and the analysis above it is cleared, because another tab may have replaced it. The upload stays; running the analysis again shows the current result. |
+| DELETE | the current handle and `deleted: true` | The UI does not say "Deleted". It keeps the document and asks for another try. |
+
+**Limit:** this is a consistency check, not a pinned snapshot. v1.3 has no analysis revision
+or version field. If another tab replaces the stored analysis with one that has the same
+status and the same records total, a later page cannot reveal it, and the page is shown under
+the earlier analysis.
+
 ## Ownership of late responses
 
 Every request takes a new generation number and its own `AbortController`. A response
@@ -129,12 +149,27 @@ log, a screenshot or diagnostics, and the handle is never displayed.
     - API restart, after which paging continues from the stored analysis;
     - a late analysis after sign-out, suppressed;
     - casework table counts unchanged.
-  - **Cleanup:** the suite deletes its documents and checks the store is empty (handles,
-    runs, recovery, api-bridge). It scans every artifact for the document-session tokens,
-    reporting matching file names only, and removes the store only when it is verified
-    empty. Otherwise the store is kept as recovery evidence, and a later launch refuses to
-    start over it. The shared teardown still stops the stack, checks the controlled-failure
-    artifact and scans for the stack's own secrets.
+  - **Cleanup** (`web/e2e/support/docArtifacts.ts`):
+    - The suite deletes its documents.
+    - **Token scan (R65):** while the stack still runs, it searches for the three
+      document-session tokens in test results, the whole runtime directory, the stack's own
+      directory (API log, manifest, PostgreSQL files) and the stack's secret file. Nothing is
+      skipped, because a document token has no expected place on disk. A match is reported
+      by relative file name only; a link or unreadable entry is reported as a problem. A
+      test-owned synthetic canary file under the stack directory must be reported by its
+      relative name and is removed before shared teardown.
+    - **Store removal (R66):** the store is removed only when its whole tree is exactly the
+      empty `docworker init` layout: the marker file, empty `handles`, `runs` and `recovery`,
+      and optionally an empty `api-bridge`. Any other file, directory, link or unreadable
+      entry, at the root or below, is refused by name and left in place. Removal is entry by
+      entry without recursion, so anything that appears after the check stops it. A kept
+      store is recovery evidence, and a later launch refuses to start over it.
+    - The shared teardown still stops the stack, checks the controlled-failure artifact and
+      scans for the stack's own secrets.
+  - **Canary tests:** `web/e2e/support/docArtifacts.test.ts` runs under Vitest on throwaway
+    directories. It covers an unexpected root file, directory and link, contents inside known
+    directories, a wrong entry type, an unreadable entry, a normal empty store, and a token
+    canary in a stack log, in the secret file and in nested directories.
   - **QA:** screenshots go to `web/test-results/qa-documents/`, which is private and ignored.
 - **Unchanged:** the legacy 19-case and trace 10-case browser suites; `suite-harness`
   asserts their starts.
@@ -146,3 +181,5 @@ log, a screenshot or diagnostics, and the handle is never displayed.
 - A worker-side analysis that the browser abandons (sign-out mid-run) still completes on the
   server and replaces the stored result. The UI never shows it to the departed session.
 - Linux browser execution is not verified here; the browser suites ran on Windows.
+- Records pages are bound to the analysis shown only by handle, source digest, status and
+  total (see R64 above). v1.3 has no analysis revision.

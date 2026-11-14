@@ -803,6 +803,68 @@ export const acceptDeleted = parseOrNull((value): DocumentDeleted => {
   return { handle_id: match(has(obj, "handle_id"), HANDLE), deleted: bool(has(obj, "deleted")) };
 });
 
+// ---- binding a success to the current document (R64) -----------------------------------------
+//
+// Each response is valid on its own; these checks reject a valid-shaped success that describes
+// a different document, upload, option set or analysis from the one the UI holds. v1.3 has no
+// analysis revision, so a replacement made elsewhere with the same status and total cannot be
+// detected from these fields; nothing here claims a pinned snapshot.
+
+/** The upload receipt describes the file that was chosen and the format it was sent as. */
+export function uploadMatches(receipt: DocumentUpload, file: { size: number }, format: DocumentFormat): boolean {
+  return receipt.format === format && receipt.size_bytes === file.size;
+}
+
+/** The analysis is of this handle's uploaded bytes, under exactly the options submitted. */
+export function analysisMatches(
+  analysis: DocumentAnalysis,
+  upload: DocumentUpload,
+  request: AnalysisRequest,
+): boolean {
+  const applied = analysis.parser.options;
+  return (
+    analysis.handle_id === upload.handle_id &&
+    analysis.source.sha256 === upload.sha256 &&
+    analysis.source.size_bytes === upload.size_bytes &&
+    analysis.format === upload.format &&
+    applied.decimal_style === request.decimal_style &&
+    applied.date_order === request.date_order &&
+    applied.default_currency === request.default_currency &&
+    applied.records_limit === request.records_limit
+  );
+}
+
+/** The page belongs to the analysis shown, answers the request made and keeps the page rule. */
+export function pageMatches(
+  page: RecordPage,
+  analysis: DocumentAnalysis,
+  offset: number,
+  limit: number,
+): boolean {
+  if (
+    page.handle_id !== analysis.handle_id ||
+    page.source_sha256 !== analysis.source.sha256 ||
+    page.status !== analysis.status ||
+    page.total !== analysis.records_total ||
+    page.offset !== offset ||
+    page.limit !== limit
+  ) {
+    return false;
+  }
+  try {
+    checkPage(page.offset, page.limit, page.total, page.records.length, page.next_offset);
+  } catch (error) {
+    if (error instanceof Reject) return false;
+    throw error;
+  }
+  return true;
+}
+
+/** Only an answer naming this handle with `deleted: true` confirms the deletion. */
+export function deletionConfirmed(answer: DocumentDeleted, handle: string): boolean {
+  return answer.handle_id === handle && answer.deleted === true;
+}
+
 // ---- formatting --------------------------------------------------------------------------------
 
 /** Signed integer minor units -> decimal text by exponent; string arithmetic only. */

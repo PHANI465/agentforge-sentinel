@@ -9,6 +9,7 @@ import {
   MAX_UPLOAD_BYTES,
   type DocumentAnalysis,
   type DocumentClient,
+  type DocumentFormat,
   type DocumentResult,
   type DocumentUpload,
   type RecordPage,
@@ -20,6 +21,7 @@ import { Workbench } from "./Workbench";
 const here = dirname(fileURLToPath(import.meta.url));
 const v13 = resolve(here, "../fixtures/http-v1.3");
 const v1 = resolve(here, "../../../contracts/http/examples");
+const workerFixtures = resolve(here, "../../../tools/document_worker/fixtures");
 
 function body<T>(name: string): T {
   return JSON.parse(readFileSync(resolve(v13, `${name}.json`), "utf8")).response as T;
@@ -44,22 +46,27 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+/** A frozen analysis rebound to the uploaded document (handle and source), as the server
+ * would answer for that upload. Its format and options stay the fixture's own. */
 function analysisFor(name: string): DocumentAnalysis {
   const data = body<DocumentAnalysis>(name);
-  return { ...data, handle_id: HANDLE };
+  return { ...data, handle_id: HANDLE, source: { sha256: UPLOAD.sha256, size_bytes: UPLOAD.size_bytes } };
 }
+
+const PAGE = body<RecordPage>("document_records_page");
 
 function fakeClient(over: Partial<DocumentClient> = {}): DocumentClient & Record<string, ReturnType<typeof vi.fn>> {
   return {
-    upload: vi.fn(async () => ok(UPLOAD)),
+    upload: vi.fn(async (_t: string, _f: File, format: DocumentFormat) => ok({ ...UPLOAD, format })),
     analyze: vi.fn(async () => ok(analysisFor("document_analysis_complete_paged"))),
-    records: vi.fn(async () => ok(body<RecordPage>("document_records_page"))),
+    records: vi.fn(async (_t: string, _h: string, offset: number, limit: number) => ok({ ...PAGE, offset, limit })),
     remove: vi.fn(async () => ok({ handle_id: HANDLE, deleted: true })),
     ...over,
   } as unknown as DocumentClient & Record<string, ReturnType<typeof vi.fn>>;
 }
 
-const CSV = "Date,Description,Amount\n2026-05-01,Coffee,-3.50\n";
+// The bytes the frozen CSV upload receipt describes (547 bytes, its SHA-256).
+const CSV = readFileSync(resolve(workerFixtures, "csv_statement_usd.csv"));
 
 async function uploadCsv(user: ReturnType<typeof userEvent.setup>, name = "C:\\Users\\private\\bank-statement.csv") {
   const file = new File([CSV], name, { type: "text/csv" });
@@ -154,7 +161,7 @@ describe("upload", () => {
 describe("analysis results", () => {
   it("shows a complete result, separate currency reconciliation and provenance", async () => {
     const user = userEvent.setup();
-    render(<DocumentReview documents={fakeClient()} token="tok" sessionId="s1" />);
+    render(<DocumentReview documents={fakeClient()} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     expect(await screen.findByRole("heading", { name: "Extraction result: complete" })).toBeInTheDocument();
@@ -203,7 +210,7 @@ describe("analysis results", () => {
     const user = userEvent.setup();
     const analysis = analysisFor(name);
     render(<DocumentReview documents={fakeClient({ analyze: vi.fn(async () => ok(analysis)) })} token="tok" sessionId="s1" />);
-    await uploadCsv(user);
+    await uploadCsv(user, `statement.${analysis.format}`);
     await analyse(user);
     expect(await screen.findByRole("heading", { name: `Extraction result: ${status}` })).toBeInTheDocument();
     expect(screen.getByText(text)).toBeInTheDocument();
@@ -215,7 +222,7 @@ describe("analysis results", () => {
   it("states that PDF tables are not typed and there is no OCR", async () => {
     const user = userEvent.setup();
     render(<DocumentReview documents={fakeClient({ analyze: vi.fn(async () => ok(analysisFor("document_analysis_pdf_scanned_partial"))) })} token="tok" sessionId="s1" />);
-    await uploadCsv(user);
+    await uploadCsv(user, "statement.pdf");
     await analyse(user);
     expect(await screen.findByText(/PDF tables are not typed and there is no OCR/)).toBeInTheDocument();
   });
@@ -278,11 +285,11 @@ describe("paging follows next_offset", () => {
     // A 2 MiB byte bound can end a page early: 3 of a requested 5.
     const early = { ...analysis, records: analysis.records.slice(0, 3), records_next_offset: 3 };
     const records = vi.fn(async (_t: string, _h: string, offset: number) => {
-      const page = body<RecordPage>("document_records_page");
-      return ok({ ...page, offset, records: page.records.slice(0, 10 - offset > 5 ? 5 : 10 - offset), next_offset: null,
+      const rows = [...analysis.records, ...PAGE.records].slice(offset, offset + 5);
+      return ok({ ...PAGE, offset, records: rows, next_offset: offset + rows.length < 10 ? offset + rows.length : null,
         total: 10, limit: 5 } as RecordPage);
     });
-    render(<DocumentReview documents={fakeClient({ analyze: vi.fn(async () => ok(early)), records })} token="tok" sessionId="s1" />);
+    render(<DocumentReview documents={fakeClient({ analyze: vi.fn(async () => ok(early)), records })} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     expect(await screen.findByText("Records 1–3 of 10.")).toBeInTheDocument();
@@ -293,7 +300,7 @@ describe("paging follows next_offset", () => {
   it("moves forward and back and ends where the server says", async () => {
     const user = userEvent.setup();
     const documents = fakeClient();
-    render(<DocumentReview documents={documents} token="tok" sessionId="s1" />);
+    render(<DocumentReview documents={documents} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     await screen.findByText("Records 1–5 of 10.");
@@ -305,7 +312,7 @@ describe("paging follows next_offset", () => {
 
   it("a deleted, expired or foreign handle (404) clears stale content", async () => {
     const user = userEvent.setup();
-    render(<DocumentReview documents={fakeClient({ records: vi.fn(async () => failure("refused", 404, "not_found")) })} token="tok" sessionId="s1" />);
+    render(<DocumentReview documents={fakeClient({ records: vi.fn(async () => failure("refused", 404, "not_found")) })} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     await screen.findByText("Records 1–5 of 10.");
@@ -332,7 +339,7 @@ describe("worker failures are not document results", () => {
       .mockResolvedValueOnce(ok(analysisFor("document_analysis_complete_paged")))
       .mockResolvedValueOnce(result)
       .mockResolvedValueOnce(ok(analysisFor("document_analysis_complete_paged")));
-    render(<DocumentReview documents={fakeClient({ analyze })} token="tok" sessionId="s1" />);
+    render(<DocumentReview documents={fakeClient({ analyze })} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     await screen.findByRole("heading", { name: "Extraction result: complete" });
@@ -347,7 +354,7 @@ describe("worker failures are not document results", () => {
   it("explains re-analysis before replacing the stored result", async () => {
     const user = userEvent.setup();
     const documents = fakeClient();
-    render(<DocumentReview documents={documents} token="tok" sessionId="s1" />);
+    render(<DocumentReview documents={documents} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     await screen.findByRole("heading", { name: "Extraction result: complete" });
@@ -363,7 +370,7 @@ describe("delete and fencing", () => {
   it("delete clears every piece of local content", async () => {
     const user = userEvent.setup();
     const documents = fakeClient();
-    render(<DocumentReview documents={documents} token="tok" sessionId="s1" />);
+    render(<DocumentReview documents={documents} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     await screen.findByRole("heading", { name: "Extraction result: complete" });
@@ -378,12 +385,12 @@ describe("delete and fencing", () => {
     const user = userEvent.setup();
     const pending = deferred<DocumentResult<DocumentAnalysis>>();
     const documents = fakeClient({ analyze: vi.fn(() => pending.promise) });
-    const { rerender } = render(<DocumentReview documents={documents} token="tok" sessionId="s1" />);
+    const { rerender } = render(<DocumentReview documents={documents} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     expect(screen.getByLabelText(/Local file/)).toBeDisabled();
     expect(screen.getByRole("button", { name: "Delete document" })).toBeDisabled();
-    rerender(<DocumentReview documents={documents} token="tok-2" sessionId="s2" />);
+    rerender(<DocumentReview documents={documents} token="tok-2" recordsLimit={5} sessionId="s2" />);
     await act(async () => {
       pending.resolve(ok(analysisFor("document_analysis_complete_paged")));
       await Promise.resolve();
@@ -397,12 +404,12 @@ describe("delete and fencing", () => {
     const user = userEvent.setup();
     const pending = deferred<DocumentResult<RecordPage>>();
     const documents = fakeClient({ records: vi.fn(() => pending.promise) });
-    const { rerender } = render(<DocumentReview documents={documents} token="tok" sessionId="s1" />);
+    const { rerender } = render(<DocumentReview documents={documents} token="tok" recordsLimit={5} sessionId="s1" />);
     await uploadCsv(user);
     await analyse(user);
     await screen.findByText("Records 1–5 of 10.");
     await user.click(screen.getByRole("button", { name: "Next records" }));
-    rerender(<DocumentReview documents={documents} token="other-token" sessionId="s2" />);
+    rerender(<DocumentReview documents={documents} token="other-token" recordsLimit={5} sessionId="s2" />);
     expect(screen.queryByText("Uploaded document")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Extraction result/ })).not.toBeInTheDocument();
     await act(async () => {
@@ -430,5 +437,104 @@ describe("delete and fencing", () => {
     });
     expect(screen.queryByText("f".repeat(64))).not.toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText("Uploaded document")).not.toBeInTheDocument());
+  });
+});
+
+describe("R64: every success is bound to the current document", () => {
+  const OTHER_DIGEST = "a".repeat(64);
+  const OTHER_HANDLE = "h_0000000000000000000099";
+
+  it("an upload receipt whose size disagrees with the chosen file is unconfirmed", async () => {
+    const user = userEvent.setup();
+    render(<DocumentReview documents={fakeClient()} token="tok" sessionId="s1" />);
+    await user.upload(screen.getByLabelText(/Local file/), new File(["x"], "one-byte.csv")); // the receipt says 547
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/did not confirm this upload/);
+    expect(screen.queryByText("Uploaded document")).not.toBeInTheDocument();
+    expect(screen.queryByText(UPLOAD.sha256)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Run the analysis" })).not.toBeInTheDocument();
+  });
+
+  it("an upload receipt for another format is unconfirmed", async () => {
+    const user = userEvent.setup();
+    render(<DocumentReview documents={fakeClient({ upload: vi.fn(async () => ok({ ...UPLOAD, format: "pdf" as const })) })} token="tok" sessionId="s1" />);
+    await user.upload(screen.getByLabelText(/Local file/), new File([CSV], "a.csv"));
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/did not confirm this upload/);
+    expect(screen.queryByText("Uploaded document")).not.toBeInTheDocument();
+  });
+
+  const paged = () => analysisFor("document_analysis_complete_paged");
+  it.each([
+    ["another handle", () => ({ ...paged(), handle_id: OTHER_HANDLE })],
+    ["another source digest", () => ({ ...paged(), source: { ...paged().source, sha256: OTHER_DIGEST } })],
+    ["another source size", () => ({ ...paged(), source: { ...paged().source, size_bytes: 548 } })],
+    ["another format", () => ({ ...paged(), format: "pdf" as const })],
+    ["other interpretation options", () => ({ ...paged(), parser: { ...paged().parser, options: { ...paged().parser.options, decimal_style: "comma" as const } } })],
+    ["another default currency", () => ({ ...paged(), parser: { ...paged().parser, options: { ...paged().parser.options, default_currency: "EUR" } } })],
+    ["another records limit", () => ({ ...paged(), parser: { ...paged().parser, options: { ...paged().parser.options, records_limit: 100 } } })],
+  ])("an analysis for %s is unconfirmed and offers a retry", async (_label, make) => {
+    const user = userEvent.setup();
+    render(<DocumentReview documents={fakeClient({ analyze: vi.fn(async () => ok(make())) })} token="tok" recordsLimit={5} sessionId="s1" />);
+    await uploadCsv(user);
+    await analyse(user);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/did not confirm a result for this document/);
+    expect(screen.queryByRole("heading", { name: /Extraction result/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Records 1–5/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try the analysis again" })).toBeInTheDocument();
+  });
+
+  it("a contradictory re-analysis does not leave the old result presented as current", async () => {
+    const user = userEvent.setup();
+    const analyze = vi
+      .fn()
+      .mockResolvedValueOnce(ok(paged()))
+      .mockResolvedValueOnce(ok({ ...paged(), source: { ...paged().source, sha256: OTHER_DIGEST } }));
+    render(<DocumentReview documents={fakeClient({ analyze })} token="tok" recordsLimit={5} sessionId="s1" />);
+    await uploadCsv(user);
+    await analyse(user);
+    await screen.findByRole("heading", { name: "Extraction result: complete" });
+    await user.click(screen.getByRole("button", { name: "Analyse again" }));
+    await user.click(screen.getByRole("button", { name: "Replace the stored result" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/did not confirm a result for this document/);
+    expect(screen.queryByRole("heading", { name: /Extraction result/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Records 1–5/)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["a different status", { status: "partial" as const }],
+    ["a different total", { total: 11 }],
+    ["another source digest", { source_sha256: OTHER_DIGEST }],
+    ["another handle", { handle_id: OTHER_HANDLE }],
+    ["another offset", { offset: 6 }],
+    ["another limit", { limit: 100 }],
+    ["a broken page rule", { next_offset: 9 }],
+  ])("a records page with %s is refused and the analysis is no longer shown as current", async (_label, change) => {
+    const user = userEvent.setup();
+    const records = vi.fn(async (_t: string, _h: string, offset: number, limit: number) => ok({ ...PAGE, offset, limit, ...change }));
+    render(<DocumentReview documents={fakeClient({ records })} token="tok" recordsLimit={5} sessionId="s1" />);
+    await uploadCsv(user);
+    await analyse(user);
+    await screen.findByText("Records 1–5 of 10.");
+    await user.click(screen.getByRole("button", { name: "Next records" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/do not match the analysis shown/);
+    expect(screen.queryByText(/Records 6–10/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Extraction result/ })).not.toBeInTheDocument();
+    expect(screen.getByText("Uploaded document")).toBeInTheDocument(); // the handle is still ours
+  });
+
+  it.each([
+    ["deleted: false", { handle_id: HANDLE, deleted: false }],
+    ["another handle", { handle_id: OTHER_HANDLE, deleted: true }],
+  ])("a delete answer with %s is not reported as deleted", async (_label, answer) => {
+    const user = userEvent.setup();
+    render(<DocumentReview documents={fakeClient({ remove: vi.fn(async () => ok(answer)) })} token="tok" recordsLimit={5} sessionId="s1" />);
+    await uploadCsv(user);
+    await analyse(user);
+    await screen.findByRole("heading", { name: "Extraction result: complete" });
+    await user.click(screen.getByRole("button", { name: "Delete document" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/did not confirm the deletion/);
+    expect(screen.queryByText(/^Deleted\./)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete document" })).toBeEnabled(); // it can be tried again
   });
 });

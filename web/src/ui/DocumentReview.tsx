@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
+  analysisMatches,
   DEFAULT_RECORDS_LIMIT,
+  deletionConfirmed,
   DOCUMENT_FORMATS,
   documentMessage,
   INTERPRETATION,
   locatorText,
   MAX_UPLOAD_BYTES,
   minorToDecimal,
+  pageMatches,
   ratioText,
+  uploadMatches,
   type AnalysisRequest,
   type CurrencyReconciliation,
   type DocumentAnalysis,
@@ -90,10 +94,13 @@ export function DocumentReview({
   documents,
   token,
   sessionId,
+  recordsLimit = DEFAULT_RECORDS_LIMIT,
 }: {
   documents: DocumentClient;
   token: string;
   sessionId: string;
+  /** Records per page requested with each analysis (the v1.3 default unless a caller sets it). */
+  recordsLimit?: number;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [format, setFormat] = useState<DocumentFormat | null>(null);
@@ -107,7 +114,7 @@ export function DocumentReview({
     decimal_style: "unspecified",
     date_order: "iso_only",
     default_currency: null,
-    records_limit: DEFAULT_RECORDS_LIMIT,
+    records_limit: recordsLimit,
   });
   const [currencyText, setCurrencyText] = useState("");
   const generation = useRef(0);
@@ -222,6 +229,12 @@ export function DocumentReview({
       failed(result, "upload");
       return;
     }
+    if (!uploadMatches(result.data, file, format)) {
+      // A receipt for another size or format does not describe the chosen file. Its handle is
+      // not adopted; the file stays selected so the upload can be tried again.
+      setNotice({ tone: "error", text: "The server did not confirm this upload for the chosen file. Nothing from it is shown." });
+      return;
+    }
     handleRef.current = result.data.handle_id;
     setUpload(result.data);
     setFile(null); // the bytes now live only on the server, under this session
@@ -237,17 +250,27 @@ export function DocumentReview({
       return;
     }
     setConfirmReanalyze(false);
+    const submitted = options;
+    const uploaded = upload;
     const { gen, signal } = begin("analyzing");
     setNotice({ tone: "info", text: "Analysing. This can take up to a minute and a half." });
-    const result = await documents.analyze(token, handle, options, signal);
+    const result = await documents.analyze(token, handle, submitted, signal);
     if (!stillCurrent(gen, handle)) return;
     finish(gen);
     if (!result.ok) {
       failed(result, "analyze");
       return;
     }
-    if (result.data.handle_id !== handle) {
-      setNotice({ tone: "error", text: "The server did not confirm a result for this document." });
+    if (!uploaded || uploaded.handle_id !== handle || !analysisMatches(result.data, uploaded, submitted)) {
+      // A valid-shaped answer about another document, upload or option set. The stored
+      // result may have changed, so no earlier result stays on screen as current.
+      setAnalysis(null);
+      setPage(null);
+      setNotice({
+        tone: "error",
+        text: "The server did not confirm a result for this document. The stored result may have changed, so none is shown.",
+        retry: true,
+      });
       return;
     }
     setAnalysis(result.data);
@@ -273,9 +296,15 @@ export function DocumentReview({
       failed(result, "records");
       return;
     }
-    if (result.data.handle_id !== handle || result.data.source_sha256 !== analysis.source.sha256 ||
-        result.data.offset !== offset) {
-      setNotice({ tone: "error", text: "The server did not confirm this page of records." });
+    if (result.data.handle_id !== handle || !pageMatches(result.data, analysis, offset, page.limit)) {
+      // The stored analysis may have been replaced (for example from another tab), so the
+      // result above is no longer shown as current. The uploaded document stays available.
+      setAnalysis(null);
+      setPage(null);
+      setNotice({
+        tone: "error",
+        text: "The server's records do not match the analysis shown, which may have been replaced. Run the analysis again to see the current result.",
+      });
       return;
     }
     setPage({
@@ -296,6 +325,10 @@ export function DocumentReview({
     const result = await documents.remove(token, handle, signal);
     if (!stillCurrent(gen, handle)) return;
     finish(gen);
+    if (result.ok && !deletionConfirmed(result.data, handle)) {
+      setNotice({ tone: "error", text: "The server did not confirm the deletion. The document may still be stored; try deleting it again." });
+      return;
+    }
     if (result.ok || (result.kind === "refused" && result.code === "not_found")) {
       clearAll();
       setNotice({ tone: "info", text: "Deleted. Nothing from that document is shown any more." });

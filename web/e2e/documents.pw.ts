@@ -1,10 +1,12 @@
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   apiCall,
   caseworkCounts,
   connectDoc,
+  currentStackDir,
   docFixtures,
   docSessions,
   docStore,
@@ -37,8 +39,22 @@ test.afterAll(async () => {
     expect([200, 404]).toContain(result.status);
   }
   expect(storeLeftovers()).toEqual({ handles: [], runs: [], recovery: [], "api-bridge": [] });
+  // R65: a test-owned synthetic canary under the stack directory proves that the token scan
+  // reaches stack-owned artifacts. It is removed again before the shared teardown runs.
+  const canary = `doc01-canary-${randomBytes(16).toString("hex")}`;
+  const canaryPath = path.join(currentStackDir(), "doc01-canary.txt");
+  writeFileSync(canaryPath, canary, { flag: "wx" });
+  let probe: ReturnType<typeof scanForTokens>;
+  try {
+    probe = scanForTokens([canary]);
+  } finally {
+    unlinkSync(canaryPath);
+  }
+  expect(probe.leaks).toEqual([path.relative(webRoot, canaryPath)]);
+  expect(JSON.stringify(probe)).not.toContain(canary);
   const scanned = scanForTokens(Object.values(tokens));
   expect(scanned.files).toBeGreaterThan(0);
+  expect(scanned.problems).toEqual([]);
   expect(scanned.leaks).toEqual([]);
   expect(removeVerifiedStore()).toEqual({ removed: true, reason: "removed" });
 });

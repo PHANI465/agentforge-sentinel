@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, lstatSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { expect, type Page } from "@playwright/test";
+import * as artifacts from "./docArtifacts";
 import { readRuntime, repoRoot, runtimeDir, waitForRuntime, webRoot } from "./runtime";
 
 /** DOC01 Part C: helpers for the documents suite. Tokens stay in this process's memory; the
@@ -110,53 +111,23 @@ export async function apiCall(
 
 /** Owned store contents that must be empty after the suite. */
 export function storeLeftovers(): Record<string, string[]> | null {
-  if (!existsSync(docStore)) return null;
-  const out: Record<string, string[]> = {};
-  for (const sub of ["handles", "runs", "recovery", "api-bridge"]) {
-    const dir = path.join(docStore, sub);
-    out[sub] = existsSync(dir) ? readdirSync(dir) : [];
-  }
-  return out;
+  return artifacts.storeLeftovers(docStore);
 }
 
-/** Remove the store only when it is the owned, marker-bearing, empty run store. */
-export function removeVerifiedStore(): { removed: boolean; reason: string } {
-  if (!existsSync(docStore)) return { removed: false, reason: "store_missing" };
-  if (lstatSync(docStore).isSymbolicLink()) return { removed: false, reason: "store_is_a_link" };
-  if (path.dirname(path.resolve(docStore)) !== path.resolve(runtimeDir)) return { removed: false, reason: "store_outside_runtime" };
-  if (!existsSync(path.join(docStore, ".docworker-store"))) return { removed: false, reason: "store_marker_missing" };
-  const left = storeLeftovers();
-  if (!left || Object.values(left).some((entries) => entries.length > 0)) return { removed: false, reason: "store_not_empty" };
-  rmSync(docStore, { recursive: true, force: false });
-  return { removed: true, reason: "removed" };
+/** Remove the store only when its whole tree is the owned, marker-bearing, empty layout
+ * (see docArtifacts.ts). Anything unexpected is left in place as recovery evidence. */
+export function removeVerifiedStore(): artifacts.StoreVerdict {
+  return artifacts.removeVerifiedStore(docStore, runtimeDir);
 }
 
-/** Scan this run's artifacts for the document-session tokens (the stack's own tokens are
- * scanned by the shared teardown). Reports the relative names of files that contain one,
- * never their content, so a leak can be located. */
-export function scanForTokens(tokens: string[]): { files: number; leaks: string[] } {
-  if (tokens.length === 0 || tokens.some((token) => token.length < 16)) throw new Error("scan_secrets_missing");
+/** Scan this run's test results, runtime files and the stack's own artifacts for the given
+ * tokens while the stack still exists. Reports relative names only, never content. */
+export function scanForTokens(tokens: string[]): { files: number; leaks: string[]; problems: string[] } {
   const runtime = readRuntime();
-  const skip = [runtime.stackDir, runtime.secretsPath].filter((item) => item.length > 0).map((item) => path.resolve(item));
-  const roots = [path.join(webRoot, "test-results"), runtimeDir];
-  const leaks: string[] = [];
-  let files = 0;
-  const pending = roots.filter((root) => existsSync(root));
-  while (pending.length > 0) {
-    const current = pending.pop() as string;
-    if (skip.some((item) => path.resolve(current) === item || path.resolve(current).startsWith(item + path.sep))) continue;
-    for (const entry of readdirSync(current, { withFileTypes: true })) {
-      const full = path.join(current, entry.name);
-      if (entry.isSymbolicLink()) throw new Error("scan_symlink");
-      if (entry.isDirectory()) {
-        pending.push(full);
-        continue;
-      }
-      if (skip.includes(path.resolve(full))) continue;
-      files += 1;
-      const bytes = readFileSync(full);
-      if (tokens.some((token) => bytes.includes(token))) leaks.push(path.relative(webRoot, full));
-    }
-  }
-  return { files, leaks };
+  return artifacts.scanForTokens(tokens, { webRoot, runtimeDir, stackDir: runtime.stackDir, secretsPath: runtime.secretsPath });
+}
+
+/** The stack directory of the current run (for the test-owned canary only). */
+export function currentStackDir(): string {
+  return readRuntime().stackDir;
 }

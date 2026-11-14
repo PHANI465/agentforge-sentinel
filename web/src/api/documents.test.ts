@@ -8,11 +8,15 @@ import {
   acceptDeleted,
   acceptRecordPage,
   acceptUpload,
+  analysisMatches,
   createDocumentClient,
+  deletionConfirmed,
   documentMessage,
   INTERPRETATION,
   minorToDecimal,
+  pageMatches,
   ratioText,
+  uploadMatches,
   type DocumentAnalysis,
 } from "./documents";
 
@@ -253,5 +257,37 @@ describe("document client", () => {
     controller.abort();
     const aborted = await failing.records("tok", "h_0000000000000000000001", 0, 100, controller.signal);
     expect(aborted.ok === false && aborted.kind).toBe("aborted");
+  });
+});
+
+describe("R64 binding of frozen examples to one document", () => {
+  const upload = acceptUpload(docBody("document_upload_csv"))!;
+  const analysis = parsed("document_analysis_complete_paged");
+  const page = acceptRecordPage(docBody("document_records_page"))!;
+  const request = { ...analysis.parser.options };
+
+  it("accepts the frozen CSV upload, analysis and page as one document", () => {
+    expect(uploadMatches(upload, { size: 547 }, "csv")).toBe(true);
+    expect(analysisMatches(analysis, upload, request)).toBe(true);
+    // The frozen page was requested at offset 5 with limit 100 (a page of the stored analysis).
+    expect(pageMatches(page, analysis, 5, 100)).toBe(true);
+    expect(deletionConfirmed(acceptDeleted(docBody("document_deleted"))!, upload.handle_id)).toBe(true);
+  });
+
+  it("rejects each contradiction", () => {
+    expect(uploadMatches(upload, { size: 1 }, "csv")).toBe(false);
+    expect(uploadMatches(upload, { size: 547 }, "pdf")).toBe(false);
+    expect(analysisMatches({ ...analysis, source: { ...analysis.source, sha256: "a".repeat(64) } }, upload, request)).toBe(false);
+    expect(analysisMatches({ ...analysis, source: { ...analysis.source, size_bytes: 546 } }, upload, request)).toBe(false);
+    expect(analysisMatches({ ...analysis, format: "xlsx" }, upload, request)).toBe(false);
+    expect(analysisMatches(analysis, upload, { ...request, date_order: "dmy" })).toBe(false);
+    expect(analysisMatches(analysis, { ...upload, handle_id: "h_0000000000000000000099" }, request)).toBe(false);
+    expect(pageMatches({ ...page, status: "partial" }, analysis, 5, 100)).toBe(false);
+    expect(pageMatches({ ...page, total: 9 }, analysis, 5, 100)).toBe(false);
+    expect(pageMatches(page, analysis, 0, 100)).toBe(false);
+    expect(pageMatches(page, analysis, 5, 5)).toBe(false);
+    expect(pageMatches({ ...page, next_offset: 10 }, analysis, 5, 100)).toBe(false);
+    expect(deletionConfirmed({ handle_id: upload.handle_id, deleted: false }, upload.handle_id)).toBe(false);
+    expect(deletionConfirmed({ handle_id: "h_0000000000000000000099", deleted: true }, upload.handle_id)).toBe(false);
   });
 });
