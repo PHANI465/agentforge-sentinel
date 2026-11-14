@@ -7,10 +7,14 @@
 - **Tool and worktree:** Claude Code, `E:/PHANI/sentinel-wt/claude-doc01-ui`. It was created
   from exact main `813b0db3f5e5b289428ea03dc249518f589bf0c2` (DOC01 Part B accepted at
   `d6d509e`, integrated in source merge `e51f47a`).
-- **Updated:** 2026-11-13 (local time).
-- **State:** ready for Codex review. Not merged and not pushed. Claude's Part B branch, the
+- **Updated:** 2026-11-14 (local time).
+- **State:** R64–R66 corrections for Codex re-review under
+  `docs/prompts/CLAUDE_DOC01C_REVIEW_FIXES.md` and `docs/reviews/DOC01-C-8bee376.md`
+  (task/coordination). The reviewed candidate `8bee376` is preserved as an ancestor (no reset,
+  rebase or amend). Not merged and not pushed. Claude's Part B branch, the
   accepted Part A worktree, AN01-M1 and Cursor's seven edits are untouched.
-- **Code reference tested before this note:** `ae86cf8` (clean). Exact final-commit checks
+- **Code reference tested before this note:** the R64–R66 correction commit directly before
+  this note (clean); the first round's note tested `ae86cf8`. Exact final-commit checks
   are reported in chat; this note cannot name its own commit.
 - **Owned/changed paths:**
   - `web/src/api/{documents.ts, documents.test.ts, types.ts}`
@@ -20,6 +24,8 @@
   - `web/e2e/{documents.pw.ts, support/documents.ts}`
   - `web/e2e/support/{launch.mjs, suite.mjs, suite-harness.mjs}`
   - `web/package.json` (a script only; no dependency)
+  - R64–R66 round: `web/e2e/support/{docArtifacts.ts, docArtifacts.test.ts}` (new) and
+    `web/vite.config.ts` (the Vitest `include` adds `e2e/support/**/*.test.ts`)
   - `tests/support/doc01_browser.py`, `docs/ui/DOC01-document-review.md` and this note
 
   No production `src/`, `contracts/`, migration, worker, model/data/evals, lockfile, CI or
@@ -58,7 +64,39 @@ See `docs/ui/DOC01-document-review.md`.
 - **Fencing:** each request carries a generation counter and an AbortController, and the
   section is keyed by session. The token and handle stay in memory only.
 
-## Verified (before this note)
+## R64–R66 corrections (second round)
+
+- **R64:** every success is now bound to the current document; see the UI note's R64
+  section.
+  - The upload receipt must match the chosen file's size and format.
+  - The analysis must match the handle, the receipt's digest, size and format, and every
+    submitted option.
+  - A records page must match the handle, the shown analysis's digest, status and total, the
+    requested offset and limit, and the page rule.
+  - DELETE must name the handle and say `deleted: true`.
+  - On a contradiction the response is unconfirmed. After an analysis or page contradiction
+    no earlier result stays on screen as current.
+  - The no-revision limit is recorded: a same-status, same-total replacement cannot be
+    detected.
+  - Component fakes now answer as the server would for the chosen file. The CSV test file is
+    the frozen receipt's own 547 bytes, analyses are rebound to that upload's source, PDF and
+    XLSX analyses are uploaded under their own format, and pages answer the requested
+    offset and limit. A `recordsLimit` prop (default 100; the workbench does not set it) lets
+    tests request the frozen paged example's limit of 5. No assertion was weakened.
+- **R65:** the document-token scan now covers test results, the whole runtime directory, the
+  stack directory and the stack's secret file, skipping nothing. The live suite plants a
+  test-owned synthetic canary file in the stack directory, requires it to be reported by
+  relative name and removes it before shared teardown.
+- **R66:** the store is removed only when its whole tree is exactly the empty init layout.
+  Removal is entry by entry without recursion.
+- **Failing-first evidence (private, `.agent/doc01-c-r2/`):**
+  - `failing-first-r64*.txt`: with the new component tests and test fakes on the unchanged
+    `8bee376` UI, 19 new R64 tests failed and the 36 existing tests passed.
+  - `failing-first-r65-r66.txt`: with the `8bee376` store and scan logic moved unchanged into
+    `docArtifacts.ts` (paths as parameters), 13 of 16 canary tests failed. The two
+    normal-empty-store controls and the missing-token refusal passed.
+
+## Verified in the first round (before the first note)
 
 - **Frontend:** typecheck (app and e2e) passes; 228 unit and component tests (133 existing
   plus 59 API plus 36 component); build OK.
