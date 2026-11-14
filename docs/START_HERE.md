@@ -22,7 +22,7 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 - DOC01 Part B integrated the HTTP v1.3 API in `e51f47a`. [Part B release](releases/DOC01-Part-B-main-integration-2026-11-13.md)
 - The casework and scoring paths retain their tested 871e31d baseline. Main also includes the accepted DOC01 Part A worker through source merge `662572e`; its integration checks are recorded separately.
 - DOC01 Part A [local worker is accepted](reviews/DOC01-8f7bd87.md) at `8f7bd87` and integrated in source merge `662572e`; [release evidence](releases/DOC01-Part-A-main-integration-2026-11-12.md). The [Part B backend assignment](prompts/CLAUDE_DOC01_PART_B_BACKEND.md) is delivered history.
-- AN01-M1 measurement prototype is independently accepted at exact `28dfcef` for its reviewed behavior; R56 is closed. [Review](reviews/AN01-M1-28dfcef.md). It remains unmerged, and the tiny timing controls are not demonstrated. The prior b54de1a review is preserved as history.
+- AN01-M1 is integrated at verified merge `1427b2c`. The full-size grid and provisional limits remain open. [Integration evidence](releases/AN01-M1-main-integration-2026-11-14.md)
 - DOC01 Part A was delivered at `cecccad`; its [first review](reviews/DOC01-cecccad.md) requested R58/R59. The original [two-finding correction](prompts/CLAUDE_DOC01_REVIEW_FIXES.md) is delivered history.
 - DOC01 re-review at `69b51fe` [closes R59](reviews/DOC01-69b51fe.md); its [unreadable-member correction](prompts/CLAUDE_DOC01_R58_FOLLOWUP.md) is delivered history.
 - DOC01 `7ec46ae` [required one R58 group-race fix](reviews/DOC01-7ec46ae.md). Its [correction prompt](prompts/CLAUDE_DOC01_R58_RACE_FOLLOWUP.md) is delivered history.

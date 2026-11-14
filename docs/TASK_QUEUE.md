@@ -2,10 +2,10 @@
 
 ## November 14 DOC01 Part C complete
 
-The local Document Review UI is integrated at verified source commit
-`3dfbc00`. AN01-M1 remains an accepted prototype awaiting its separate
-integration. Its provisional limits remain recorded in the
-[AN01 review](reviews/AN01-M1-28dfcef.md).
+The local Document Review UI is integrated at `3dfbc00`. The AN01-M1
+prototype is integrated at `1427b2c`. The next Reports milestone is to
+resolve timing and disk constraints before measuring the full grid.
+[AN01-M1 integration evidence](releases/AN01-M1-main-integration-2026-11-14.md)
 
 ## November 13 document review UI assignment (delivered history)
 

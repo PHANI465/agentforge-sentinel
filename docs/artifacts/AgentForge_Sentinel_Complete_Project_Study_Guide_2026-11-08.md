@@ -2,7 +2,7 @@
 
 November 8 edition · Updated November 13, 2026 · Project idea, implementation and remaining stages
 
-**November 14 integration update.** Document Review is integrated locally at source commit `3dfbc00`. With the document grant, an analyst can upload a public or synthetic CSV, XLSX or PDF, review extraction coverage and available reconciliation, and page through evidence. The workflow uses the separately locked worker and keeps the analysis separate from case approvals and actions. AN01-M1 remains an accepted prototype awaiting integration, with its full-size limits unqualified. [Part C release](../releases/DOC01-Part-C-main-integration-2026-11-14.md) · [Current work](../START_HERE.md)
+**November 14 integration update.** Document Review is integrated locally at source commit `3dfbc00`. With the document grant, an analyst can upload a public or synthetic CSV, XLSX or PDF, review extraction coverage and available reconciliation, and page through evidence. The AN01-M1 prototype is integrated at `1427b2c`, with full-size Reports measurements still ahead. [Part C release](../releases/DOC01-Part-C-main-integration-2026-11-14.md) · [AN01-M1 integration](../releases/AN01-M1-main-integration-2026-11-14.md) · [Current work](../START_HERE.md)
 
 **Historical review update (November 12, 2026):** AN01-M1 candidate [28dfcef](../reviews/AN01-M1-28dfcef.md) is accepted for its measurement-prototype behavior, with R53–R57 closed. It remains unmerged. Its earlier tiny timing controls still do not demonstrate the provisional performance limits. The November 10 review narrative later in this edition records the earlier b54de1a state as history. Read the linked review and [START_HERE](../START_HERE.md) for the next task.
 

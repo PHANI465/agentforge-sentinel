@@ -1,5 +1,9 @@
 # AgentForge Sentinel: shared agent instructions
 
+November 14 AN01-M1 prototype integration is verified at `1427b2c`.
+Read docs/releases/AN01-M1-main-integration-2026-11-14.md for Windows and
+Ubuntu evidence and docs/benchmarks/AN01-M1.md for measurement limits.
+
 November 14 DOC01 Part C is integrated locally at the verified source commit
 3dfbc0054fa34d457f292a3ec916ee0d452b59a2. R64–R66 are closed. Read
 docs/releases/DOC01-Part-C-main-integration-2026-11-14.md and

@@ -1,6 +1,6 @@
 # Project artifacts
 
-The latest local release adds Document Review to the analyst workbench. AN01-M1 remains an accepted prototype awaiting integration, with its full-size limits unqualified. [DOC01 Part C release](../releases/DOC01-Part-C-main-integration-2026-11-14.md) · [Current status](../STATUS.md) · [START_HERE](../START_HERE.md)
+The local releases include Document Review and the AN01-M1 prototype. Full-size Reports measurements remain future work. [DOC01 Part C release](../releases/DOC01-Part-C-main-integration-2026-11-14.md) · [AN01-M1 integration](../releases/AN01-M1-main-integration-2026-11-14.md) · [Current status](../STATUS.md) · [START_HERE](../START_HERE.md)
 
 Current decisions and future chat context: [decision ledger](../decisions/PROJECT_DECISION_LEDGER.md), [START_HERE](../START_HERE.md) and [expansion research](../research/2026-11-08-expansion-research.md). New directions are planned, not implemented.
 

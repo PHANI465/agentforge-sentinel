@@ -1,5 +1,12 @@
 # Project status
 
+## November 14 AN01-M1 prototype integrated
+
+Local main includes verified merge `1427b2c`. Windows passed 1,099 tests
+and Ubuntu passed 1,103, with one allowed skip each. AN01 production
+Reports and numerical qualification remain future work.
+[Integration evidence](releases/AN01-M1-main-integration-2026-11-14.md)
+
 ## November 14 DOC01 Part C integrated
 
 Local main includes the Document Review UI at verified source commit

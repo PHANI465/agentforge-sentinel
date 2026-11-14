@@ -33,6 +33,7 @@ These are retrospective summaries of written project records, not reconstructed 
 | H13 | DOC01 Part B candidates `612934b`, `aca58f2` and `a3d1a6c` went through R60-R63 corrections. The last gap was a cross-process bridge record counted as zero kept while its owner was live. | [Final candidate review](../reviews/DOC01-B-d6d509e.md) |
 | H14 | DOC01 Part B `d6d509e` closes R60-R63 for the local upload API. It is integrated on main at source merge `e51f47a` after sequential Windows/native full gates and the unchanged 19+10 browser suites. The document UI, private-customer use and hosting remain separate work. | [Final review](../reviews/DOC01-B-d6d509e.md), [integration evidence](../releases/DOC01-Part-B-main-integration-2026-11-13.md) |
 | H15 | DOC01 Part C closes R64–R66 and adds local Document Review at verified source commit `3dfbc00`. An unavailable handle clears the display, and a matching success confirms deletion. Both backend gates and the 41 Windows browser cases passed. | [Part C release](../releases/DOC01-Part-C-main-integration-2026-11-14.md) |
+| H16 | AN01-M1 prototype `28dfcef` is integrated at verified merge `1427b2c`. Both backend gates passed. Full-size measurement and the Reports feature remain separate. | [AN01-M1 release](../releases/AN01-M1-main-integration-2026-11-14.md) |
 
 **D20261113-01 — active document contract.** HTTP v1.3 is accepted for the
 opt-in local DOC01 API at source merge `e51f47a`; v1/v1.1/v1.2 stay frozen.
