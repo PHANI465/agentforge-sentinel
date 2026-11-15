@@ -37,7 +37,8 @@ def select_passage(matches, api_key: str):
     schema = {"type":"object", "properties":{"id":{"type":"string","enum":allowed}},
               "required":["id"], "additionalProperties":False}
     payload = {
-        "model": "gpt-4o-mini",
+        "model": "gpt-6-luna",
+        "reasoning": {"effort": "none"},
         "store": False,
         "max_output_tokens": 80,
         "instructions": "Select the public passage that best matches the topic cues. Return its ID.",

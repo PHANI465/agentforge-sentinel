@@ -21,8 +21,9 @@ missing key leaves the library answer available.
 3. Redeploy the current production deployment in Vercel. Open IAF and ask a project question.
 
 Configure the key in Vercel. The browser, GitHub and chat do not need a copy.
-A new deployment reads the new value. The live API uses `gpt-4o-mini` and
-limits model calls to 30 per UTC day and 300 per UTC month across instances.
+A new deployment reads the new value. IAF uses OpenAI GPT-6 Luna (`gpt-6-luna`)
+with reasoning effort set to `none` for passage selection. The app limits
+model calls to 30 per UTC day and 300 per UTC month across instances.
 It limits each question to 400 characters and sends a bounded output request.
 These limits bound calls. OpenAI API usage is billed by the API project.
 
