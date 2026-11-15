@@ -17,6 +17,10 @@ The public site requires no account or API key. Start a [live workbench case](ht
 
 ## What you can run locally
 
+- **Browser document insights.** Reconcile statement balances and compare linked
+  invoices, orders, deliveries, and payments in the static site. Serve
+  `public_site/static` to try the new examples and source viewer.
+  [Document insights guide](docs/ui/PUBLIC-DOCUMENT-INSIGHTS.md)
 - **Case investigation.** Use the rule scorer or opt into the registered ML
   scorer. Inspect evidence, review the investigation trace, and approve or
   reject a proposed simulated action.

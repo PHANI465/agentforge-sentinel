@@ -30,8 +30,8 @@ and payments, and clearly labeled synthetic scenarios plus official public repor
 They requested Codex's security/architecture foundation and GPT-6.1 Sol / High for all
 remaining implementation. [Plan](../documents/INSIGHTS-ROADMAP-2026-11-15.md) and
 [dispatch](../prompts/SOL_DOCUMENT_INSIGHTS.md) define source scope and verification.
-Status: foundation implemented in its task branch; remaining product work assigned, not
-delivered. Revisit when actual file-to-browser checks establish each capability.
+Status: implementation delivered at `a56f104`, verified for the supported layouts,
+and approved for GitHub publication. See [release verification](../releases/DOCUMENT-INSIGHTS-GITHUB.md).
 
 **D20261115-04 · delegated privacy and subscription choice.** Owner asked Codex to
 choose the better option and preferred existing subscription use. Chosen default is local

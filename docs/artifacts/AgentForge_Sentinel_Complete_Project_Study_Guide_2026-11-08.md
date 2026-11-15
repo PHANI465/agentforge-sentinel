@@ -1,12 +1,10 @@
 # AgentForge Sentinel: the complete project guide
 
-**November 15 public-product roadmap.** The public site and synthetic workbench are live;
-IAF answers project questions. The next document release adds structured financial
-insights, explicit check coverage, complex examples and local comparisons. The new
-statement-evidence foundation is implemented in a task branch, not yet connected to the
-website. Read the [architecture, security, UI and implementation plan](../documents/INSIGHTS-ROADMAP-2026-11-15.md)
-and [GPT-6.1 Sol / High handoff](../prompts/SOL_DOCUMENT_INSIGHTS.md). Optional remote
-document AI remains disabled. Historical completion tables below retain their dated scope.
+**Browser document insights.** The source release includes statement reconciliation,
+document comparisons, check coverage, and complex examples. The live public site and
+synthetic workbench use the preceding deployment. See the
+[source release](../releases/DOCUMENT-INSIGHTS-GITHUB.md) and
+[user guide](../ui/PUBLIC-DOCUMENT-INSIGHTS.md). The completion tables below describe their dated scope.
 
 November 8 edition · Updated November 13, 2026 · Project idea, implementation and remaining stages
 

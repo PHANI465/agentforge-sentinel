@@ -1,14 +1,12 @@
 # Project status
 
-## November 15 document-insights foundation and next release
+## Browser document insights verified for GitHub
 
-The isolated `task/codex-document-insights-foundation` branch contains exact-money,
-immutable source-linked statement checks plus the [implementation/security roadmap](documents/INSIGHTS-ROADMAP-2026-11-15.md).
-This library is not wired into the live reviewer. No current capability is expanded by
-the documentation alone. GPT-6.1 Sol / High is assigned the remaining browser extraction,
-UI, examples and comparison slices through [this dispatch](prompts/SOL_DOCUMENT_INSIGHTS.md).
-Optional remote document explanations remain disabled pending a reviewed budget/consent
-service. Existing IAF is project-only and unchanged. See the foundation handoff for checks.
+The static reader now connects PDF, XLSX, and DOCX parsing to statement reconciliation
+and typed comparisons. It includes a source viewer, a capabilities page, 24 synthetic
+sample files, and the two existing Treasury PDFs. The owner authorized GitHub publication.
+See [release verification](releases/DOCUMENT-INSIGHTS-GITHUB.md) for the source commit
+and scope. The production deployment is a separate release.
 
 ## November 15 live workbench and revised public PDF checks
 
