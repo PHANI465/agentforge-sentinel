@@ -1,5 +1,11 @@
 # Project status
 
+## November 15 public PDF explainer and synthetic dataset published
+
+The public site supports text PDF review in the browser, the recorded synthetic
+case and a verified p1 snapshot download. The hosted FastAPI/PostgreSQL workbench
+is still outstanding. [Release and evidence](releases/PUBLIC-SITE-2026-11-15.md)
+
 ## November 14 AN01-M1 prototype integrated
 
 Local main includes verified merge `1427b2c`. Windows passed 1,099 tests

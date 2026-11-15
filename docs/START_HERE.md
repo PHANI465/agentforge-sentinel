@@ -1,6 +1,6 @@
 # Resume Sentinel from committed context
 
-Updated November 14, 2026. This is the durable entry point for a new Codex or Claude chat.
+Updated November 15, 2026. This is the durable entry point for a new Codex or Claude chat.
 Files supply context; they do not automatically synchronize sessions, authorize extra
 work or preserve a killed process. Inspect actual Git and job/recovery state before acting.
 
@@ -18,6 +18,7 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 
 ## Current position
 
+- The public site offers browser PDF explanations, a synthetic p1 dataset download and the recorded fraud case. The Python/PostgreSQL workbench still runs locally. [Public site release](releases/PUBLIC-SITE-2026-11-15.md)
 - DOC01 Part C is integrated locally at verified source commit `3dfbc00`. Sessions with the document grant can upload local public or synthetic files and review extraction results in the workbench. [Part C release](releases/DOC01-Part-C-main-integration-2026-11-14.md)
 - DOC01 Part B integrated the HTTP v1.3 API in `e51f47a`. [Part B release](releases/DOC01-Part-B-main-integration-2026-11-13.md)
 - The casework and scoring paths retain their tested 871e31d baseline. Main also includes the accepted DOC01 Part A worker through source merge `662572e`; its integration checks are recorded separately.
@@ -31,9 +32,6 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 - ULB dataset is acquired privately, not trained. p1 and protected final cases unchanged.
 - Small Claude Pro and Codex/ChatGPT connectivity smokes passed. No live quality study,
   Cursor inference or app provider configuration change is implied.
-- Local document extraction is implemented as a separate worker. Browser upload,
-  feedback API/UI, automated development review and expanded report metrics
-  remain separate work.
 - [Original DOC01 handoff](prompts/CLAUDE_EXPANSION_AFTER_M1.md) is delivered
   history; use the current review and correction dispatch above.
 

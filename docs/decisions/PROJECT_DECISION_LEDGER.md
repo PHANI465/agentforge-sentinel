@@ -1,6 +1,6 @@
 # Sentinel decision ledger
 
-Updated November 12, 2026. This is the decision-to-decision entry point for future Codex
+Updated November 15, 2026. This is the decision-to-decision entry point for future Codex
 and Claude chats. It complements numbered ADRs, STATUS and TASK_QUEUE; it is not a verbatim
 transcript or automatic shared memory. Read [START_HERE](../START_HERE.md) first when resuming.
 
@@ -11,6 +11,14 @@ and what would change the decision. Keep confirmed choices distinct from researc
 implemented behavior and verified results. Supersede a decision with a linked new entry;
 do not erase it or silently backfill an undocumented conversation. Evidence for a code
 acceptance names the reviewed SHA. Auth tokens, private outputs and raw datasets stay out.
+
+**D20261115-01 · public PDF review and dataset.** The owner requested a public
+landing page, PDF explanation and deployment. The published site reads PDFs in
+the browser and gives page evidence, so public visitors can use it without a
+session or document storage. Publish the exact synthetic p1 snapshot, including
+offline labels, with its checksum. Preserve the separate ULB research acquisition
+and link to its source. The full hosted workbench remains open pending access to
+a runtime and PostgreSQL. [Public site release](../releases/PUBLIC-SITE-2026-11-15.md)
 
 ## Earlier decisions with recorded sources
 

@@ -4,11 +4,14 @@ AgentForge Sentinel is a local financial investigation workbench. It scores
 synthetic transactions, opens cases, records the investigation and its evidence,
 and requires human approval before a simulated action.
 
-## Try the public walkthrough
+## Try Sentinel online
 
-Follow one recorded synthetic case across ten interactive steps, from the
-initial risk score to the audit trail. The walkthrough runs in your browser
-and requires no account or API key. [Open the Sentinel walkthrough](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site)
+- [Explain a PDF](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/#review). Pick a text PDF or try the synthetic sample. The explanation quotes financial terms and amounts with source pages. The file stays in your browser.
+- [Walk through a fraud case](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/walkthrough.html). Follow ten recorded steps from the initial risk score to human approval, simulated action and audit.
+- [Download the synthetic p1 dataset](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/dataset.html). Includes 82,819 generated transactions, 600 fictional accounts, labels, features and the manifest used to verify the snapshot.
+
+The public site requires no account or API key. Live case creation and the full
+analyst workbench currently run locally. [Public release and checks](docs/releases/PUBLIC-SITE-2026-11-15.md)
 
 ## What you can run locally
 
@@ -60,7 +63,7 @@ integration passed 266 frontend tests and 41 Windows Chromium cases. The
 recorded walkthrough passed 31 local browser checks. [AN01-M1 release](docs/releases/AN01-M1-main-integration-2026-11-14.md) · [Document Review release](docs/releases/DOC01-Part-C-main-integration-2026-11-14.md) · [Walkthrough release](docs/releases/DEMO01-public-walkthrough-2026-11-14.md)
 
 Sentinel uses synthetic transactions and simulated actions. The verification
-covers the local workflow and the static replay. Live agent evaluation and
+covers the local workflow and the public browser site. Live agent evaluation and
 a hosted sandbox for running fresh cases remain future work.
 
 [Complete guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md) · [Offline HTML](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html) · [Current status](docs/STATUS.md) · [Contributor and assistant handoff](docs/START_HERE.md)
