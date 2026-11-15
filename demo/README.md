@@ -14,7 +14,12 @@ approval, simulated action**. The rule score is a heuristic, not a fraud probabi
 this is not live inference. The approval was sent by the capture program, not by a person
 reviewing the case.
 
-## Open it
+## Try the walkthrough
+
+Visitors can step through all ten frames in the public walkthrough. The
+site serves the recorded synthetic case and its viewer. [Open the Sentinel walkthrough](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site)
+
+## Run locally
 
 From the repository root, start a static server that only listens on loopback:
 
