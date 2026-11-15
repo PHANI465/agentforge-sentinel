@@ -1,7 +1,7 @@
 # Sentinel public website
 
 The buildless site contains the browser PDF explainer, the recorded case replay and the
-synthetic p1 dataset download. The existing Python API and PostgreSQL run separately.
+synthetic p1 dataset download. The live workbench deploys alongside the static files on Vercel. See ../hosting/vercel/README.md.
 
 ## Preview and verify
 

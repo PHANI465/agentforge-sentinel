@@ -46,7 +46,7 @@
       <div class="wrap tool">
         <div class="tool-head">
           <h2 id="review-title" class="heading-2">Explain a PDF</h2>
-          <p id="file-help" class="body-3">Choose a PDF with selectable text. Maximum 10 MiB and 40 pages. Use the synthetic statement to try it without your own file.</p>
+          <p id="file-help" class="body-3">Choose a PDF with selectable text. Maximum 10 MB and 40 pages. Use the synthetic statement to try it without your own file.</p>
         </div>
         <div class="file-box">
           <div class="file-actions">
@@ -67,7 +67,7 @@
       <h2 class="heading-2" id="how-title">From PDF to explanation</h2>
       <ol class="steps">
         <li class="step"><h3 class="heading-6">Choose a document</h3><p class="body-3">Use a statement, invoice, or transaction report with text you can select. A scan may have no text to read.</p></li>
-        <li class="step"><h3 class="heading-6">Read the findings</h3><p class="body-3">The browser reads each page and looks for labeled amounts, key passages, and common financial terms.</p></li>
+        <li class="step"><h3 class="heading-6">Read the findings</h3><p class="body-3">The browser reads each page and looks for labeled amounts, invoice math and changes to payment instructions.</p></li>
         <li class="step"><h3 class="heading-6">Check the source page</h3><p class="body-3">Compare each finding with the source. If text was missing or unclear, the results show the gap.</p></li>
       </ol>
       <p class="statement heading-3" id="statement">See where each finding comes from.<br>Decide what needs a closer look.</p>
@@ -78,6 +78,7 @@
         <div>
           <h2 class="heading-2">How Sentinel investigates fraud</h2>
           <p class="body-3">Sentinel is a research workbench for fraud analysts. The public walkthrough follows a synthetic case recorded from the local app.</p>
+          <a class="primary button-md" href="https://agentforge-sentinel.vercel.app/workbench">Start a live demo case <span aria-hidden="true">↗</span></a>
           <a class="secondary button-md" href="walkthrough.html">Walk through the recorded case <span aria-hidden="true">↗</span></a>
         </div>
         <ol class="case-steps body-3">
@@ -89,14 +90,22 @@
       </div>
     </section>
 
+    <section class="wrap section" aria-labelledby="built-title">
+      <h2 id="built-title" class="heading-2">How Sentinel was built and tested</h2>
+      <ul class="highlights">
+        <li><h3 class="heading-6">Tested with three different invoices</h3><p class="body-3">The PDF checks distinguish incorrect math, payments close to a stated approval limit and a request to change bank details. Findings point back to the page that triggered them.</p></li>
+        <li><h3 class="heading-6">Training data you can inspect</h3><p class="body-3">We generated 82,819 transactions and used separate time periods to train, tune and test the model. <a href="dataset.html">See what went into the dataset.</a></p></li>
+        <li><h3 class="heading-6">Approval before any action</h3><p class="body-3">The recorded case shows when the app opened a case, checked evidence, required approval and executed one simulated action. Repeating the request returns the same action.</p></li>
+      </ul>
+    </section>
     <section class="wrap section faq" aria-labelledby="faq-title">
       <h2 class="heading-2" id="faq-title">Before you start</h2>
       <details><summary class="title-2">Where does my PDF go?</summary><p class="body-3">The file and its extracted text stay in the browser tab. Clear the result or close the tab to remove it from the page.</p></details>
-      <details><summary class="title-2">What files work here?</summary><p class="body-3">Use a text PDF up to 10 MiB and 40 pages. Password protected PDFs are unsupported. Image only pages need OCR, which this tool does not include.</p></details>
-      <details><summary class="title-2">What do the findings mean?</summary><p class="body-3">They explain terms and repeat labeled amounts when those appear in readable text. The browser does not add up table rows, verify an invoice, or determine whether a document is fraudulent.</p></details>
+      <details><summary class="title-2">What files work here?</summary><p class="body-3">Use a text PDF up to 10 MB and 40 pages. Password protected PDFs are unsupported. Image only pages need OCR, which this tool does not include.</p></details>
+      <details><summary class="title-2">What do the findings mean?</summary><p class="body-3">They explain terms and show the math on readable invoice rows. The browser also flags changes in payment instructions and compares amounts with a threshold explicitly stated in the document. Confirm entities, policy and account information using trusted records.</p></details>
       <details><summary class="title-2">Does this use ChatGPT or Claude?</summary><p class="body-3">The PDF explainer uses local text extraction and rules. The recorded case uses deterministic roles. Both tools work without a model account or key.</p></details>
       <details><summary class="title-2">What data trained the model?</summary><p class="body-3">Sentinel's bundled model was trained on generated transactions with synthetic account histories and known labels. The sample PDF and public case are also synthetic. The ULB and Worldline dataset was acquired separately for research.</p><p class="body-3"><a href="data/sentinel-p1-synthetic.zip" download>Download the synthetic training dataset (6.4 MiB ZIP)</a> · <a href="dataset.html">Dataset contents and verification</a></p></details>
-      <details><summary class="title-2">Can I run the full workbench here?</summary><p class="body-3">This site hosts the PDF explainer and recorded case. The full workbench currently runs locally with a Python API and PostgreSQL. The local document review also supports CSV and XLSX.</p></details>
+      <details><summary class="title-2">Can I run the full workbench here?</summary><p class="body-3">Yes. <a href="https://agentforge-sentinel.vercel.app/workbench">Open the live workbench</a> to investigate and approve a simulated action on a temporary synthetic case. The PDF explainer runs in your browser. The local app also supports CSV and XLSX.</p></details>
       <a class="primary button-md" href="#review">Explain a PDF <span aria-hidden="true">↗</span></a>
     </section>
   </main>

@@ -20,6 +20,8 @@ offline labels, with its checksum. Preserve the separate ULB research acquisitio
 and link to its source. The full hosted workbench remains open pending access to
 a runtime and PostgreSQL. [Public site release](../releases/PUBLIC-SITE-2026-11-15.md)
 
+**D20261115-02 · Vercel live synthetic demo.** Vercel CLI login restored deployment access. The free Neon resource and restricted API role serve scoped guest sessions with deterministic roles. PDF checks stay in the browser, with a decimal 10 MB cap. This updates the hosting status in D20261115-01. [Release evidence](../releases/PUBLIC-SITE-VERCEL-2026-11-15.md)
+
 ## Earlier decisions with recorded sources
 
 These are retrospective summaries of written project records, not reconstructed quotes.

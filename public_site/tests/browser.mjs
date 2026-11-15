@@ -5,7 +5,8 @@ import {createRequire} from 'node:module';
 import {extname, join, resolve, sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-const [modules, fixtures, artifacts, hosted] = process.argv.slice(2);
+const [modules, fixtures, artifacts, target, invoiceFixtures] = process.argv.slice(2);
+const hosted = target === '--local' ? undefined : target;
 const {chromium} = createRequire(join(resolve(modules), 'package.json'))('playwright');
 const root = fileURLToPath(new URL('../static/', import.meta.url));
 const contentType = {'.html':'text/html', '.css':'text/css', '.mjs':'text/javascript', '.js':'text/javascript', '.svg':'image/svg+xml', '.pdf':'application/pdf', '.json':'application/json', '.woff2':'font/woff2'};
@@ -69,12 +70,31 @@ try {
   await picker.setInputFiles({name:'fake.pdf',mimeType:'application/pdf',buffer:Buffer.from('this is not a PDF')});
   await page.getByRole('button', {name:'Explain this PDF'}).click();
   await page.getByRole('alert').getByText(/does not have a PDF header/).waitFor();
-  await picker.setInputFiles({name:'large.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(10*1024*1024+1)});
+  await picker.setInputFiles({name:'large.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(10_000_001)});
   await page.getByRole('button', {name:'Explain this PDF'}).click();
-  await page.getByRole('alert').getByText(/exceeds 10 MiB/).waitFor();
+  await page.getByRole('alert').getByText(/exceeds 10 MB/).waitFor();
   await picker.setInputFiles(join(fixtures,'pdf_encrypted.pdf'));
   await page.getByRole('button', {name:'Explain this PDF'}).click();
   await page.getByRole('alert').getByText(/could not be read/i).waitFor();
+
+  if (invoiceFixtures) {
+    const samples = [
+      ['QA_Test_01_Math_Discrepancy.pdf', ['line-math','subtotal-math','total-math'], ['$480.00','$680.00','$1,280.00','$1,480.00','$1,598.40','$1,898.40']],
+      ['QA_Test_02_Threshold_Splitting.pdf', ['approval-limit','address-overlap'], ['$4,995.00','$5.00','$5,000.00','$9,990.00']],
+      ['QA_Test_03_Remittance_Mismatch.pdf', ['payment-change','payee-name','routing-format','email-verify'], ['all zeros','Beneficiary name differs from the vendor']],
+    ];
+    for (const [filename, codes, facts] of samples) {
+      await picker.setInputFiles(join(invoiceFixtures,filename));
+      const selected = requests.length;
+      await page.getByRole('button', {name:'Explain this PDF'}).click();
+      await page.getByText('PDF reviewed in this browser.').waitFor();
+      assert.deepEqual(await page.locator('#results [data-check]').evaluateAll(nodes => nodes.map(node => node.dataset.check)),codes);
+      const copy = await page.locator('#results .checks').innerText();
+      for (const fact of facts) assert.ok(copy.includes(fact), filename + ' missing ' + fact);
+      assert.ok(!copy.includes('Expected flags:') && !copy.includes('Expected anomalies:'));
+      assert.ok(requests.slice(selected).every(url => url.startsWith(origin + '/vendor/pdfjs/')));
+    }
+  }
   const narrow = await browser.newPage({viewport:{width:390,height:844}});
   await narrow.goto(origin);
   await narrow.keyboard.press('Tab');
@@ -83,13 +103,36 @@ try {
   assert.equal(await narrow.evaluate(()=>document.documentElement.scrollWidth),390);
   await narrow.screenshot({path:join(artifacts,'mobile.png'),fullPage:true});
   await page.getByRole('link',{name:/Walk through the recorded case/}).click();
+
+  await page.getByRole('heading',{name:'Follow one fraud case'}).waitFor();
+  await page.getByRole('heading',{name:'A large debit triggers an alert'}).waitFor();
+  await page.screenshot({path:join(artifacts,'walkthrough-desktop.png'),fullPage:true});
+  const phases = [
+    'Investigators check the activity behind the alert',
+    'The proposal waits for a decision',
+    'The approved action runs in the simulator',
+    'The audit explains how the case closed',
+  ];
+  for (const title of phases) {
+    await page.getByRole('button',{name:'Next',exact:true}).click();
+    await page.getByRole('heading',{name:title}).waitFor();
+    assert.equal(await page.evaluate(()=>document.activeElement.id),'walk-title');
+  }
+  assert.equal(await page.locator('[aria-current=step]').count(),1);
+  await narrow.goto(origin + '/walkthrough.html');
+  await narrow.getByRole('heading',{name:'A large debit triggers an alert'}).waitFor();
+  assert.equal(await narrow.evaluate(()=>document.documentElement.scrollWidth),390);
+  await narrow.screenshot({path:join(artifacts,'walkthrough-mobile.png'),fullPage:true});
+  await page.getByRole('link',{name:/technical replay/}).click();
   await page.getByRole('heading',{name:'Recorded replay of one synthetic case'}).waitFor();
   await page.getByRole('button',{name:/^Next/}).click();
+  await page.getByRole('link',{name:'Back to the case overview'}).click();
   await page.getByRole('link',{name:'Back to Sentinel'}).click();
   await page.getByRole('heading',{name:'Understand what your financial PDF says'}).waitFor();
   assert.deepEqual(errors,[]);
   assert.deepEqual(writes,[]);
-  console.log('Passed sample and local PDF, image only and mixed PDF, inert text, bad header, size and password rejection, clear, GET-only traffic, keyboard, 390 px layout and replay navigation.');
+  console.log('Passed sample and local PDF, image only and mixed PDF, inert text, bad header, size and password rejection, clear, GET-only traffic, keyboard, 390 px layouts and both replay views.');
+  if (invoiceFixtures) console.log('All three invoice PDFs produced their expected distinct findings and values.');
 } finally {
   await browser.close();
   if (server.listening) await new Promise(resolve => server.close(resolve));

@@ -1,5 +1,9 @@
 # Project status
 
+## November 15 live workbench and revised public PDF checks
+
+The public Vercel app runs scoped synthetic cases with FastAPI and Neon PostgreSQL. The new browser PDF rules and five-step replay are deployed. [Release and verification](releases/PUBLIC-SITE-VERCEL-2026-11-15.md)
+
 ## November 15 public PDF explainer and synthetic dataset published
 
 The public site supports text PDF review in the browser, the recorded synthetic

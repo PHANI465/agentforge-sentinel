@@ -89,3 +89,10 @@ summary{cursor:pointer}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important}.statement span{opacity:1!important}}
 
 .hash{overflow-wrap:anywhere}
+.checks,.highlights{list-style:none;display:grid;padding:0;gap:16px}
+.checks{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));margin:0}
+.highlights{grid-template-columns:repeat(auto-fit,minmax(min(100%,272px),1fr));margin-top:24px}
+.checks li,.highlights li{border:1px solid var(--line);border-radius:12px;padding:16px;background:#f7f9f4;overflow-wrap:anywhere}
+.checks li p,.highlights li p,.checks li details{margin-top:8px}
+.checks h5{margin:0}
+.checks details{background:#fff}

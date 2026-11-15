@@ -53,7 +53,27 @@ function show(report, total) {
     output.append(make('p', 'body-3', `No readable text on ${report.missing.length === 1 ? 'page' : 'pages'} ${report.missing.join(', ')}. If these pages are scans, use a copy with selectable text.`));
   }
   if (report.readable) {
+    if (report.checks.length) {
+      output.append(make('h4', 'heading-6', 'What to review'));
+      const checks = make('ol', 'checks');
+      for (const check of report.checks) {
+        const item = make('li');
+        item.dataset.check = check.code;
+        item.append(make('h5', 'title-3', check.title));
+        if (check.item) item.append(make('p', 'body-6', check.item));
+        item.append(make('p', 'body-3', check.description));
+        const evidence = make('details');
+        evidence.append(make('summary', 'title-4', 'Evidence on page ' + check.page),
+          make('p', 'body-6', check.line));
+        item.append(evidence);
+        checks.append(item);
+      }
+      output.append(checks);
+    } else if (report.kind === 'Invoice') {
+      output.append(make('p', 'body-3', 'No review flags from the invoice checks that could run. Check the source for any amounts, terms or layouts this review did not cover.'));
+    }
     if (report.findings.length) {
+      output.append(make('h4', 'heading-6', 'Amounts and terms found'));
       const cards = make('ul', 'findings');
       for (const finding of report.findings) {
         const item = make('li');
@@ -70,7 +90,7 @@ function show(report, total) {
     } else {
       output.append(make('p', 'body-3', 'No supported labeled amounts or terms were found. Use the page excerpts below to review the extracted text.'));
     }
-    output.append(make('p', 'caption-2', 'Findings use simple text rules. Amounts are quoted as printed. Tables and totals were not recalculated.'));
+    output.append(make('p', 'caption-2', 'Sentinel quotes printed amounts and checks recognizable invoice rows. Compare each finding with the source. A flag is a reason to review.'));
     const excerpts = make('details');
     excerpts.append(make('summary', 'title-3', 'Read page excerpts'));
     for (const excerpt of report.excerpts) {
@@ -107,7 +127,7 @@ async function review(useSample) {
       if (!response.ok) throw new ReviewError('The sample could not load. Try again or choose a PDF.');
       bytes = await response.arrayBuffer();
     } else {
-      if (file.size > maximumBytes) throw new ReviewError('This file exceeds 10 MiB. Choose a smaller PDF.');
+      if (file.size > maximumBytes) throw new ReviewError('This file exceeds 10 MB. Choose a smaller PDF.');
       bytes = await file.arrayBuffer();
     }
     if (current !== generation) return;

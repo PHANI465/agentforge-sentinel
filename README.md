@@ -6,12 +6,13 @@ and requires human approval before a simulated action.
 
 ## Try Sentinel online
 
+[Open the public Vercel site](https://agentforge-sentinel.vercel.app/). You can explain a PDF, follow a recorded case or run a fresh synthetic case.
+
 - [Explain a PDF](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/#review). Pick a text PDF or try the synthetic sample. The explanation quotes financial terms and amounts with source pages. The file stays in your browser.
-- [Walk through a fraud case](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/walkthrough.html). Follow ten recorded steps from the initial risk score to human approval, simulated action and audit.
+- [Walk through a fraud case](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/walkthrough.html). Follow five plain language steps, with the original technical replay available for details.
 - [Download the synthetic p1 dataset](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/dataset.html). Includes 82,819 generated transactions, 600 fictional accounts, labels, features and the manifest used to verify the snapshot.
 
-The public site requires no account or API key. Live case creation and the full
-analyst workbench currently run locally. [Public release and checks](docs/releases/PUBLIC-SITE-2026-11-15.md)
+The public site requires no account or API key. Start a [live workbench case](https://agentforge-sentinel.vercel.app/workbench) to try investigation and simulated execution. The 30 minute session contains only synthetic data. [Public release and checks](docs/releases/PUBLIC-SITE-VERCEL-2026-11-15.md)
 
 ## What you can run locally
 
@@ -63,7 +64,7 @@ integration passed 266 frontend tests and 41 Windows Chromium cases. The
 recorded walkthrough passed 31 local browser checks. [AN01-M1 release](docs/releases/AN01-M1-main-integration-2026-11-14.md) · [Document Review release](docs/releases/DOC01-Part-C-main-integration-2026-11-14.md) · [Walkthrough release](docs/releases/DEMO01-public-walkthrough-2026-11-14.md)
 
 Sentinel uses synthetic transactions and simulated actions. The verification
-covers the local workflow and the public browser site. Live agent evaluation and
-a hosted sandbox for running fresh cases remain future work.
+covers the local workflow and the hosted synthetic demo. Live provider quality
+evaluation remains future work.
 
 [Complete guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md) · [Offline HTML](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html) · [Current status](docs/STATUS.md) · [Contributor and assistant handoff](docs/START_HERE.md)

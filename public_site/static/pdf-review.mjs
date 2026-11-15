@@ -1,13 +1,15 @@
-export const maximumBytes = 10 * 1024 * 1024;
+import {invoiceEvidence} from './invoice-review.mjs';
+
+export const maximumBytes = 10_000_000;
 export const maximumPages = 40;
 export const maximumCharacters = 240_000;
 
 const labeledAmounts = [
   ['Opening balance', /^(?:opening|beginning|previous) balance\b/i, 'The amount reported at the start of the statement period.'],
   ['Closing balance', /^(?:closing|ending|new) balance\b/i, 'The amount reported at the end of the statement period.'],
-  ['Amount due', /^(?:total amount due|amount due|balance due|total due|total payable)\b/i, 'The amount the issuer says remains payable. Check the due date and whether any payments have posted.'],
-  ['Subtotal', /^sub[ -]?total\b/i, 'An intermediate total, usually before taxes, discounts or other adjustments.'],
-  ['Listed tax', /^(?:total tax|sales tax|vat|gst|tax)\b/i, 'A tax amount reported by the issuer. Rates and taxable items may appear separately.'],
+  ['Amount due', /^(?:reported\s+)?(?:total amount due|amount due|balance due|total due|total payable)\b/i, 'The amount the issuer says remains payable. Check the due date and whether any payments have posted.'],
+  ['Subtotal', /^(?:reported\s+)?sub[ -]?total\b/i, 'An intermediate total, usually before taxes, discounts or other adjustments.'],
+  ['Listed tax', /^(?:total tax|sales tax|vat|gst|tax)\b(?:\s*\(\d+(?:\.\d+)?%\))?/i, 'A tax amount reported by the issuer. Rates and taxable items may appear separately.'],
   ['Listed total', /^(?:grand total|invoice total|total)\b/i, 'A total reported on this page. Compare its label and currency with the source.'],
   ['Deposits or credits', /^(?:total )?(?:deposits|credits|payments received)\b/i, 'Incoming amounts or credits as labeled by the issuer.'],
   ['Withdrawals or debits', /^(?:total )?(?:withdrawals|debits|purchases)\b/i, 'Outgoing amounts or debits as labeled by the issuer.'],
@@ -69,6 +71,7 @@ export function explain(pages) {
   }
   return {
     kind,
+    checks: kind === 'Invoice' ? invoiceEvidence(pages) : [],
     readable: readable.length,
     missing: pages.filter(page => !page.lines.length).map(page => page.number),
     findings: [...amountFindings, ...termFindings.values()],

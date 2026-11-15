@@ -18,7 +18,7 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 
 ## Current position
 
-- The public site offers browser PDF explanations, a synthetic p1 dataset download and the recorded fraud case. The Python/PostgreSQL workbench still runs locally. [Public site release](releases/PUBLIC-SITE-2026-11-15.md)
+- The public site offers browser PDF explanations, a synthetic p1 dataset download and the recorded fraud case. The same deterministic workbench is live on Vercel for scoped synthetic cases. [Public deployment and checks](releases/PUBLIC-SITE-VERCEL-2026-11-15.md)
 - DOC01 Part C is integrated locally at verified source commit `3dfbc00`. Sessions with the document grant can upload local public or synthetic files and review extraction results in the workbench. [Part C release](releases/DOC01-Part-C-main-integration-2026-11-14.md)
 - DOC01 Part B integrated the HTTP v1.3 API in `e51f47a`. [Part B release](releases/DOC01-Part-B-main-integration-2026-11-13.md)
 - The casework and scoring paths retain their tested 871e31d baseline. Main also includes the accepted DOC01 Part A worker through source merge `662572e`; its integration checks are recorded separately.
