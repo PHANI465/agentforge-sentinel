@@ -1,5 +1,15 @@
 # Project status
 
+## November 15 document-insights foundation and next release
+
+The isolated `task/codex-document-insights-foundation` branch contains exact-money,
+immutable source-linked statement checks plus the [implementation/security roadmap](documents/INSIGHTS-ROADMAP-2026-11-15.md).
+This library is not wired into the live reviewer. No current capability is expanded by
+the documentation alone. GPT-6.1 Sol / High is assigned the remaining browser extraction,
+UI, examples and comparison slices through [this dispatch](prompts/SOL_DOCUMENT_INSIGHTS.md).
+Optional remote document explanations remain disabled pending a reviewed budget/consent
+service. Existing IAF is project-only and unchanged. See the foundation handoff for checks.
+
 ## November 15 live workbench and revised public PDF checks
 
 The public Vercel app runs scoped synthetic cases with FastAPI and Neon PostgreSQL. The new browser PDF rules and five-step replay are deployed. [Release and verification](releases/PUBLIC-SITE-VERCEL-2026-11-15.md)

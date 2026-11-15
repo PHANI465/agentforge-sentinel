@@ -1,5 +1,16 @@
 # Shared implementation queue
 
+## November 15 document insights: next public-release work
+
+Current owner-approved scope: single-document understanding and local multi-document
+comparisons for invoices, statements and payments; complex synthetic/official samples,
+capability catalog and accessible results. Codex supplies the initial evidence foundation
+and security design. [GPT-6.1 Sol / High dispatch](prompts/SOL_DOCUMENT_INSIGHTS.md) owns
+S1-S5 sequentially from `task/codex-document-insights-foundation`, not an older main.
+[Plan and acceptance criteria](documents/INSIGHTS-ROADMAP-2026-11-15.md).
+No new paid provider mode or deployment is enabled by this assignment. Existing historical
+entries below remain evidence, not the current public-review dispatch.
+
 ## November 14 DOC01 Part C complete
 
 The local Document Review UI is integrated at `3dfbc00`. The AN01-M1

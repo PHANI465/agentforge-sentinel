@@ -16,7 +16,22 @@ node tests/browser.mjs <sentinel>/web/node_modules <sentinel>/tools/document_wor
 An optional fourth argument tests the published origin. The run writes screenshots from
 the sample only and checks that the visitor's PDF is handled without any outbound upload.
 
-## Sources
+## Document insights foundation (not yet connected to the UI)
+
+`static/document-evidence.mjs` validates immutable statement-summary evidence and
+reconciles exact monetary values. It does not parse files or send data to a provider.
+The [roadmap](../docs/documents/INSIGHTS-ROADMAP-2026-11-15.md) and
+[Sol dispatch](../docs/prompts/SOL_DOCUMENT_INSIGHTS.md) define the next implementation.
+
+```powershell
+node --test public_site/tests/document-evidence.test.mjs public_site/tests/invoice-review.test.mjs
+node public_site/tests/document-evidence.browser.mjs <sentinel>/web/node_modules
+```
+
+Run these from the repository root. The browser check serves only the new module on
+loopback; it verifies a structured-input calculation, not an end-to-end PDF parser.
+
+## Sources and licenses
 
 - The synthetic sample PDF is `tools/document_worker/fixtures/pdf_text_statement.pdf`
   from Sentinel at `46fcb2f`. Its SHA-256 is

@@ -1,5 +1,13 @@
 # AgentForge Sentinel: the complete project guide
 
+**November 15 public-product roadmap.** The public site and synthetic workbench are live;
+IAF answers project questions. The next document release adds structured financial
+insights, explicit check coverage, complex examples and local comparisons. The new
+statement-evidence foundation is implemented in a task branch, not yet connected to the
+website. Read the [architecture, security, UI and implementation plan](../documents/INSIGHTS-ROADMAP-2026-11-15.md)
+and [GPT-6.1 Sol / High handoff](../prompts/SOL_DOCUMENT_INSIGHTS.md). Optional remote
+document AI remains disabled. Historical completion tables below retain their dated scope.
+
 November 8 edition · Updated November 13, 2026 · Project idea, implementation and remaining stages
 
 **November 14 integration update.** Document Review is integrated locally at source commit `3dfbc00`. With the document grant, an analyst can upload a public or synthetic CSV, XLSX or PDF, review extraction coverage and available reconciliation, and page through evidence. The AN01-M1 prototype is integrated at `1427b2c`, with full-size Reports measurements still ahead. [Part C release](../releases/DOC01-Part-C-main-integration-2026-11-14.md) · [AN01-M1 integration](../releases/AN01-M1-main-integration-2026-11-14.md) · [Current work](../START_HERE.md)

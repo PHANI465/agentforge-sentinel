@@ -24,6 +24,26 @@ a runtime and PostgreSQL. [Public site release](../releases/PUBLIC-SITE-2026-11-
 
 ## Earlier decisions with recorded sources
 
+**D20261115-03 · document insights and work split.** In the owner's pop-up answers,
+they chose both single-document and cross-document review, initially invoices, statements
+and payments, and clearly labeled synthetic scenarios plus official public reports.
+They requested Codex's security/architecture foundation and GPT-6.1 Sol / High for all
+remaining implementation. [Plan](../documents/INSIGHTS-ROADMAP-2026-11-15.md) and
+[dispatch](../prompts/SOL_DOCUMENT_INSIGHTS.md) define source scope and verification.
+Status: foundation implemented in its task branch; remaining product work assigned, not
+delivered. Revisit when actual file-to-browser checks establish each capability.
+
+**D20261115-04 · delegated privacy and subscription choice.** Owner asked Codex to
+choose the better option and preferred existing subscription use. Chosen default is local
+browser analysis; optional remote explanation requires explicit consent for selected
+evidence and a separately reviewed budget/service before activation. ChatGPT Plus and
+Claude Pro do not include ordinary API billing; OpenAI participating-tool allowance sharing
+does not establish Sentinel eligibility. No consumer-login relay or new paid mode is
+authorized. Current IAF's project-only configuration is unchanged. Sources and the future
+activation checklist are in plan section 9. Status: policy/design, no document provider
+calls or endpoint implemented. Revisit only with supported authentication, retention and
+funding evidence.
+
 These are retrospective summaries of written project records, not reconstructed quotes.
 
 | ID | Decision and current meaning | Source |
