@@ -12,42 +12,112 @@
   const ALLOWED_ATTRS = new Set(["id", "role", "tabindex", "type", "title", "scope",
     "hidden", "colspan", "lang"]);
 
-  const NARRATIVE = {
-    ingest: "The capture program posted five synthetic debits for one synthetic account to " +
-      "POST /v1/transactions. The production rule scorer scored each one at ingest time, " +
-      "using only history already ingested. The first four stayed below the threshold; the " +
-      "large final debit, with two debits in the hour before it, reached the threshold and " +
-      "raised an alert.",
-    case_opened: "In the same database transaction as the alert, the server opened a case " +
-      "and attached two evidence items computed from stored records. Their snapshot hash is " +
-      "pinned on the case together with the scorer, action policy, workflow and tool profile " +
-      "versions. No approval or action exists.",
-    analyst: "The capture program asked for an investigation at revision 1. The " +
-      "deterministic three-role workflow claimed the case. The server ran the baseline read " +
-      "tools itself; the evidence analyst then restated facts with citations and asked for " +
-      "follow-up tools, which the server ran and recorded, including unavailable results.",
-    investigator: "The investigator chose one enumerated operation and reason code and cited " +
-      "the facts behind it. The server, not a role, checked every claim against the stored " +
-      "evidence and tool results.",
-    reviewer: "The reviewer saw the server's claim checks and accepted. The coordinator " +
-      "recorded a recommendation and moved the case to awaiting approval. Deterministic " +
-      "adapters call no provider, so token usage is not applicable rather than zero.",
-    proposal: "The server built the exact action intent from stored records: the target " +
-      "transaction and amount come from the database, not from role output. The intent is " +
-      "bound to the case revision and evidence snapshot by its SHA-256. Nothing is approved.",
-    approval: "Scripted step: the capture program, holding the analyst session, sent the " +
-      "decision \u201capproved\u201d for this exact intent. This is not a human review. " +
-      "The approval is bound to the intent hash and expires after the policy time limit. " +
-      "No action has run yet.",
-    execution: "The capture program executed the approved intent once. Under lock the server " +
-      "re-checked authority, the intent binding and the approval window, consumed the " +
-      "approval, recorded exactly one simulated action and closed the case. No external " +
-      "system was contacted.",
-    replay: "The capture program retried with the same idempotency key. The server returned " +
-      "the original action marked replayed and executed nothing again. The simulated action " +
-      "count stays at one.",
-    audit: "Each state change wrote an audit event in the same transaction as the change. A " +
-      "final trace read returned the same stored workflow: reading never changes a case.",
+  // The teaching sequence follows the real capture. Records and request payloads render below it.
+  const GUIDE = {
+    ingest: {
+      nav: "Score the debits", title: "A large debit triggers an alert", visual: "How this score was calculated",
+      story: "Five debits arrived for one fictional account. Sentinel scored each as it arrived, using only the account history it already had.",
+      nodes: (r, p) => {
+        const scored = r.ingests.at(-1);
+        const rule = p.scorer.rule_config;
+        return [
+          ["Large amount", money(scored.transaction.amount), "+" + rule.large_amount_points + " for meeting the large amount rule"],
+          ["Recent activity", scored.scoring.prior_count_1h + " earlier debits", "+" + rule.velocity_points_per_prior + " for each in the previous hour"],
+          ["Alert cutoff", r.alert.score.toFixed(2) + " ≥ " + r.alert.threshold.toFixed(2), "The rule score reaches the alert threshold"],
+        ];
+      },
+      why: "The rule score measures a rule match. The alert tells an investigator which debit to look at.",
+    },
+    case_opened: {
+      nav: "Open the case", title: "The alert becomes a case", visual: "What Sentinel saves",
+      story: "Sentinel saved the alert and opened a case in the same database transaction. The case points to the exact evidence and rules used.",
+      nodes: r => [
+        ["Trigger", "One flagged debit", money(r.ingests.at(-1).transaction.amount)],
+        ["Evidence", r.evidence.length + " saved facts", "The debit amount and the count of earlier debits"],
+        ["Case", "Open", "The case is ready for investigation"],
+      ],
+      why: "Saving the facts and rule versions lets a future reviewer see what Sentinel knew when it opened the case.",
+    },
+    analyst: {
+      nav: "Gather evidence", title: "The evidence analyst gathers the facts", visual: "From tool requests to evidence",
+      story: "Sentinel ran tools to read the case and the account history. The evidence analyst organized the results and asked the server to check additional context.",
+      nodes: r => [
+        ["Start with the case", "Amount and activity", "Use the evidence saved when the alert fired"],
+        ["Read more context", r.tool_results.length + " tool results", "The server records the data each tool returned"],
+        ["Record gaps", "Account profile unavailable", "The workflow can see where information is missing"],
+      ],
+      why: "A missing account profile stays visible as a gap. The workflow can base its recommendation on facts it actually has.",
+    },
+    investigator: {
+      nav: "Verify the claims", title: "The investigator proposes a simulated hold", visual: "How a recommendation is checked",
+      story: "The investigator selected a simulated hold and cited the recorded facts. The server compared each claim with its source before passing the results to the reviewer.",
+      nodes: r => [
+        ["Proposal", "Simulated hold", "A recommendation for the flagged debit"],
+        ["Cited evidence", "Case facts and tools", "Evidence shows the amount and the pattern of recent debits"],
+        ["Server checks", r.workflow.disposition.supported_claims + " supported claims", r.workflow.disposition.unsupported_claims + " unsupported claims"],
+      ],
+      why: "For example, a claim of two earlier debits can be checked against the saved one-hour count.",
+    },
+    reviewer: {
+      nav: "Review the recommendation", title: "The reviewer accepts the evidence", visual: "Two separate decisions",
+      story: "The reviewer checked the investigator’s proposal with the server’s claim results in view. Sentinel saved the recommendation and moved the case to awaiting approval.",
+      nodes: r => [
+        ["Input", r.workflow.disposition.supported_claims + " verified claims", "The reviewer sees what the server checked"],
+        ["Review outcome", "Recommendation accepted", "The three roles completed their work"],
+        ["Next decision", "Awaiting approval", "An analyst session must approve the exact action"],
+      ],
+      why: "The reviewer’s verdict ends the investigation. Approval is a separate decision recorded by the action policy.",
+    },
+    proposal: {
+      nav: "Prepare the action", title: "Sentinel prepares the exact action for approval", visual: "What the proposal is tied to",
+      story: "The server built an action intent, a record of what it would do if approved. It used the saved transaction and amount.",
+      nodes: r => [
+        ["Target", money(r.intent.parameters.amount), "The exact debit that triggered the alert"],
+        ["Binding", "Case revision " + r.intent.case_revision, "Linked to the case and its saved evidence"],
+        ["Requested action", "Simulated hold", "Ready for an approval decision"],
+      ],
+      why: "The approval must match this proposal, including its version and evidence. A changed proposal needs a new decision.",
+    },
+    approval: {
+      nav: "Record approval", title: "The approval is recorded", visual: "Approval opens a short window to execute",
+      story: "The recording script acted as the analyst and approved the exact proposal. In the live demo, you make that decision yourself.",
+      nodes: r => [
+        ["Input", "Exact proposal", "The approval references this action intent"],
+        ["Decision", "Approved", "Scripted by the capture program for this example"],
+        ["Valid for", Math.round((ms(r.approval.expires_at) - ms(r.approval.decided_at)) / 60000) + " minutes", "Once the window expires, this approval cannot be used"],
+      ],
+      why: "At this point, one approval exists and zero actions have run. Execution is a separate operation.",
+    },
+    execution: {
+      nav: "Execute once", title: "The simulated hold runs once", visual: "Checks before the case closes",
+      story: "Sentinel checked the approver, the proposal and the time window. It used the approval, recorded a successful simulated hold and closed the case.",
+      nodes: () => [
+        ["Validate", "Approval is valid", "The request matches the proposal and is within the time window"],
+        ["Execute", "One simulated hold", "The approval is consumed and cannot be spent again"],
+        ["Save", "Case closed", "The action and its audit entry are stored"],
+      ],
+      why: "This step shows how the action boundary works. The hold is simulated and no external payment system is contacted.",
+    },
+    replay: {
+      nav: "Retry safely", title: "A retry returns the same action", visual: "One request identity, one action",
+      story: "The script resent the execution request with the same idempotency key, an identifier Sentinel uses to recognize a repeat request.",
+      nodes: () => [
+        ["First request", "One action recorded", "The server saves its result with the request key"],
+        ["Repeat request", "Same key", "Sentinel finds the result it saved the first time"],
+        ["Response", "Same action ID", "The case still has one simulated action"],
+      ],
+      why: "A retry can recover the result after a lost response without applying the hold twice.",
+    },
+    audit: {
+      nav: "Read the audit", title: "The audit explains how the case closed", visual: "Read the events in order",
+      story: "The audit trail ties the debit, investigation, approval and action together. The last request read back the stored trace.",
+      nodes: r => [
+        ["Signal", "Debit received → alert raised", "Why the case started"],
+        ["Decision", "Investigation → approval", "The recommendation and who approved it"],
+        ["Outcome", r.audit.length + " audit events", "The final trace read leaves the closed case unchanged"],
+      ],
+      why: "The timeline answers who did what and when. Open the recorded details to inspect the exact events.",
+    },
   };
 
   const state = { fx: null, index: 0, records: new Map(), digest: null, manifest: null };
@@ -178,7 +248,7 @@
   }
 
   function table(head, rows, caption) {
-    return h("div", { class: "table-wrap" }, h("table", null,
+    return h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": caption }, h("table", null,
       caption ? h("caption", null, caption) : null,
       h("thead", null, h("tr", null, head.map((c) => h("th", { scope: "col" }, c)))),
       h("tbody", null, rows)));
@@ -490,9 +560,8 @@
         ["Expires", time(a.expires_at) + " (" + ttl + " s window)"],
         ["Consumed", a.consumed_at ? time(a.consumed_at) : "not yet"],
       ]), { id: a.id, tag: "scripted", tagCls: "tag-scripted" }),
-      card("What this step is not", h("p", null, "No person reviewed this case. The capture " +
-        "program sent this decision through POST /v1/approvals so the stored path from " +
-        "approval to simulated action could be recorded. This page has no approve control."),
+      card("How approval was captured", h("p", null, "The recording script sent this decision " +
+        "through POST /v1/approvals to capture the path from approval to simulated action."),
       { cls: "warnnote" }),
       card("Checks this page re-ran on the recorded values", h("ul", { class: "checks" },
         check(a.intent_id === r.intent.id && a.intent_sha256 === r.intent.intent_sha256,
@@ -565,31 +634,59 @@
 
   // ---- page chrome ----------------------------------------------------------------------
 
+  const CHAPTERS = [
+    ["Alert", ["ingest", "case_opened"]],
+    ["Investigation", ["analyst", "investigator", "reviewer", "proposal"]],
+    ["Approval and outcome", ["approval", "execution", "replay", "audit"]],
+  ];
+
   function renderRail() {
+    const frames = state.fx.frames;
     const rail = document.getElementById("rail");
-    rail.replaceChildren(...state.fx.frames.map((f, i) => h("li", null,
-      h("button", { type: "button", class: "rail-btn", "data-index": i,
-        on: { click: () => go(i) } },
-        h("span", { class: "rail-no" }, String(f.index).padStart(2, "0")),
-        h("span", { class: "rail-label" }, f.title)))));
+    rail.replaceChildren(...CHAPTERS.map(([chapter, stages]) =>
+      h("section", {class: "rail-chapter"},
+        h("h2", null, chapter),
+        h("ol", null, stages.map((stage) => {
+          const index = frameIndexOf(stage);
+          return h("li", null,
+            h("button", {type: "button", class: "rail-btn", "data-index": index,
+              on: {click: () => go(index, {focus: true})}},
+              h("span", {class: "rail-no"}, String(frames[index].index)),
+              h("span", null, GUIDE[stage].nav)));
+        })))));
+    const selector = document.getElementById("jump-step");
+    selector.replaceChildren(...frames.map((frame) => {
+      const option = h("option", null, frame.index + ". " + GUIDE[frame.stage].nav);
+      option.value = String(frame.index - 1);
+      return option;
+    }));
+    selector.disabled = false;
+    selector.addEventListener("change", () => go(Number(selector.value), {focus: true}));
   }
 
-  function renderLedger(o, previous) {
-    const row = (label, value, key) => {
-      const changed = previous && key && previous[key] !== o[key];
-      return h("div", { class: "kv-row" + (changed ? " changed" : "") }, h("dt", null, label),
-        h("dd", null, mono(value), changed ? h("span", { class: "visually-hidden" },
-          " (changed)") : null));
-    };
-    document.getElementById("ledger").replaceChildren(
-      row("Case state", o.case_state, "case_state"),
-      row("Case revision", o.case_revision, "case_revision"),
-      row("Action intents", o.action_intents, "action_intents"),
-      row("Approvals", o.approvals, "approvals"),
-      row("Simulated actions", o.simulated_actions, "simulated_actions"),
-      row("Audit events", o.audit_events, "audit_events"),
-      row("Transactions", o.transactions, "transactions"),
-      row("Observed", time(o.observed_at)));
+  function renderGuide(guide, records, provenance) {
+    const nodes = guide.nodes(records, provenance);
+    document.getElementById("frame-guide").replaceChildren(
+      h("figure", {class: "step-figure"},
+        h("figcaption", null, guide.visual),
+        h("ol", {class: "diagram-nodes"}, nodes.map(([label, value, explanation]) =>
+          h("li", null, h("span", {class: "diagram-label"}, label),
+            h("strong", null, value), h("small", null, explanation))))),
+      h("p", {class: "takeaway"}, h("strong", null, "Why it matters"), " ", guide.why));
+  }
+
+  function renderLedger(frame, observation) {
+    const labels = {open: "Open", awaiting_approval: "Awaiting approval", closed: "Closed"};
+    const note = frame.observation === "after_investigation"
+      ? "Captured after the investigation. Steps 3–6 share this snapshot."
+      : "Recorded state at this point in the case.";
+    document.getElementById("snapshot-note").textContent = note;
+    document.getElementById("ledger").replaceChildren(...[
+      ["Case status", labels[observation.case_state]],
+      ["Approvals", observation.approvals],
+      ["Simulated actions", observation.simulated_actions],
+    ].map(([label, value]) => h("div", {class: "kv-row"}, h("dt", null, label),
+      h("dd", null, String(value)))));
   }
 
   function renderTech(frame) {
@@ -605,28 +702,30 @@
   function render() {
     const fx = state.fx;
     const frame = fx.frames[state.index];
+    const guide = GUIDE[frame.stage];
     const total = fx.frames.length;
-    document.getElementById("frame-no").textContent = "Frame " + frame.index + " of " + total;
-    document.getElementById("frame-title").textContent = frame.title;
-    document.getElementById("frame-narrative").textContent = NARRATIVE[frame.stage] || "";
+    document.getElementById("frame-no").textContent = "Step " + frame.index + " of " + total;
+    document.getElementById("frame-title").textContent = guide.title;
+    document.getElementById("frame-narrative").textContent = guide.story;
+    renderGuide(guide, fx.records, fx.provenance);
+    document.getElementById("records").open = false;
+    document.getElementById("frame-tech").open = false;
     const renderer = RENDER[frame.stage];
     document.getElementById("frame-body").replaceChildren(...[].concat(
-      renderer ? renderer(fx.records, fx.provenance) : []).filter(Boolean));
+      renderer(fx.records, fx.provenance)).filter(Boolean));
     renderTech(frame);
-    const prevFrame = state.index > 0 ? fx.frames[state.index - 1] : null;
-    renderLedger(fx.observations[frame.observation],
-      prevFrame ? fx.observations[prevFrame.observation] : null);
-    document.querySelectorAll(".rail-btn").forEach((b, i) => {
-      if (i === state.index) b.setAttribute("aria-current", "step");
-      else b.removeAttribute("aria-current");
-      b.classList.toggle("done", i < state.index);
+    renderLedger(frame, fx.observations[frame.observation]);
+    document.getElementById("jump-step").value = String(state.index);
+    document.querySelectorAll(".rail-btn").forEach((button, index) => {
+      if (index === state.index) button.setAttribute("aria-current", "step");
+      else button.removeAttribute("aria-current");
     });
     document.getElementById("prev").disabled = state.index === 0;
     document.getElementById("next").disabled = state.index === total - 1;
     document.getElementById("position").textContent = frame.index + " / " + total;
-    document.getElementById("announce").textContent = "Frame " + frame.index + " of " + total +
-      ": " + frame.title;
-    document.title = "Sentinel Recorded Replay \u2013 " + "frame " + frame.index + " of " + total;
+    document.getElementById("announce").textContent = "Step " + frame.index + " of " + total +
+      ": " + guide.title;
+    document.title = guide.title + " | Sentinel case walkthrough";
   }
 
   function renderProvenance() {
@@ -701,7 +800,9 @@
   function wellFormed(fx) {
     return fx && fx.schema === SCHEMA && Array.isArray(fx.frames) && fx.frames.length === 10 &&
       fx.records && fx.observations && fx.provenance &&
-      fx.frames.every((f) => RENDER[f.stage] && fx.observations[f.observation]);
+      CHAPTERS.flatMap(([, stages]) => stages).every((stage, index) =>
+        fx.frames[index].stage === stage && fx.frames[index].index === index + 1 &&
+        fx.observations[fx.frames[index].observation]);
   }
 
   async function sha256Hex(buffer) {
@@ -749,8 +850,8 @@
     indexRecords(fx);
     renderRail();
     renderProvenance();
-    document.getElementById("prev").addEventListener("click", () => go(state.index - 1));
-    document.getElementById("next").addEventListener("click", () => go(state.index + 1));
+    document.getElementById("prev").addEventListener("click", () => go(state.index - 1, {focus: true}));
+    document.getElementById("next").addEventListener("click", () => go(state.index + 1, {focus: true}));
     document.addEventListener("keydown", (event) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
       const tag = event.target && event.target.tagName;

@@ -70,6 +70,15 @@
         <li class="step"><h3 class="heading-6">Read the findings</h3><p class="body-3">The browser reads each page and looks for labeled amounts, invoice math and changes to payment instructions.</p></li>
         <li class="step"><h3 class="heading-6">Check the source page</h3><p class="body-3">Compare each finding with the source. If text was missing or unclear, the results show the gap.</p></li>
       </ol>
+      <figure class="worked-example" aria-labelledby="invoice-example">
+        <figcaption id="invoice-example" class="heading-6">Example from a synthetic invoice</figcaption>
+        <dl class="example-values">
+          <div><dt class="title-4">Printed quantity and price</dt><dd class="heading-5">4 × $120</dd></div>
+          <div><dt class="title-4">Calculated line total</dt><dd class="heading-5">$480</dd></div>
+          <div><dt class="title-4">Printed line total</dt><dd class="heading-5">$680</dd></div>
+        </dl>
+        <p class="body-3">Sentinel shows the $200 difference and the page where the numbers appear.</p>
+      </figure>
       <p class="statement heading-3" id="statement">See where each finding comes from.<br>Decide what needs a closer look.</p>
     </section>
 
@@ -81,12 +90,16 @@
           <a class="primary button-md" href="https://agentforge-sentinel.vercel.app/workbench">Start a live demo case <span aria-hidden="true">↗</span></a>
           <a class="secondary button-md" href="walkthrough.html">Walk through the recorded case <span aria-hidden="true">↗</span></a>
         </div>
-        <ol class="case-steps body-3">
-          <li><strong>Ingest and score.</strong> Store the transaction and evaluate its amount and recent account activity using rules or the bundled model.</li>
-          <li><strong>Investigate.</strong> For a flagged transaction, review stored evidence. The workbench can record investigator, analyst and reviewer steps.</li>
-          <li><strong>Review the proposal.</strong> A person decides whether to approve or reject. The trace shows the evidence and the recommendation.</li>
-          <li><strong>Execute and audit.</strong> The approved action is simulated. The audit records what happened and a retry returns the original result.</li>
-        </ol>
+        <figure class="case-flow" aria-labelledby="case-flow-title">
+          <figcaption id="case-flow-title" class="title-2">From alert to audit</figcaption>
+          <ol class="case-steps body-3">
+            <li><strong>Score the debit</strong><span>A $2,450 debit and two recent debits push the rule score past the alert cutoff.</span></li>
+            <li><strong>Check the evidence</strong><span>Investigators review the amount and activity. The server checks their claims.</span></li>
+            <li class="approval-step"><strong>Wait for approval</strong><span>The analyst’s decision controls whether the exact proposal can run.</span></li>
+            <li><strong>Execute and audit</strong><span>One simulated hold is recorded. A retry returns that same action.</span></li>
+          </ol>
+          <p class="body-6"><a href="walkthrough-details.html">Follow all 10 steps with recorded evidence</a></p>
+        </figure>
       </div>
     </section>
 

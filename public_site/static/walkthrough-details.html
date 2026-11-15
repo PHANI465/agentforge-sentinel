@@ -3,69 +3,70 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Sentinel Recorded Replay</title>
-<link rel="icon" href="data:,">
+<title>Detailed case walkthrough | AgentForge Sentinel</title>
+<link rel="icon" href="mark.svg" type="image/svg+xml">
 <link rel="stylesheet" href="replay.css">
 <script src="replay.js" defer></script>
 </head>
 <body>
-<a class="skip" href="#frame-title">Skip to the current frame</a>
+<a class="skip" href="#frame-title">Skip to the current step</a>
 <header class="masthead">
-  <div class="masthead-inner"><p><a href="./walkthrough.html">Back to the case overview</a></p>
-    <p class="eyebrow">AgentForge Sentinel &middot; DEMO01</p>
-    <h1>Recorded replay of one synthetic case</h1>
-    <p class="lede">A recording of one synthetic fraud case captured through the unchanged
-      Sentinel service. Step through what was stored. This page sends no request to any
-      backend, model or provider; nothing is re-run while you watch.</p>
+  <div class="masthead-inner">
+    <nav class="replay-top" aria-label="Site navigation">
+      <a href="./"><img src="mark.svg" width="24" height="24" alt="">AgentForge Sentinel</a>
+      <a href="./walkthrough.html">Case overview</a>
+    </nav>
+    <div class="replay-intro">
+      <h1>Follow the case from alert to audit</h1>
+      <p class="lede">Trace a $2,450 debit on a fictional account. Explore what Sentinel saw, who could act, and why a retry leaves just one simulated hold.</p>
+      <p class="recorded-note">Recorded synthetic case · Scripted approval · Simulated action</p>
+    </div>
   </div>
 </header>
-<div class="labelbar" role="note" aria-label="What this replay is">
-  <ul class="labels">
-    <li class="label label-recorded">Recorded</li>
-    <li class="label">Synthetic</li>
-    <li class="label">Rule baseline</li>
-    <li class="label">Deterministic roles</li>
-    <li class="label label-scripted">Scripted approval</li>
-    <li class="label">Simulated action</li>
-  </ul>
-</div>
 <div id="integrity" class="integrity" role="status" hidden></div>
-<nav class="rail" aria-label="Recorded frames">
-  <ol id="rail"></ol>
-</nav>
 <main class="stage" id="stage">
+  <nav class="rail" aria-label="Replay steps">
+    <label for="jump-step">Jump to a step</label>
+    <select id="jump-step" disabled><option>Loading the recording</option></select>
+    <div id="rail"></div>
+  </nav>
   <article class="frame" id="frame" aria-labelledby="frame-title">
     <header class="frame-head">
-      <p class="frame-no" id="frame-no">Loading</p>
-      <h2 id="frame-title" tabindex="-1">Loading the recording</h2>
-      <p class="narrative" id="frame-narrative">The recorded data is loading from this
-        page's own folder.</p>
+      <p class="frame-no" id="frame-no">Loading the recording</p>
+      <h2 id="frame-title" tabindex="-1">Loading the case</h2>
+      <p class="narrative" id="frame-narrative"></p>
     </header>
-    <div class="frame-body" id="frame-body"></div>
-    <details class="tech" id="frame-tech">
-      <summary>Technical details for this frame</summary>
-      <div id="frame-tech-body"></div>
+    <div id="frame-guide"></div>
+    <div class="controls" aria-label="Replay controls">
+      <button type="button" id="prev" class="btn" disabled>← Back</button>
+      <p class="position" id="position" aria-hidden="true"></p>
+      <button type="button" id="next" class="btn btn-primary" disabled>Next →</button>
+    </div>
+    <details class="tech" id="records">
+      <summary>Recorded details for this step</summary>
+      <div class="frame-body" id="frame-body"></div>
+      <details class="raw" id="frame-tech">
+        <summary>Recorded API requests and observation</summary>
+        <div id="frame-tech-body"></div>
+      </details>
     </details>
   </article>
   <aside class="ledger" aria-labelledby="ledger-title">
-    <h2 id="ledger-title" class="ledger-title">Observed at this frame</h2>
-    <p class="ledger-note">Read back from the API by the capture program right after this step.</p>
+    <h2 id="ledger-title" class="ledger-title">Case snapshot</h2>
+    <p class="ledger-note" id="snapshot-note"></p>
     <dl id="ledger"></dl>
   </aside>
 </main>
-<div class="controls" role="group" aria-label="Replay controls">
-  <button type="button" id="prev" class="btn">&larr; Previous</button>
-  <p class="position" id="position" aria-hidden="true">&ndash;</p>
-  <button type="button" id="next" class="btn btn-primary">Next &rarr;</button>
-</div>
 <p id="announce" class="visually-hidden" aria-live="polite"></p>
-<footer class="provenance" aria-labelledby="prov-title">
-  <h2 id="prov-title">Provenance and limitations</h2>
-  <div id="provenance"><p>Provenance appears once the recording has loaded.</p></div>
+<footer class="provenance">
+  <details class="tech">
+    <summary>Recording sources and verification</summary>
+    <div id="provenance"><p>Provenance appears once the recording has loaded.</p></div>
+  </details>
+  <p><a href="./walkthrough.html">Back to the case overview</a> · <a href="https://agentforge-sentinel.vercel.app/workbench">Try a live synthetic case</a></p>
 </footer>
-<noscript><p class="noscript">This replay needs JavaScript to step through the recorded
-  frames. The recorded data is plain JSON in data/recorded-case.json.</p></noscript>
+<noscript><p class="noscript">Enable JavaScript to follow the steps. <a href="data/recorded-case.json">Read the recorded data.</a></p></noscript>
 </body>
 </html>

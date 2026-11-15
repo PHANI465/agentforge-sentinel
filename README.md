@@ -9,7 +9,7 @@ and requires human approval before a simulated action.
 [Open the public Vercel site](https://agentforge-sentinel.vercel.app/). You can explain a PDF, follow a recorded case or run a fresh synthetic case.
 
 - [Explain a PDF](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/#review). Pick a text PDF or try the synthetic sample. The explanation quotes financial terms and amounts with source pages. The file stays in your browser.
-- [Walk through a fraud case](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/walkthrough.html). Follow five plain language steps, with the original technical replay available for details.
+- [Walk through a fraud case](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/walkthrough.html). Follow five plain language steps, or [explore all ten steps](https://agentforge-sentinel.vercel.app/walkthrough-details.html) with diagrams and recorded evidence.
 - [Download the synthetic p1 dataset](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/dataset.html). Includes 82,819 generated transactions, 600 fictional accounts, labels, features and the manifest used to verify the snapshot.
 
 The public site requires no account or API key. Start a [live workbench case](https://agentforge-sentinel.vercel.app/workbench) to try investigation and simulated execution. The 30 minute session contains only synthetic data. [Public release and checks](docs/releases/PUBLIC-SITE-VERCEL-2026-11-15.md)

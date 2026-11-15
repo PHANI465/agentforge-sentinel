@@ -73,9 +73,9 @@ input::file-selector-button{font:inherit;border:1px solid var(--line);background
 .statement span{transition:opacity 500ms var(--motion)}
 .statement[data-reveal] span:not(.shown){opacity:.34}
 .case-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px}
-.case-grid a{margin-top:24px}
-.case-steps{display:grid;gap:16px;padding-left:24px}
-.case-steps li::marker{font-weight:600;color:var(--forest)}
+.case-grid .button-md{margin-top:24px}
+.case-steps{display:grid;gap:16px}
+
 .faq{max-width:800px}
 .faq h2{margin-bottom:24px}
 details{border:1px solid var(--line);border-radius:8px;padding:12px 16px}
@@ -96,3 +96,18 @@ summary{cursor:pointer}
 .checks li p,.highlights li p,.checks li details{margin-top:8px}
 .checks h5{margin:0}
 .checks details{background:#fff}
+/* Explanatory figures use text so the values and order remain readable at any width. */
+.worked-example{margin:24px 0 0;padding:24px;background:#e8eee4;border:1px solid var(--line);border-radius:16px}
+.example-values,.dataset-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}
+.example-values div,.dataset-steps li,.case-steps li{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
+.example-values dd{font-variant-numeric:tabular-nums;color:var(--forest)}
+.case-flow,.dataset-flow{margin:0;min-width:0}
+.case-flow figcaption{margin-bottom:12px}
+.case-steps,.dataset-steps{list-style:none;padding:0}
+.case-steps li{position:relative}
+.case-steps li+li::before{content:"\2193" / "";position:absolute;top:-17px;left:16px;line-height:16px;color:var(--forest)}
+.case-steps li strong,.case-steps li span,.dataset-steps strong,.dataset-steps span{display:block}
+.case-steps li span,.dataset-steps span{color:var(--muted);margin-top:4px}
+.case-steps .approval-step{border-color:var(--forest)}
+.dataset-flow{padding:16px;border:1px solid var(--line);border-radius:12px;background:#e8eee4}
+@media(max-width:600px){.example-values,.dataset-steps{grid-template-columns:minmax(0,1fr)}.worked-example{padding:16px}}

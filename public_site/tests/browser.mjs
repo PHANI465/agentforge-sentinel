@@ -123,15 +123,62 @@ try {
   await narrow.getByRole('heading',{name:'A large debit triggers an alert'}).waitFor();
   assert.equal(await narrow.evaluate(()=>document.documentElement.scrollWidth),390);
   await narrow.screenshot({path:join(artifacts,'walkthrough-mobile.png'),fullPage:true});
-  await page.getByRole('link',{name:/technical replay/}).click();
-  await page.getByRole('heading',{name:'Recorded replay of one synthetic case'}).waitFor();
-  await page.getByRole('button',{name:/^Next/}).click();
-  await page.getByRole('link',{name:'Back to the case overview'}).click();
+  await page.getByRole('link',{name:'Follow all 10 steps'}).click();
+  await page.getByRole('heading',{name:'Follow the case from alert to audit'}).waitFor();
+  const detailed = [
+    'A large debit triggers an alert',
+    'The alert becomes a case',
+    'The evidence analyst gathers the facts',
+    'The investigator proposes a simulated hold',
+    'The reviewer accepts the evidence',
+    'Sentinel prepares the exact action for approval',
+    'The approval is recorded',
+    'The simulated hold runs once',
+    'A retry returns the same action',
+    'The audit explains how the case closed',
+  ];
+  for (const [index, title] of detailed.entries()) {
+    await page.getByRole('heading',{name:title,exact:true}).waitFor();
+    assert.equal(await page.locator('.diagram-nodes li').count(),3);
+    assert.equal(await page.locator('.rail-btn[aria-current=step]').getAttribute('data-index'),String(index));
+    const snapshot = await page.locator('#ledger .kv-row dd').allTextContents();
+    assert.equal(snapshot[1],index < 6 ? '0' : '1');
+    assert.equal(snapshot[2],index < 7 ? '0' : '1');
+    assert.equal(await page.locator('#records').getAttribute('open'),null);
+    const snapshotNote = await page.locator('#snapshot-note').innerText();
+    assert.equal(snapshotNote.includes('Steps 3–6 share this snapshot.'),index >= 2 && index <= 5);
+    if (index === 0) await page.screenshot({path:join(artifacts,'detailed-desktop.png')});
+    if (index < detailed.length - 1) {
+      await page.getByRole('button',{name:/^Next/}).click();
+      assert.equal(await page.evaluate(()=>document.activeElement.id),'frame-title');
+    }
+  }
+  assert.equal(await page.getByRole('button',{name:/^Next/}).isDisabled(),true);
+  await page.getByRole('button',{name:/Open the case/}).click();
+  await page.locator('#records > summary').click();
+  await page.locator('#frame-body a[href^="#rec-"]').first().click();
+  assert.equal(await page.locator('#frame-title').innerText(),detailed[0]);
+  assert.equal(await page.locator('#records').evaluate(node=>node.open),true);
+  assert.match(await page.evaluate(()=>document.activeElement.id),/^rec-/);
+
+  await narrow.goto(origin + '/walkthrough-details.html#frame-7');
+  await narrow.getByRole('heading',{name:detailed[6],exact:true}).waitFor();
+  await narrow.screenshot({path:join(artifacts,'detailed-mobile.png'),fullPage:true});
+  for (const [index,title] of detailed.entries()) {
+    await narrow.getByLabel('Jump to a step').selectOption(String(index));
+    await narrow.getByRole('heading',{name:title,exact:true}).waitFor();
+    await narrow.locator('#records > summary').click();
+    assert.equal(await narrow.evaluate(()=>document.documentElement.scrollWidth),390);
+  }
+  await narrow.goto(origin + '/dataset.html');
+  assert.equal(await narrow.locator('.dataset-steps li').count(),3);
+  assert.equal(await narrow.evaluate(()=>document.documentElement.scrollWidth),390);
+  await page.getByRole('navigation',{name:'Site navigation'}).getByRole('link',{name:'Case overview'}).click();
   await page.getByRole('link',{name:'Back to Sentinel'}).click();
   await page.getByRole('heading',{name:'Understand what your financial PDF says'}).waitFor();
   assert.deepEqual(errors,[]);
   assert.deepEqual(writes,[]);
-  console.log('Passed sample and local PDF, image only and mixed PDF, inert text, bad header, size and password rejection, clear, GET-only traffic, keyboard, 390 px layouts and both replay views.');
+  console.log('Passed sample and local PDF, image only and mixed PDF, inert text, bad header, size and password rejection, clear, GET-only traffic, keyboard, 390 px layouts, all 10 detailed steps, shared snapshots, cross-step record links and both replay views.');
   if (invoiceFixtures) console.log('All three invoice PDFs produced their expected distinct findings and values.');
 } finally {
   await browser.close();
