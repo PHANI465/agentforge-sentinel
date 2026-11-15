@@ -1,0 +1,111 @@
+{
+  "provenance": "AgentForge Sentinel synthetic training documents",
+  "files": {
+    "ambiguous-control.docx": {
+      "bytes": 1102,
+      "sha256": "b6d6a0d57899f366d3faa9cf9e864c8e22ca31d2045f0efeeeac8a0a4a5a773a"
+    },
+    "ambiguous-review.docx": {
+      "bytes": 1109,
+      "sha256": "13845c579eaa67f9b04c0addd04820536225023618361beeb579cfef43c911fb"
+    },
+    "delivery.pdf": {
+      "bytes": 1803,
+      "sha256": "9fe66396a8f2f9d969f57f5da4607d8a1784da16706fc787500659f0accb0ba5",
+      "pages": 1
+    },
+    "duplicate-control.xlsx": {
+      "bytes": 5133,
+      "sha256": "7c2493916ec52484038bd70e09b7c3d184f8c37cf473978a04826c09211c942a"
+    },
+    "duplicate-review.xlsx": {
+      "bytes": 5132,
+      "sha256": "7b73085667685aa0a765f0baab91c346761b5ff94f5adf2f14cf579b3691e83f"
+    },
+    "invoice-control.pdf": {
+      "bytes": 2478,
+      "sha256": "1cff8a46e60030806116354da34781e070f6c335821646b84a43f467a1465c0d",
+      "pages": 2
+    },
+    "invoice-review.pdf": {
+      "bytes": 2478,
+      "sha256": "b2e04edf8cac51ba5d859eed8913296388a07a66c433a90550f62928ff771121",
+      "pages": 2
+    },
+    "ledger-control.xlsx": {
+      "bytes": 5830,
+      "sha256": "a1bbb7c2ace862b68470d2e04997d81b6ed5a503323bf5af5f37ce96d3ba23ca"
+    },
+    "ledger-review.xlsx": {
+      "bytes": 5844,
+      "sha256": "8fd2d7688145f3f36ac7ed9692f128fe34e4d1bd54fe04390216465b7b151b5d"
+    },
+    "match-invoice-control.docx": {
+      "bytes": 1128,
+      "sha256": "38311ca113aa00a7481093867ef364e9081cbdd1c8afa93f65250ad7f7247931"
+    },
+    "match-invoice-review.docx": {
+      "bytes": 1133,
+      "sha256": "16aede0b793e37f53b473f56c3535ed7da318d225fbc77a8403fdaedab222245"
+    },
+    "policy-control.pdf": {
+      "bytes": 1813,
+      "sha256": "f4e6d8d4ed2693c3b7942769a5ca5d0b22b1c15634654c2bbffda41268fdb971",
+      "pages": 1
+    },
+    "policy-first.docx": {
+      "bytes": 1104,
+      "sha256": "3bbf5fc8ab4c961138e24d591dff343dc684d5861960ee04d29acef76ae78321"
+    },
+    "policy-review.pdf": {
+      "bytes": 1813,
+      "sha256": "03aedd6630d0ec84755ffc9d28d594d29b6a026e0087f1deb49aa28bb2e2d2b7",
+      "pages": 1
+    },
+    "purchase-order.xlsx": {
+      "bytes": 5090,
+      "sha256": "3dffdb34e94d800ae0a819382aa5eb55496cda9d01391dfde071fecea2f63908"
+    },
+    "settlement-control.xlsx": {
+      "bytes": 5107,
+      "sha256": "1c3ff0918aa5440e786e0b83c32076d55a937eafc7458e86f023a20d546eff19"
+    },
+    "settlement-credit.docx": {
+      "bytes": 1076,
+      "sha256": "9f16f407fdee34c11bbc322899447c3f8bfb5eea7856bf16f8b8874934b81634"
+    },
+    "settlement-first.pdf": {
+      "bytes": 1786,
+      "sha256": "3bd9cff7229472e297ed38a753846ae3f4e50e48496622face17ef126b5beea4",
+      "pages": 1
+    },
+    "settlement-invoice.pdf": {
+      "bytes": 1761,
+      "sha256": "f0159d8d60a59bfdb59e679f67e5f918816231d7526995695bc38e80c7620281",
+      "pages": 1
+    },
+    "settlement-reversal.pdf": {
+      "bytes": 1808,
+      "sha256": "a98c59689ddd9fa795d706d76124092e5df0f5ee8daeb35b7477b0b58104daef",
+      "pages": 1
+    },
+    "settlement-review.xlsx": {
+      "bytes": 5107,
+      "sha256": "c6a64b325de11716c9aadc17e3ce38bb1103d591134e683b4b81e0cb1daf18b5"
+    },
+    "statement-control.pdf": {
+      "bytes": 2572,
+      "sha256": "1b4e0e6cfbd6acf2ee874246cb7529dfdabce1b691e5bc8db650da7babf898d1",
+      "pages": 2
+    },
+    "statement-review.pdf": {
+      "bytes": 2571,
+      "sha256": "01f9400a4355b44acb65505b31b33092a9d27d0ae22b10af0c415c1f45f466d5",
+      "pages": 2
+    },
+    "trusted-baseline.docx": {
+      "bytes": 1070,
+      "sha256": "b42c0da6f22a7fb52de3f650d37731f0443bdfbbd75499452487f8f3e3d4a08b"
+    }
+  }
+}

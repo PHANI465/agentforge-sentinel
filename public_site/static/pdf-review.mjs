@@ -69,9 +69,11 @@ export function explain(pages) {
       }
     }
   }
+  const invoiceCoverage = {rows: 0, subtotals: 0, payable: 0};
   return {
     kind,
-    checks: kind === 'Invoice' ? invoiceEvidence(pages) : [],
+    checks: kind === 'Invoice' ? invoiceEvidence(pages, invoiceCoverage) : [],
+    invoiceCoverage: kind === 'Invoice' ? invoiceCoverage : null,
     readable: readable.length,
     missing: pages.filter(page => !page.lines.length).map(page => page.number),
     findings: [...amountFindings, ...termFindings.values()],

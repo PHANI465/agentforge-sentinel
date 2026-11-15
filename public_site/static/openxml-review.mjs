@@ -1,7 +1,3 @@
-import {unzipSync} from './vendor/fflate.mjs';
-
-const maximumExpanded = 12_000_000;
-const maximumEntries = 400;
 const maxRows = 10000;
 const maxCells = 120000;
 const decoder = new TextDecoder('utf-8', {fatal: true});
@@ -10,21 +6,6 @@ const wordNamespace = 'http://schemas.openxmlformats.org/wordprocessingml/2006/m
 const relationships = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const currencyDecimals = {USD:2, CAD:2, EUR:2, GBP:2, AUD:2, NZD:2, CHF:2, INR:2, JPY:0, KWD:3};
 
-function packageEntries(bytes, format) {
-  let size = 0;
-  let entries = 0;
-  const files = unzipSync(bytes, {filter(file) {
-    entries += 1;
-    if (entries > maximumEntries) throw new Error('This document exceeds the ZIP entry limit.');
-    const relevant = format === 'docx' ? file.name === 'word/document.xml'
-      : /^xl\/(?:workbook\.xml|_rels\/workbook\.xml\.rels|sharedStrings\.xml|worksheets\/[^/]+\.xml)$/.test(file.name);
-    if (!relevant) return false;
-    size += file.originalSize;
-    if (size > maximumExpanded) throw new Error('This document exceeds the expanded text limit.');
-    return true;
-  }});
-  return files;
-}
 
 function xml(files, name) {
   if (!files[name]) throw new Error('The file is missing a required document part.');
@@ -44,19 +25,28 @@ function word(files) {
   const body = first(doc, wordNamespace, 'body');
   if (!body) throw new Error('The Word document has no body.');
   const lines = [];
+  const blocks = [];
   const paragraphs = elements(body, wordNamespace, 'p');
   const tables = elements(body, wordNamespace, 'tbl').length;
   if (paragraphs.length > 10000) throw new Error('The Word document exceeds the paragraph limit.');
   for (const child of body.children) {
-    if (child.localName === 'p') lines.push(valueText(child, wordNamespace));
+    if (child.namespaceURI !== wordNamespace) continue;
+    if (child.localName === 'p') blocks.push(valueText(child, wordNamespace).trim());
     if (child.localName === 'tbl') {
       for (const row of [...child.children].filter(node => node.localName === 'tr')) {
-        lines.push([...row.children].filter(node => node.localName === 'tc')
-          .map(cell => valueText(cell, wordNamespace)).join(' '));
+        blocks.push([...row.children].filter(node => node.localName === 'tc')
+          .map(cell => valueText(cell, wordNamespace)).join(' ').trim());
       }
     }
   }
-  return {kind:'Word document', lines:lines.map(line => line.trim()).filter(Boolean), paragraphs:paragraphs.length, tables};
+  if (blocks.length > 10000) throw new Error('Too many document blocks.');
+  const locations = [];
+  blocks.forEach((line, index) => {
+    if (!line) return;
+    lines.push(line.replace(/\s+/gu, ' '));
+    locations.push({block: index + 1});
+  });
+  return {kind:'Word document', lines, locations, paragraphs:paragraphs.length, tables};
 }
 
 function workbook(files) {
@@ -101,8 +91,7 @@ function workbook(files) {
   return {kind:'Excel workbook', sheets, rowCount, formulaCount, cellCount};
 }
 
-export function readOpenXml(bytes, format) {
-  const files = packageEntries(bytes, format);
+export function readOpenXmlParts(files, format) {
   return format === 'docx' ? word(files) : workbook(files);
 }
 
@@ -128,7 +117,7 @@ export function summarizeSheet(sheet) {
   for (const {cells} of sheet.rows.slice(sheet.rows.indexOf(header) + 1)) {
     if (!cells.size) continue;
     const unit = cells.get(currency)?.toUpperCase();
-    const digits = currencyDecimals[unit];
+    const digits = Object.hasOwn(currencyDecimals, unit) ? currencyDecimals[unit] : undefined;
     if (digits === undefined) { skipped += 1; continue; }
     const net = amount ? minorUnits(cells.get(amount), digits) : undefined;
     const incoming = split ? minorUnits(cells.get(credit) ?? '0', digits) : net > 0n ? net : 0n;

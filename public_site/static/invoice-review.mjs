@@ -1,5 +1,5 @@
 const cash = '(?:[$€£]|USD |EUR |GBP )\\s*(?:\\d{1,3}(?:,\\d{3})+|\\d{1,12})(?:\\.\\d{2})?';
-const tableHeader = /\b(?:qty|quantity|hours)\b\s+(?:unit price|rate)\s+(?:line total|total|amount)\s*$/i;
+const tableHeader = /\b(?:qty|quantity|hours|units)\b\s+(?:unit price|unit cost|rate)\s+(?:line total|extended amount|total|amount)\s*$/i;
 const rowPattern = new RegExp('^(.+?)\\s+(\\d{1,8}(?:\\.\\d{1,4})?)\\s+(' + cash + ')\\s+(' + cash + ')$', 'iu');
 const exactCash = new RegExp('^' + cash + '$', 'iu');
 const subtotalPattern = /^(?:reported\s+)?sub[ -]?total\s*:/i;
@@ -50,7 +50,7 @@ function compareAmounts(calculated, printed, unit) {
   };
 }
 
-function arithmetic(lines, add) {
+function arithmetic(lines, add, coverage) {
   const header = lines.findIndex(line => tableHeader.test(line));
   if (header === -1) return;
   const rows = [];
@@ -73,6 +73,7 @@ function arithmetic(lines, add) {
     }
     const calculated = multiplication(quantity, rate.cents);
     rows.push(printed);
+    coverage.rows++;
     if (calculated !== printed.cents) {
       add('line-math', 'Line item does not add up',
         quantity + ' × ' + format(rate.cents, rate.unit) + ' gives ' + format(calculated, rate.unit) +
@@ -81,11 +82,20 @@ function arithmetic(lines, add) {
     }
   }
 
-  const [subtotalLine = '', taxLine = '', dueLine = ''] = lines.slice(index, index + 3);
+  const subtotalLine = lines[index] ?? '';
+  const adjustments = [];
+  let adjustmentIndex = index + 1;
+  for (; adjustmentIndex < lines.length; adjustmentIndex++) {
+    const match = /^(discount|shipping|handling):\s*(.+)$/i.exec(lines[adjustmentIndex]);
+    if (!match) break;
+    adjustments.push({line: match[0], key: match[1].toLowerCase(), amount: toMoney(match[2])});
+  }
+  const [taxLine = '', dueLine = ''] = lines.slice(adjustmentIndex, adjustmentIndex + 2);
   const subtotal = namedAmount(subtotalLine, subtotalPattern);
   const tax = namedAmount(taxLine, taxPattern);
   const due = namedAmount(dueLine, duePattern);
   if (complete && rows.length && subtotal && rows.every(amount => sameUnit(amount, subtotal))) {
+    coverage.subtotals++;
     const sum = rows.reduce((value, amount) => value + amount.cents, 0n);
     if (sum !== subtotal.cents) {
       add('subtotal-math', 'Subtotal differs from the listed rows',
@@ -94,13 +104,19 @@ function arithmetic(lines, add) {
         discrepancy(sum, subtotal.cents, subtotal.unit) + '.', subtotalLine, undefined, compareAmounts(sum, subtotal.cents, subtotal.unit));
     }
   }
-  if (sameUnit(subtotal, tax) && sameUnit(tax, due)) {
-    const sum = subtotal.cents + tax.cents;
+  if (sameUnit(subtotal, tax) && sameUnit(tax, due) &&
+      new Set(adjustments.map(item => item.key)).size === adjustments.length &&
+      adjustments.every(item => sameUnit(item.amount, subtotal))) {
+    const sum = adjustments.reduce((total, item) => total +
+      (item.key === 'discount' ? -item.amount.cents : item.amount.cents), subtotal.cents + tax.cents);
+    if (sum < 0n) return;
+    coverage.payable++;
+    const inputs = adjustments.length ? 'subtotal, adjustments and tax' : 'subtotal plus tax';
     if (sum !== due.cents) {
-      add('total-math', 'Total due differs from subtotal plus tax',
-        'The printed subtotal and tax add up to ' + format(sum, due.unit) + '. The reported total due is ' +
+      add('total-math', 'Total due differs from ' + inputs,
+        'The printed ' + inputs + ' add up to ' + format(sum, due.unit) + '. The reported total due is ' +
         format(due.cents, due.unit) + ', a difference of ' + discrepancy(sum, due.cents, due.unit) + '.',
-        [subtotalLine, taxLine, dueLine].join(' · '), undefined, compareAmounts(sum, due.cents, due.unit));
+        [subtotalLine, ...adjustments.map(item => item.line), taxLine, dueLine].join(' · '), undefined, compareAmounts(sum, due.cents, due.unit));
     }
   }
 }
@@ -177,7 +193,7 @@ function remittance(lines, add) {
   }
 }
 
-export function invoiceEvidence(pages) {
+export function invoiceEvidence(pages, coverage = {rows: 0, subtotals: 0, payable: 0}) {
   const checks = [];
   for (const {number: page, lines} of pages) {
     // QA annotations explain fixtures. They are excluded from the invoice checks.
@@ -188,7 +204,7 @@ export function invoiceEvidence(pages) {
         checks.push({code, title, description, line, item, page, comparison});
       }
     };
-    arithmetic(body, add);
+    arithmetic(body, add, coverage);
     paymentTerms(body, add);
     remittance(body, add);
   }

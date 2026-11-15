@@ -1,7 +1,8 @@
 # Sentinel public website
 
-The buildless site contains the browser PDF explainer, the recorded case replay and the
-synthetic p1 dataset download. The live workbench deploys alongside the static files on Vercel. See ../hosting/vercel/README.md.
+The buildless site contains browser document review and comparison, the recorded case replay
+and the synthetic p1 dataset download. The workbench deploys alongside the static files on
+Vercel. See [the hosting notes](../hosting/vercel/README.md).
 
 ## Preview and verify
 
@@ -16,20 +17,30 @@ node tests/browser.mjs <sentinel>/web/node_modules <sentinel>/tools/document_wor
 An optional fourth argument tests the published origin. The run writes screenshots from
 the sample only and checks that the visitor's PDF is handled without any outbound upload.
 
-## Document insights foundation (not yet connected to the UI)
+## Document insights
 
-`static/document-evidence.mjs` validates immutable statement-summary evidence and
-reconciles exact monetary values. It does not parse files or send data to a provider.
-The [roadmap](../docs/documents/INSIGHTS-ROADMAP-2026-11-15.md) and
-[Sol dispatch](../docs/prompts/SOL_DOCUMENT_INSIGHTS.md) define the next implementation.
+The browser parses text PDF, XLSX and DOCX sources, validates scoped statement evidence,
+reconciles exact monetary values and compares explicitly linked documents. The
+[review guide](../docs/ui/PUBLIC-DOCUMENT-INSIGHTS.md) documents the recognized layouts,
+packet field names and settings. The comparison checks run locally.
 
 ```powershell
 node --test public_site/tests/document-evidence.test.mjs public_site/tests/invoice-review.test.mjs
+node --test public_site/tests/insights-model.test.mjs
 node public_site/tests/document-evidence.browser.mjs <sentinel>/web/node_modules
+node public_site/tests/insights-browser.mjs <sentinel>/web/node_modules <qa-output-directory>
 ```
 
 Run these from the repository root. The browser check serves only the new module on
-loopback; it verifies a structured-input calculation, not an end-to-end PDF parser.
+loopback for the foundation check. The insights browser suite opens actual files via the
+review form and sample selector, then verifies results, source focus and network boundaries.
+
+Regenerate the generated examples from the repository root using
+`python public_site/generate_insight_samples.py` with ReportLab 4.5.1 and openpyxl 3.1.5
+installed in a development environment. Generation uses fixed ZIP timestamps and invariant
+PDF metadata. `static/samples/insights/manifest.json` lists each file's byte size and SHA-256,
+plus generated PDF page counts. Browser test expectations live in
+`tests/insights-expected.mjs`. The public answer key lives on the examples page.
 
 ## Sources and licenses
 

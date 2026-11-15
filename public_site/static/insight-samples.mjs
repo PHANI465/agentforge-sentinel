@@ -1,0 +1,22 @@
+const files = (...names) => names.map(name => './samples/insights/' + name);
+export const samples = {
+  statement: {title: 'Synthetic bank statement', files: ['./sample-statement.pdf']},
+  january: {title: 'U.S. Treasury, January 2025 (real)', files: ['./samples/treasury-jan-2025.pdf'], official: true},
+  may: {title: 'U.S. Treasury, May 2025 (real)', files: ['./samples/treasury-may-2025.pdf'], official: true},
+  statementgap: {title: 'Closing balance discrepancy', files: files('statement-review.pdf')},
+  statementcontrol: {title: 'Matching statement balances', files: files('statement-control.pdf')},
+  invoice: {title: 'Invoice with discount, tax and shipping', files: files('invoice-review.pdf')},
+  invoicecontrol: {title: 'Matching invoice amounts', files: files('invoice-control.pdf')},
+  purchase: {title: 'Invoice, order, delivery and vendor baseline', files: files('match-invoice-review.docx', 'purchase-order.xlsx', 'delivery.pdf', 'trusted-baseline.docx'), trusted: 'doc_4'},
+  purchasecontrol: {title: 'Matching invoice and partial delivery', files: files('match-invoice-control.docx', 'purchase-order.xlsx', 'delivery.pdf', 'trusted-baseline.docx'), trusted: 'doc_4'},
+  duplicate: {title: 'Repeated invoice reference', files: files('match-invoice-control.docx', 'duplicate-review.xlsx')},
+  duplicatecontrol: {title: 'Distinct invoices and an identical copy', files: files('match-invoice-control.docx', 'duplicate-control.xlsx', 'duplicate-control.xlsx')},
+  ledger: {title: 'Workbook with missing and formula amounts', files: files('ledger-review.xlsx')},
+  ledgercontrol: {title: 'Workbook with a complete printed summary', files: files('ledger-control.xlsx')},
+  settlement: {title: 'Overpayment with credits and a reversal', files: files('settlement-invoice.pdf', 'settlement-first.pdf', 'settlement-credit.docx', 'settlement-reversal.pdf', 'settlement-review.xlsx')},
+  settlementcontrol: {title: 'Matching payment installments and credits', files: files('settlement-invoice.pdf', 'settlement-first.pdf', 'settlement-credit.docx', 'settlement-reversal.pdf', 'settlement-control.xlsx')},
+  policy: {title: 'Related invoices across an approval threshold', files: files('policy-first.docx', 'policy-review.pdf'), policy: {currency: 'USD', limit: '5000.00', days: 7}},
+  policycontrol: {title: 'Similar amounts in separate purchase groups', files: files('policy-first.docx', 'policy-control.pdf'), policy: {currency: 'USD', limit: '5000.00', days: 7}},
+  ambiguous: {title: 'Word statement with conflicting balances', files: files('ambiguous-review.docx')},
+  ambiguouscontrol: {title: 'Matching Word statement with decimal commas', files: files('ambiguous-control.docx')},
+};

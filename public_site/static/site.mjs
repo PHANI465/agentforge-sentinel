@@ -1,15 +1,10 @@
-import {explain, maximumBytes, maximumCharacters, maximumPages, pageLines} from './pdf-review.mjs';
-
-import {treasurySummary} from './financial-metrics.mjs';
 import {comparison, metricList, renderWorkbook} from './review-charts.mjs';
-import {readOpenXml} from './openxml-review.mjs';
+import {readDocument, readSample, reviewWorker, ReviewError, validateFiles} from './review-input.mjs';
+import {samples} from './insight-samples.mjs';
+import {renderChecks, renderPacket} from './insights-view.mjs';
+import {evidenceLimits} from './document-evidence.mjs';
 
 const sampleOptions = document.querySelector('#sample-choice');
-const pdfSamples = {
-  statement: 'sample-statement.pdf',
-  january: 'samples/treasury-jan-2025.pdf',
-  may: 'samples/treasury-may-2025.pdf',
-};
 const fileInput = document.querySelector('#pdf-file');
 const analyze = document.querySelector('#analyze');
 const sample = document.querySelector('#sample');
@@ -18,12 +13,18 @@ const status = document.querySelector('#status');
 const error = document.querySelector('#error');
 const loading = document.querySelector('#loading');
 const results = document.querySelector('#results');
+const trusted = document.querySelector('#trusted-document');
+const policy = document.querySelector('#policy-limit');
+const currency = document.querySelector('#policy-currency');
+const days = document.querySelector('#policy-days');
+const options = document.querySelector('#comparison-options');
 let generation = 0;
-let activeTask;
-let sampleRequest;
+let active;
 let busy = false;
 
-class ReviewError extends Error {}
+for (const [key, item] of Object.entries(samples)) sampleOptions.add(new Option(item.title, key));
+const requestedSample = new URLSearchParams(location.search).get('sample');
+if (Object.hasOwn(samples, requestedSample)) sampleOptions.value = requestedSample;
 
 function make(tag, style, copy) {
   const element = document.createElement(tag);
@@ -32,29 +33,7 @@ function make(tag, style, copy) {
   return element;
 }
 
-function controls() {
-  analyze.disabled = busy || !fileInput.files.length;
-  sample.disabled = busy;
-  sampleOptions.disabled = busy;
-  loading.hidden = !busy;
-}
-
-function reset(message) {
-  generation += 1;
-  sampleRequest?.abort();
-  sampleRequest = undefined;
-  if (activeTask) void activeTask.destroy().catch(() => {});
-  activeTask = undefined;
-  results.replaceChildren();
-  error.hidden = true;
-  error.textContent = '';
-  status.textContent = message;
-  busy = false;
-  clear.hidden = !fileInput.files.length;
-  controls();
-}
-
-function show(report, total, {word, summary} = {}) {
+function renderLegacy(report, total, {word, summary} = {}) {
   const output = make('section', 'results');
   const location = page => word ? 'document body' : 'page ' + page;
   const title = summary ? 'Treasury budget statement' : word
@@ -76,6 +55,13 @@ function show(report, total, {word, summary} = {}) {
     output.append(make('p', 'body-3', `No readable text on ${report.missing.length === 1 ? 'page' : 'pages'} ${report.missing.join(', ')}. If these pages are scans, use a copy with selectable text.`));
   }
   if (report.readable) {
+    if (report.invoiceCoverage?.rows) {
+      output.append(metricList([
+        {label: 'Invoice rows checked', text: String(report.invoiceCoverage.rows)},
+        {label: 'Subtotals compared', text: String(report.invoiceCoverage.subtotals)},
+        {label: 'Payable totals compared', text: String(report.invoiceCoverage.payable)},
+      ]));
+    }
     if (report.checks.length) {
       output.append(make('h4', 'heading-6', 'What to review'));
       const checks = make('ol', 'checks');
@@ -97,7 +83,7 @@ function show(report, total, {word, summary} = {}) {
       }
       output.append(checks);
     } else if (report.kind === 'Invoice') {
-      output.append(make('p', 'body-3', 'No review flags from the invoice checks that could run. Check the source for any amounts, terms or layouts this review did not cover.'));
+      output.append(make('p', 'body-3', 'No flags from the recognized invoice patterns. See the capability guide for required fields and layouts.'));
     }
     if (report.findings.length) {
       output.append(make('h4', 'heading-6', 'Amounts and terms found'));
@@ -125,139 +111,153 @@ function show(report, total, {word, summary} = {}) {
     }
     output.append(excerpts);
   }
-  results.replaceChildren(output);
-  heading.focus();
+  return output;
+}
+
+function controls() {
+  analyze.disabled = busy || !fileInput.files.length;
+  sample.disabled = busy;
+  sampleOptions.disabled = busy;
+  loading.hidden = !busy;
+}
+
+function reset(message) {
+  generation += 1;
+  active?.abort();
+  active = undefined;
+  results.replaceChildren();
+  error.hidden = true;
+  error.textContent = '';
+  status.textContent = message;
+  busy = false;
+  clear.textContent = 'Clear';
+  clear.hidden = !fileInput.files.length;
+  controls();
+}
+
+function refreshSelection() {
+  trusted.replaceChildren(new Option('None selected', ''));
+  for (let index = 1; index <= Math.min(fileInput.files.length, 10); index++) {
+    trusted.add(new Option('Document ' + index + ' (' + fileInput.files[index - 1].name + ')', 'doc_' + index));
+  }
+  options.hidden = fileInput.files.length < 2;
+  analyze.textContent = fileInput.files.length > 1 ? 'Compare these files' : 'Review this file';
+}
+
+function showAll(parsed, report) {
+  const fragment = document.createDocumentFragment();
+  if (parsed.length > 1) {
+    const heading = make('h3', 'heading-5', 'Document comparison');
+    fragment.append(heading, renderPacket(report.documents),
+      renderChecks(report.comparisons, parsed, 'Comparison findings'));
+  }
+  for (const [index, original] of parsed.entries()) {
+    const result = report.documents[index];
+    if (original.descriptor.sha256 !== result.descriptor.sha256 || original.descriptor.id !== result.descriptor.id) {
+      throw new ReviewError('The results no longer match the selected documents.');
+    }
+    const view = original.workbook ? renderWorkbook(original.workbook) :
+      renderLegacy(result.report, original.pages.length, {word: original.word, summary: result.summary});
+    if (result.checks.length) view.prepend(renderChecks(result.checks, parsed, 'Statement checks'));
+    if (parsed.length > 1) {
+      const details = make('details', 'document-preview');
+      const name = view.querySelector('h3').textContent;
+      details.append(make('summary', 'title-3', 'Document ' + (index + 1) + ' · ' + name), view);
+      fragment.append(details);
+    } else fragment.append(view);
+  }
+  results.replaceChildren(fragment);
+  const first = results.querySelector('h3');
+  first.tabIndex = -1;
+  first.focus();
 }
 
 async function review(useSample) {
-  const file = fileInput.files[0];
-  if (!useSample && !file) return;
-  if (useSample) fileInput.value = '';
-  reset('Reading your document…');
+  const selectedSample = useSample ? samples[sampleOptions.value] : undefined;
+  if (useSample) {
+    fileInput.value = '';
+    refreshSelection();
+  }
+  reset('Reading your documents?');
   const current = generation;
-  const selectedSample = sampleOptions.value;
+  const controller = new AbortController();
+  const {signal} = controller;
+  active = controller;
+  const settings = {trusted: selectedSample?.trusted ?? trusted.value,
+    policy: selectedSample ? selectedSample.policy :
+      policy.value ? {currency: currency.value, limit: policy.value, days: Number(days.value)} : undefined,
+    reviewId: 'r_' + crypto.randomUUID()};
   busy = true;
   clear.hidden = false;
+  clear.textContent = 'Cancel';
   controls();
-  let task;
-  const timeout = setTimeout(() => {
-    if (generation !== current) return;
-    reset('Review stopped.');
-    error.textContent = 'The file took too long to read. Try a shorter document.';
-    error.hidden = false;
-    clear.hidden = false;
-  }, 25_000);
+  let worker;
+  const timeout = setTimeout(() => controller.abort(new ReviewError('The review took too long. Try fewer or shorter documents.')), 25_000);
   try {
-    let bytes;
-    const format = useSample ? 'pdf' : file.name.split('.').at(-1).toLowerCase();
-    if (!['pdf','xlsx','docx'].includes(format)) {
-      throw new ReviewError('Choose PDF, XLSX or DOCX. Save an older Word DOC file as DOCX first.');
-    }
-    if (useSample) {
-      sampleRequest = new AbortController();
-      const response = await fetch(new URL(pdfSamples[selectedSample], import.meta.url), {signal: sampleRequest.signal});
-      if (!response.ok) throw new ReviewError('The sample could not load. Try again or choose a PDF.');
-      bytes = await response.arrayBuffer();
-    } else {
-      if (file.size > maximumBytes) throw new ReviewError('This file exceeds 10 MB. Choose a smaller document.');
-      bytes = await file.arrayBuffer();
-    }
-    if (current !== generation) return;
-    if (format !== 'pdf') {
-      const structured = readOpenXml(new Uint8Array(bytes), format);
-      if (format === 'xlsx') {
-        const output = renderWorkbook(structured);
-        results.replaceChildren(output);
-        output.querySelector('h3').focus();
-      } else {
-        const count = structured.lines.reduce((sum,line) => sum + line.length,0);
-        if (count > maximumCharacters) throw new ReviewError('This document has too much text for one review.');
-        show(explain([{number:1,lines:structured.lines}]), 1, {word:structured});
+    const files = selectedSample ? [] : validateFiles([...fileInput.files]);
+    if (selectedSample) {
+      let budget = evidenceLimits.totalBytes;
+      for (const path of selectedSample.files) {
+        const item = await readSample(path, path.split('.').at(-1), signal, budget);
+        budget -= item.file.size;
+        files.push(item);
       }
-      status.textContent = 'Document reviewed in this browser.';
-      return;
     }
-    if (!new TextDecoder().decode(bytes.slice(0, 1024)).includes('%PDF-')) {
-      throw new ReviewError('This file does not have a PDF header. Choose a PDF file.');
+    signal.throwIfAborted();
+    worker = reviewWorker(signal);
+    const parsed = [];
+    for (const [index, item] of files.entries()) {
+      status.textContent = 'Reading document ' + (index + 1) + ' of ' + files.length + '?';
+      parsed.push(await readDocument(item, 'doc_' + (index + 1), signal, worker, (page, total) => {
+        if (current === generation && !signal.aborted) status.textContent =
+          'Document ' + (index + 1) + ' ? Page ' + page + ' of ' + total;
+      }));
+      signal.throwIfAborted();
     }
-    const pdf = await import('./vendor/pdfjs/pdf.min.mjs');
-    if (current !== generation) return;
-    pdf.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdfjs/pdf.worker.min.mjs', import.meta.url).href;
-    task = pdf.getDocument({
-      data: new Uint8Array(bytes),
-      isEvalSupported: false,
-      disableFontFace: true,
-      useSystemFonts: false,
-      useWasm: false,
-      stopAtErrors: true,
-      cMapUrl: new URL('./vendor/pdfjs/cmaps/', import.meta.url).href,
-      cMapPacked: true,
-    });
-    activeTask = task;
-    task.onPassword = () => { void task.destroy().catch(() => {}); };
-    const documentPdf = await task.promise;
-    if (documentPdf.numPages > maximumPages) {
-      throw new ReviewError('This PDF exceeds 40 pages. Choose a shorter document.');
-    }
-
-    const pages = [];
-    let characters = 0;
-    for (let number = 1; number <= documentPdf.numPages; number += 1) {
-      if (current !== generation) return;
-      status.textContent = `Reading page ${number} of ${documentPdf.numPages}…`;
-      const page = await documentPdf.getPage(number);
-      const content = await page.getTextContent();
-      const lines = pageLines(content.items);
-      characters += lines.reduce((sum, line) => sum + line.length, 0);
-      if (characters > maximumCharacters) {
-        throw new ReviewError('This PDF has too much text for one review. Split it and try again.');
-      }
-      pages.push({number, lines});
-      page.cleanup();
-    }
-    if (current !== generation) return;
-    show(explain(pages), documentPdf.numPages, {summary:treasurySummary(pages)});
-    status.textContent = useSample ? (selectedSample === 'statement' ? 'Synthetic sample reviewed.' : 'Public Treasury sample reviewed.') : 'PDF reviewed in this browser.';
+    const report = await worker.run({type: 'analyze', documents: parsed, options: settings});
+    if (generation !== current || signal.aborted) return;
+    showAll(parsed, report);
+    status.textContent = selectedSample ? (selectedSample.official ? 'Public Treasury sample reviewed.' : 'Synthetic sample reviewed.') :
+      files.length === 1 && files[0].format === 'pdf' ? 'PDF reviewed in this browser.' : 'Document reviewed in this browser.';
   } catch (failure) {
-    if (current !== generation) return;
-    error.textContent = failure instanceof ReviewError
-      ? failure.message
-      : (useSample || file.name.toLowerCase().endsWith('.pdf') ? 'This PDF could not be read. Try an intact PDF with selectable text and no password.' : 'This file could not be read. Try an intact XLSX or DOCX without a password.');
+    if (generation !== current) return;
+    error.textContent = failure instanceof ReviewError ? failure.message :
+      'This file could not be read. Choose an intact text PDF, XLSX or DOCX without a password.';
     error.hidden = false;
+    error.tabIndex = -1;
+    error.focus();
     status.textContent = 'Review could not finish.';
   } finally {
     clearTimeout(timeout);
-    if (current === generation) {
-      activeTask = undefined;
-      sampleRequest = undefined;
+    worker?.close();
+    if (generation === current) {
+      active = undefined;
       busy = false;
+      clear.textContent = 'Clear';
       controls();
-      if (task) void task.destroy().catch(() => {});
     }
   }
 }
 
-fileInput.addEventListener('change', () => reset(fileInput.files.length ? 'File ready to explain.' : 'Choose a file or try a sample.'));
+fileInput.addEventListener('change', () => {
+  refreshSelection();
+  reset(fileInput.files.length ? 'Documents ready to review.' : 'Choose a file or try a sample.');
+});
+for (const setting of [trusted, currency, sampleOptions]) {
+  setting.addEventListener('change', () => reset('Selection changed. Start a new review.'));
+}
+for (const setting of [policy, days]) {
+  setting.addEventListener('input', () => reset('Policy changed. Start a new review.'));
+}
 analyze.addEventListener('click', () => { void review(false); });
 sample.addEventListener('click', () => { void review(true); });
 clear.addEventListener('click', () => {
+  const canceled = busy;
   fileInput.value = '';
-  reset('Choose a file or try a sample.');
+  policy.value = '';
+  currency.value = 'USD';
+  days.value = '7';
+  refreshSelection();
+  reset(canceled ? 'Review canceled.' : 'Choose a file or try a sample.');
   fileInput.focus();
 });
-
-const statement = document.querySelector('#statement');
-if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  const words = statement.innerText.trim().split(/\s+/u).map(word => make('span', '', word));
-  const reveal = new IntersectionObserver(([entry]) => {
-    if (!entry.isIntersecting) return;
-    reveal.disconnect();
-    words.forEach((word, index) => setTimeout(() => word.classList.add('shown'), 45 * index));
-  });
-  const phrases = ['See where each finding comes from.', 'Decide what needs a closer look.'];
-  const firstCount = phrases[0].split(' ').length;
-  const spaced = words.flatMap((word, index) => [index === firstCount ? document.createElement('br') : ' ', word]);
-  statement.replaceChildren(...spaced);
-  statement.dataset.reveal = '';
-  reveal.observe(statement);
-}

@@ -26,6 +26,19 @@ export function comparison({title, note, bars, metrics = []}) {
   }
   figure.append(values);
   if (metrics.length) figure.append(metricList(metrics));
+  if (bars.length) {
+    const details = node('details', 'chart-data');
+    const table = node('table', 'insight-table');
+    table.append(node('caption', 'title-4', title));
+    for (const {label, text} of bars) {
+      const row = table.insertRow();
+      const heading = node('th', '', label);
+      heading.scope = 'row';
+      row.append(heading, node('td', '', text));
+    }
+    details.append(node('summary', 'title-4', 'View chart values as a table'), table);
+    figure.append(details);
+  }
   figure.append(node('p', 'caption-2', note));
   return figure;
 }

@@ -34,6 +34,10 @@ try {
   const errors = [];
   const writes = [];
   const requests = [];
+  const localReaderAsset = url => url.startsWith(origin + '/vendor/pdfjs/') ||
+    (new URL(url).origin === origin && ['/document-worker.mjs', '/document-checks.mjs', '/packet-checks.mjs',
+      '/pdf-review.mjs', '/invoice-review.mjs', '/financial-metrics.mjs', '/document-evidence.mjs', '/observation-values.mjs',
+      '/vendor/fflate.mjs'].includes(new URL(url).pathname) && !new URL(url).search);
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => {
     if (request.method() !== 'GET') writes.push(request.method());
@@ -56,7 +60,7 @@ try {
   await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByText('PDF reviewed in this browser.').waitFor();
   assert.equal(await closing.getByText('USD 1,554.90',{exact:true}).count(), 1);
-  assert.ok(requests.slice(before).every(url => url.startsWith(origin + '/vendor/pdfjs/')), requests.slice(before).join(', '));
+  assert.ok(requests.slice(before).every(localReaderAsset), requests.slice(before).join(', '));
   await picker.setInputFiles(join(fixtures,'pdf_image_only.pdf'));
   await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByRole('heading', {name:'No readable text found'}).waitFor();
@@ -94,7 +98,7 @@ try {
       const copy = await page.locator('#results .checks').innerText();
       for (const fact of facts) assert.ok(copy.includes(fact), filename + ' missing ' + fact);
       assert.ok(!copy.includes('Expected flags:') && !copy.includes('Expected anomalies:'));
-      assert.ok(requests.slice(selected).every(url => url.startsWith(origin + '/vendor/pdfjs/')));
+      assert.ok(requests.slice(selected).every(localReaderAsset));
     }
   }
   for (const [sampleName, month, receipts, outlays, deficit] of [
