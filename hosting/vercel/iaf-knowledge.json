@@ -1,0 +1,174 @@
+[
+    {
+        "id":  "overview",
+        "title":  "What AgentForge Sentinel does",
+        "answer":  "Sentinel is a research workbench for reviewing financial documents and investigating flagged transactions. The document tool extracts evidence locally in the browser. The synthetic workbench shows the full chain from a risk signal to an investigator’s recommendation, a human approval and an audited simulated action.",
+        "url":  "/",
+        "source":  "Sentinel homepage",
+        "phrases":  [
+                        "what is sentinel",
+                        "what is agentforge sentinel",
+                        "what is this project",
+                        "overview",
+                        "purpose",
+                        "introduce sentinel",
+                        "what does sentinel do",
+                        "how does sentinel work",
+                        "what does this project do",
+                        "tell me about the project",
+                        "what is the project"
+                    ]
+    },
+    {
+        "id":  "differentiation",
+        "title":  "What makes Sentinel useful",
+        "answer":  "Sentinel links findings to source pages, worksheets or Word text; shows the math where it can calculate it; and exposes gaps where evidence is missing. Its case workflow records claim checks, requires analyst approval for the exact proposed action, and preserves an audit trail. A risk flag starts a review. The evidence is what you can verify.",
+        "url":  "/",
+        "source":  "Sentinel homepage",
+        "phrases":  [
+                        "what makes",
+                        "different",
+                        "unique",
+                        "special",
+                        "perks",
+                        "advantage",
+                        "stand out",
+                        "why use",
+                        "compare fraud detector"
+                    ]
+    },
+    {
+        "id":  "documents",
+        "title":  "How document review works",
+        "answer":  "The browser reads searchable PDFs, XLSX files and DOCX files up to 10 MB. Supported invoice layouts show the math and the source, Treasury statements can show published receipts and outlays, and suitable workbooks show separate totals by currency. Scanned PDFs need searchable text. Save older DOC files as DOCX first.",
+        "url":  "/#review",
+        "source":  "Document review",
+        "phrases":  [
+                        "document",
+                        "pdf",
+                        "excel",
+                        "xlsx",
+                        "word",
+                        "docx",
+                        "upload",
+                        "file type",
+                        "image only",
+                        "ocr",
+                        "spreadsheet"
+                    ]
+    },
+    {
+        "id":  "samples",
+        "title":  "How to verify a public example",
+        "answer":  "Try the January or May 2025 U.S. Treasury Monthly Treasury Statement in the sample selector. Compare the reported receipts, outlays and deficit in Sentinel with the This Month column in Table 2 on PDF page 5. The labeled bank statement is a separate synthetic example.",
+        "url":  "/#samples-title",
+        "source":  "Labeled sample documents",
+        "phrases":  [
+                        "sample",
+                        "treasury",
+                        "real document",
+                        "public pdf",
+                        "budget",
+                        "government report",
+                        "verify results"
+                    ]
+    },
+    {
+        "id":  "privacy",
+        "title":  "Where your file goes",
+        "answer":  "The document and its extracted text are processed inside your browser. IAF is a separate project explainer and receives only questions you type into its own form. The project knowledge is curated for public use.",
+        "url":  "/privacy.html",
+        "source":  "Privacy and use",
+        "phrases":  [
+                        "privacy",
+                        "private",
+                        "my file go",
+                        "data sent",
+                        "stored",
+                        "documents leave",
+                        "keep local"
+                    ]
+    },
+    {
+        "id":  "case",
+        "title":  "How the case workflow works",
+        "answer":  "Sentinel flags a synthetic transaction, pins the case evidence, checks investigation claims and prepares a proposal. An analyst must separately approve that exact proposal before a simulated action can execute. Repeating the execution request returns the original action record.",
+        "url":  "/walkthrough-details.html",
+        "source":  "Ten-step case walkthrough",
+        "phrases":  [
+                        "approval",
+                        "case",
+                        "investigat",
+                        "simulated",
+                        "retry",
+                        "audit",
+                        "hold",
+                        "role",
+                        "workbench",
+                        "alert",
+                        "actions"
+                    ]
+    },
+    {
+        "id":  "dataset",
+        "title":  "How the research dataset was built",
+        "answer":  "The p1 snapshot contains 82,819 generated transactions across 600 fictional accounts. It uses chronological training, validation and test periods. Synthetic labels support a reproducible evaluation; they do not measure real-world fraud detection performance.",
+        "url":  "/dataset.html",
+        "source":  "Synthetic model dataset",
+        "phrases":  [
+                        "train",
+                        "dataset",
+                        "training data",
+                        "model data",
+                        "82,819",
+                        "test data",
+                        "accuracy",
+                        "classifier",
+                        "model score",
+                        "fraud probability",
+                        "benchmark"
+                    ]
+    },
+    {
+        "id":  "author",
+        "title":  "Who built AgentForge Sentinel",
+        "answer":  "Phaneendra Gavara (PHANI465 on GitHub) built AgentForge Sentinel. His public portfolio describes his work on AI agents, retrieval pipelines and data systems, and lists an M.S. in Data Science from Arizona State University.",
+        "url":  "https://phaneendragavara.dev/",
+        "source":  "Public portfolio of Phaneendra Gavara",
+        "phrases":  [
+                        "author",
+                        "who built",
+                        "who made",
+                        "who created",
+                        "creator",
+                        "phani465",
+                        "phaneendra",
+                        "about me",
+                        "developer",
+                        "own this",
+                        "owner",
+                        "education",
+                        "where did he study",
+                        "background",
+                        "degree",
+                        "gavara"
+                    ]
+    },
+    {
+        "id":  "assistant",
+        "title":  "How IAF retrieves answers",
+        "answer":  "IAF means I am Antifraud. It retrieves answers from a curated public library covering Sentinel and its creator, and shows the source for each answer. When enabled, the OpenAI model selects among the retrieved answers. IAF never takes a case action or analyzes your file.",
+        "url":  "/iaf.html",
+        "source":  "IAF project assistant",
+        "phrases":  [
+                        "iaf",
+                        "chatbot",
+                        "rag",
+                        "assistant",
+                        "antifraud",
+                        "knowledge base",
+                        "openai",
+                        "api key"
+                    ]
+    }
+]

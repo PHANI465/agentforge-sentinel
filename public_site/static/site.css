@@ -111,3 +111,33 @@ summary{cursor:pointer}
 .case-steps .approval-step{border-color:var(--forest)}
 .dataset-flow{padding:16px;border:1px solid var(--line);border-radius:12px;background:#e8eee4}
 @media(max-width:600px){.example-values,.dataset-steps{grid-template-columns:minmax(0,1fr)}.worked-example{padding:16px}}
+.samples-intro{max-width:680px;margin-top:12px;color:var(--muted)}
+.picker select{max-width:100%;font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px}
+.review-chart{min-width:0;margin:0;border:1px solid var(--line);background:#fff;border-radius:8px;padding:16px}
+.checks .review-chart{margin-top:12px}
+.review-chart figcaption{margin-bottom:12px}
+.chart-bars,.review-metrics{display:grid;gap:8px}
+.chart-bars dd{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+.chart-bars meter{width:100%;height:16px}
+.chart-bars meter::-webkit-meter-optimum-value{background:var(--forest)}
+.chart-bars meter::-moz-meter-bar{background:var(--forest)}
+.review-metrics{grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));margin-block:12px}
+.review-metrics div{padding:8px;border-radius:8px;background:#eef3ed;overflow-wrap:anywhere}
+.review-chart .caption-2{margin-top:8px;color:var(--muted)}
+.iaf-band{background:#e8eee4}
+.iaf-topics{display:grid;gap:12px;margin:0;padding-left:24px}
+@media(max-width:480px){.nav{flex-wrap:wrap}.nav-links{gap:12px}.chart-bars dd{grid-template-columns:minmax(0,1fr)}}
+.iaf-page{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:32px;align-items:start}
+.iaf-page h1{margin-bottom:8px}
+.iaf-page .heading-6{margin-bottom:16px}
+.iaf-prompts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.iaf-panel{min-width:0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px}
+#transcript{display:grid;gap:8px;max-height:432px;overflow:auto;overscroll-behavior:contain}
+.iaf-message{padding:12px;border-radius:8px;background:#eef3ed;overflow-wrap:anywhere}
+.iaf-message.user{background:var(--paper)}
+.iaf-message p{margin-top:4px}
+.iaf-message a{display:inline-block;margin-top:8px}
+#iaf-form{display:grid;justify-items:start;gap:8px;margin-top:16px}
+#iaf-form textarea{width:100%;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:12px;font:inherit;color:var(--ink)}
+#iaf-status:empty{display:none}
+@media(max-width:760px){.iaf-page{grid-template-columns:minmax(0,1fr);gap:24px}.iaf-panel{padding:16px}}

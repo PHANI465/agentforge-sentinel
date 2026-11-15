@@ -1,5 +1,15 @@
 import {explain, maximumBytes, maximumCharacters, maximumPages, pageLines} from './pdf-review.mjs';
 
+import {treasurySummary} from './financial-metrics.mjs';
+import {comparison, metricList, renderWorkbook} from './review-charts.mjs';
+import {readOpenXml} from './openxml-review.mjs';
+
+const sampleOptions = document.querySelector('#sample-choice');
+const pdfSamples = {
+  statement: 'sample-statement.pdf',
+  january: 'samples/treasury-jan-2025.pdf',
+  may: 'samples/treasury-may-2025.pdf',
+};
 const fileInput = document.querySelector('#pdf-file');
 const analyze = document.querySelector('#analyze');
 const sample = document.querySelector('#sample');
@@ -25,6 +35,7 @@ function make(tag, style, copy) {
 function controls() {
   analyze.disabled = busy || !fileInput.files.length;
   sample.disabled = busy;
+  sampleOptions.disabled = busy;
   loading.hidden = !busy;
 }
 
@@ -43,13 +54,25 @@ function reset(message) {
   controls();
 }
 
-function show(report, total) {
+function show(report, total, {word, summary} = {}) {
   const output = make('section', 'results');
-  const heading = make('h3', 'heading-5', report.readable ? report.kind : 'No readable text found');
+  const location = page => word ? 'document body' : 'page ' + page;
+  const title = summary ? 'Treasury budget statement' : word
+    ? (report.kind === 'PDF text review' ? 'Word document' : report.kind + ' in Word')
+    : report.kind;
+  const heading = make('h3', 'heading-5', report.readable ? title : 'No readable text found');
   heading.tabIndex = -1;
   output.append(heading);
   output.append(make('p', 'body-3', `Readable text on ${report.readable} of ${total} pages.`));
-  if (report.missing.length) {
+  if (word) {
+    output.lastElementChild.textContent = 'Review of text and tables in the document body.';
+    output.append(metricList([
+      {label:'Paragraphs',text:String(word.paragraphs)},
+      {label:'Tables',text:String(word.tables)},
+    ]));
+  }
+  if (summary) output.append(comparison(summary));
+  if (report.missing.length && !word) {
     output.append(make('p', 'body-3', `No readable text on ${report.missing.length === 1 ? 'page' : 'pages'} ${report.missing.join(', ')}. If these pages are scans, use a copy with selectable text.`));
   }
   if (report.readable) {
@@ -62,8 +85,12 @@ function show(report, total) {
         item.append(make('h5', 'title-3', check.title));
         if (check.item) item.append(make('p', 'body-6', check.item));
         item.append(make('p', 'body-3', check.description));
+        if (check.comparison) item.append(comparison({
+          title:'Calculated and printed amounts', note:'Source ' + location(check.page) + '.',
+          ...check.comparison,
+        }));
         const evidence = make('details');
-        evidence.append(make('summary', 'title-4', 'Evidence on page ' + check.page),
+        evidence.append(make('summary', 'title-4', (word ? 'Evidence in ' : 'Evidence on ') + location(check.page)),
           make('p', 'body-6', check.line));
         item.append(evidence);
         checks.append(item);
@@ -82,19 +109,19 @@ function show(report, total) {
         item.append(
           make('p', 'body-6', finding.description),
           make('blockquote', 'body-6', finding.line.slice(0, 300)),
-          make('span', 'caption-2', `Source page ${finding.page}`),
+          make('span', 'caption-2', 'Source ' + location(finding.page)),
         );
         cards.append(item);
       }
       output.append(cards);
     } else {
-      output.append(make('p', 'body-3', 'No supported labeled amounts or terms were found. Use the page excerpts below to review the extracted text.'));
+      if (!summary && !report.checks.length) output.append(make('p', 'body-3', 'No supported labeled amounts or terms were found. Use the excerpts below to review the extracted text.'));
     }
     output.append(make('p', 'caption-2', 'Sentinel quotes printed amounts and checks recognizable invoice rows. Compare each finding with the source. A flag is a reason to review.'));
     const excerpts = make('details');
-    excerpts.append(make('summary', 'title-3', 'Read page excerpts'));
+    excerpts.append(make('summary', 'title-3', word ? 'Read document excerpts' : 'Read page excerpts'));
     for (const excerpt of report.excerpts) {
-      excerpts.append(make('p', 'title-4', `Page ${excerpt.page}`), make('p', 'excerpt body-6', excerpt.text));
+      excerpts.append(make('p', 'title-4', word ? 'Document body' : 'Page ' + excerpt.page), make('p', 'excerpt body-6', excerpt.text));
     }
     output.append(excerpts);
   }
@@ -106,8 +133,9 @@ async function review(useSample) {
   const file = fileInput.files[0];
   if (!useSample && !file) return;
   if (useSample) fileInput.value = '';
-  reset('Reading your PDF…');
+  reset('Reading your document…');
   const current = generation;
+  const selectedSample = sampleOptions.value;
   busy = true;
   clear.hidden = false;
   controls();
@@ -115,22 +143,40 @@ async function review(useSample) {
   const timeout = setTimeout(() => {
     if (generation !== current) return;
     reset('Review stopped.');
-    error.textContent = 'The PDF took too long to read. Try a shorter document.';
+    error.textContent = 'The file took too long to read. Try a shorter document.';
     error.hidden = false;
     clear.hidden = false;
   }, 25_000);
   try {
     let bytes;
+    const format = useSample ? 'pdf' : file.name.split('.').at(-1).toLowerCase();
+    if (!['pdf','xlsx','docx'].includes(format)) {
+      throw new ReviewError('Choose PDF, XLSX or DOCX. Save an older Word DOC file as DOCX first.');
+    }
     if (useSample) {
       sampleRequest = new AbortController();
-      const response = await fetch(new URL('sample-statement.pdf', import.meta.url), {signal: sampleRequest.signal});
+      const response = await fetch(new URL(pdfSamples[selectedSample], import.meta.url), {signal: sampleRequest.signal});
       if (!response.ok) throw new ReviewError('The sample could not load. Try again or choose a PDF.');
       bytes = await response.arrayBuffer();
     } else {
-      if (file.size > maximumBytes) throw new ReviewError('This file exceeds 10 MB. Choose a smaller PDF.');
+      if (file.size > maximumBytes) throw new ReviewError('This file exceeds 10 MB. Choose a smaller document.');
       bytes = await file.arrayBuffer();
     }
     if (current !== generation) return;
+    if (format !== 'pdf') {
+      const structured = readOpenXml(new Uint8Array(bytes), format);
+      if (format === 'xlsx') {
+        const output = renderWorkbook(structured);
+        results.replaceChildren(output);
+        output.querySelector('h3').focus();
+      } else {
+        const count = structured.lines.reduce((sum,line) => sum + line.length,0);
+        if (count > maximumCharacters) throw new ReviewError('This document has too much text for one review.');
+        show(explain([{number:1,lines:structured.lines}]), 1, {word:structured});
+      }
+      status.textContent = 'Document reviewed in this browser.';
+      return;
+    }
     if (!new TextDecoder().decode(bytes.slice(0, 1024)).includes('%PDF-')) {
       throw new ReviewError('This file does not have a PDF header. Choose a PDF file.');
     }
@@ -170,13 +216,13 @@ async function review(useSample) {
       page.cleanup();
     }
     if (current !== generation) return;
-    show(explain(pages), documentPdf.numPages);
-    status.textContent = useSample ? 'Synthetic sample reviewed.' : 'PDF reviewed in this browser.';
+    show(explain(pages), documentPdf.numPages, {summary:treasurySummary(pages)});
+    status.textContent = useSample ? (selectedSample === 'statement' ? 'Synthetic sample reviewed.' : 'Public Treasury sample reviewed.') : 'PDF reviewed in this browser.';
   } catch (failure) {
     if (current !== generation) return;
     error.textContent = failure instanceof ReviewError
       ? failure.message
-      : 'This PDF could not be read. Try an intact PDF with selectable text and no password.';
+      : (useSample || file.name.toLowerCase().endsWith('.pdf') ? 'This PDF could not be read. Try an intact PDF with selectable text and no password.' : 'This file could not be read. Try an intact XLSX or DOCX without a password.');
     error.hidden = false;
     status.textContent = 'Review could not finish.';
   } finally {
@@ -191,12 +237,12 @@ async function review(useSample) {
   }
 }
 
-fileInput.addEventListener('change', () => reset(fileInput.files.length ? 'PDF ready to explain.' : 'Choose a PDF or try the sample.'));
+fileInput.addEventListener('change', () => reset(fileInput.files.length ? 'File ready to explain.' : 'Choose a file or try a sample.'));
 analyze.addEventListener('click', () => { void review(false); });
 sample.addEventListener('click', () => { void review(true); });
 clear.addEventListener('click', () => {
   fileInput.value = '';
-  reset('Choose a PDF or try the sample.');
+  reset('Choose a file or try a sample.');
   fileInput.focus();
 });
 

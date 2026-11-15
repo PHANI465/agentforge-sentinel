@@ -40,6 +40,16 @@ function multiplication(quantity, rate) {
   return (BigInt(whole + fraction) * rate + scale / 2n) / scale;
 }
 
+function compareAmounts(calculated, printed, unit) {
+  return {
+    bars:[
+      {label:'Calculated',value:Number(calculated),text:format(calculated,unit)},
+      {label:'Printed',value:Number(printed),text:format(printed,unit)},
+    ],
+    metrics:[{label:'Difference',text:discrepancy(calculated,printed,unit)}],
+  };
+}
+
 function arithmetic(lines, add) {
   const header = lines.findIndex(line => tableHeader.test(line));
   if (header === -1) return;
@@ -67,7 +77,7 @@ function arithmetic(lines, add) {
       add('line-math', 'Line item does not add up',
         quantity + ' × ' + format(rate.cents, rate.unit) + ' gives ' + format(calculated, rate.unit) +
         '. The row lists ' + format(printed.cents, rate.unit) + ', a difference of ' +
-        discrepancy(calculated, printed.cents, rate.unit) + '.', line, item.slice(0, 120));
+        discrepancy(calculated, printed.cents, rate.unit) + '.', line, item.slice(0, 120), compareAmounts(calculated, printed.cents, rate.unit));
     }
   }
 
@@ -81,7 +91,7 @@ function arithmetic(lines, add) {
       add('subtotal-math', 'Subtotal differs from the listed rows',
         'The printed line totals on this page add up to ' + format(sum, subtotal.unit) + '. The reported subtotal is ' +
         format(subtotal.cents, subtotal.unit) + ', a difference of ' +
-        discrepancy(sum, subtotal.cents, subtotal.unit) + '.', subtotalLine);
+        discrepancy(sum, subtotal.cents, subtotal.unit) + '.', subtotalLine, undefined, compareAmounts(sum, subtotal.cents, subtotal.unit));
     }
   }
   if (sameUnit(subtotal, tax) && sameUnit(tax, due)) {
@@ -90,7 +100,7 @@ function arithmetic(lines, add) {
       add('total-math', 'Total due differs from subtotal plus tax',
         'The printed subtotal and tax add up to ' + format(sum, due.unit) + '. The reported total due is ' +
         format(due.cents, due.unit) + ', a difference of ' + discrepancy(sum, due.cents, due.unit) + '.',
-        [subtotalLine, taxLine, dueLine].join(' · '));
+        [subtotalLine, taxLine, dueLine].join(' · '), undefined, compareAmounts(sum, due.cents, due.unit));
     }
   }
 }
@@ -173,9 +183,9 @@ export function invoiceEvidence(pages) {
     // QA annotations explain fixtures. They are excluded from the invoice checks.
     const annotation = lines.findIndex(line => /^synthetic benchmark artifact\b/i.test(line));
     const body = annotation < 0 ? lines : lines.slice(0, annotation);
-    const add = (code, title, description, line, item) => {
+    const add = (code, title, description, line, item, comparison) => {
       if (checks.length < 24 && !checks.some(check => check.code === code && check.page === page && check.line === line)) {
-        checks.push({code, title, description, line, item, page});
+        checks.push({code, title, description, line, item, page, comparison});
       }
     };
     arithmetic(body, add);

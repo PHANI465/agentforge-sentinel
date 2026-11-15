@@ -21,7 +21,7 @@ try {
     Remove-Item -LiteralPath $sourceZip
     Move-Item -LiteralPath (Join-Path $stage 'src/sentinel') -Destination (Join-Path $stage 'sentinel')
     Remove-Item -LiteralPath (Join-Path $stage 'src')
-    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'app.py') -Destination $stage
+    foreach ($file in @('app.py','iaf.py','iaf-knowledge.json')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $stage }
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'vercel.json') -Destination $stage
 
     $requirements = Join-Path $stage 'requirements.txt'

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>IAF · I am Antifraud | AgentForge Sentinel</title>
+  <meta name="description" content="Ask IAF about AgentForge Sentinel and its creator. Answers cite the project’s public sources.">
+  <link rel="icon" href="mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="site.css">
+  <script type="module" src="iaf.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to chat</a>
+  <header class="mast">
+    <nav class="nav wrap" aria-label="Main navigation">
+      <a class="brand title-3" href="./"><img src="mark.svg" width="24" height="24" alt="">AgentForge Sentinel</a>
+      <a href="walkthrough.html">Case walkthrough</a>
+    </nav>
+  </header>
+  <main id="main" class="wrap section iaf-page">
+    <div>
+      <h1 class="heading-1">IAF</h1>
+      <p class="heading-6">I am Antifraud</p>
+      <p class="body-3">Ask about Sentinel or its creator, Phaneendra Gavara. IAF answers from the project’s public library and shows where the answer came from.</p>
+      <div class="iaf-prompts" aria-label="Suggested questions">
+        <button class="secondary button-sm" type="button">What makes Sentinel different?</button>
+        <button class="secondary button-sm" type="button">How does approval work?</button>
+        <button class="secondary button-sm" type="button">Who built Sentinel?</button>
+      </div>
+    </div>
+    <div class="iaf-panel">
+      <div id="transcript" aria-live="polite" aria-relevant="additions"></div>
+      <form id="iaf-form">
+        <label class="title-3" for="question">Ask a question</label>
+        <textarea id="question" name="question" rows="2" maxlength="400" placeholder="What data did Sentinel use?" required aria-describedby="iaf-privacy"></textarea>
+        <button class="primary button-md" type="submit">Ask IAF</button>
+        <p class="caption-2" id="iaf-privacy">Your question goes to the IAF server. Your files stay in the review tool.</p>
+      </form>
+      <p class="body-6 status" id="iaf-status" role="status"></p>
+      <noscript>Enable JavaScript to ask a question.</noscript>
+    </div>
+  </main>
+  <footer class="wrap footer body-6"><a href="./#review">Review a document</a><a href="privacy.html">Privacy and use</a></footer>
+</body>
+</html>

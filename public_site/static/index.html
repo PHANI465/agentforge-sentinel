@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; font-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>AgentForge Sentinel | Explain a financial PDF</title>
-  <meta name="description" content="Review a financial PDF in your browser. See the amounts and passages Sentinel found, then walk through a recorded fraud investigation.">
-  <meta property="og:title" content="AgentForge Sentinel | Explain a financial PDF">
+  <title>AgentForge Sentinel | Review financial documents</title>
+  <meta name="description" content="Review PDF, Excel and Word files in your browser. Check the evidence and follow a recorded fraud investigation.">
+  <meta property="og:title" content="AgentForge Sentinel | Review financial documents">
   <meta property="og:description" content="Read a financial PDF with page references and explore a recorded fraud investigation.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/">
@@ -20,15 +20,15 @@
   <header class="mast">
     <nav class="nav wrap" aria-label="Main navigation">
       <a class="brand title-3" href="./" aria-current="page"><img src="mark.svg" width="24" height="24" alt="">AgentForge Sentinel</a>
-      <div class="nav-links title-4"><a href="#how">How it works</a><a href="walkthrough.html">Case walkthrough</a></div>
+      <div class="nav-links title-4"><a href="#how">How it works</a><a href="walkthrough.html">Case walkthrough</a><a href="https://agentforge-sentinel.vercel.app/iaf.html">Ask IAF</a></div>
     </nav>
   </header>
   <main id="main">
     <section class="hero wrap">
       <div class="hero-copy">
-        <h1 class="heading-1">Understand what your financial PDF says</h1>
-        <p class="body-3">See the amounts and passages Sentinel found, what they usually mean, and which page to check. Your file stays in this browser.</p>
-        <a class="primary button-md" href="#review">Explain a PDF <span aria-hidden="true">↘</span></a>
+        <h1 class="heading-1">Understand your financial documents</h1>
+        <p class="body-3">Review PDF statements, Excel workbooks and Word documents. See the source behind each finding. Your file stays in this browser.</p>
+        <a class="primary button-md" href="#review">Review a document <span aria-hidden="true">↘</span></a>
         <p class="caption-2">Free to try. No account required.</p>
       </div>
       <article class="preview" aria-label="Sample explanation">
@@ -37,7 +37,7 @@
           <p class="heading-5">Closing balance</p>
           <p class="body-3">The amount reported at the end of the statement period.</p>
           <blockquote class="body-4">“Closing balance USD 1,554.90”</blockquote>
-          <p class="caption-2">Check the source page before using an extracted amount.</p>
+          <p class="caption-2">Check the source before using an extracted amount.</p>
         </div>
       </article>
     </section>
@@ -45,17 +45,24 @@
     <section class="tool-band" id="review" aria-labelledby="review-title">
       <div class="wrap tool">
         <div class="tool-head">
-          <h2 id="review-title" class="heading-2">Explain a PDF</h2>
-          <p id="file-help" class="body-3">Choose a PDF with selectable text. Maximum 10 MB and 40 pages. Use the synthetic statement to try it without your own file.</p>
+          <h2 id="review-title" class="heading-2">Review a document</h2>
+          <p id="file-help" class="body-3">Choose a PDF with selectable text, an XLSX workbook, or a DOCX document. Files can be up to 10 MB. PDFs can be up to 40 pages.</p>
         </div>
         <div class="file-box">
           <div class="file-actions">
-            <div class="picker"><label class="title-4" for="pdf-file">Your PDF</label><input class="body-6" type="file" id="pdf-file" accept=".pdf,application/pdf" aria-describedby="file-help"></div>
-            <button class="primary button-md" id="analyze" type="button" disabled>Explain this PDF</button>
+            <div class="picker"><label class="title-4" for="pdf-file">Your file</label><input class="body-6" type="file" id="pdf-file" accept=".pdf,.xlsx,.docx,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-describedby="file-help"></div>
+            <button class="primary button-md" id="analyze" type="button" disabled>Review this file</button>
+            <div class="picker"><label class="title-4" for="sample-choice">Sample document</label>
+              <select class="body-6" id="sample-choice">
+                <option value="statement">Synthetic bank statement</option>
+                <option value="january">U.S. Treasury, January 2025 (real)</option>
+                <option value="may">U.S. Treasury, May 2025 (real)</option>
+              </select>
+            </div>
             <button class="secondary button-md" id="sample" type="button">Try the sample</button>
             <button class="quiet button-sm" id="clear" type="button" hidden>Clear</button>
           </div>
-          <p class="status body-6" id="status" role="status">Choose a PDF or try the sample.</p>
+          <p class="status body-6" id="status" role="status">Choose a file or try a sample.</p>
           <p class="error body-6" id="error" role="alert" hidden></p>
           <div class="loading" id="loading" aria-hidden="true" hidden><div></div><div></div></div>
           <div id="results"></div>
@@ -63,12 +70,21 @@
       </div>
     </section>
 
+    <section class="wrap section" aria-labelledby="samples-title">
+      <h2 class="heading-2" id="samples-title">Check the results against real records</h2>
+      <p class="body-3 samples-intro">The two public Treasury PDFs below are original government reports. Select one in the review tool and compare its chart with the “This Month” column in Table 2, PDF page 5.</p>
+      <ul class="highlights">
+        <li><h3 class="heading-6">January 2025 Treasury statement</h3><p class="body-3">Real federal budget report. Look for USD 513,294 million in receipts and USD 641,935 million in outlays.</p><p class="body-6"><a href="samples/treasury-jan-2025.pdf">Open sample PDF</a> · <a href="https://fiscal.treasury.gov/system/files/files/reports-statements/mts/mts0125.pdf">Treasury original</a></p></li>
+        <li><h3 class="heading-6">May 2025 Treasury statement</h3><p class="body-3">Real federal budget report. Look for USD 371,229 million in receipts and USD 687,233 million in outlays.</p><p class="body-6"><a href="samples/treasury-may-2025.pdf">Open sample PDF</a> · <a href="https://fiscal.treasury.gov/system/files/files/reports-statements/mts/mts0525.pdf">Treasury original</a></p></li>
+        <li><h3 class="heading-6">Synthetic bank statement</h3><p class="body-3">A fictional statement with a closing balance of USD 1,554.90 on page 2. Use it to see how evidence links back to the document.</p><p class="body-6"><a href="sample-statement.pdf">Open sample PDF</a></p></li>
+      </ul>
+    </section>
     <section class="wrap section" id="how" aria-labelledby="how-title">
-      <h2 class="heading-2" id="how-title">From PDF to explanation</h2>
+      <h2 class="heading-2" id="how-title">From file to evidence</h2>
       <ol class="steps">
-        <li class="step"><h3 class="heading-6">Choose a document</h3><p class="body-3">Use a statement, invoice, or transaction report with text you can select. A scan may have no text to read.</p></li>
-        <li class="step"><h3 class="heading-6">Read the findings</h3><p class="body-3">The browser reads each page and looks for labeled amounts, invoice math and changes to payment instructions.</p></li>
-        <li class="step"><h3 class="heading-6">Check the source page</h3><p class="body-3">Compare each finding with the source. If text was missing or unclear, the results show the gap.</p></li>
+        <li class="step"><h3 class="heading-6">Choose a document</h3><p class="body-3">Choose a text PDF, a workbook, or a Word document. For a scanned PDF, start with a searchable copy.</p></li>
+        <li class="step"><h3 class="heading-6">Read the findings</h3><p class="body-3">Supported tables can show charted totals. Readable invoices can show differences between printed and calculated amounts.</p></li>
+        <li class="step"><h3 class="heading-6">Check the source</h3><p class="body-3">Review the source page or worksheet and check which values were available.</p></li>
       </ol>
       <figure class="worked-example" aria-labelledby="invoice-example">
         <figcaption id="invoice-example" class="heading-6">Example from a synthetic invoice</figcaption>
@@ -104,22 +120,29 @@
     </section>
 
     <section class="wrap section" aria-labelledby="built-title">
-      <h2 id="built-title" class="heading-2">How Sentinel was built and tested</h2>
+      <h2 id="built-title" class="heading-2">What makes Sentinel useful</h2>
       <ul class="highlights">
-        <li><h3 class="heading-6">Tested with three different invoices</h3><p class="body-3">The PDF checks distinguish incorrect math, payments close to a stated approval limit and a request to change bank details. Findings point back to the page that triggered them.</p></li>
-        <li><h3 class="heading-6">Training data you can inspect</h3><p class="body-3">We generated 82,819 transactions and used separate time periods to train, tune and test the model. <a href="dataset.html">See what went into the dataset.</a></p></li>
+        <li><h3 class="heading-6">Private document review</h3><p class="body-3">Files are read in the browser. You can inspect an invoice or workbook without sending it to a model or server.</p></li>
+        <li><h3 class="heading-6">Findings you can verify</h3><p class="body-3">The PDF checks distinguish incorrect math, payments close to a stated approval limit and a request to change bank details. Findings point back to the page that triggered them.</p></li>
+        <li><h3 class="heading-6">Training data you can reproduce</h3><p class="body-3">We generated 82,819 transactions and used separate time periods to train, tune and test the model. <a href="dataset.html">See what went into the dataset.</a></p></li>
         <li><h3 class="heading-6">Approval before any action</h3><p class="body-3">The recorded case shows when the app opened a case, checked evidence, required approval and executed one simulated action. Repeating the request returns the same action.</p></li>
       </ul>
     </section>
+    <section class="iaf-band">
+      <div class="wrap section case-grid">
+        <div><h2 class="heading-2">Meet IAF</h2><p class="body-3">I am Antifraud. Ask how Sentinel works, where its evidence comes from, or who built it.</p><a class="primary button-md" href="https://agentforge-sentinel.vercel.app/iaf.html">Ask IAF</a></div>
+        <ul class="iaf-topics body-3"><li>Why does Sentinel show the source page?</li><li>What happens before a simulated hold?</li><li>What data did PHANI465 use to build the project?</li></ul>
+      </div>
+    </section>
     <section class="wrap section faq" aria-labelledby="faq-title">
       <h2 class="heading-2" id="faq-title">Before you start</h2>
-      <details><summary class="title-2">Where does my PDF go?</summary><p class="body-3">The file and its extracted text stay in the browser tab. Clear the result or close the tab to remove it from the page.</p></details>
-      <details><summary class="title-2">What files work here?</summary><p class="body-3">Use a text PDF up to 10 MB and 40 pages. Password protected PDFs are unsupported. Image only pages need OCR, which this tool does not include.</p></details>
+      <details><summary class="title-2">Where does my file go?</summary><p class="body-3">The file and its extracted text stay in the browser tab. Clear the result or close the tab to remove it from the page.</p></details>
+      <details><summary class="title-2">What files work here?</summary><p class="body-3">Use a text PDF, XLSX, or DOCX up to 10 MB. PDFs are limited to 40 pages. Save legacy DOC files as DOCX. Image-only PDFs need a searchable copy.</p></details>
       <details><summary class="title-2">What do the findings mean?</summary><p class="body-3">They explain terms and show the math on readable invoice rows. The browser also flags changes in payment instructions and compares amounts with a threshold explicitly stated in the document. Confirm entities, policy and account information using trusted records.</p></details>
-      <details><summary class="title-2">Does this use ChatGPT or Claude?</summary><p class="body-3">The PDF explainer uses local text extraction and rules. The recorded case uses deterministic roles. Both tools work without a model account or key.</p></details>
+      <details><summary class="title-2">Does this use ChatGPT or Claude?</summary><p class="body-3">Document review uses local rules and the recorded case uses deterministic roles. IAF uses a curated project library. A server-side OpenAI key enables optional model-assisted selection for IAF.</p></details>
       <details><summary class="title-2">What data trained the model?</summary><p class="body-3">Sentinel's bundled model was trained on generated transactions with synthetic account histories and known labels. The sample PDF and public case are also synthetic. The ULB and Worldline dataset was acquired separately for research.</p><p class="body-3"><a href="data/sentinel-p1-synthetic.zip" download>Download the synthetic training dataset (6.4 MiB ZIP)</a> · <a href="dataset.html">Dataset contents and verification</a></p></details>
       <details><summary class="title-2">Can I run the full workbench here?</summary><p class="body-3">Yes. <a href="https://agentforge-sentinel.vercel.app/workbench">Open the live workbench</a> to investigate and approve a simulated action on a temporary synthetic case. The PDF explainer runs in your browser. The local app also supports CSV and XLSX.</p></details>
-      <a class="primary button-md" href="#review">Explain a PDF <span aria-hidden="true">↗</span></a>
+      <a class="primary button-md" href="#review">Review a document <span aria-hidden="true">↗</span></a>
     </section>
   </main>
   <footer class="wrap footer body-6"><span>AgentForge Sentinel · Research project by PHANI465</span><a href="privacy.html">Privacy and use</a></footer>

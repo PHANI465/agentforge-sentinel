@@ -1,11 +1,15 @@
 """Vercel-only demo entrypoint. The main application still owns case and action rules."""
+import json
 import os
 import secrets
 from datetime import timedelta
 from uuid import uuid4
 
 from fastapi import Request
+from starlette.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, RedirectResponse
+
+from iaf import MAX_QUESTION, answer as answer_iaf
 
 from sentinel import db
 from sentinel.agents.coordinator import deterministic_workflow
@@ -60,6 +64,25 @@ def hosted_app(database_url: str):
                 occurred_at=anchor - timedelta(minutes=(240, 120, 40, 20, 0)[index]),
             ))
         return JSONResponse({"token": token}, headers={"Cache-Control": "no-store"})
+
+    @api.post("/iaf/ask", include_in_schema=False)
+    async def iaf_ask(request: Request):
+        headers = {"Cache-Control": "no-store"}
+        if request.headers.get("sec-fetch-site") != "same-origin":
+            return JSONResponse({"kind": "bad_request"}, status_code=403, headers=headers)
+        raw = bytearray()
+        async for chunk in request.stream():
+            if len(raw) + len(chunk) > 4000:
+                return JSONResponse({"kind": "bad_request"}, status_code=413, headers=headers)
+            raw.extend(chunk)
+        try:
+            data = json.loads(raw)
+        except (ValueError, UnicodeError):
+            data = None
+        question = data.get("question") if isinstance(data, dict) else None
+        if not isinstance(question, str) or not 1 <= len(question.strip()) <= MAX_QUESTION:
+            return JSONResponse({"kind": "bad_request"}, status_code=422, headers=headers)
+        return JSONResponse(await run_in_threadpool(answer_iaf, question, database_url), headers=headers)
 
     return api
 

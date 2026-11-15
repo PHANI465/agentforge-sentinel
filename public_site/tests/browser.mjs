@@ -5,6 +5,8 @@ import {createRequire} from 'node:module';
 import {extname, join, resolve, sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {strToU8, zipSync} from '../static/vendor/fflate.mjs';
+
 const [modules, fixtures, artifacts, target, invoiceFixtures] = process.argv.slice(2);
 const hosted = target === '--local' ? undefined : target;
 const {chromium} = createRequire(join(resolve(modules), 'package.json'))('playwright');
@@ -38,7 +40,7 @@ try {
     requests.push(request.url());
   });
   await page.goto(origin);
-  await page.getByRole('heading', {name:'Understand what your financial PDF says'}).waitFor();
+  await page.getByRole('heading', {name:'Understand your financial documents'}).waitFor();
   await page.screenshot({path:join(artifacts,'desktop.png'),fullPage:true});
   await page.getByRole('button', {name:'Try the sample'}).click();
   await page.getByText('Readable text on 2 of 2 pages.').waitFor();
@@ -51,30 +53,30 @@ try {
   const picker = page.locator('#pdf-file');
   await picker.setInputFiles(join(fixtures,'pdf_text_statement.pdf'));
   const before = requests.length;
-  await page.getByRole('button', {name:'Explain this PDF'}).click();
+  await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByText('PDF reviewed in this browser.').waitFor();
   assert.equal(await closing.getByText('USD 1,554.90',{exact:true}).count(), 1);
   assert.ok(requests.slice(before).every(url => url.startsWith(origin + '/vendor/pdfjs/')), requests.slice(before).join(', '));
   await picker.setInputFiles(join(fixtures,'pdf_image_only.pdf'));
-  await page.getByRole('button', {name:'Explain this PDF'}).click();
+  await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByRole('heading', {name:'No readable text found'}).waitFor();
   await picker.setInputFiles(join(fixtures,'pdf_scanned_mixed.pdf'));
-  await page.getByRole('button', {name:'Explain this PDF'}).click();
+  await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByText('Readable text on 1 of 2 pages.').waitFor();
   await picker.setInputFiles(join(fixtures,'pdf_hostile_text.pdf'));
-  await page.getByRole('button', {name:'Explain this PDF'}).click();
+  await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByText('PDF reviewed in this browser.').waitFor();
   await page.getByText('Read page excerpts', {exact:true}).click();
   assert.equal(await page.locator('#results img, #results iframe, #results a, #results script').count(), 0);
   assert.match(await page.locator('#results').innerText(), /ignore|override|script/i);
   await picker.setInputFiles({name:'fake.pdf',mimeType:'application/pdf',buffer:Buffer.from('this is not a PDF')});
-  await page.getByRole('button', {name:'Explain this PDF'}).click();
+  await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByRole('alert').getByText(/does not have a PDF header/).waitFor();
   await picker.setInputFiles({name:'large.pdf',mimeType:'application/pdf',buffer:Buffer.alloc(10_000_001)});
-  await page.getByRole('button', {name:'Explain this PDF'}).click();
+  await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByRole('alert').getByText(/exceeds 10 MB/).waitFor();
   await picker.setInputFiles(join(fixtures,'pdf_encrypted.pdf'));
-  await page.getByRole('button', {name:'Explain this PDF'}).click();
+  await page.getByRole('button', {name:'Review this file'}).click();
   await page.getByRole('alert').getByText(/could not be read/i).waitFor();
 
   if (invoiceFixtures) {
@@ -86,7 +88,7 @@ try {
     for (const [filename, codes, facts] of samples) {
       await picker.setInputFiles(join(invoiceFixtures,filename));
       const selected = requests.length;
-      await page.getByRole('button', {name:'Explain this PDF'}).click();
+      await page.getByRole('button', {name:'Review this file'}).click();
       await page.getByText('PDF reviewed in this browser.').waitFor();
       assert.deepEqual(await page.locator('#results [data-check]').evaluateAll(nodes => nodes.map(node => node.dataset.check)),codes);
       const copy = await page.locator('#results .checks').innerText();
@@ -95,11 +97,47 @@ try {
       assert.ok(requests.slice(selected).every(url => url.startsWith(origin + '/vendor/pdfjs/')));
     }
   }
+  for (const [sampleName, month, receipts, outlays, deficit] of [
+    ['january','January','513,294','641,935','128,640'],
+    ['may','May','371,229','687,233','316,004'],
+  ]) {
+    await page.getByLabel('Sample document').selectOption(sampleName);
+    await page.getByRole('button',{name:'Try the sample'}).click();
+    await page.getByText('Public Treasury sample reviewed.').waitFor();
+    const chart = page.locator('.review-chart').filter({hasText:month + ' 2025 budget summary'});
+    const text = await chart.innerText();
+    assert.ok([receipts, outlays, deficit, 'Source page 5, Table 2'].every(value => text.includes(value)));
+    assert.equal(await chart.locator('meter').count(),2);
+  }
+  const workbookParts = {
+    'xl/workbook.xml':'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Ledger" r:id="rId1"/></sheets></workbook>',
+    'xl/_rels/workbook.xml.rels':'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="/xl/worksheets/sheet1.xml"/></Relationships>',
+    'xl/worksheets/sheet1.xml':'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Currency</t></is></c><c r="B1" t="inlineStr"><is><t>Amount</t></is></c></row><row r="2"><c r="A2" t="inlineStr"><is><t>USD</t></is></c><c r="B2"><v>150</v></c></row><row r="3"><c r="A3" t="inlineStr"><is><t>USD</t></is></c><c r="B3"><v>-25.50</v></c></row><row r="4"><c r="A4" t="inlineStr"><is><t>EUR</t></is></c><c r="B4"><v>11.25</v></c></row><row r="5"><c r="A5" t="inlineStr"><is><t>USD</t></is></c><c r="B5"><f>75*100</f><v>7500</v></c></row></sheetData></worksheet>',
+  };
+  const wordParts = {
+    'word/document.xml':'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Invoice Example 7</w:t></w:r></w:p><w:p><w:r><w:t>Total Due: $42.00</w:t></w:r></w:p></w:body></w:document>',
+  };
+  const zip = parts => Buffer.from(zipSync(Object.fromEntries(Object.entries(parts).map(([name,text]) => [name,strToU8(text)]))));
+  await picker.setInputFiles({name:'ledger.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:zip(workbookParts)});
+  await page.getByRole('button',{name:'Review this file'}).click();
+  await page.getByRole('heading',{name:'Excel workbook'}).waitFor();
+  assert.match(await page.locator('#results').innerText(), /3 data rows counted/);
+  assert.match(await page.locator('#results').innerText(), /124\.50 USD/);
+  assert.match(await page.locator('#results').innerText(), /11\.25 EUR/);
+  assert.doesNotMatch(await page.locator('#results').innerText(), /7500/);
+  await picker.setInputFiles({name:'invoice.docx',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',buffer:zip(wordParts)});
+  await page.getByRole('button',{name:'Review this file'}).click();
+  await page.getByRole('heading',{name:'Invoice in Word'}).waitFor();
+  await page.getByText('$42.00',{exact:true}).waitFor();
+  await page.getByText('Source document body',{exact:true}).waitFor();
+  await picker.setInputFiles({name:'legacy.doc',mimeType:'application/msword',buffer:Buffer.from('legacy')});
+  await page.getByRole('button',{name:'Review this file'}).click();
+  await page.getByRole('alert').getByText(/Save an older Word DOC file/).waitFor();
   const narrow = await browser.newPage({viewport:{width:390,height:844}});
   await narrow.goto(origin);
   await narrow.keyboard.press('Tab');
   assert.equal(await narrow.evaluate(()=>document.activeElement.textContent),'Skip to content');
-  await narrow.getByRole('link',{name:'Explain a PDF'}).first().click();
+  await narrow.getByRole('link',{name:'Review a document'}).first().click();
   assert.equal(await narrow.evaluate(()=>document.documentElement.scrollWidth),390);
   await narrow.screenshot({path:join(artifacts,'mobile.png'),fullPage:true});
   await page.getByRole('link',{name:/Walk through the recorded case/}).click();
@@ -175,10 +213,10 @@ try {
   assert.equal(await narrow.evaluate(()=>document.documentElement.scrollWidth),390);
   await page.getByRole('navigation',{name:'Site navigation'}).getByRole('link',{name:'Case overview'}).click();
   await page.getByRole('link',{name:'Back to Sentinel'}).click();
-  await page.getByRole('heading',{name:'Understand what your financial PDF says'}).waitFor();
+  await page.getByRole('heading',{name:'Understand your financial documents'}).waitFor();
   assert.deepEqual(errors,[]);
   assert.deepEqual(writes,[]);
-  console.log('Passed sample and local PDF, image only and mixed PDF, inert text, bad header, size and password rejection, clear, GET-only traffic, keyboard, 390 px layouts, all 10 detailed steps, shared snapshots, cross-step record links and both replay views.');
+  console.log('Passed sample and local PDF, image only and mixed PDF, inert text, bad header, size and password rejection, clear, GET-only traffic, keyboard, 390 px layouts, all 10 detailed steps, shared snapshots, cross-step record links and both replay views, two original Treasury PDFs, workbook metrics and Word review.');
   if (invoiceFixtures) console.log('All three invoice PDFs produced their expected distinct findings and values.');
 } finally {
   await browser.close();
