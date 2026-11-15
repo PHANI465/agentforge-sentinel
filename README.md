@@ -1,30 +1,26 @@
 # AgentForge Sentinel
 
-A local financial investigation workbench: synthetic transactions, temporal rule/trained
-ML scoring, bounded agent investigation, human approval, explicit simulated actions and
-an auditable trace. It connects to no bank account and moves no real money.
+AgentForge Sentinel is a local financial investigation workbench. It scores
+synthetic transactions, opens cases, records the investigation and its evidence,
+and requires human approval before a simulated action.
 
-**Start here:** [complete guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md),
-[offline HTML](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html),
-[decision ledger](docs/decisions/PROJECT_DECISION_LEDGER.md) and
-[current status](docs/STATUS.md). New assistant chats read [START_HERE](docs/START_HERE.md).
+## Try the public walkthrough
 
-Accepted application/tooling is the tested 871e31d release plus documentation: independent
-Windows/native Ubuntu backend gates passed 810 + one allowed skip each. Earlier Windows
-UI evidence is 133 unit and 19 legacy + 10 trace browser cases, not rerun for later tooling.
-See [release evidence](docs/releases/Batch-r2-main-integration-2026-11-07.md).
+Follow one recorded synthetic case across ten interactive steps, from the
+initial risk score to the audit trail. The walkthrough runs in your browser
+and requires no account or API key. [Open the Sentinel walkthrough](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site)
 
-AN01-M1 candidate b54de1a still needs one R56 close-interruption correction; R54 and
-the earlier findings close for their reviewed scopes. It is not accepted or integrated.
-See the [latest review](docs/reviews/AN01-M1-b54de1a.md). The downloaded ULB public dataset is a separate future
-benchmark; p1 is unchanged. Local document feedback, automated development grading and
-more readable metrics are [planned slices](docs/research/2026-11-08-expansion-research.md),
-not shipped functionality. Current scores are uncalibrated synthetic-benchmark rankings.
+## What you can run locally
 
-This repository is private. GitHub lists PHANI465 as the sole contributor. Actions are
-disabled pending verified included budget and explicit CI dispatch. Real CI, Linux browser,
-macOS and hosted/public deployment remain unverified. Raw datasets, credentials and local
-evidence are excluded; download/source manifests provide provenance without redistribution.
+- **Case investigation.** Use the rule scorer or opt into the registered ML
+  scorer. Inspect evidence, review the investigation trace, and approve or
+  reject a proposed simulated action.
+- **Document Review.** An opt-in analyst session can upload synthetic or
+  public CSV, XLSX, or PDF files for extraction and review. Configure the
+  local worker and document grant first. [Worker setup](docs/security/DOC01-document-upload.md)
+- **Reporting prototype.** AN01-M1 provides tools and tests for measuring
+  report queries against synthetic PostgreSQL fixtures. The full-size
+  measurements and the Reports screen are future work. [Benchmark notes](docs/benchmarks/AN01-M1.md)
 
 ## Run locally
 
@@ -32,7 +28,7 @@ Requires Python 3.11+, uv, Node 22+ and native PostgreSQL binaries. Run from the
 
 ```powershell
 uv sync --locked --extra dev --extra ml
-$env:SENTINEL_INVESTIGATOR = 'deterministic'
+$env:SENTINEL_LIVE_CLAUDE = '0'
 uv run --locked python scripts/local_stack.py up
 uv run --locked python scripts/local_stack.py status
 ```
@@ -45,15 +41,26 @@ npm ci
 npm run dev
 ```
 
-The UI proxies API requests to `http://127.0.0.1:8000`. Read your local bearer token from `.agent/stack/session.json` and enter it in the UI; keep it private. The UI holds it in memory only. A new database starts with no cases. To verify the synthetic rule workflow, run `uv run --locked python scripts/local_stack.py smoke` from the project root. Stop the owned API/database with `uv run --locked python scripts/local_stack.py down`.
+Open the URL printed by Vite. Copy the bearer token from
+`.agent/stack/session.json` into the sign-in field. To create and verify
+one synthetic case, run `uv run --locked python scripts/local_stack.py smoke`
+from the project root and refresh the case queue. Stop Vite with Ctrl+C,
+then run `uv run --locked python scripts/local_stack.py down` to stop the
+API and database.
 
-Model mode is explicit (`up --scorer model`) and requires operator-provisioned account profiles. See [setup](SETUP.md), the [operator runbook](docs/runbooks/local-operations.md), [API documentation](docs/api/README.md) and [browser fixture guide](docs/api/model-browser-fixtures.md).
+The default rule scorer and deterministic investigator need no model key.
+Model mode (`up --scorer model`) requires operator-provisioned account
+profiles. [Setup and checks](SETUP.md) · [Operator runbook](docs/runbooks/local-operations.md) · [HTTP API](docs/api/README.md)
 
-## Verify and understand the project
+## Verification and project guide
 
-- [Current local release](docs/releases/G3D-P3-main-integration-2026-11-06.md): integrated references, verification commands and limits.
-- [Current status](docs/STATUS.md), [task queue](docs/TASK_QUEUE.md) and [roadmap](docs/PROJECT_PLAN.md): accepted scope and remaining milestones.
-- [Project artifacts](docs/artifacts/README.md): saved HTML, Word and Markdown checkpoints.
-- [Setup and checks](SETUP.md): locked dev+ml, strict/package/contract checks and real browser/API/Postgres tests.
+The AN01-M1 integration passed 1,099 backend tests on Windows and 1,103 on
+Ubuntu in WSL, with one allowed live-provider skip each. The Document Review
+integration passed 266 frontend tests and 41 Windows Chromium cases. The
+recorded walkthrough passed 31 local browser checks. [AN01-M1 release](docs/releases/AN01-M1-main-integration-2026-11-14.md) · [Document Review release](docs/releases/DOC01-Part-C-main-integration-2026-11-14.md) · [Walkthrough release](docs/releases/DEMO01-public-walkthrough-2026-11-14.md)
 
-The rule scorer and deterministic investigator need no model key. The optional local Claude adapter is separate from hosted inference. Bounded evidence-analyst/investigator/reviewer orchestration is integrated; its read-only investigation trace UI is integrated, while measured live quality comparison remains next. Public visitor keys, deeper financial analytics, broader AI attack evaluations and hosted operation remain future work; native Linux coverage is currently the local backend scope. All actions are simulated; there is no real-bank fraud-performance or production-capacity claim.
+Sentinel uses synthetic transactions and simulated actions. The verification
+covers the local workflow and the static replay. Live agent evaluation and
+a hosted sandbox for running fresh cases remain future work.
+
+[Complete guide](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.md) · [Offline HTML](docs/artifacts/AgentForge_Sentinel_Complete_Project_Study_Guide_2026-11-08.html) · [Current status](docs/STATUS.md) · [Contributor and assistant handoff](docs/START_HERE.md)
