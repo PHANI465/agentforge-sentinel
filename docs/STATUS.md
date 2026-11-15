@@ -1,12 +1,12 @@
 # Project status
 
-## Browser document insights verified for GitHub
+## Browser document insights live on Vercel
 
 The static reader now connects PDF, XLSX, and DOCX parsing to statement reconciliation
 and typed comparisons. It includes a source viewer, a capabilities page, 24 synthetic
 sample files, and the two existing Treasury PDFs. The owner authorized GitHub publication.
-See [release verification](releases/DOCUMENT-INSIGHTS-GITHUB.md) for the source commit
-and scope. The production deployment is a separate release.
+See [release verification](releases/DOCUMENT-INSIGHTS-GITHUB.md) for the source commit,
+Vercel production deployment, and public browser checks.
 
 ## November 15 live workbench and revised public PDF checks
 

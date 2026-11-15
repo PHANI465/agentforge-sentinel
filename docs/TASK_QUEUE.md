@@ -1,11 +1,12 @@
 # Shared implementation queue
 
-## Browser document insights verified for GitHub
+## Browser document insights live on Vercel
 
 The document-insights assignment is complete for the supported browser layouts.
 [GitHub release verification](releases/DOCUMENT-INSIGHTS-GITHUB.md) covers the
 source update. The [implementation dispatch](prompts/SOL_DOCUMENT_INSIGHTS.md)
-is delivered history. Production deployment and optional document AI are future work.
+is delivered history. The production site serves this release. Optional document AI is
+future work.
 
 ## November 14 DOC01 Part C complete
 

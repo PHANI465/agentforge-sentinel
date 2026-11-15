@@ -1,8 +1,8 @@
 # AgentForge Sentinel: the complete project guide
 
 **Browser document insights.** The source release includes statement reconciliation,
-document comparisons, check coverage, and complex examples. The live public site and
-synthetic workbench use the preceding deployment. See the
+document comparisons, check coverage, and complex examples. The public site and
+synthetic workbench serve this release on Vercel. See the
 [source release](../releases/DOCUMENT-INSIGHTS-GITHUB.md) and
 [user guide](../ui/PUBLIC-DOCUMENT-INSIGHTS.md). The completion tables below describe their dated scope.
 

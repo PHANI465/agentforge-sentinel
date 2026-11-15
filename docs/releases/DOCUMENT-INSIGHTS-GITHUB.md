@@ -3,8 +3,14 @@
 Verified implementation `a56f104b301ee8c6bf0670c1e41f05693e170542` directly follows
 the evidence foundation `aa1c0690d8592cdbb5cb62827218059564feddc6`. The owner approved
 publication of the completed work on GitHub. This forward-only update includes both
-commits and this documentation. The production website continues to use its preceding
-deployment.
+commits and this documentation.
+
+Vercel production serves source commit `34309e3177dcad522fed2efe31b0e48bdfb4c588`
+from deployment `dpl_AY2VARxMmcBdFtwnURMbY4L4fQbT`. Chromium verified the public
+purchasing sample, all three expected flags, the purchase-order source excerpt and
+same-origin GET requests. The capabilities and examples pages, workbench entry, IAF
+page and health endpoint also responded successfully. GitHub-triggered deployments
+are disabled for the combined FastAPI and browser release. [Vercel deployment](https://vercel.com/pgavara1-3079s-projects/agentforge-sentinel/AY2VARxMmcBdFtwnURMbY4L4fQbT).
 
 The change adds local statement reconciliation and explicit document comparisons with
 source excerpts. The examples include normal controls as well as discrepancies.

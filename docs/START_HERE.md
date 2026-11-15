@@ -18,8 +18,7 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 
 ## Current position
 
-- The browser document-insights source is ready for GitHub at verified implementation
-  commit `a56f104`. The production site still uses the preceding deployment.
+- The browser document-insights release is live on Vercel from source commit `34309e3`.
   [Release verification](releases/DOCUMENT-INSIGHTS-GITHUB.md) and
   [user guide](ui/PUBLIC-DOCUMENT-INSIGHTS.md).
 

@@ -8,7 +8,7 @@ and requires human approval before a simulated action.
 
 [Open the public Vercel site](https://agentforge-sentinel.vercel.app/). You can review a PDF, workbook, or Word document, follow a recorded case or run a fresh synthetic case.
 
-- [Review a document](https://agentforge-sentinel.vercel.app/#review). Try a labeled Treasury report or review a PDF, XLSX, or DOCX file in the browser.
+- [Review documents](https://agentforge-sentinel.vercel.app/#review). Review PDF, XLSX, or DOCX files, compare related records, or try the [sample library](https://agentforge-sentinel.vercel.app/examples.html).
 - [Ask IAF](https://agentforge-sentinel.vercel.app/iaf.html) about the project and its creator. [OpenAI key setup](hosting/vercel/IAF.md).
 - [Walk through a fraud case](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/walkthrough.html). Follow five plain language steps, or [explore all ten steps](https://agentforge-sentinel.vercel.app/walkthrough-details.html) with diagrams and recorded evidence.
 - [Download the synthetic p1 dataset](https://agentforge-sentinel-walkthrough.engagingfoxglove1.chatgpt.site/dataset.html). Includes 82,819 generated transactions, 600 fictional accounts, labels, features and the manifest used to verify the snapshot.
