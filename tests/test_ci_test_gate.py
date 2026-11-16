@@ -74,6 +74,9 @@ def step_script(name_prefix: str) -> str:
 def suite(tmp_path: Path, files: dict[str, str]) -> Path:
     project = tmp_path / "project"
     (project / "tests").mkdir(parents=True)
+    # The scratch suite has its own pytest root even when --basetemp is inside
+    # the repository. Its JUnit node IDs must never inherit a parent path.
+    (project / "pytest.ini").write_text("[pytest]\n", encoding="utf-8")
     for name, body in files.items():
         (project / "tests" / name).write_text(body, encoding="utf-8")
     scripts = ROOT / "scripts"
