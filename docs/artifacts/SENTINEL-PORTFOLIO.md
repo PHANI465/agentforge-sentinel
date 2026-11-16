@@ -12,8 +12,10 @@ This file does not assert employment, customer results, degrees or certification
 
 ## Resume entry
 
-**AgentForge Sentinel — Financial Investigation Workbench**  
-Personal project · [Live demo](https://agentforge-sentinel.vercel.app/)  
+**AgentForge Sentinel — Financial Investigation Workbench**
+
+Personal project · [Live demo](https://agentforge-sentinel.vercel.app/)
+
 Python, FastAPI, PostgreSQL, React, TypeScript, scikit-learn, Vercel
 
 - Built a full-stack investigation workflow with tenant/session-scoped access,
