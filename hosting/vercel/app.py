@@ -10,6 +10,7 @@ from starlette.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from iaf import MAX_QUESTION, answer as answer_iaf
+from guard import HostedGuard
 
 from sentinel import db
 from sentinel.agents.coordinator import deterministic_workflow
@@ -24,6 +25,7 @@ CAPABILITIES = frozenset({"read_case", "approve_action", "execute_simulated_acti
 def hosted_app(database_url: str):
     service = Sentinel(database_url, deterministic_workflow())
     api = create_app(service=service, documents=DocumentService(None))
+    api.add_middleware(HostedGuard, database_url=database_url)
 
     @api.get("/", include_in_schema=False)
     def home():
@@ -34,10 +36,7 @@ def hosted_app(database_url: str):
         return RedirectResponse("/workbench/index.html")
 
     @api.post("/demo/session", include_in_schema=False)
-    def start_demo(request: Request):
-        # Browser requests are same-origin. The database also bounds admission across instances.
-        if request.headers.get("sec-fetch-site") != "same-origin":
-            return JSONResponse({"error": "demo_same_origin_required"}, status_code=403)
+    def start_demo():
         token = secrets.token_urlsafe(32)
         scope = Scope(tenant_id=uuid4(), session_id=uuid4())
         actor = uuid4()
@@ -68,8 +67,6 @@ def hosted_app(database_url: str):
     @api.post("/iaf/ask", include_in_schema=False)
     async def iaf_ask(request: Request):
         headers = {"Cache-Control": "no-store"}
-        if request.headers.get("sec-fetch-site") != "same-origin":
-            return JSONResponse({"kind": "bad_request"}, status_code=403, headers=headers)
         raw = bytearray()
         async for chunk in request.stream():
             if len(raw) + len(chunk) > 4000:

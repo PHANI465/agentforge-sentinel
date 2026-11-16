@@ -17,7 +17,11 @@ def main() -> None:
     db.migrate(owner)
     grant_runtime(owner, ROLE, password)
     with db.connect(owner) as conn:
-        conn.execute(Path(__file__).with_name("guest.sql").read_text(encoding="utf-8"))
+        for name in ("guest.sql", "iaf-quota.sql"):
+            conn.execute(Path(__file__).with_name(name).read_text(encoding="utf-8"))
+    with db.connect(owner) as conn:
+        conn.autocommit = True
+        conn.execute(Path(__file__).with_name("request-limits.sql").read_text(encoding="utf-8"))
     hostname = parts.netloc.rsplit("@", 1)[1]
     runtime = urlunsplit(parts._replace(netloc=f"{ROLE}:{quote(password, safe='')}@{hostname}"))
     with db.connect(runtime) as conn:

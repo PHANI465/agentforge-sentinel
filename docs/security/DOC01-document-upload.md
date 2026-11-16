@@ -7,8 +7,8 @@ route contract is in [documents-v1.3.md](../api/documents-v1.3.md).
 ## Registering the worker (operator only)
 
 ```bash
-# 1. The worker's own locked environment (never the app's).
-cd tools/document_worker && uv sync --locked
+# 1. The worker's own locked environment (Python 3.11.5 through 3.12).
+cd tools/document_worker && uv sync --locked --python 3.11.14
 # 2. A marker-owned store directory (absolute path, not shared with anything else).
 uv run --locked sentinel-docworker init --store /abs/path/doc-store
 # 3. Server configuration (environment of the API process only):

@@ -9,7 +9,7 @@ import {expected} from './insights-expected.mjs';
 import {samples} from '../static/insight-samples.mjs';
 import {strToU8, zipSync} from '../static/vendor/fflate.mjs';
 
-const [modules, output] = process.argv.slice(2);
+const [modules, output, publicCorpus] = process.argv.slice(2);
 if (!modules || !output) throw new Error('Pass installed web/node_modules and a QA output directory.');
 await mkdir(output, {recursive: true});
 const {chromium} = createRequire(join(resolve(modules), 'package.json'))('playwright');
@@ -171,6 +171,38 @@ try {
   await page.setViewportSize({width: 390, height: 844});
   await choose('purchase');
   await page.screenshot({path: join(output, 'comparison-390.png'), fullPage: true});
+  if (publicCorpus) {
+    const checks = [
+      ['treasury-jan-2025.pdf', 'January 2025', ['513,294', '641,935', '128,640']],
+      ['treasury-may-2025.pdf', 'May 2025', ['371,229', '687,233', '316,004']],
+      ['treasury-aug-2025.pdf', 'August 2025', ['344,315', '689,107', '344,792']],
+      ['treasury-daily-2025-01-15.pdf', null, []],
+    ];
+    const outcomes = [];
+    for (const [name, month, numbers] of checks) {
+      await page.goto(origin);
+      const directory = name.includes('-aug-') || name.includes('-daily-')
+        ? publicCorpus : join(root, 'samples');
+      const file = join(directory, name);
+      await page.locator('#pdf-file').setInputFiles(file);
+      const review = page.getByRole('button', {name:/^Review (?:this file|files)$/});
+      await review.click();
+      await page.getByText('PDF reviewed in this browser.').waitFor({timeout: 27_000});
+      const result = await page.locator('#results').innerText();
+      if (month) {
+        assert.ok(result.includes(month + ' budget summary'), name);
+        assert.ok(result.includes('Source page 5, Table 2'), name);
+        for (const number of numbers) assert.ok(result.includes(number), name + ' ' + number);
+      } else {
+        assert.match(result, /Readable text on [1-9]/);
+        assert.doesNotMatch(result, /budget summary|reported deficit|reported surplus/i);
+      }
+      outcomes.push({name, sha256: createHash('sha256').update(await readFile(file)).digest('hex'),
+        referenceFields: numbers.length, matchedFields: numbers.length,
+        outcome: month ? 'matched_this_month_table_2' : 'readable_outside_supported_layout'});
+    }
+    console.log('Public document validation ' + JSON.stringify(outcomes));
+  }
   // Verify actual browser-level network and storage boundaries for all review sessions.
   const localOrigin = new URL(origin).origin;
   assert.ok(book.every(([method, url, body]) => method === 'GET' && body === null &&

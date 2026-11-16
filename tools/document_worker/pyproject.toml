@@ -6,17 +6,17 @@ build-backend = "setuptools.build_meta"
 name = "sentinel-document-worker"
 version = "0.1.0"
 description = "DOC01 Part A: bounded local document extraction worker (separately locked; not an app dependency)"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11.5,<3.13"
 dependencies = [
-    # Microsoft MarkItDown, MIT. 0.1.8 is pinned because 0.1.9 requires certifi>=2026.10.19,
-    # which the application's certifi holdback (pre-2026-10-09) would not admit. Only the
-    # extras for the reviewed fixture matrix (text-layer PDF, XLSX) are installed.
+    # Microsoft MarkItDown, MIT. Retain the verified 0.1.8 adapter during the security refresh.
+    # Only the supported PDF and XLSX extras are installed.
+
     "markitdown[pdf,xlsx]==0.1.8",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.3,<9",
+    "pytest>=9.0.3,<10",
     "ruff>=0.9,<1",
 ]
 
@@ -40,7 +40,7 @@ select = ["E4", "E7", "E9", "F"]
 
 [tool.uv]
 # Supply-chain hygiene for this worker only: every package must have been released at least
-# two weeks before this lock was created (2026-11-12), and certifi keeps the application's
-# stricter pre-2026-10-09 holdback rather than relaxing it.
+# two weeks before the original lock. The named exceptions admit security fixes.
+
 exclude-newer = "2026-10-29T00:00:00Z"
-exclude-newer-package = { certifi = "2026-10-09T00:00:00Z" }
+exclude-newer-package = { certifi = "2026-11-16T00:00:00Z", soupsieve = "2026-11-16T00:00:00Z", pytest = "2026-11-16T00:00:00Z" }
