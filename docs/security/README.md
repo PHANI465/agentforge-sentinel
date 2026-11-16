@@ -1,5 +1,10 @@
 # Backend reliability, diagnostics and least privilege (C05)
 
+For the current cross-project assessment, read the
+[November 15 security/readiness review](PROJECT-REVIEW-2026-11-15.md).
+The C05 implementation history below describes its original baseline; newer agent,
+document and hosting controls are covered separately in the current review.
+
 Audience: reviewers, operators and the UI owner. Base: accepted C01 `2e6c232`. The HTTP response bodies, status codes and OpenAPI snapshot are **unchanged**. The only externally visible addition is an `X-Request-ID` response header; see "Contract notes".
 
 ## Request IDs, events and metrics

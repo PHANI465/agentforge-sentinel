@@ -12,6 +12,17 @@ implemented behavior and verified results. Supersede a decision with a linked ne
 do not erase it or silently backfill an undocumented conversation. Evidence for a code
 acceptance names the reviewed SHA. Auth tokens, private outputs and raw datasets stay out.
 
+**D20261115-05 · security review and portfolio documentation.** The owner requested a
+whole-project security/gap review, practical use/scaling advice, resume/LinkedIn/profile
+material and a clearer visual README. Reviewed baseline is `d583118`; results are in
+[the security review](../security/PROJECT-REVIEW-2026-11-15.md). The review records open
+advisories and hardening work rather than marking them fixed. Recommendations do not
+authorize new paid services, private-document hosting or changes to model training.
+[Usage/scaling](../artifacts/SENTINEL-USAGE-AND-SCALING.md) and
+[portfolio guidance](../artifacts/SENTINEL-PORTFOLIO.md) include a factual JSON profile
+for optional retrieval use; no profile model was trained or uploaded. Runtime and
+deployment remain unchanged in this documentation task.
+
 **D20261115-01 · public PDF review and dataset.** The owner requested a public
 landing page, PDF explanation and deployment. The published site reads PDFs in
 the browser and gives page evidence, so public visitors can use it without a

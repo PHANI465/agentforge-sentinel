@@ -18,6 +18,12 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 
 ## Current position
 
+- The November 15 [security/readiness review](security/PROJECT-REVIEW-2026-11-15.md)
+  identifies dependency remediation and public hardening as the recommended next work.
+  Findings are open; the review does not change runtime code or certify customer readiness.
+  Owner guides: [usage/scaling](artifacts/SENTINEL-USAGE-AND-SCALING.md) and
+  [resume/LinkedIn/profile](artifacts/SENTINEL-PORTFOLIO.md).
+
 - The browser document-insights release is live on Vercel from source commit `34309e3`.
   [Release verification](releases/DOCUMENT-INSIGHTS-GITHUB.md) and
   [user guide](ui/PUBLIC-DOCUMENT-INSIGHTS.md).

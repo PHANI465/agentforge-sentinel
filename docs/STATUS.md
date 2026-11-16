@@ -1,5 +1,14 @@
 # Project status
 
+## November 15 security and readiness review
+
+The owner requested a project-wide security/gap review, usage/scaling guidance and
+portfolio materials. The [review](security/PROJECT-REVIEW-2026-11-15.md) covers source
+`d583118` with targeted tests and public read-only checks. Dependency advisories,
+missing anti-framing headers and release-hardening findings remain open. This is a
+documentation update, not a security remediation release or production certification.
+The [README](../README.md) now separates the browser, hosted and local-worker paths.
+
 ## Browser document insights live on Vercel
 
 The static reader now connects PDF, XLSX, and DOCX parsing to statement reconciliation

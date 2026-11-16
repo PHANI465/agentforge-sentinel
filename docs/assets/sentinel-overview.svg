@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">AgentForge Sentinel: evidence before action</title>
+  <desc id="desc">Three separate experiences: document review inside your browser, synthetic case investigation with human approval, and IAF for project questions.</desc>
+  <rect width="1200" height="360" rx="24" fill="#102f2b"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="40" y="57" font-size="14" letter-spacing="3" fill="#a8d5c1">AGENTFORGE SENTINEL</text>
+    <text x="40" y="105" font-size="34" font-weight="700" fill="#ffffff">Evidence before action.</text>
+    <text x="40" y="137" font-size="18" fill="#d0e4da">Financial document insights and a human-controlled investigation workbench.</text>
+    <g transform="translate(40 170)">
+      <rect width="360" height="151" rx="14" fill="#edf4ee"/>
+      <text x="22" y="35" font-size="20" font-weight="700" fill="#102f2b">01 / Review documents</text>
+      <text x="22" y="69" font-size="16" fill="#25473f">PDF, Excel and Word</text>
+      <text x="22" y="96" font-size="16" fill="#25473f">Checks + charts + source excerpts</text>
+      <text x="22" y="127" font-size="14" font-weight="700" fill="#185840">Files stay in the browser</text>
+    </g>
+    <g transform="translate(420 170)">
+      <rect width="360" height="151" rx="14" fill="#edf4ee"/>
+      <text x="22" y="35" font-size="20" font-weight="700" fill="#102f2b">02 / Investigate a case</text>
+      <text x="22" y="69" font-size="16" fill="#25473f">Score, evidence and recorded trace</text>
+      <text x="22" y="96" font-size="16" fill="#25473f">Human approval before execution</text>
+      <text x="22" y="127" font-size="14" font-weight="700" fill="#185840">Synthetic data / simulated actions</text>
+    </g>
+    <g transform="translate(800 170)">
+      <rect width="360" height="151" rx="14" fill="#edf4ee"/>
+      <text x="22" y="35" font-size="20" font-weight="700" fill="#102f2b">03 / Ask IAF</text>
+      <text x="22" y="69" font-size="16" fill="#25473f">Project and creator questions</text>
+      <text x="22" y="96" font-size="16" fill="#25473f">Answers from a curated library</text>
+      <text x="22" y="127" font-size="14" font-weight="700" fill="#185840">Separate from document analysis</text>
+    </g>
+  </g>
+</svg>

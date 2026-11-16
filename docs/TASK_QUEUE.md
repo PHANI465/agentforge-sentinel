@@ -1,5 +1,14 @@
 # Shared implementation queue
 
+## Recommended next: security hardening
+
+The [November 15 review](security/PROJECT-REVIEW-2026-11-15.md) identifies SEC-01
+dependency remediation, then public headers/rate limits and release artifact integrity.
+These are proposed follow-up slices, not already assigned or completed fixes.
+Keep runtime, development and worker dependency exposure separate; preserve frozen
+contracts and model artifacts and verify compatibility before deployment. Customer
+uploads and capacity increases require the later isolation/retention/admission work.
+
 ## Browser document insights live on Vercel
 
 The document-insights assignment is complete for the supported browser layouts.
