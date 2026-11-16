@@ -1,5 +1,13 @@
 # Project status
 
+## November 16 hardening and invited pilot
+
+The [readiness note](security/SENTINEL-PILOT-READINESS.md) records dependency
+updates, verified release packaging and the official-document evaluation.
+The [handoff](handoff/CODEX-sentinel-hardening.md) records the backend
+verification and the staged Vercel release. Promotion requires the additive
+Neon request-limit migration and a working staged session check.
+
 ## November 15 security and readiness review
 
 The owner requested a project-wide security/gap review, usage/scaling guidance and

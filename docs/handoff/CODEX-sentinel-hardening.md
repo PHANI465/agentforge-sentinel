@@ -22,6 +22,46 @@ repository and the existing Vercel project.
 - OSV returned zero matches for 270 locked/vendored version identities.
   The upgraded npm audit also returned zero findings.
 
+## Final verification
+
+- Windows full backend run at `e83f5ee`: 1,100 passed, one expected skip and
+  two failures caused by placing scratch files inside the checkout. The CI
+  fixture inherited the outer pytest root, and the wheel probe correctly saw
+  a checkout path where it required an external environment. All five other
+  checker commands passed. The isolated fixture commit passed all 17 CI
+  gate tests. The unchanged wheel test passed with scratch files on E:
+  outside the checkout.
+- The first Ubuntu gate at `146b3a4` found a synthetic evaluator failure and
+  one browser fixture startup error. The browser fixture passed in isolation.
+  A controlled backward-clock regression reproduced the evaluator's missing
+  case and traceback on Windows. The correction uses one advancing UTC clock
+  within each attempt and reports a missing case as a typed setup failure.
+  Both failing-first regressions and the evaluator suites passed on Windows
+  after the fix (25 tests).
+- Ubuntu at `ae246a6`: all six strict commands passed, with 1,108 tests
+  passed and one allowed skip. The same-run JUnit validated. HTTP v1.3
+  exports matched and the read-only ML reproduction returned true. The
+  separate document worker suite passed 216 tests with the one Windows-only
+  skip. The test-only Windows fixes, evaluator
+  correction and docs leave the deployed inputs and frozen assets unchanged.
+- The packaged Windows browser smoke ran through real FastAPI and disposable
+  PostgreSQL, including isolated guest sessions, denied document upload,
+  investigation, human approval, simulated execution and idempotent replay.
+  Owned local processes were stopped after the run.
+- A 36-request local Ubuntu benchmark at `ae246a6` completed all 12 ingests
+  and all 12 reads successfully. Investigations succeeded 4/4, 1/4 and 1/4
+  at concurrency 1, 2 and 4, respectively. The other six requests received
+  `agent_capacity_exhausted`. The run recorded zero approvals or simulated
+  actions and verified cleanup. These results describe the local stack.
+- The explicit archive allowlist rebuilt the same 326 release files byte for
+  byte as the staged build. This ties the staged `e83f5ee` bundle to the tested
+  runtime bytes in the follow-up commits.
+
+Evidence lives in the two hardening worktrees' ignored
+`.agent/hardening/` directories and the Ubuntu user's
+`~/sentinel-hardening-native-reports` and
+`~/sentinel-hardening-native-reports-r2` directories.
+
 ## Vercel staging
 
 The candidate built successfully from `e83f5ee` at

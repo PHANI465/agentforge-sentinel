@@ -62,11 +62,12 @@ separate extraction performance from fraud classification.
 - Use the facilitator checklist and recording form. Separate contact
   information, anonymous observations and project issues. Pick a named
   facilitator and have them confirm deletion at the retention deadline.
-- The stored rate limiter is tested under concurrent reservations. That
-  verifies counter behavior, while a latency or capacity claim needs a
-  measured end-to-end workload. Per-instance investigation capacity and
-  PostgreSQL connection pressure remain important. See the existing
-  [PERF01 local measurement](../benchmarks/PERF01-local-capacity.md).
+- The stored rate limiter is tested under concurrent reservations. In the
+  November 16 local Ubuntu smoke, all 24 ingest and read requests succeeded.
+  Six of 12 investigation requests succeeded and six received the expected
+  capacity refusal. These laptop measurements exercise the per-process
+  workflow limit. See the [hardening handoff](../handoff/CODEX-sentinel-hardening.md)
+  and the [PERF01 local measurement](../benchmarks/PERF01-local-capacity.md).
 - Before increasing hosted traffic, benchmark the shipped guard and workbench
   against a disposable environment, with a capped request count and a
   representative mix. Record p95 latency, per-route 429/503, database lock
