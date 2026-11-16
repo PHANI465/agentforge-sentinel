@@ -15,7 +15,9 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 HOSTED = ("app.py", "guard.py", "iaf.py", "iaf-knowledge.json", "vercel.json")
 SOURCE = (
-    "src/sentinel", "ml", "data_pipeline", "public_site/static", "web",
+    "src/sentinel", "ml", "data_pipeline", "public_site/static",
+    "web/index.html", "web/package.json", "web/package-lock.json", "web/src",
+    "web/postcss.config.mjs", "web/tsconfig.json", "web/vite.config.ts",
     "pyproject.toml", "uv.lock", *(f"hosting/vercel/{name}" for name in HOSTED),
 )
 STATIC_SUFFIXES = {
