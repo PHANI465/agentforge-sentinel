@@ -1,13 +1,14 @@
 # Shared implementation queue
 
-## Recommended next: security hardening
+## November 16 hardening and pilot
 
-The [November 15 review](security/PROJECT-REVIEW-2026-11-15.md) identifies SEC-01
-dependency remediation, then public headers/rate limits and release artifact integrity.
-These are proposed follow-up slices, not already assigned or completed fixes.
-Keep runtime, development and worker dependency exposure separate; preserve frozen
-contracts and model artifacts and verify compatibility before deployment. Customer
-uploads and capacity increases require the later isolation/retention/admission work.
+The dependency, headers, hosted admission and packaging implementation is in
+`e83f5ee`. See [pilot readiness](security/SENTINEL-PILOT-READINESS.md) for the
+checks on official reports, invite procedure and capacity boundaries.
+The packaged Vercel release needs the [database migration](../hosting/vercel/request-limits.sql)
+and a staged smoke before promotion. Track its live status in the handoff.
+Next product milestone is an invited pilot on the documented file types, then
+broader document evaluation and bounded multi-instance measurement.
 
 ## Browser document insights live on Vercel
 

@@ -77,9 +77,9 @@ also supports a registered scikit-learn model and optional bounded investigator 
 - Browser review keeps files in the tab. Local worker uploads use local storage. Synthetic workbench sessions expire, but their database records are not automatically erased at expiry.
 - There are no bank connections, real payment execution, production Reports screen, or validated customer-scale capacity claims.
 
-**Security review:** the [November 15 audit](docs/security/PROJECT-REVIEW-2026-11-15.md)
-records dependency advisories, missing anti-framing headers and deployment hardening work.
-This is a working research/portfolio demo; customer-document hosting needs additional controls.
+The [November 15 security review](docs/security/PROJECT-REVIEW-2026-11-15.md)
+records the original findings. See [pilot readiness](docs/security/SENTINEL-PILOT-READINESS.md)
+for dependency updates, hosted safeguards and the official-document evaluation.
 
 ## Run locally
 
@@ -92,7 +92,8 @@ python -m http.server 8080 --bind 127.0.0.1 --directory public_site/static
 Open `http://127.0.0.1:8080`. Document samples and the recorded walkthrough work locally;
 the IAF API and live case links use the hosted service.
 
-**The full case workbench** — requires Python 3.11+, uv, Node 22+ and native PostgreSQL binaries:
+**The full case workbench** uses Python 3.11+, uv, Node 22.12+ within the Node 22
+series, and native PostgreSQL binaries.
 
 ```powershell
 uv sync --locked --extra dev --extra ml
@@ -122,9 +123,9 @@ Verification is tied to named releases, not a continuously valid badge:
 | [Document Review UI](docs/releases/DOC01-Part-C-main-integration-2026-11-14.md) | 266 frontend tests and 41 Windows Chromium cases |
 | [Browser insights](docs/releases/DOCUMENT-INSIGHTS-GITHUB.md) | 56 Node tests, file-to-browser checks, 22 typed assertions across 14 scenarios |
 
-Next priorities are dependency updates, public-service hardening, reproducible release
-packaging and wider document evaluation. Reporting measurement remains a prototype.
-Scaling to real customer data comes after identity, isolation, retention and abuse controls.
+The next product step is a small pilot for invited reviewers using synthetic and official
+public documents. Reporting measurement remains a prototype. See the
+[pilot runbook](docs/runbooks/invited-document-pilot.md) for the facilitator guide.
 
 | Read next | Purpose |
 | --- | --- |

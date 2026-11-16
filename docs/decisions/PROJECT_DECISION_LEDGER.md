@@ -12,6 +12,12 @@ implemented behavior and verified results. Supersede a decision with a linked ne
 do not erase it or silently backfill an undocumented conversation. Evidence for a code
 acceptance names the reviewed SHA. Auth tokens, private outputs and raw datasets stay out.
 
+**November 16, 2026 · invited pilot and release.** The owner chose an invited
+pilot with synthetic files and official public reports, and authorized publishing
+the verified changes to the private GitHub repository and verifying them on Vercel.
+[Pilot readiness](../security/SENTINEL-PILOT-READINESS.md) records the results and
+[the runbook](../runbooks/invited-document-pilot.md) describes how to run it.
+
 **D20261115-05 · security review and portfolio documentation.** The owner requested a
 whole-project security/gap review, practical use/scaling advice, resume/LinkedIn/profile
 material and a clearer visual README. Reviewed baseline is `d583118`; results are in

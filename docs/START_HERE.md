@@ -18,6 +18,10 @@ work or preserve a killed process. Inspect actual Git and job/recovery state bef
 
 ## Current position
 
+- November 16 hardening and document evaluation details are in
+  [Pilot readiness](security/SENTINEL-PILOT-READINESS.md). The pilot procedure
+  covers invited reviewers and public or synthetic material.
+
 - The November 15 [security/readiness review](security/PROJECT-REVIEW-2026-11-15.md)
   identifies dependency remediation and public hardening as the recommended next work.
   Findings are open; the review does not change runtime code or certify customer readiness.
