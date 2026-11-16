@@ -25,15 +25,19 @@ def test_committed_fixtures_match_generator_and_manifest(tmp_path):
     assert hashlib.sha256(labels).hexdigest() == manifest["labels_sha256"]
 
 
-def test_worker_is_separately_locked_and_app_is_untouched():
+def test_worker_is_separately_locked_with_reviewed_security_updates():
     worker = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert worker["project"]["dependencies"] == ["markitdown[pdf,xlsx]==0.1.8"]
-    assert worker["tool"]["uv"]["exclude-newer-package"]["certifi"] == "2026-10-09T00:00:00Z"
-    lock = (ROOT / "uv.lock").read_text(encoding="utf-8")
-    assert 'name = "markitdown"\nversion = "0.1.8"' in lock
+    assert worker["project"]["requires-python"] == ">=3.11.5,<3.13"
+    assert worker["tool"]["uv"]["exclude-newer"] == "2026-10-29T00:00:00Z"
+    assert set(worker["tool"]["uv"]["exclude-newer-package"]) == {"certifi", "soupsieve", "pytest"}
+    lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
+    assert {(p["name"], p["version"]) for p in lock["package"]} >= {
+        ("markitdown", "0.1.8"), ("certifi", "2026.10.23"), ("soupsieve", "4.0"), ("pytest", "9.2.0"),
+    }
     app_root = ROOT.parent.parent
     app = (app_root / "pyproject.toml").read_text(encoding="utf-8")
-    assert "markitdown" not in app and 'certifi = "2026-10-09T00:00:00Z"' in app
+    assert "markitdown" not in app
     assert "markitdown" not in (app_root / "uv.lock").read_text(encoding="utf-8")
 
 

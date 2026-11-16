@@ -41,5 +41,5 @@ The lock is authoritative for exact versions and hashes. The table records decla
 metadata, not a legal review.
 
 Supply chain: `exclude-newer = 2026-10-29` (two weeks before lock creation) and the
-application's stricter certifi holdback (`2026-10-09`). MarkItDown 0.1.9 was excluded because
+application's original certifi holdback (`2026-10-09`). MarkItDown 0.1.9 was excluded because
 it requires `certifi>=2026.10.19`.
