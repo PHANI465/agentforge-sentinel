@@ -13,12 +13,14 @@ Policy under test (evaluator-runbook.md §3):
 """
 import importlib.util
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import psycopg
 import pytest
 from psycopg import sql
 
+from sentinel import service
 from sentinel.investigators import DeterministicInvestigator
 from sentinel.service import Sentinel
 from test_agent_eval_privileges import count, runner, runtime_role
@@ -60,6 +62,40 @@ def assert_safe(output):
 
 
 # ---- R41: setup failures stop the run, keep earlier attempts and are not attempts ----------
+
+def test_synthetic_seed_survives_backward_wall_step(database_url, monkeypatch):
+    """Exercise the real velocity rule after the host clock jumps during seeding."""
+    runner_module = module()
+    import agent_cases
+
+    wall = datetime.now(timezone.utc)
+    monkeypatch.setattr(service, "utc_now", lambda: wall)
+    original = agent_cases._input
+
+    def jump_before_alert(external_id, *args):
+        nonlocal wall
+        if external_id == "d02-alert":
+            wall -= timedelta(seconds=3)
+        return original(external_id, *args)
+
+    monkeypatch.setattr(agent_cases, "_input", jump_before_alert)
+    _, runtime = runtime_role(database_url)
+    provisioner = Sentinel(database_url, DeterministicInvestigator())
+    result = runner_module.attempt(provisioner, runtime, runner_module.comparator("C0"), "D02")
+    assert result["outcome"] == "disposition"
+
+
+def test_a_missing_seeded_case_is_a_typed_setup_failure(database_url, monkeypatch):
+    runner_module = module()
+    import agent_cases
+
+    monkeypatch.setattr(agent_cases, "seed", lambda *_args: {"case": None})
+    _, runtime = runtime_role(database_url)
+    provisioner = Sentinel(database_url, DeterministicInvestigator())
+    with pytest.raises(runner_module.SetupFailed) as failed:
+        runner_module.attempt(provisioner, runtime, runner_module.comparator("C0"), "D02")
+    assert (failed.value.phase, failed.value.code) == ("ingest", "case_not_alerted")
+
 
 @pytest.mark.parametrize("table, phase, sessions", [("api_sessions", "provision", 1),
                                                      ("transactions", "ingest", 2)])

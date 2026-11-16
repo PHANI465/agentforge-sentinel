@@ -42,7 +42,7 @@ import subprocess
 import sys
 import time
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -266,10 +266,20 @@ def attempt(provisioner, runtime_url: str, investigator, case_id: str) -> dict:
     try:  # Exception only: KeyboardInterrupt and SystemExit still stop the process
         token = provisioner.create_session(ac.ANALYST)[0]
         phase = "authenticate"
-        svc = Sentinel(runtime_url, investigator, utc_now)
+        # Synthetic event times and read cutoffs share one advancing clock.
+        # A host clock correction must not make a committed seed row look future.
+        anchor_utc = utc_now()
+        anchor_ticks = time.monotonic_ns()
+
+        def clock():
+            return anchor_utc + timedelta(microseconds=(time.monotonic_ns() - anchor_ticks) // 1000)
+
+        svc = Sentinel(runtime_url, investigator, clock)
         ctx = svc.authenticate(token)
         phase = "ingest"
-        case = ac.seed(svc, ctx, case_id, utc_now)["case"]
+        case = ac.seed(svc, ctx, case_id, clock)["case"]
+        if case is None:
+            raise ServiceError("case_not_alerted", 409)
     except Exception as error:
         raise SetupFailed(phase, safe_code(error)) from None
     row = {"case": case_id, "ids": {"tenant_id": str(ctx.scope.tenant_id),
